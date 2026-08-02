@@ -2,6 +2,7 @@
 
 import sqlite3
 import os
+import shutil
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from ..utils.logging_utils import log_exception
@@ -91,12 +92,57 @@ class TaskDB:
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_focus_created ON focus_events(created_utc)")
                 cur.execute("PRAGMA user_version")
                 schema_version = int(cur.fetchone()[0] or 0)
+                cur.execute(
+                    "CREATE TABLE IF NOT EXISTS schema_migrations ("
+                    "version INTEGER PRIMARY KEY, applied_utc TEXT NOT NULL)"
+                )
                 if schema_version < 1:
                     cur.execute("PRAGMA user_version = 1")
+                    cur.execute(
+                        "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
+                        (1, datetime.now(timezone.utc).isoformat()),
+                    )
+                if schema_version < 2:
+                    # Version 2 records the active-task invariant and the
+                    # timed-out transition in the durable migration journal.
+                    cur.execute(
+                        "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
+                        (2, datetime.now(timezone.utc).isoformat()),
+                    )
+                    cur.execute("PRAGMA user_version = 2")
                 con.commit()
         except Exception as exc:
             log_exception("TaskDB: failed ensuring schema")
             raise RuntimeError(f"TaskDB schema initialization failed: {exc}") from exc
+
+    def backup_to(self, destination):
+        """Create a consistent SQLite backup, including WAL contents."""
+        destination = os.fspath(destination)
+        os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
+        with self._conn() as con:
+            backup_con = sqlite3.connect(destination)
+            try:
+                con.backup(backup_con)
+                backup_con.commit()
+            finally:
+                backup_con.close()
+        return destination
+
+    @staticmethod
+    def restore_from(source, destination):
+        """Restore a previously created backup without mutating the source."""
+        source = os.fspath(source)
+        destination = os.fspath(destination)
+        os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
+        temp = f"{destination}.{os.getpid()}.restore.tmp"
+        try:
+            shutil.copy2(source, temp)
+            os.replace(temp, destination)
+        finally:
+            try:
+                os.remove(temp)
+            except FileNotFoundError:
+                pass
 
     def get_active(self):
         with self._conn() as con:
