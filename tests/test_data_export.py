@@ -67,6 +67,34 @@ class DataExportTests(unittest.TestCase):
                 embedded = json.loads(archive.read("EXPORT_MANIFEST.json"))
             self.assertEqual(manifest, embedded)
 
+    def test_inventory_covers_known_operational_and_recovery_artifacts_without_contents(self):
+        from focuscheck.utils.data_export import inventory_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            artifacts = {
+                "focus_app.log": "private app detail",
+                "focuscheck_supervisor.log": "private supervisor detail",
+                "focus_settings.json.corrupt-2026": "private settings",
+                "focus_settings.json.migration.jsonl": "private migration detail",
+                "retention_audit.jsonl": "private retention detail",
+                "hb.txt": "private heartbeat detail",
+                "diagnostic_bundle.zip": "private bundle bytes",
+                "camera_1.png": "private camera bytes",
+            }
+            for name, value in artifacts.items():
+                (root / name).write_text(value, encoding="utf-8")
+
+            report = inventory_data(root)
+            indexed = {item["path"]: item for item in report["files"]}
+
+            self.assertEqual(set(artifacts), set(indexed))
+            self.assertTrue(all("size" in item and "sensitive" in item for item in indexed.values()))
+            self.assertNotIn("private app detail", json.dumps(report))
+            self.assertNotIn("private settings", json.dumps(report))
+            self.assertTrue(indexed["focus_settings.json.corrupt-2026"]["sensitive"])
+            self.assertFalse(indexed["hb.txt"]["sensitive"])
+
     def test_export_rejects_symlink_sources_and_existing_destination(self):
         from tools.export_data import export_data
 

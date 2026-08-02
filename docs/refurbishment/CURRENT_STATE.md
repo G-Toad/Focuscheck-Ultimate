@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `205` unittest cases passing.
+- Current automated baseline after hardening: `206` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -29,6 +29,7 @@
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
 - `tools/export_data.py` and tray/App data controls provide atomic allowlisted export, metadata-only inventory, confirmed clear-log/personal-data actions, and explicit-age log retention with sensitive-category safeguards and metadata-only audit records; the bounded runner exercises the export path in a disposable root.
+- The export inventory allowlist covers application/supervisor logs, settings recovery artifacts, audit journals, heartbeat/stop markers, diagnostic bundles, and camera files without exposing contents in inventory metadata.
 - The tray diagnostic bundle action previews allowlisted operational files and creates a sanitized bundle that excludes settings, tasks, camera files, and exports.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

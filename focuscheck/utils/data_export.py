@@ -15,10 +15,14 @@ CATEGORIES = ("logs", "metadata", "settings", "tasks", "camera")
 _CATEGORY_PATTERNS = {
     "logs": ("focus_log.csv", "focus_log.csv.*", "focus_waste_log.csv", "focus_waste_log.csv.*",
              "focus_study_log.csv", "focus_study_log.csv.*", "focus_intervention_reflections.jsonl",
-             "focus_intervention_reflections.jsonl.*"),
+             "focus_intervention_reflections.jsonl.*", "focus_app.log", "focus_app.log.*",
+             "focuscheck_supervisor.log", "focuscheck_supervisor.log.*"),
     "metadata": ("structured_events.jsonl", "structured_events.jsonl.*", "runtime_state.jsonl",
-                 "runtime_state.jsonl.*", "data_migration.jsonl"),
-    "settings": ("focus_settings.json", "focus_settings.json.bak", "focus_settings.json.bak.*"),
+                 "runtime_state.jsonl.*", "data_migration.jsonl", "retention_audit.jsonl",
+                 "data_clear_audit.jsonl", "hb.txt", "supervisor.stop", "supervisor.stop.ack",
+                 "diagnostic_bundle.zip", "diagnostic_bundle.zip.*"),
+    "settings": ("focus_settings.json", "focus_settings.json.bak", "focus_settings.json.bak.*",
+                 "focus_settings.json.corrupt-*", "focus_settings.json.migration.jsonl"),
     "tasks": ("focus_tasks.sqlite3", "focus_tasks.sqlite3.*"),
     "camera": ("camera_*.png", "camera_*.jpg", "camera_*.jpeg"),
 }
