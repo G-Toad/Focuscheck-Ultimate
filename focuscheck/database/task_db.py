@@ -9,6 +9,9 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..utils.logging_utils import log_exception
 
 
+CURRENT_TASK_SCHEMA_VERSION = 3
+
+
 def _normalize_utc(value, *, allow_none=False):
     """Normalize external timestamps to an explicit UTC ISO-8601 value."""
     if value is None and allow_none:
@@ -35,6 +38,7 @@ class TaskDB:
     
     def __init__(self, path):
         self.path = path
+        self.pre_migration_backup = None
         self._ensure_schema()
 
     @contextmanager
@@ -56,6 +60,7 @@ class TaskDB:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
         except Exception:
             pass
+        self._prepare_migration_safety_copy()
         try:
             with self._conn() as con:
                 cur = con.cursor()
@@ -132,7 +137,7 @@ class TaskDB:
                         (2, datetime.now(timezone.utc).isoformat()),
                     )
                     cur.execute("PRAGMA user_version = 2")
-                if schema_version < 3:
+                if schema_version < CURRENT_TASK_SCHEMA_VERSION:
                     # Normalize recoverable legacy timestamps and make invalid
                     # due dates visible instead of silently exempting tasks.
                     cur.execute(
@@ -173,11 +178,53 @@ class TaskDB:
                         "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
                         (3, datetime.now(timezone.utc).isoformat()),
                     )
-                    cur.execute("PRAGMA user_version = 3")
+                    cur.execute(f"PRAGMA user_version = {CURRENT_TASK_SCHEMA_VERSION}")
                 con.commit()
         except Exception as exc:
             log_exception("TaskDB: failed ensuring schema")
             raise RuntimeError(f"TaskDB schema initialization failed: {exc}") from exc
+
+    def _prepare_migration_safety_copy(self):
+        """Verify and snapshot an existing older DB before any schema mutation."""
+        if not os.path.isfile(self.path) or os.path.getsize(self.path) == 0:
+            return
+        try:
+            with sqlite3.connect(self.path, timeout=30) as source:
+                version = int(source.execute("PRAGMA user_version").fetchone()[0] or 0)
+                integrity = str(source.execute("PRAGMA integrity_check").fetchone()[0] or "")
+                if integrity.lower() != "ok":
+                    raise RuntimeError(f"SQLite integrity check failed: {integrity[:120]}")
+                if version >= CURRENT_TASK_SCHEMA_VERSION:
+                    return
+
+                candidate = f"{self.path}.pre-migration-v{version}.bak"
+                suffix = 1
+                while os.path.exists(candidate):
+                    candidate = f"{self.path}.pre-migration-v{version}.{suffix}.bak"
+                    suffix += 1
+                temporary = f"{candidate}.{os.getpid()}.tmp"
+                backup = sqlite3.connect(temporary)
+                try:
+                    source.backup(backup)
+                    backup.commit()
+                finally:
+                    backup.close()
+                os.replace(temporary, candidate)
+                self.pre_migration_backup = candidate
+        except RuntimeError:
+            raise
+        except Exception as exc:
+            log_exception("TaskDB: pre-migration safety copy failed")
+            raise RuntimeError(f"TaskDB pre-migration safety copy failed: {exc}") from exc
+
+    def integrity_check(self):
+        """Return whether SQLite reports a clean database integrity check."""
+        try:
+            with self._conn() as con:
+                result = con.execute("PRAGMA integrity_check").fetchone()
+            return bool(result and str(result[0]).lower() == "ok")
+        except Exception:
+            return False
 
     def backup_to(self, destination):
         """Create a consistent SQLite backup, including WAL contents."""

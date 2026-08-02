@@ -59,9 +59,26 @@ class TaskDbRecoveryTests(unittest.TestCase):
                 con.commit()
 
             db = TaskDB(str(path))
+            self.assertTrue(db.integrity_check())
             history = {row["id"]: row for row in db.list_history(limit=10)}
             self.assertEqual("2026-08-03T00:00:00+00:00", history[1]["created_utc"])
             self.assertIsNone(history[1]["due_utc"])
             self.assertIn("legacy invalid due_utc cleared", history[1]["change_reason"])
             self.assertEqual("active", history[2]["status"])
             self.assertIn("reconciled duplicate active task", history[1]["change_reason"])
+            self.assertIsNotNone(db.pre_migration_backup)
+            self.assertTrue(Path(db.pre_migration_backup).exists())
+            with sqlite3.connect(db.pre_migration_backup) as backup:
+                self.assertEqual(1, backup.execute("PRAGMA user_version").fetchone()[0])
+
+    def test_corrupt_existing_database_is_rejected_without_replacement(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = Path(temp_dir) / "corrupt.sqlite3"
+            original = b"not a sqlite database"
+            path.write_bytes(original)
+            with self.assertRaises(RuntimeError):
+                TaskDB(str(path))
+            self.assertEqual(original, path.read_bytes())
+            self.assertEqual([], list(path.parent.glob("corrupt.sqlite3.pre-migration-*.bak")))

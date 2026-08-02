@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `186` unittest cases passing.
+- Current automated baseline after hardening: `188` unittest cases passing.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
 - Isolated native overlay self-test: passing with virtual-screen region updates.
@@ -24,5 +24,6 @@
 - Task analytics now store UTC while accepting an explicit timezone and injected clock for local-day/DST boundaries; existing callers retain an explicit UTC default.
 - TaskDB schema migration version 3 normalizes recoverable legacy timestamps and clears invalid legacy due dates with an auditable repair reason; a checked-in legacy SQL fixture covers the path.
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
+- TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.
