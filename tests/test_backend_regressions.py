@@ -311,6 +311,38 @@ class TaskDbTests(unittest.TestCase):
 
 
 class ImportHardeningTests(unittest.TestCase):
+    def test_gentle_reminder_timer_ownership_releases_fired_and_cancelled_ids(self):
+        from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
+
+        dialog = GentleReminderDialog.__new__(GentleReminderDialog)
+        dialog._closed = False
+        dialog._active_timers = set()
+        dialog._drift_timer = None
+        scheduled = []
+        cancelled = []
+        callbacks = []
+        dialog.after = lambda delay, callback: (scheduled.append((delay, callback)) or f"timer-{len(scheduled)}")
+        dialog.after_cancel = cancelled.append
+
+        first = dialog._schedule_timer(100, lambda: callbacks.append("fired"))
+        dialog._drift_timer = first
+        self.assertIn(first, dialog._active_timers)
+
+        scheduled[0][1]()
+        self.assertEqual(["fired"], callbacks)
+        self.assertNotIn(first, dialog._active_timers)
+        self.assertIsNone(dialog._drift_timer)
+
+        second = dialog._schedule_timer(200, lambda: callbacks.append("cancelled"))
+        dialog._drift_timer = second
+        dialog._cleanup_timers()
+        self.assertEqual([second], cancelled)
+        self.assertEqual(set(), dialog._active_timers)
+        self.assertIsNone(dialog._drift_timer)
+
+        dialog._closed = True
+        self.assertIsNone(dialog._schedule_timer(300, lambda: callbacks.append("closed")))
+
     def test_camera_capability_reports_bounded_states(self):
         from focuscheck.ui.camera.capability import build_camera_capability
 

@@ -270,7 +270,19 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
     def _schedule_timer(self, delay_ms, callback):
         if self._closed:
             return None
-        timer_id = self.after(delay_ms, callback)
+        timer_ref = {}
+
+        def run_callback():
+            timer_id = timer_ref.get("id")
+            if timer_id is not None:
+                self._active_timers.discard(timer_id)
+                if self._drift_timer == timer_id:
+                    self._drift_timer = None
+            if not self._closed:
+                callback()
+
+        timer_id = self.after(delay_ms, run_callback)
+        timer_ref["id"] = timer_id
         self._active_timers.add(timer_id)
         return timer_id
 
@@ -281,6 +293,7 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
             except Exception:
                 pass
         self._active_timers.clear()
+        self._drift_timer = None
 
     def _start_drift_timer(self):
         """Start the timer for drifting back to center."""
