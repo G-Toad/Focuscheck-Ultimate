@@ -112,6 +112,7 @@ def main() -> int:
     stages = [
         ("compileall", [py, "-m", "compileall", "main.py", "focuscheck", "focuscheck_supervisor.py", "tests", "tools"]),
         ("unittest", [py, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"]),
+        ("mutation_smoke", [py, "tools/mutation_smoke.py"]),
         ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"]),
         ("main_selftest", [py, "main.py", "--selftest"]),
         ("tray_selftest", [py, "main.py", "--tray-selftest"]),

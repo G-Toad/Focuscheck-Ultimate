@@ -71,6 +71,10 @@ class VerificationRunnerTests(unittest.TestCase):
         property_tests = Path(__file__).resolve().parents[1] / "tests" / "test_property_invariants.py"
         self.assertTrue(property_tests.is_file())
 
+    def test_mutation_smoke_contract_is_present(self):
+        mutation_tool = Path(__file__).resolve().parents[1] / "tools" / "mutation_smoke.py"
+        self.assertTrue(mutation_tool.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
