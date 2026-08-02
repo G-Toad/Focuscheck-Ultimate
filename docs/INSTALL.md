@@ -38,6 +38,11 @@ powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Ins
 powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Uninstall -InstallDir "$env:LOCALAPPDATA\FocusCheck\app" -DataDir "$env:APPDATA\FocusCheck"
 ```
 
+Add `-RegisterStartup` to the install/upgrade command when enabling the
+canonical per-user Run entry. The entry targets `FocusCheckSupervisor.exe`,
+never the child executable; uninstall removes it only when it still points at
+the installation being removed.
+
 The previous package is retained beside the install directory and the promoted executable receives a SHA-256 manifest. A release package must contain both `FocusCheck.exe` and `FocusCheckSupervisor.exe`; the frozen supervisor launches the sibling child executable.
 
 The supervisor owns the application process. Do not create an independent startup entry for the child executable.

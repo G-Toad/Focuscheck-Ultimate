@@ -64,6 +64,15 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Move-Item -LiteralPath $install", lifecycle)
         self.assertNotIn("Remove-Item -LiteralPath $data", lifecycle)
 
+    def test_lifecycle_script_validates_promoted_package_and_manages_optional_startup(self):
+        root = Path(__file__).resolve().parents[1]
+        lifecycle = (root / "tools/package_lifecycle.ps1").read_text(encoding="utf-8")
+        self.assertIn("RegisterStartup", lifecycle)
+        self.assertIn("FocusCheckSupervisor.exe", lifecycle)
+        self.assertIn("validate_package.ps1", lifecycle)
+        self.assertIn("Get-CanonicalStartupCommand", lifecycle)
+        self.assertIn("Startup entry retained", lifecycle)
+
     def test_package_validation_checks_artifacts_manifest_and_optional_signing(self):
         root = Path(__file__).resolve().parents[1]
         validator = (root / "tools/validate_package.ps1").read_text(encoding="utf-8")
@@ -126,6 +135,7 @@ class PackagingContractTests(unittest.TestCase):
             package.mkdir()
             data.mkdir()
             (package / "FocusCheck.exe").write_text("new", encoding="ascii")
+            (package / "FocusCheckSupervisor.exe").write_text("supervisor", encoding="ascii")
             marker = data / "focus_settings.json"
             marker.write_text("user-data", encoding="ascii")
             command = [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(root / "tools/package_lifecycle.ps1")]
