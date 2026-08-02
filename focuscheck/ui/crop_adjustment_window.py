@@ -64,6 +64,8 @@ class CropAdjustmentWindow(tk.Toplevel):
         # Camera state
         self.camera = None
         self.camera_update_timer = None
+        self._camera_generation = 0
+        self._camera_init_timer = None
         self.current_frame = None
         self.preview_photo = None
         self.crop_preview_photo = None
@@ -92,7 +94,7 @@ class CropAdjustmentWindow(tk.Toplevel):
 
         # Start camera if available
         if CV2_AVAILABLE and PIL_AVAILABLE:
-            self.after(500, self._initialize_camera)
+            self._camera_init_timer = self.after(500, self._initialize_camera, self._camera_generation)
         else:
             messagebox.showwarning(
                 "Camera Unavailable",
@@ -823,10 +825,14 @@ class CropAdjustmentWindow(tk.Toplevel):
 
     # ===== CAMERA MANAGEMENT =====
 
-    def _initialize_camera(self):
+    def _initialize_camera(self, generation=None):
         """Initialize camera feed."""
-        if not CV2_AVAILABLE:
+        current_generation = getattr(self, "_camera_generation", 0)
+        if generation is None:
+            generation = current_generation
+        if generation != current_generation or not CV2_AVAILABLE:
             return
+        self._camera_init_timer = None
 
         try:
             device_index = self.settings.get("camera_device_index", 0)
@@ -841,7 +847,7 @@ class CropAdjustmentWindow(tk.Toplevel):
                 return
 
             # Start update loop
-            self._update_camera_feed()
+            self._update_camera_feed(generation)
 
         except Exception as e:
             messagebox.showerror(
@@ -850,9 +856,12 @@ class CropAdjustmentWindow(tk.Toplevel):
                 parent=self
             )
 
-    def _update_camera_feed(self):
+    def _update_camera_feed(self, generation=None):
         """Update camera feed and preview."""
-        if not self.camera or not self.camera.isOpened():
+        current_generation = getattr(self, "_camera_generation", 0)
+        if generation is None:
+            generation = current_generation
+        if generation != current_generation or not self.camera or not self.camera.isOpened():
             return
 
         try:
@@ -862,7 +871,7 @@ class CropAdjustmentWindow(tk.Toplevel):
                 self._update_preview()
 
             # Schedule next update (30 FPS)
-            self.camera_update_timer = self.after(33, self._update_camera_feed)
+            self.camera_update_timer = self.after(33, self._update_camera_feed, generation)
 
         except Exception:
             pass
@@ -1935,6 +1944,15 @@ class CropAdjustmentWindow(tk.Toplevel):
 
     def _cleanup(self):
         """Clean up resources."""
+        self._camera_generation = getattr(self, "_camera_generation", 0) + 1
+
+        if self._camera_init_timer:
+            try:
+                self.after_cancel(self._camera_init_timer)
+            except Exception:
+                pass
+            self._camera_init_timer = None
+
         # Cancel camera update timer
         if self.camera_update_timer:
             self.after_cancel(self.camera_update_timer)

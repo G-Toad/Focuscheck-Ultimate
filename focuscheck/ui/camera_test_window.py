@@ -42,6 +42,7 @@ class CameraTestWindow(tk.Toplevel):
         self._closed = False
         self._camera_capture = None
         self._camera_update_timer = None
+        self._camera_generation = 0
         self._camera_label = None
         self._camera_last_face_rect = None
         self._camera_face_cascade = None
@@ -145,14 +146,17 @@ class CameraTestWindow(tk.Toplevel):
                     pass
 
             # Start update loop
-            self._update_camera_feed()
+            self._update_camera_feed(self._camera_generation)
 
         except Exception as e:
             self._show_error(f"Camera initialization failed: {e}")
 
-    def _update_camera_feed(self):
+    def _update_camera_feed(self, generation=None):
         """Update camera feed display."""
-        if self._closed or self._camera_capture is None:
+        current_generation = getattr(self, "_camera_generation", 0)
+        if generation is None:
+            generation = current_generation
+        if generation != current_generation or self._closed or self._camera_capture is None:
             if self._camera_capture is None:
                 self._camera_label.configure(text="Camera not initialized", fg="#f00")
             return
@@ -161,7 +165,7 @@ class CameraTestWindow(tk.Toplevel):
             ret, frame = self._camera_capture.read()
             if not ret or frame is None:
                 self._camera_label.configure(text="No camera frame available", fg="#f00")
-                self._camera_update_timer = self.after(33, self._update_camera_feed)
+                self._camera_update_timer = self.after(33, self._update_camera_feed, generation)
                 return
 
             # Process frame using camera feed mixin logic
@@ -170,7 +174,7 @@ class CameraTestWindow(tk.Toplevel):
             processed_frame = self._process_camera_frame(frame)
 
             if processed_frame is None:
-                self._camera_update_timer = self.after(33, self._update_camera_feed)
+                self._camera_update_timer = self.after(33, self._update_camera_feed, generation)
                 return
 
             # Pad to display size
@@ -195,11 +199,11 @@ class CameraTestWindow(tk.Toplevel):
             # Schedule next update
             fps = self.camera_settings.get("camera_fps", 30)
             delay_ms = int(1000 / fps)
-            self._camera_update_timer = self.after(delay_ms, self._update_camera_feed)
+            self._camera_update_timer = self.after(delay_ms, self._update_camera_feed, generation)
 
         except Exception as e:
             self._camera_label.configure(text=f"Error: {e}")
-            self._camera_update_timer = self.after(100, self._update_camera_feed)
+            self._camera_update_timer = self.after(100, self._update_camera_feed, generation)
 
     def _show_error(self, message):
         """Show error message in camera display."""
@@ -208,6 +212,7 @@ class CameraTestWindow(tk.Toplevel):
     def _on_close(self):
         """Handle window close."""
         self._closed = True
+        self._camera_generation = getattr(self, "_camera_generation", 0) + 1
 
         # Cancel pending camera update timer
         if self._camera_update_timer is not None:

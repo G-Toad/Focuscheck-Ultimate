@@ -36,6 +36,7 @@ class CameraAdjustmentWindow(tk.Toplevel):
         self._closed = False
         self._camera_capture = None
         self._update_timer = None
+        self._camera_generation = 0
 
         # Manual adjustment values (0.0 - 1.0 range for all)
         self.brightness_var = tk.DoubleVar(value=self.settings.get("camera_manual_brightness", 0.5))
@@ -231,21 +232,24 @@ class CameraAdjustmentWindow(tk.Toplevel):
             self._camera_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
             # Start update loop
-            self._update_feed()
+            self._update_feed(self._camera_generation)
 
         except Exception as e:
             self._show_error(f"Camera error: {e}")
 
-    def _update_feed(self):
+    def _update_feed(self, generation=None):
         """Update both original and enhanced camera feeds."""
-        if self._closed or self._camera_capture is None:
+        current_generation = getattr(self, "_camera_generation", 0)
+        if generation is None:
+            generation = current_generation
+        if generation != current_generation or self._closed or self._camera_capture is None:
             return
 
         try:
             ret, frame = self._camera_capture.read()
 
             if not ret or frame is None:
-                self._update_timer = self.after(33, self._update_feed)
+                self._update_timer = self.after(33, self._update_feed, generation)
                 return
 
             # Resize for display (maintain aspect ratio)
@@ -270,11 +274,11 @@ class CameraAdjustmentWindow(tk.Toplevel):
             self._display_frame(enhanced, self.enhanced_label)
 
             # Schedule next update
-            self._update_timer = self.after(33, self._update_feed)
+            self._update_timer = self.after(33, self._update_feed, generation)
 
         except Exception as e:
             print(f"Update error: {e}")
-            self._update_timer = self.after(100, self._update_feed)
+            self._update_timer = self.after(100, self._update_feed, generation)
 
     def _display_frame(self, frame, label):
         """Display frame in the given label."""
@@ -331,6 +335,7 @@ class CameraAdjustmentWindow(tk.Toplevel):
     def _on_close(self):
         """Clean up and close window."""
         self._closed = True
+        self._camera_generation = getattr(self, "_camera_generation", 0) + 1
 
         # Cancel pending update timer
         if self._update_timer is not None:

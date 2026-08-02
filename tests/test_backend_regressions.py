@@ -308,6 +308,60 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual(1, capture.reads)
         self.assertEqual(1, capture.releases)
 
+    def test_camera_preview_windows_ignore_stale_callbacks_after_close(self):
+        from focuscheck.ui.camera_adjustment_window import CameraAdjustmentWindow
+        from focuscheck.ui.camera_test_window import CameraTestWindow
+        from focuscheck.ui.crop_adjustment_window import CropAdjustmentWindow
+
+        class Capture:
+            def __init__(self):
+                self.reads = 0
+                self.releases = 0
+
+            def read(self):
+                self.reads += 1
+                return True, object()
+
+            def release(self):
+                self.releases += 1
+
+            def isOpened(self):
+                return True
+
+        for window_class, update_name, cleanup_name in (
+            (CameraTestWindow, "_update_camera_feed", "_on_close"),
+            (CameraAdjustmentWindow, "_update_feed", "_on_close"),
+        ):
+            window = window_class.__new__(window_class)
+            capture = Capture()
+            window._camera_capture = capture
+            window._camera_generation = 4
+            window._closed = False
+            window._camera_update_timer = None
+            window._update_timer = None
+            window.after_cancel = mock.Mock()
+            window.destroy = mock.Mock()
+
+            getattr(window, update_name)(3)
+            getattr(window, cleanup_name)()
+
+            self.assertEqual(0, capture.reads)
+            self.assertEqual(1, capture.releases)
+
+        window = CropAdjustmentWindow.__new__(CropAdjustmentWindow)
+        capture = Capture()
+        window.camera = capture
+        window._camera_generation = 4
+        window._camera_init_timer = None
+        window.camera_update_timer = None
+        window.after_cancel = mock.Mock()
+
+        window._update_camera_feed(3)
+        window._cleanup()
+
+        self.assertEqual(0, capture.reads)
+        self.assertEqual(1, capture.releases)
+
     def test_native_overlay_destroy_releases_handles_once(self):
         from focuscheck.platform_specific import windows
 
