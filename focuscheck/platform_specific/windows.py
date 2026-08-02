@@ -54,6 +54,7 @@ PBT_APMRESUMEAUTOMATIC = 0x0012
 # GDI+ token (global)
 _GDIPLUS_TOKEN = None
 _win_overlay_class_atom = None
+_win_overlay_wndproc = None
 
 if not hasattr(wintypes, "HCURSOR"):
     HCURSOR = wintypes.HANDLE
@@ -271,9 +272,10 @@ class WinClickThroughOverlay:
         self._create_window(x, y, w, h, color_hex)
 
     def _register_class(self):
-        global _win_overlay_class_atom
+        global _win_overlay_class_atom, _win_overlay_wndproc
         if _win_overlay_class_atom is not None:
             self._atom = _win_overlay_class_atom
+            self._proc = _win_overlay_wndproc
             return
         user32 = _user32()
         gdi32 = _gdi32()
@@ -358,6 +360,7 @@ class WinClickThroughOverlay:
             # If already registered, proceed
             atom = user32.RegisterClassExW(ctypes.byref(wc))
         _win_overlay_class_atom = atom
+        _win_overlay_wndproc = _proc
         self._atom = atom
         self._proc = _proc  # keep ref
 

@@ -691,6 +691,24 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.COLORREF], gdi32.CreateSolidBrush.argtypes)
         self.assertEqual([wintypes.LPCWSTR], kernel32.GetModuleHandleW.argtypes)
 
+    def test_overlay_reuse_retains_process_global_wndproc(self):
+        from focuscheck.platform_specific import windows
+        from focuscheck.ui.dialogs import windows_utils
+
+        core_overlay = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+        dialog_overlay = windows_utils._WinClickThroughOverlay.__new__(windows_utils._WinClickThroughOverlay)
+        core_proc = object()
+        dialog_proc = object()
+        with mock.patch.object(windows, "_win_overlay_class_atom", 101), \
+                mock.patch.object(windows, "_win_overlay_wndproc", core_proc), \
+                mock.patch.object(windows_utils, "_win_overlay_class_atom", 202), \
+                mock.patch.object(windows_utils, "_win_overlay_wndproc", dialog_proc):
+            core_overlay._register_class()
+            dialog_overlay._register_class()
+
+        self.assertIs(core_proc, core_overlay._proc)
+        self.assertIs(dialog_proc, dialog_overlay._wnd_proc)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

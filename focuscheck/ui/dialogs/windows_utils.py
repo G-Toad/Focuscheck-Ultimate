@@ -108,6 +108,7 @@ def _install_httransparent_wndproc(hwnd, owner_widget=None):
 
 # Native Windows click-through overlay class
 _win_overlay_class_atom = None
+_win_overlay_wndproc = None
 
 
 def _configure_overlay_api(user32, gdi32, kernel32):
@@ -152,9 +153,10 @@ class _WinClickThroughOverlay:
         self._create_window(x, y, w, h, color_hex)
 
     def _register_class(self):
-        global _win_overlay_class_atom
+        global _win_overlay_class_atom, _win_overlay_wndproc
         if _win_overlay_class_atom is not None:
             self._atom = _win_overlay_class_atom
+            self._wnd_proc = _win_overlay_wndproc
             return
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
@@ -191,6 +193,7 @@ class _WinClickThroughOverlay:
         if not atom:
             raise RuntimeError("RegisterClassExW failed")
         _win_overlay_class_atom = atom
+        _win_overlay_wndproc = wnd_proc
         self._atom = atom
 
     def _create_window(self, x, y, w, h, color_hex):
