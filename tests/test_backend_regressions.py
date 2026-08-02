@@ -662,6 +662,35 @@ class ImportHardeningTests(unittest.TestCase):
         )
         self.assertEqual([wintypes.LPCWSTR], kernel32.GetModuleHandleW.argtypes)
 
+    def test_dialog_overlay_declares_lifecycle_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs import windows_utils
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "RegisterClassExW", "CreateWindowExW", "DefWindowProcW",
+                "SetLayeredWindowAttributes", "SetWindowPos", "ShowWindow", "DestroyWindow",
+            )
+        })()
+        gdi32 = type("Gdi32", (), {name: Api() for name in ("CreateSolidBrush", "DeleteObject")})()
+        kernel32 = type("Kernel32", (), {"GetModuleHandleW": Api()})()
+
+        windows_utils._configure_overlay_api(user32, gdi32, kernel32)
+
+        self.assertEqual([wintypes.HWND], user32.DestroyWindow.argtypes)
+        self.assertEqual(
+            [wintypes.HWND, wintypes.COLORREF, wintypes.BYTE, wintypes.DWORD],
+            user32.SetLayeredWindowAttributes.argtypes,
+        )
+        self.assertEqual([wintypes.COLORREF], gdi32.CreateSolidBrush.argtypes)
+        self.assertEqual([wintypes.LPCWSTR], kernel32.GetModuleHandleW.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

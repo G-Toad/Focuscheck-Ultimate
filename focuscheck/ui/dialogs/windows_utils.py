@@ -110,6 +110,39 @@ def _install_httransparent_wndproc(hwnd, owner_widget=None):
 _win_overlay_class_atom = None
 
 
+def _configure_overlay_api(user32, gdi32, kernel32):
+    """Declare pointer-safe signatures for the dialog overlay lifecycle."""
+    user32.RegisterClassExW.argtypes = [ctypes.c_void_p]
+    user32.RegisterClassExW.restype = wintypes.ATOM
+    user32.CreateWindowExW.argtypes = [
+        wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
+        ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+        wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, ctypes.c_void_p,
+    ]
+    user32.CreateWindowExW.restype = wintypes.HWND
+    user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
+    user32.DefWindowProcW.restype = LRESULT
+    user32.SetLayeredWindowAttributes.argtypes = [
+        wintypes.HWND, wintypes.COLORREF, wintypes.BYTE, wintypes.DWORD,
+    ]
+    user32.SetLayeredWindowAttributes.restype = wintypes.BOOL
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+        ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.ShowWindow.restype = wintypes.BOOL
+    user32.DestroyWindow.argtypes = [wintypes.HWND]
+    user32.DestroyWindow.restype = wintypes.BOOL
+    gdi32.CreateSolidBrush.argtypes = [wintypes.COLORREF]
+    gdi32.CreateSolidBrush.restype = wintypes.HBRUSH
+    gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
+    gdi32.DeleteObject.restype = wintypes.BOOL
+    kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
+    kernel32.GetModuleHandleW.restype = wintypes.HINSTANCE
+
+
 class _WinClickThroughOverlay:
     """Robust native Windows overlay with click-through support."""
     def __init__(self, x, y, w, h, color_hex="#000000"):
@@ -125,6 +158,7 @@ class _WinClickThroughOverlay:
             return
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
+        _configure_overlay_api(user32, gdi32, ctypes.windll.kernel32)
         class WNDCLASSEXW(ctypes.Structure):
             _fields_ = [
                 ("cbSize", ctypes.c_uint),
@@ -162,6 +196,7 @@ class _WinClickThroughOverlay:
     def _create_window(self, x, y, w, h, color_hex):
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
+        _configure_overlay_api(user32, gdi32, ctypes.windll.kernel32)
         WS_POPUP = 0x80000000
         WS_EX_LAYERED = 0x00080000
         WS_EX_TRANSPARENT = 0x00000020
