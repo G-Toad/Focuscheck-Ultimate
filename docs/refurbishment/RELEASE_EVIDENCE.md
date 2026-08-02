@@ -14,4 +14,4 @@ The current automated baseline is `264` tests; the detailed older bullets are re
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.
 - Pinned PyInstaller packaging, packaged self-test, scripted package promotion/rollback, and disposable install/upgrade/uninstall evidence are present; real installer shell lifecycle and signing remain unverified.
-- Native Windows and UI evidence is pending and must be attached before release claims.
+- Native Windows and broader UI evidence is pending and must be attached before release claims; the automated resource-leak stage now exercises representative V1/V2 prompt cleanup on a withdrawn Tk root.

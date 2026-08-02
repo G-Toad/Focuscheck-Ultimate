@@ -42,6 +42,7 @@
 - Snooze Reminder initial-focus callbacks use a generation-aware timer registry and invalidate queued work on close.
 - V1/V2 prompt timer APIs retain their existing timer-ID contract while delegating ownership, cancellation, and stale-callback invalidation to `TimerRegistry`.
 - Biodata pulse callbacks use the host prompt timer owner when available and fall back safely for standalone camera-mixin consumers.
+- The withdrawn-root resource-leak self-test constructs and cleans up representative V1 and V2 prompts in addition to reminder dialogs.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.
 - Monitoring engine switches synchronously close the active prompt before replacing the old engine.

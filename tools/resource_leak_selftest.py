@@ -7,11 +7,15 @@ import sys
 import threading
 import tkinter as tk
 from pathlib import Path
+from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
 
 def _thread_snapshot() -> set[tuple[int | None, str, bool]]:
@@ -56,6 +60,35 @@ def main() -> int:
         gentle = GentleReminderDialog(root, settings)
         gentle.withdraw()
         gentle._on_dismiss()
+
+        prompt_settings = dict(DEFAULT_SETTINGS)
+        prompt_settings.update({
+            "always_on_top": False,
+            "anti_habit_enabled": False,
+            "camera_feed_enabled": False,
+            "biodata_enabled": False,
+            "encouragement_enabled": False,
+            "focus_prompt_ask_doing": False,
+            "focus_prompt_ask_benefits": False,
+            "show_task_analytics": False,
+        })
+        for prompt_type, kwargs in (
+            (PromptDialog, {}),
+            (V2PromptDialog, {"activity_info": {}}),
+        ):
+            prompt = prompt_type(
+                root,
+                prompt_settings,
+                lambda: None,
+                datetime.now(),
+                **kwargs,
+            )
+            prompt.withdraw()
+            prompt._closed = True
+            prompt._cleanup_camera_feed()
+            prompt._cleanup_all_timers()
+            prompt.destroy()
+
         root.update()
 
         children = _existing_children(root)
