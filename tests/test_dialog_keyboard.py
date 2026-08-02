@@ -16,6 +16,52 @@ def _make_root():
 
 
 class DialogKeyboardTests(unittest.TestCase):
+    def test_snooze_reminder_yes_and_no_close_cleanly(self):
+        from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+
+        root = _make_root()
+        events = []
+        try:
+            dialog = SnoozeReminderDialog(root, {"always_on_top": False}, on_yes=lambda: events.append("yes"))
+            dialog.withdraw()
+            dialog._on_yes()
+            root.update()
+            self.assertEqual(["yes"], events)
+            self.assertFalse(dialog.winfo_exists())
+
+            dialog = SnoozeReminderDialog(root, {"always_on_top": False}, on_no=lambda: events.append("no"))
+            dialog.withdraw()
+            dialog._on_no()
+            root.update()
+            self.assertEqual(["yes", "no"], events)
+            self.assertFalse(dialog.winfo_exists())
+        finally:
+            root.destroy()
+
+    def test_gentle_reminder_dismisses_without_camera_or_drift(self):
+        from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
+
+        root = _make_root()
+        dismissed = []
+        try:
+            dialog = GentleReminderDialog(
+                root,
+                {
+                    "always_on_top": False,
+                    "camera_feed_enabled": False,
+                    "biodata_enabled": False,
+                    "gentle_reminder_drift_enabled": False,
+                },
+                on_dismiss=lambda: dismissed.append(True),
+            )
+            dialog.withdraw()
+            dialog._on_dismiss()
+            root.update()
+            self.assertEqual([True], dismissed)
+            self.assertFalse(dialog.winfo_exists())
+        finally:
+            root.destroy()
+
     def test_task_entry_enter_submits(self):
         from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
 

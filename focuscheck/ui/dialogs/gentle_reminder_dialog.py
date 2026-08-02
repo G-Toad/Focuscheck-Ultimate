@@ -51,14 +51,13 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
             on_dismiss: Optional callback when dialog is dismissed
         """
         tk.Toplevel.__init__(self, master)
-
-        # Initialize camera feed mixin if available
-        if CameraFeedMixin != object:
-            CameraFeedMixin.__init__(self, settings)
-
         self.settings = settings
         self.on_dismiss = on_dismiss
         self._closed = False
+
+        # Initialize camera feed state through the mixin contract.
+        if CameraFeedMixin != object:
+            self._init_camera_feed()
 
         # Drag state
         self._drag_start_x = 0
@@ -132,7 +131,7 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
         # Camera feed (if enabled)
         if self.settings.get("camera_feed_enabled", False):
             try:
-                camera_widget = self._create_camera_widget(main_container)
+                camera_widget = self._create_camera_feed_widget(main_container)
                 if camera_widget:
                     camera_widget.pack(fill="x", pady=(0, 10))
             except Exception as e:
@@ -386,9 +385,9 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
         self._cleanup_timers()
 
         # Clean up camera
-        if hasattr(self, '_cleanup_camera'):
+        if hasattr(self, '_cleanup_camera_feed'):
             try:
-                self._cleanup_camera()
+                self._cleanup_camera_feed()
             except Exception:
                 pass
 
