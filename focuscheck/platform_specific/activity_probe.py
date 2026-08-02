@@ -9,6 +9,21 @@ from .browser_info import try_get_browser_url
 from .cdp_browser import get_best_url_for_window
 
 
+def _configure_process_api(kernel32):
+    """Declare the process APIs before passing pointers across the Win32 boundary."""
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.QueryFullProcessImageNameW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPWSTR,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    kernel32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+
+
 def _get_window_text(hwnd):
     try:
         user32 = ctypes.windll.user32
@@ -36,6 +51,7 @@ def _get_window_class(hwnd):
 def _get_process_path(pid):
     try:
         kernel32 = ctypes.windll.kernel32
+        _configure_process_api(kernel32)
         PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
         handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
         if not handle:
