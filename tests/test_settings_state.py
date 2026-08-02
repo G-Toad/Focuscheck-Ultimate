@@ -361,6 +361,47 @@ class SnoozeStateTests(unittest.TestCase):
 
         self.assertEqual(300000, app._timers.schedule.call_args.args[1])
 
+    def test_expired_startup_snooze_preserves_manual_pause(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        settings = {
+            "paused": True,
+            "snooze_until_utc": (clock.now_utc() - timedelta(minutes=1)).isoformat(),
+        }
+        app = App.__new__(App)
+        app.settings = settings
+        app._runtime_state = RuntimeStateCoordinator(settings, clock=clock)
+        app._snooze_unpause_timer_id = None
+
+        with mock.patch("focuscheck.app.save_settings"):
+            App._reconcile_snooze_state_on_startup(app)
+
+        self.assertTrue(app._runtime_state.snapshot.manual_paused)
+        self.assertEqual("", settings["snooze_until_utc"])
+        self.assertTrue(settings["paused"])
+
+    def test_snooze_expiry_callback_preserves_manual_pause(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        settings = {"paused": True, "snooze_until_utc": "2030-01-01T00:05:00+00:00"}
+        app = App.__new__(App)
+        app.settings = settings
+        app._runtime_state = RuntimeStateCoordinator(settings)
+        app._snooze_unpause_timer_id = "timer-1"
+        app._schedule_next = mock.Mock()
+
+        with mock.patch("focuscheck.app.save_settings"):
+            App._expire_snooze(app)
+
+        self.assertTrue(app._runtime_state.snapshot.manual_paused)
+        self.assertTrue(settings["paused"])
+        self.assertEqual("", settings["snooze_until_utc"])
+        app._schedule_next.assert_called_once_with(0)
+
     def test_snooze_state_preserves_manual_pause_and_expires_without_clearing_it(self):
         from focuscheck.runtime.state import RuntimeStateCoordinator
 

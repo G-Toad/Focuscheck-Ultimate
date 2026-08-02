@@ -547,26 +547,24 @@ class App:
                 until = until.astimezone(timezone.utc)
             now = self._now_utc()
             if until <= now:
-                self.settings["snooze_until_utc"] = ""
-                self.settings["paused"] = False
-                save_settings(self.settings)
+                state = getattr(self, "_runtime_state", None)
+                if state is not None:
+                    state.clear_snooze()
+                else:
+                    self.settings["snooze_until_utc"] = ""
+                    self.settings["paused"] = False
+                    save_settings(self.settings)
                 return
             self.settings["paused"] = True
             save_settings(self.settings)
 
             remaining_ms = max(1, int((until - now).total_seconds() * 1000))
 
-            def _expire_snooze():
-                self._snooze_unpause_timer_id = None
-                self.settings["snooze_until_utc"] = ""
-                self._set_paused(False, source="snooze_expired_startup")
-                self._schedule_next(0)
-
             if hasattr(self, "_timers"):
-                self._timers.schedule("snooze-expiry", remaining_ms, _expire_snooze)
+                self._timers.schedule("snooze-expiry", remaining_ms, self._expire_snooze)
                 self._snooze_unpause_timer_id = self._timers.callback_id("snooze-expiry")
             else:
-                self._snooze_unpause_timer_id = self.root.after(remaining_ms, _expire_snooze)
+                self._snooze_unpause_timer_id = self.root.after(remaining_ms, self._expire_snooze)
         except Exception:
             self.settings["snooze_until_utc"] = ""
             save_settings(self.settings)
@@ -1378,15 +1376,36 @@ class App:
             pass
         return True
 
-    def _cancel_snooze(self):
-        if hasattr(self, "_timers"):
-            self._timers.cancel("snooze-expiry")
-        if self._snooze_unpause_timer_id is not None:
+    def _expire_snooze(self):
+        """Clear snooze through the coordinator without changing manual pause."""
+        self._snooze_unpause_timer_id = None
+        state = getattr(self, "_runtime_state", None)
+        if state is not None:
+            state.clear_snooze()
+        else:
+            self.settings["snooze_until_utc"] = ""
+            self.settings["paused"] = False
+            save_settings(self.settings)
+        try:
+            get_logger().info("snooze expired, resuming eligible reminders")
+        except Exception:
+            pass
+        self._schedule_next(0)
+
+    def _cancel_snooze_timer(self):
+        """Cancel the named snooze timer through its owning registry."""
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.cancel("snooze-expiry")
+        elif self._snooze_unpause_timer_id is not None:
             try:
                 self.root.after_cancel(self._snooze_unpause_timer_id)
             except Exception:
                 pass
-            self._snooze_unpause_timer_id = None
+        self._snooze_unpause_timer_id = None
+
+    def _cancel_snooze(self):
+        self._cancel_snooze_timer()
         if str(self.settings.get("snooze_until_utc", "") or "").strip():
             state = getattr(self, "_runtime_state", None)
             if state is not None:
@@ -1529,37 +1548,18 @@ class App:
 
             # Cancel any existing snooze unpause timer
             if self._snooze_unpause_timer_id is not None:
-                try:
-                    self.root.after_cancel(self._snooze_unpause_timer_id)
-                except Exception:
-                    pass
-                self._snooze_unpause_timer_id = None
+                self._cancel_snooze_timer()
                 try:
                     get_logger().info("tray: cancelled prior snooze-unpause timer")
                 except Exception:
                     pass
 
             # Schedule timer to un-pause after snooze duration expires
-            def _unpause_after_snooze():
-                self._snooze_unpause_timer_id = None
-                state = getattr(self, "_runtime_state", None)
-                if state is not None:
-                    state.clear_snooze()
-                else:
-                    self.settings["snooze_until_utc"] = ""
-                    save_settings(self.settings)
-                try:
-                    get_logger().info("tray: snooze expired, resuming reminders")
-                except Exception:
-                    pass
-                # Resume normal reminder schedule
-                self._schedule_next(0)
-
             if hasattr(self, "_timers"):
-                self._timers.schedule("snooze-expiry", ms, _unpause_after_snooze)
+                self._timers.schedule("snooze-expiry", ms, self._expire_snooze)
                 self._snooze_unpause_timer_id = self._timers.callback_id("snooze-expiry")
             else:
-                self._snooze_unpause_timer_id = self.root.after(ms, _unpause_after_snooze)
+                self._snooze_unpause_timer_id = self.root.after(ms, self._expire_snooze)
             try:
                 get_logger().info("tray: scheduled unpause timer ms=%s", ms)
             except Exception:
