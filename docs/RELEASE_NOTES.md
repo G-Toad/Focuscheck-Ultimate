@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 174 unittest cases.
+- Automated test baseline: 176 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -22,3 +22,4 @@
 - App lifecycle phases are now explicit and published in the heartbeat: `starting`, `ready`, `stopping`, `stopped`, and `failed`.
 - Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.
 - Retention now rejects symlink candidates, accepts an injected clock for deterministic planning, and writes metadata-only deletion audit records.
+- A static settings contract now verifies every `_save()` key against the canonical schema and prevents runtime state keys from entering ordinary UI saves.

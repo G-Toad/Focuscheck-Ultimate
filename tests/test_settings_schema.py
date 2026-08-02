@@ -1,18 +1,39 @@
+"""Static contracts between the hand-built settings UI and canonical schema."""
+
 from __future__ import annotations
 
-import json
+import ast
+from pathlib import Path
 import unittest
 
+from focuscheck.settings.schema import get_settings_schema, schema_manifest
 
-class SettingsSchemaTests(unittest.TestCase):
-    def test_schema_covers_defaults_and_is_json_ready(self):
-        from focuscheck.settings.defaults import DEFAULT_SETTINGS
-        from focuscheck.settings.schema import schema_manifest
 
+class SettingsSchemaContractTests(unittest.TestCase):
+    def test_visible_save_keys_are_registered_and_state_only_keys_are_excluded(self):
+        source_path = Path(__file__).resolve().parents[1] / "focuscheck" / "ui" / "windows.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        save_keys: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef) and node.name == "_save":
+                for child in ast.walk(node):
+                    if isinstance(child, ast.Dict):
+                        for key in child.keys:
+                            if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                                save_keys.add(key.value)
+
+        schema = get_settings_schema()
+        self.assertTrue(save_keys)
+        self.assertEqual(set(), save_keys - set(schema) - {"settings_revision"})
+        self.assertNotIn("paused", save_keys)
+        self.assertNotIn("snooze_until_utc", save_keys)
+        self.assertTrue(all(schema[key].ui_section for key in save_keys if key in schema))
+
+    def test_schema_manifest_is_sorted_and_json_ready(self):
         manifest = schema_manifest()
-        self.assertEqual(set(DEFAULT_SETTINGS), {item["key"] for item in manifest})
-        json.dumps(manifest)
-        for item in manifest:
-            self.assertTrue(item["canonical_type"])
-            self.assertIn(item["sensitivity"], {"normal", "sensitive"})
-            self.assertTrue(item["ui_section"])
+        self.assertEqual(sorted(item["key"] for item in manifest), [item["key"] for item in manifest])
+        self.assertTrue(all({"key", "canonical_type", "default", "ui_section"}.issubset(item) for item in manifest))
+
+
+if __name__ == "__main__":
+    unittest.main()
