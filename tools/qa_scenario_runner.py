@@ -671,7 +671,9 @@ def run_gui_scenarios(log: QaLog):
     import tkinter as tk
     from focuscheck.ui.dialogs.task_change_dialog import TaskChangeDialog
     from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
+    from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
     from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+    from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 
     with scenario(log, "gui.task_entry.enter_submit"):
         root = tk.Tk()
@@ -726,6 +728,49 @@ def run_gui_scenarios(log: QaLog):
             root.update()
             checks = {"break": result == "break", "submitted": bool(submitted), "destroyed": not bool(dialog.winfo_exists())}
             log.event("gui.task_change.enter_submit", "assert_enter", all(checks.values()), checks=checks, payload=submitted[0] if submitted else None)
+            assert all(checks.values())
+        finally:
+            root.destroy()
+
+    with scenario(log, "gui.snooze_reminder.yes_close"):
+        root = tk.Tk()
+        root.withdraw()
+        events = []
+        try:
+            dialog = SnoozeReminderDialog(
+                root,
+                {"always_on_top": False},
+                on_yes=lambda: events.append("yes"),
+            )
+            dialog.withdraw()
+            dialog._on_yes()
+            root.update()
+            checks = {"callback": events == ["yes"], "destroyed": not bool(dialog.winfo_exists())}
+            log.event("gui.snooze_reminder.yes_close", "assert_yes_close", all(checks.values()), checks=checks)
+            assert all(checks.values())
+        finally:
+            root.destroy()
+
+    with scenario(log, "gui.gentle_reminder.dismiss_close"):
+        root = tk.Tk()
+        root.withdraw()
+        events = []
+        try:
+            dialog = GentleReminderDialog(
+                root,
+                {
+                    "always_on_top": False,
+                    "camera_feed_enabled": False,
+                    "biodata_enabled": False,
+                    "gentle_reminder_drift_enabled": False,
+                },
+                on_dismiss=lambda: events.append("dismissed"),
+            )
+            dialog.withdraw()
+            dialog._on_dismiss()
+            root.update()
+            checks = {"callback": events == ["dismissed"], "destroyed": not bool(dialog.winfo_exists())}
+            log.event("gui.gentle_reminder.dismiss_close", "assert_dismiss_close", all(checks.values()), checks=checks)
             assert all(checks.values())
         finally:
             root.destroy()
