@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -256,6 +257,20 @@ class SnoozeStateTests(unittest.TestCase):
             self.assertIsNone(app._snooze_unpause_timer_id)
             self.assertEqual("", app.settings["snooze_until_utc"])
             save_settings.assert_called_once()
+
+    def test_snooze_state_preserves_manual_pause_and_expires_without_clearing_it(self):
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        settings = {"paused": True, "snooze_until_utc": ""}
+        state = RuntimeStateCoordinator(settings)
+        until = datetime.now(timezone.utc) + timedelta(minutes=5)
+        self.assertTrue(state.set_snooze_until(until))
+        self.assertTrue(state.snapshot.manual_paused)
+        self.assertTrue(state.snapshot.snooze_active())
+        self.assertTrue(state.clear_snooze())
+        self.assertTrue(state.snapshot.manual_paused)
+        self.assertTrue(settings["paused"])
+        self.assertEqual("", settings["snooze_until_utc"])
 
     def test_heartbeat_reports_manual_pause(self):
         import json

@@ -1229,11 +1229,15 @@ class App:
                 pass
             self._snooze_unpause_timer_id = None
         if str(self.settings.get("snooze_until_utc", "") or "").strip():
-            self.settings["snooze_until_utc"] = ""
-            try:
-                save_settings(self.settings)
-            except Exception:
-                pass
+            state = getattr(self, "_runtime_state", None)
+            if state is not None:
+                state.clear_snooze()
+            else:
+                self.settings["snooze_until_utc"] = ""
+                try:
+                    save_settings(self.settings)
+                except Exception:
+                    pass
 
     def _close_current_prompt(self, source="unknown"):
         prompt = getattr(self, "_current_prompt", None)
@@ -1348,8 +1352,14 @@ class App:
 
             # Set paused to True for snooze duration
             until = datetime.now(timezone.utc) + timedelta(milliseconds=ms)
-            self.settings["snooze_until_utc"] = until.isoformat()
-            self._set_paused(True, source=f"snooze_{mins}m")
+            state = getattr(self, "_runtime_state", None)
+            if state is not None:
+                if not state.set_snooze_until(until):
+                    get_logger().warning("tray: snooze state was not persisted")
+                    return
+            else:
+                self.settings["snooze_until_utc"] = until.isoformat()
+                save_settings(self.settings)
             try:
                 get_logger().info("tray: snooze for %s minute(s) - paused=True", mins)
             except Exception:
@@ -1372,8 +1382,12 @@ class App:
             # Schedule timer to un-pause after snooze duration expires
             def _unpause_after_snooze():
                 self._snooze_unpause_timer_id = None
-                self.settings["snooze_until_utc"] = ""
-                self._set_paused(False, source=f"snooze_expired_{mins}m")
+                state = getattr(self, "_runtime_state", None)
+                if state is not None:
+                    state.clear_snooze()
+                else:
+                    self.settings["snooze_until_utc"] = ""
+                    save_settings(self.settings)
                 try:
                     get_logger().info("tray: snooze expired, resuming reminders")
                 except Exception:
