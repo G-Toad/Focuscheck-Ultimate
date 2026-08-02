@@ -262,6 +262,7 @@ class App:
             except Exception:
                 pass
         self._engine = None
+        self._engine_shutdown = False
         # App start times for runtime reporting
         self._start_wall = datetime.now()
         self._start_mono = time.monotonic()
@@ -582,6 +583,41 @@ class App:
                 pass
         try:
             self._engine.on_settings_updated(self.settings)
+        except Exception:
+            pass
+
+    def _shutdown_engine(self):
+        """Stop the active monitoring engine exactly once during teardown."""
+        if getattr(self, "_engine_shutdown", False):
+            return
+        self._engine_shutdown = True
+        engine = getattr(self, "_engine", None)
+        self._engine = None
+        if engine is not None:
+            try:
+                engine.shutdown()
+            except Exception:
+                get_logger().exception("monitoring engine shutdown failed", exc_info=True)
+
+    def _close_current_prompt_for_shutdown(self):
+        """Run prompt-owned cleanup before the Tk root is destroyed."""
+        prompt = getattr(self, "_current_prompt", None)
+        self._current_prompt = None
+        if prompt is None:
+            return
+        try:
+            prompt._closed = True
+        except Exception:
+            pass
+        for method_name in ("_cleanup_camera_feed", "_cleanup_all_timers", "_destroy_stage5_overlays"):
+            method = getattr(prompt, method_name, None)
+            if callable(method):
+                try:
+                    method()
+                except Exception:
+                    get_logger().exception("prompt shutdown cleanup failed: %s", method_name, exc_info=True)
+        try:
+            prompt.destroy()
         except Exception:
             pass
 
@@ -1883,6 +1919,8 @@ class App:
         try:
             if getattr(self, "_runtime_state", None) is not None:
                 self._runtime_state.request_shutdown()
+            self._close_current_prompt_for_shutdown()
+            self._shutdown_engine()
             if getattr(self, "_timers", None) is not None:
                 self._timers.close()
         except Exception:

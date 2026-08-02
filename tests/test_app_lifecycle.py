@@ -172,6 +172,45 @@ class AppLifecycleTests(unittest.TestCase):
         with mock.patch("focuscheck.app.get_data_dir", return_value="C:/different-root"):
             self.assertEqual(Path("C:/frozen-focuscheck-root"), App._data_root(app))
 
+    def test_engine_shutdown_is_idempotent(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._engine_shutdown = False
+        engine = mock.Mock()
+        app._engine = engine
+
+        App._shutdown_engine(app)
+        App._shutdown_engine(app)
+
+        engine.shutdown.assert_called_once_with()
+        self.assertIsNone(app._engine)
+
+    def test_prompt_cleanup_runs_before_shutdown_destroy(self):
+        from focuscheck.app import App
+
+        events = []
+
+        class Prompt:
+            def _cleanup_camera_feed(self):
+                events.append("camera")
+
+            def _cleanup_all_timers(self):
+                events.append("timers")
+
+            def _destroy_stage5_overlays(self):
+                events.append("overlays")
+
+            def destroy(self):
+                events.append("destroy")
+
+        app = App.__new__(App)
+        app._current_prompt = Prompt()
+        App._close_current_prompt_for_shutdown(app)
+
+        self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
+        self.assertIsNone(app._current_prompt)
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 198 unittest cases.
+- Automated test baseline: 200 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -34,3 +34,4 @@
 - `tools/export_data.py` now provides an atomic, allowlisted ZIP export with explicit sensitive-category opt-in, symlink rejection, and a SHA-256 manifest; the bounded runner exercises it in a disposable root.
 - Tray/App data controls now provide metadata-only inventory, confirmed clear-log/personal-data actions, and explicit-age log retention through packaged services with metadata-only audit records.
 - The diagnostic bundle service now supports a live-data preview and sanitized operational bundle from the tray, excluding settings, tasks, camera files, and exports.
+- Shutdown now explicitly cleans the active prompt and shuts down the monitoring engine exactly once before destroying Tk.
