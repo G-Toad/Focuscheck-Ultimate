@@ -18,7 +18,7 @@ Status meanings:
 | 2 Product contract and contradictions | Partial | Registers and several regression tests exist. The full contradiction/contract closure and complete transition truth tables do not. |
 | 3 Verification refurbishment | Partial | Bounded stages and JSON reporting exist. Deterministic clock, comprehensive fault-injection harnesses, isolation assertions, and all required test categories do not. |
 | 4 Unified paths and data location | Partial | Frozen `AppPaths` now covers the canonical data/runtime paths and `FOCUS_DATA_DIR` precedence was fixed. Legacy hash/revision conflict resolution, migration journal, and complete atomic migration workflow remain absent. |
-| 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, backup recovery, atomic save, and several regressions exist. Typed schema descriptors, revision/conflict handling, `.bak.1/.bak.2`, migration journal, and all listed fixtures are missing. |
+| 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, backup recovery, atomic save, typed schema descriptors, revision/conflict handling, and fixture classes now exist. `.bak.1/.bak.2`, migration journal, complete UI schema generation, and bounded-input coverage remain incomplete. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` owns transactional pause/snooze mutation, expiry-aware state, refreshed settings adoption, and exclusive prompt/intervention/shutdown leases. Full App integration, guard synchronization, and transition journal remain absent. |
 | 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers. Dialog/remaining callback timers remain distributed, there is no injected clock, and the required stress matrix is absent. |
 | 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, PID-bound JSON stop requests, stale checks, force-start correction, circuit breaker, and lifecycle tests now exist. Acknowledgement timeout, sleep-gap handling, and the complete failure matrix are not proven. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 94 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 96 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -54,7 +54,7 @@ The plan's final-release deliverables were also checked individually:
 | --- | --- |
 | Updated architecture and behaviour specs | Partial; refurbishment maps exist, but the required coordinator architecture is not implemented. |
 | Current operation matrix | Missing as a clearly identified current matrix. |
-| Settings schema/truth table generated or verified | Partial; schema map exists, but it is not generated from typed descriptors and does not cover revision/conflict behavior. |
+| Settings schema/truth table generated or verified | Partial; typed schema descriptors and revision tests exist, but the UI is not generated from the schema and the full truth table is incomplete. |
 | Lifecycle/state-machine documentation | Present; implementation and full evidence remain partial. |
 | Defect/contradiction registers with no untriaged severity 0/1 | Not met; the defect register is incomplete and several severity-1 items remain unverified. |
 | Deterministic verification report | Partial; report is machine-readable, but deterministic clock and leak assertions are absent. |
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 94 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 96 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
@@ -76,7 +76,7 @@ The bounded runner at `tools/verification_runner.py` currently reports passing s
 | --- | --- | --- |
 | A Repository/build | Partial | The tree is clean and source checks pass, but dependencies are unpinned and no reproducible packaged build exists. |
 | B Automated verification | Partial | The seven bounded stages pass; integration breadth, leak checks, and full test-category coverage are absent. |
-| C Settings/data | Partial | Migration, recovery, backup, and atomic save are tested; revision conflict, complete one-root architecture, and all migration fixtures are absent. |
+| C Settings/data | Partial | Migration, recovery, backup, atomic save, and revision conflict are tested; complete one-root architecture, migration journal, and all bounded-input fixtures are absent. |
 | D Runtime state | Unverified | No complete truth-table/manual evidence proves pause, snooze, guards, effective pause, and duplicate-prompt invariants. |
 | E Supervisor/startup | Partial | Several supervisor regressions pass; circuit breaker, generation-bound stop protocol, and native startup evidence are absent. |
 | F Tk/tray/UI | Unverified | Source tests and self-tests exist, but owner-thread, tray uniqueness, deterministic dialog cleanup, and persistence-error UI evidence are incomplete. |

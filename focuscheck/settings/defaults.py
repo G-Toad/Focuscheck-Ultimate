@@ -6,6 +6,7 @@ This module contains all default configuration values.
 
 DEFAULT_SETTINGS = {
     "settings_schema_version": 2,
+    "settings_revision": 0,
     "interval_seconds": 60,
     "intensify_after_seconds": 15,
     "overdrive_after_seconds": 60,

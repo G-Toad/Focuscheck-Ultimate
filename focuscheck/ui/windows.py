@@ -636,6 +636,7 @@ class AdvancedSettingsWindow(
 
         try:
             s = {
+                "settings_revision": int(self.settings.get("settings_revision", 0)),
                 # Core
                 "interval_seconds": max(10, self._safe_int(self.interval_var, 60)),
                 "intensify_after_seconds": max(5, self._safe_int(self.intensify_var, 15)),
@@ -873,7 +874,9 @@ class AdvancedSettingsWindow(
                     self.wasting_challenge_vars[challenge_id].get()
                 )
 
-            save_settings(s)
+            if save_settings(s) is False:
+                messagebox.showerror("Save Error", "Settings changed elsewhere; reload before saving.")
+                return
             self.on_save(s)
             self.destroy()
 

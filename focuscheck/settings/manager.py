@@ -57,6 +57,7 @@ def validate_settings(data):
                 return False
         return bool(d)
     s["settings_schema_version"] = CURRENT_SETTINGS_SCHEMA_VERSION
+    s["settings_revision"] = max(0, _int(s.get("settings_revision", 0), 0))
     s["interval_seconds"] = max(10, _int(s.get("interval_seconds"), DEFAULT_SETTINGS["interval_seconds"]))
     s["intensify_after_seconds"] = max(5, _int(s.get("intensify_after_seconds"), DEFAULT_SETTINGS["intensify_after_seconds"]))
     s["overdrive_after_seconds"] = max(20, _int(s.get("overdrive_after_seconds"), DEFAULT_SETTINGS["overdrive_after_seconds"]))
@@ -614,7 +615,7 @@ def load_settings():
         return defaults
 
 
-def save_settings(s):
+def save_settings(s, expected_revision=None):
     """Save settings to JSON file atomically."""
     logger = get_logger()
     SETTINGS_PATH = choose_path("focus_settings.json")
@@ -645,6 +646,22 @@ def save_settings(s):
             logger.info("  Starting atomic write...")
             logger.info("    Validating settings before save...")
             validated = validate_settings(s)
+            current_revision = 0
+            if os.path.exists(SETTINGS_PATH):
+                try:
+                    with open(SETTINGS_PATH, "r", encoding="utf-8") as existing_file:
+                        existing = json.load(existing_file)
+                    if isinstance(existing, dict):
+                        current_revision = int(existing.get("settings_revision", 0))
+                except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                    # The normal load/recovery path owns malformed-file handling.
+                    current_revision = 0
+            if expected_revision is None and isinstance(s, dict) and "settings_revision" in s:
+                expected_revision = int(s.get("settings_revision", 0))
+            if expected_revision is not None and os.path.exists(SETTINGS_PATH) and int(expected_revision) != current_revision:
+                logger.warning("settings revision conflict: expected=%s current=%s", expected_revision, current_revision)
+                return False
+            validated["settings_revision"] = current_revision + 1
             logger.info("    Settings validated")
             logger.info("      Validated keys: %s", len(validated))
 
