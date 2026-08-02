@@ -199,6 +199,49 @@ class HarnessSupervisor:
 
 
 class SupervisorHarnessTests(unittest.TestCase):
+    def test_launch_failure_wait_is_cancellation_aware(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.target_script = Path("C:/FocusCheck/main.py")
+        supervisor.python_executable = "python"
+        supervisor.logger = MemoryLogger()
+        supervisor.stop_event = FakeEvent()
+        supervisor.current_delay = 3.0
+        supervisor.child = None
+        supervisor.supervisor_id = "supervisor"
+        supervisor.child_generation = None
+        supervisor.stop_file = Path("C:/FocusCheck/supervisor.stop")
+        supervisor.stop_ack_file = Path("C:/FocusCheck/supervisor.stop.ack")
+        supervisor.heartbeat_path = Path("C:/FocusCheck/hb.txt")
+        with mock.patch.object(supervisor_module.subprocess, "Popen", side_effect=OSError("launcher unavailable")):
+            supervisor._launch_focuscheck()
+
+        self.assertEqual([3.0], supervisor.stop_event.waits)
+        self.assertIsNone(supervisor.child)
+        self.assertTrue(any("Failed to start FocusCheck" in line for line in supervisor.logger.lines))
+
+    def test_resume_gap_uses_process_scoped_restart(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.logger = MemoryLogger()
+        supervisor.stop_event = FakeEvent()
+        supervisor.child = FakeProcess(321)
+        supervisor.current_delay = 4.0
+        supervisor.restart_delay = 4.0
+        supervisor._restart_history = []
+        supervisor._degraded_until = 0.0
+        supervisor.last_tick = 10.0
+        with mock.patch.object(supervisor_module, "kill_process_tree") as kill_tree, \
+                mock.patch.object(supervisor_module.time, "monotonic", return_value=100.0):
+            supervisor._force_restart("Detected 90.0s watchdog gap (likely resume/unlock)")
+
+        kill_tree.assert_called_once_with(321)
+        self.assertTrue(any("forcing restart" in line for line in supervisor.logger.lines))
+
     def test_duplicate_supervisor_lock_rejected_without_live_processes(self):
         from focuscheck_supervisor import SupervisorLock
 
@@ -358,6 +401,28 @@ class SupervisorHarnessTests(unittest.TestCase):
 
             self.assertFalse(supervisor._intentional_stop_requested(expected_pid=1234))
             self.assertFalse(ack_file.exists())
+
+    def test_stop_acknowledgement_write_failure_is_explicit(self):
+        from focuscheck_supervisor import FocusCheckSupervisor, FileLogger
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            supervisor = FocusCheckSupervisor(
+                target_script=root / "main.py",
+                python_executable="python",
+                logger=FileLogger(root / "supervisor.log"),
+                stop_file=root / "supervisor.stop",
+                stop_ack_file=root / "missing" / "supervisor.stop.ack",
+                heartbeat_path=root / "hb.txt",
+            )
+            supervisor.child_generation = "generation-1"
+            (root / "supervisor.stop").write_text("{not-json", encoding="ascii")
+
+            with mock.patch.object(supervisor.logger, "log") as log:
+                supervisor._acknowledge_stop_request()
+
+            log.assert_called_once()
+            self.assertIn("Could not acknowledge intentional stop", log.call_args.args[0])
 
 
 if __name__ == "__main__":
