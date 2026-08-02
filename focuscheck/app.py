@@ -41,6 +41,7 @@ from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
+from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -197,6 +198,8 @@ if platform.system().lower() == "windows":
 
 class App:
     def __init__(self):
+        self.lifecycle = LifecycleCoordinator()
+        self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
         self.root = tk.Tk()
         self._tk_thread_id = threading.get_ident()
         try:
@@ -405,6 +408,7 @@ class App:
                 print(f"Windows watcher/tray unavailable: {e}", file=sys.stderr)
         # quick first pop to prove it works
         self._schedule_next(2000)
+        self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")
 
     def _apply_initial_monitoring_state(self):
         desired, reason = resolve_initial_monitoring_state(self.settings)
@@ -896,6 +900,9 @@ class App:
                 pass
             return
         self._shutdown_requested = True
+        lifecycle = getattr(self, "lifecycle", None)
+        if lifecycle is not None:
+            lifecycle.begin_shutdown(reason=f"windows_{stage}")
         try:
             get_logger().info("system shutdown requested | stage=%s", stage)
         except Exception:
@@ -1644,6 +1651,9 @@ class App:
             get_logger().info("quit requested")
         except Exception:
             pass
+        lifecycle = getattr(self, "lifecycle", None)
+        if lifecycle is not None:
+            lifecycle.begin_shutdown(reason="user_exit")
         self._request_supervisor_stop()
         try:
             if getattr(self, "_runtime_state", None) is not None:
@@ -1666,6 +1676,8 @@ class App:
             self.root.destroy()
         except Exception:
             pass
+        if lifecycle is not None:
+            lifecycle.mark_stopped(reason="user_exit_complete")
         sys.exit(0)
 
     def _request_supervisor_stop(self):
@@ -1733,7 +1745,8 @@ class App:
                 "process_start_utc": process_start_utc,
                 "sequence": self._heartbeat_sequence,
                 "heartbeat_interval_seconds": FILE_HEARTBEAT_INTERVAL_SECONDS / 1000,
-                "readiness": "ready",
+                "readiness": getattr(getattr(self, "lifecycle", None), "phase", LifecyclePhase.READY).value,
+                "lifecycle": getattr(getattr(self, "lifecycle", None), "snapshot", lambda: {})(),
                 "tk_pulse": True,
                 "paused": bool(manual_paused or guard_paused),
                 "manual_paused": manual_paused,
@@ -1926,6 +1939,11 @@ class App:
             self.root.mainloop()
         except KeyboardInterrupt:
             return
+        except Exception as exc:
+            lifecycle = getattr(self, "lifecycle", None)
+            if lifecycle is not None:
+                lifecycle.fail(exc, reason="mainloop_exception")
+            raise
         finally:
             try:
                 if getattr(self, "_winwatch", None):
@@ -1939,3 +1957,6 @@ class App:
                     gdiplus_shutdown()
                 except Exception:
                     pass
+            lifecycle = getattr(self, "lifecycle", None)
+            if lifecycle is not None and lifecycle.phase == LifecyclePhase.STOPPING:
+                lifecycle.mark_stopped(reason="run_cleanup")

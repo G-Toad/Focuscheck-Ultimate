@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 from focuscheck.runtime.state import RuntimeStateCoordinator
 from focuscheck.utils.clock import FakeClock
+from focuscheck.runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 
 
 class RuntimeStateTests(unittest.TestCase):
@@ -81,3 +82,26 @@ class RuntimeStateTests(unittest.TestCase):
         clock.advance(10)
         self.assertFalse(state.is_effectively_paused())
         self.assertTrue(state.can_start_prompt())
+
+
+class LifecycleCoordinatorTests(unittest.TestCase):
+    def test_lifecycle_validates_phases_and_records_bounded_transitions(self):
+        events = []
+        lifecycle = LifecycleCoordinator(_sink=events.append)
+
+        self.assertTrue(lifecycle.transition(LifecyclePhase.STARTING, reason="construct"))
+        self.assertTrue(lifecycle.transition(LifecyclePhase.READY, reason="services_started"))
+        self.assertFalse(lifecycle.transition(LifecyclePhase.CONSTRUCTING))
+        self.assertTrue(lifecycle.begin_shutdown(reason="user_exit"))
+        self.assertTrue(lifecycle.mark_stopped(reason="cleanup_complete"))
+        self.assertFalse(lifecycle.mark_stopped())
+        self.assertEqual("stopped", lifecycle.snapshot()["phase"])
+        self.assertEqual(["starting", "ready", "stopping", "stopped"], [event["to"] for event in events])
+
+    def test_lifecycle_failure_preserves_error_type(self):
+        lifecycle = LifecycleCoordinator()
+        lifecycle.transition(LifecyclePhase.STARTING)
+        self.assertTrue(lifecycle.fail(RuntimeError("boom"), reason="startup_failure"))
+        snapshot = lifecycle.snapshot()
+        self.assertEqual("failed", snapshot["phase"])
+        self.assertEqual("RuntimeError", snapshot["error_type"])
