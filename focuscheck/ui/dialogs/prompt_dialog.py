@@ -92,6 +92,7 @@ class PromptDialog(
         self._overdrive = False
         self._overdrive_stage4 = False
         self._closed = False
+        self._submit_notified = False
         self._hold_start = None
         # Timer registry for cleanup
         self._active_timers = set()
@@ -707,6 +708,21 @@ class PromptDialog(
         # Clean up all timers before destroying
         self._cleanup_all_timers()
         self.destroy()
+        self._notify_submit()
+
+    def _notify_submit(self):
+        """Notify the owning app after the prompt has been fully cleaned up."""
+        if self._submit_notified:
+            return
+        self._submit_notified = True
+        try:
+            if callable(self.on_submit):
+                self.on_submit()
+        except Exception:
+            try:
+                get_logger().exception("V1 prompt submit callback failed", exc_info=True)
+            except Exception:
+                pass
 
     def _schedule_timer(self, delay_ms, callback):
         """

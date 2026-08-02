@@ -63,6 +63,43 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_v1_prompt_notifies_owner_after_studying_choice(self):
+        from datetime import datetime
+
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+
+        root = _make_root()
+        submitted = []
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update({
+            "always_on_top": False,
+            "anti_habit_enabled": False,
+            "camera_feed_enabled": False,
+            "encouragement_enabled": False,
+            "focus_prompt_ask_doing": False,
+            "focus_prompt_ask_benefits": False,
+            "show_task_analytics": False,
+        })
+        try:
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"):
+                dialog = PromptDialog(
+                    root,
+                    settings,
+                    lambda: submitted.append(True),
+                    datetime.now(),
+                    taskdb=None,
+                    app_ref=None,
+                )
+                dialog.withdraw()
+                dialog._invoke_action_button(dialog.btn_study)
+                root.update()
+
+            self.assertEqual([True], submitted)
+            self.assertFalse(dialog.winfo_exists())
+        finally:
+            root.destroy()
+
     def test_task_entry_enter_submits(self):
         from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
 
