@@ -116,6 +116,26 @@ class SystemTrayCommandTests(unittest.TestCase):
 
         self.assertEqual(["install_startup", "uninstall_startup"], app.calls)
 
+    def test_enabled_exit_delegates_without_tray_thread_sys_exit(self):
+        from focuscheck.system_tray import SystemTray
+
+        class Icon:
+            def __init__(self):
+                self.visible = True
+                self.stopped = False
+
+            def stop(self):
+                self.stopped = True
+
+        app = FakeTrayApp()
+        tray = SystemTray(app=app, name="FocusCheckTest")
+        tray._icon = Icon()
+        with mock.patch("focuscheck.system_tray.sys.exit") as exit_mock:
+            tray._on_quit(None, None)
+        self.assertEqual(["exit"], app.calls)
+        self.assertTrue(tray._icon.stopped)
+        exit_mock.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

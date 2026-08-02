@@ -891,12 +891,9 @@ class SystemTray:
                 else:
                     logger.info("    Icon is None, nothing to stop")
 
-            # As a last resort, exit the process
-            logger.info("  Exiting process with sys.exit(0)...")
-            with contextlib.suppress(Exception):
-                logger.info("  FINAL MESSAGE: Application shutting down via tray exit")
-                logger.info("=" * 80)
-                sys.exit(0)
+            # The application lifecycle owner decides process termination. A
+            # tray callback must never call sys.exit from the tray thread.
+            logger.info("  Tray exit delegation complete; no tray-thread process exit")
 
     def _build_menu(self) -> "pystray.Menu":
         logger.info("=" * 80)
