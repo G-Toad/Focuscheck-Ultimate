@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `171` unittest cases passing.
+- Current automated baseline after hardening: `172` unittest cases passing.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
 - Isolated native overlay self-test: passing with virtual-screen region updates.
@@ -15,5 +15,6 @@
 - Startup inspection distinguishes legacy and duplicate launch mechanisms, and repair promotes the registry route while removing the known legacy launcher.
 - Single-instance mutex ownership now has explicit Win32 signatures and deterministic handle release on application exit/failure.
 - App lifecycle transitions are validated by a coordinator and exposed in the App heartbeat.
+- Lifecycle/runtime metadata is persisted in a bounded privacy-safe structured event ledger and is eligible for sanitized diagnostic bundles.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

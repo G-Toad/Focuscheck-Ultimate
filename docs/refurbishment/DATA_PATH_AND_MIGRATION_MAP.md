@@ -10,3 +10,4 @@
 - CSV/JSONL logs are per-file locked and size-bounded.
 - Settings schema migration is pure and currently upgrades schema `1` to `2`.
 - Legacy task DB and event-log artifacts are imported into the canonical root without deletion; duplicate/conflicting sources are preserved by hash in `data_migration.jsonl` and conflict copies.
+- `structured_events.jsonl` is the canonical bounded operational metadata ledger; it contains lifecycle/runtime metadata only and never raw settings, task text, URLs, responses, or camera frames.

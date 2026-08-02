@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 171 unittest cases.
+- Automated test baseline: 172 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -20,3 +20,4 @@
 - Startup inspection now detects legacy Startup-folder launchers and duplicate registry/folder startup, with an explicit canonical-route repair operation.
 - Single-instance mutex API signatures are explicit and the owned Windows handle is released through the main lifecycle finally block.
 - App lifecycle phases are now explicit and published in the heartbeat: `starting`, `ready`, `stopping`, `stopped`, and `failed`.
+- Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.

@@ -6,6 +6,7 @@ from datetime import datetime, timezone, timedelta
 from focuscheck.runtime.state import RuntimeStateCoordinator
 from focuscheck.utils.clock import FakeClock
 from focuscheck.runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
+from focuscheck.runtime.events import StructuredEventLedger
 
 
 class RuntimeStateTests(unittest.TestCase):
@@ -105,3 +106,24 @@ class LifecycleCoordinatorTests(unittest.TestCase):
         snapshot = lifecycle.snapshot()
         self.assertEqual("failed", snapshot["phase"])
         self.assertEqual("RuntimeError", snapshot["error_type"])
+
+
+class StructuredEventLedgerTests(unittest.TestCase):
+    def test_event_ledger_redacts_strings_and_rotates_within_bound(self):
+        import json
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "structured_events.jsonl"
+            ledger = StructuredEventLedger(path, max_bytes=4096)
+            ledger.append("runtime", {"event": "state", "reason": "safe", "response": "private response"})
+            for index in range(80):
+                ledger.append("test", {"event": "tick", "index": index, "url": "https://example.invalid/private"})
+
+            self.assertTrue(path.exists())
+            self.assertLessEqual(path.stat().st_size, 4096)
+            payload = json.loads(path.read_text(encoding="utf-8").splitlines()[-1])
+            self.assertNotIn("private response", path.read_text(encoding="utf-8"))
+            self.assertNotIn("example.invalid", path.read_text(encoding="utf-8"))
+            self.assertEqual("test", payload["category"])

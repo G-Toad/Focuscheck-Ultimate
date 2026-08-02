@@ -30,7 +30,10 @@ def create_bundle(runtime: Path, output: Path) -> Path:
     runtime = runtime.resolve()
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    candidates = sorted(runtime.glob("*.log")) + [runtime / "verification.json"]
+    candidates = sorted(runtime.glob("*.log")) + [
+        runtime / "verification.json",
+        runtime / "structured_events.jsonl",
+    ]
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for source in candidates:
             if source.is_file():

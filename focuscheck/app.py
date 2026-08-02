@@ -42,6 +42,7 @@ from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
+from .runtime.events import StructuredEventLedger
 from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -198,7 +199,10 @@ if platform.system().lower() == "windows":
 
 class App:
     def __init__(self):
-        self.lifecycle = LifecycleCoordinator()
+        self._event_ledger = StructuredEventLedger(get_app_paths().structured_events)
+        self.lifecycle = LifecycleCoordinator(
+            _sink=lambda event: self._event_ledger.append("lifecycle", event)
+        )
         self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
         self.root = tk.Tk()
         self._tk_thread_id = threading.get_ident()
@@ -236,10 +240,15 @@ class App:
         except Exception:
             get_logger().exception("legacy data migration failed", exc_info=True)
         self._runtime_journal = RuntimeTransitionJournal(get_app_paths().runtime_state)
+
+        def record_runtime_event(event):
+            self._runtime_journal.append(event)
+            self._event_ledger.append("runtime", event)
+
         self._runtime_state = RuntimeStateCoordinator(
             self.settings,
             persist=save_settings,
-            transition_sink=self._runtime_journal.append,
+            transition_sink=record_runtime_event,
         )
         self._snooze_unpause_timer_id = None
         self._snooze_confirm_dialog = None

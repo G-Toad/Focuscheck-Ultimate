@@ -222,6 +222,7 @@ class AppPaths:
     lock: Path
     diagnostic_bundle: Path
     runtime_state: Path
+    structured_events: Path
     exports: Path
     cache: Path
     temp: Path
@@ -248,6 +249,7 @@ def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
         lock=root / "supervisor.lock",
         diagnostic_bundle=root / "diagnostic_bundle.zip",
         runtime_state=root / "runtime_state.jsonl",
+        structured_events=root / "structured_events.jsonl",
         exports=root / "exports",
         cache=root / "cache",
         temp=root / "tmp",

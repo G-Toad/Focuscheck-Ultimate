@@ -1,5 +1,7 @@
 # Support Diagnostics
 
+Application lifecycle and runtime transition metadata is stored in `structured_events.jsonl`; its string fields are allowlisted or reduced to type/length metadata before persistence. Diagnostic bundles may include this file, but never include settings, tasks, browser URLs, responses, or camera frames.
+
 Use the diagnostic bundle only when requested by a maintainer. It contains sanitized verification logs and machine-readable stage results; it must not contain raw settings, task text, browser URLs, camera frames, or the SQLite database.
 
 ## Collect a bundle
