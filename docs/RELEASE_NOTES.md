@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 91 unittest cases.
+- Automated test baseline: 92 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Release status: `NOT_READY`.
 
