@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 208 unittest cases.
+- Automated test baseline: 209 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -36,6 +36,7 @@
 - Data inventory and allowlisted export now cover application/supervisor logs plus settings recovery, audit, heartbeat, and diagnostic artifacts without including file contents in metadata previews.
 - Tray fallback now stops the pystray adapter on the Tk owner thread before enabling the native adapter, preventing overlapping tray backends.
 - Prompt scheduling now uses the validated in-memory settings snapshot instead of reparsing settings on every tick.
+- Heartbeat publication now follows the App-owned frozen data-root snapshot instead of an import-time path constant.
 - The diagnostic bundle service now supports a live-data preview and sanitized operational bundle from the tray, excluding settings, tasks, camera files, and exports.
 - Shutdown now explicitly cleans the active prompt and shuts down the monitoring engine exactly once before destroying Tk.
 - Fixed guard-state refresh recursion so lock/idle/sleep pause state reaches the runtime coordinator.

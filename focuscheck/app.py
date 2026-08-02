@@ -2040,7 +2040,8 @@ class App:
                 "pause_reason": pause_reason,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
             }
-            heartbeat_path = Path(HEARTBEAT_PATH)
+            paths = getattr(self, "paths", None)
+            heartbeat_path = Path(getattr(paths, "heartbeat", HEARTBEAT_PATH))
             heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
             temp_path = heartbeat_path.with_name(
                 f"{heartbeat_path.name}.{os.getpid()}.{self._heartbeat_sequence}.tmp"

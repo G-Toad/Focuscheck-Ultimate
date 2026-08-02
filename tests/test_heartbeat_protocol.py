@@ -47,6 +47,27 @@ class HeartbeatProtocolTests(unittest.TestCase):
         self.assertEqual(60, payload["heartbeat_interval_seconds"])
         self.assertEqual("ready", payload["readiness"])
 
+    def test_app_heartbeat_uses_frozen_app_paths_snapshot(self):
+        from focuscheck.app import App
+        from focuscheck.utils.paths import get_app_paths
+
+        with tempfile.TemporaryDirectory() as app_dir, tempfile.TemporaryDirectory() as other_dir:
+            app = App.__new__(App)
+            app.paths = get_app_paths(app_dir)
+            app.settings = {"paused": False, "interval_seconds": 60}
+            app.guard = mock.Mock()
+            app.guard.should_pause.return_value = False
+            app._heartbeat_sequence = 0
+            app._process_start_utc = "2030-01-01T00:00:00+00:00"
+            with mock.patch.dict(
+                "os.environ",
+                {"FOCUSCHECK_SUPERVISOR_ID": "sup", "FOCUSCHECK_CHILD_GENERATION": "gen"},
+            ), mock.patch("focuscheck.app.HEARTBEAT_PATH", str(Path(other_dir) / "wrong-hb.txt")):
+                app._write_heartbeat()
+
+            self.assertTrue(app.paths.heartbeat.exists())
+            self.assertFalse((Path(other_dir) / "wrong-hb.txt").exists())
+
     def test_supervisor_uses_sequence_receipt_time_not_wall_clock_age(self):
         from focuscheck_supervisor import FocusCheckSupervisor
 
