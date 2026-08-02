@@ -85,7 +85,10 @@ class RuntimeStateCoordinator:
         before_settings = deepcopy(dict(self.settings))
         before_snapshot = deepcopy(self.snapshot)
         mutate()
-        self.settings["paused"] = self.snapshot.manual_paused or bool(self.snapshot.snooze_until_utc)
+        self.settings["paused"] = (
+            self.snapshot.manual_paused
+            or self.snapshot.snooze_active(self.clock.now_utc())
+        )
         self.settings["snooze_until_utc"] = self.snapshot.snooze_until_utc
         if self._persist is not None:
             try:

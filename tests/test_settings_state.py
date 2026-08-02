@@ -416,6 +416,20 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertTrue(settings["paused"])
         self.assertEqual("", settings["snooze_until_utc"])
 
+    def test_expired_snooze_does_not_persist_as_paused(self):
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        settings = {"paused": False, "snooze_until_utc": ""}
+        state = RuntimeStateCoordinator(settings, clock=clock)
+
+        self.assertTrue(state.set_snooze_until(clock.now_utc() + timedelta(seconds=1)))
+        clock.advance(2)
+        self.assertTrue(state.set_manual_paused(True))
+        self.assertTrue(state.set_manual_paused(False))
+        self.assertFalse(settings["paused"])
+
     def test_heartbeat_reports_manual_pause(self):
         import json
         import tempfile

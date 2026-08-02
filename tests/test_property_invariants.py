@@ -69,7 +69,7 @@ class PropertyInvariantTests(unittest.TestCase):
             self.assertFalse(state.snapshot.prompt_active and state.snapshot.intervention_active)
             self.assertEqual(
                 settings["paused"],
-                state.snapshot.manual_paused or bool(state.snapshot.snooze_until_utc),
+                state.snapshot.manual_paused or state.snapshot.snooze_active(clock.now_utc()),
             )
             if state.snapshot.shutdown_requested:
                 self.assertFalse(state.begin_prompt())
