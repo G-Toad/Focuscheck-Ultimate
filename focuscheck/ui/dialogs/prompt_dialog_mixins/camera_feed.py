@@ -72,6 +72,7 @@ class CameraFeedMixin:
         self._camera_label = None
         self._camera_capture = None
         self._camera_update_timer = None
+        self._biodata_pulse_timer_ids = set()
         self._camera_generation = 0
         self._camera_static_image = None
         self._camera_mode = self.settings.get("camera_feed_mode", "live")
@@ -1143,11 +1144,21 @@ class CameraFeedMixin:
             frame: The frame to animate
             icon_label: The icon label to pulse
         """
-        pulse_state = {"brightness": 0, "direction": 1}
+        pulse_state = {
+            "brightness": 0,
+            "direction": 1,
+            "generation": getattr(self, "_camera_generation", 0),
+        }
 
         def pulse():
+            timer_id = pulse_state.get("timer_id")
+            if timer_id is not None:
+                self._biodata_pulse_timer_ids.discard(timer_id)
             try:
-                if hasattr(self, '_closed') and self._closed:
+                if (
+                    (hasattr(self, '_closed') and self._closed)
+                    or pulse_state["generation"] != getattr(self, "_camera_generation", 0)
+                ):
                     return
 
                 # Pulse the icon between yellow and red
@@ -1170,7 +1181,9 @@ class CameraFeedMixin:
                     return  # Widget destroyed
 
                 # Schedule next pulse
-                self.after(50, pulse)
+                timer_id = self.after(50, pulse)
+                pulse_state["timer_id"] = timer_id
+                self._biodata_pulse_timer_ids.add(timer_id)
 
             except Exception:
                 pass  # Silently stop animation if there's an error
@@ -1331,6 +1344,15 @@ class CameraFeedMixin:
             except Exception:
                 pass
             self._camera_update_timer = None
+
+        # Cancel biodata animation callbacks as well as camera frame updates.
+        for timer_id in list(getattr(self, "_biodata_pulse_timer_ids", ())):
+            try:
+                self.after_cancel(timer_id)
+            except Exception:
+                pass
+        if hasattr(self, "_biodata_pulse_timer_ids"):
+            self._biodata_pulse_timer_ids.clear()
 
         # Release camera
         if self._camera_capture is not None:

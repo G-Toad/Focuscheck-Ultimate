@@ -434,6 +434,36 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual(1, capture.reads)
         self.assertEqual(1, capture.releases)
 
+    def test_biodata_pulse_callbacks_are_cancelled_with_camera_cleanup(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin._closed = False
+        mixin._camera_generation = 2
+        mixin._camera_update_timer = None
+        mixin._camera_capture = None
+        mixin._camera_capability = {}
+        mixin._biodata_pulse_timer_ids = set()
+        scheduled = []
+        cancelled = []
+
+        class Label:
+            def configure(self, **_kwargs):
+                return None
+
+        mixin.after = lambda delay, callback: (scheduled.append((delay, callback)) or "pulse-timer")
+        mixin.after_cancel = cancelled.append
+        mixin._animate_biodata_pulse(object(), Label())
+
+        self.assertEqual({"pulse-timer"}, mixin._biodata_pulse_timer_ids)
+        mixin._cleanup_camera_feed()
+        self.assertEqual(["pulse-timer"], cancelled)
+        self.assertEqual(set(), mixin._biodata_pulse_timer_ids)
+
+        # A callback already dequeued by Tk must not reschedule after cleanup.
+        scheduled[0][1]()
+        self.assertEqual(1, len(scheduled))
+
     def test_camera_preview_windows_ignore_stale_callbacks_after_close(self):
         from focuscheck.ui.camera_adjustment_window import CameraAdjustmentWindow
         from focuscheck.ui.camera_test_window import CameraTestWindow
