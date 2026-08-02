@@ -32,3 +32,30 @@ class RetentionTests(unittest.TestCase):
             os.utime(old, (old_time, old_time))
             apply_retention(root, max_age_days=1, apply=False)
             self.assertTrue(old.exists())
+
+    def test_symlinked_old_log_is_not_selected(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            target = root / "outside.log"
+            target.write_text("outside", encoding="utf-8")
+            link = root / "focus_app.log.1"
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+            self.assertEqual([], retention_plan(root, max_age_days=1, now=time.time() + 20 * 86400))
+            self.assertTrue(target.exists())
+
+    def test_apply_retention_uses_injected_time_and_writes_metadata_only_audit(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            old = root / "focus_log.csv.1"
+            old.write_text("private response", encoding="utf-8")
+            old_time = 100.0
+            import os
+            os.utime(old, (old_time, old_time))
+            result = apply_retention(root, max_age_days=1, now=old_time + 2 * 86400, apply=True)
+            self.assertTrue(result[0]["deleted"])
+            audit = (root / "retention_audit.jsonl").read_text(encoding="utf-8")
+            self.assertNotIn("private response", audit)
+            self.assertIn('"operation":"retention_delete"', audit)

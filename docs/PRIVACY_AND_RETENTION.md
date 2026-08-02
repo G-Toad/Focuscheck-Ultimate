@@ -12,6 +12,6 @@
 
 ## Retention
 
-`tools/retention.py` plans deletion only for known log/rotation patterns. It is dry-run by default; deletion requires an explicit `--apply` and a selected root. Settings and task databases are never selected by this tool.
+`tools/retention.py` plans deletion only for known log/rotation patterns. It is dry-run by default; deletion requires an explicit `--apply` and a selected root. Settings and task databases are never selected by this tool. Symlink candidates are rejected, and applied deletions append only filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
 
 Automated verification never runs with `--apply` and uses `_verify_runtime/data` as its data root.
