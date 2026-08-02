@@ -117,6 +117,7 @@ def main() -> int:
         ("main_selftest", [py, "main.py", "--selftest"]),
         ("tray_selftest", [py, "main.py", "--tray-selftest"]),
         ("native_overlay_selftest", [py, "tools/spotlight_overlay_selftest.py"]),
+        ("resource_leak_selftest", [py, "tools/resource_leak_selftest.py"]),
         ("settings_inventory", [py, "tools/settings_inventory.py"]),
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
         ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip")]),
