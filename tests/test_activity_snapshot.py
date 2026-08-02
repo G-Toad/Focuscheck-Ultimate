@@ -66,3 +66,57 @@ class WindowsActivityProbeTests(unittest.TestCase):
         self.assertIs(activity_probe.wintypes.HANDLE, kernel32.OpenProcess.restype)
         self.assertIs(activity_probe.wintypes.BOOL, kernel32.QueryFullProcessImageNameW.restype)
         self.assertIs(activity_probe.wintypes.BOOL, kernel32.CloseHandle.restype)
+
+    def test_foreground_probe_declares_user32_signatures(self):
+        from focuscheck.platform_specific import activity_probe
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, *_args):
+                return 0
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "GetWindowTextLengthW", "GetWindowTextW", "GetClassNameW",
+                "GetForegroundWindow", "GetWindowThreadProcessId",
+            )
+        })()
+        activity_probe._configure_user32(user32)
+
+        self.assertEqual([activity_probe.wintypes.HWND], user32.GetWindowTextLengthW.argtypes)
+        self.assertIs(activity_probe.wintypes.HWND, user32.GetForegroundWindow.restype)
+        self.assertEqual(
+            [activity_probe.wintypes.HWND, activity_probe.ctypes.POINTER(activity_probe.wintypes.DWORD)],
+            user32.GetWindowThreadProcessId.argtypes,
+        )
+
+    def test_window_enumeration_declares_user32_and_psapi_signatures(self):
+        from focuscheck.platform_specific import window_enumeration
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "GetWindowTextLengthW", "GetWindowTextW", "GetWindowThreadProcessId",
+                "IsWindowVisible", "EnumWindows", "PostMessageW", "IsWindow",
+            )
+        })()
+        kernel32 = type("Kernel32", (), {"OpenProcess": Api(), "CloseHandle": Api()})()
+        psapi = type("Psapi", (), {"GetModuleBaseNameW": Api()})()
+
+        window_enumeration._configure_user32(user32)
+        window_enumeration._configure_process_api(kernel32, psapi)
+
+        self.assertIs(window_enumeration.wintypes.BOOL, user32.EnumWindows.restype)
+        self.assertIs(window_enumeration.wintypes.HANDLE, kernel32.OpenProcess.restype)
+        self.assertEqual(
+            [window_enumeration.wintypes.HANDLE, window_enumeration.wintypes.HANDLE,
+             window_enumeration.wintypes.LPWSTR, window_enumeration.wintypes.DWORD],
+            psapi.GetModuleBaseNameW.argtypes,
+        )

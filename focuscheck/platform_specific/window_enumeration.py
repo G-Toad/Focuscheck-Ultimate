@@ -5,9 +5,46 @@ from ctypes import wintypes
 import platform
 
 
+def _configure_user32(user32):
+    """Declare user32 signatures before enumerating or controlling windows."""
+    enum_proc = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+        ctypes.c_bool, wintypes.HWND, wintypes.LPARAM
+    )
+    user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+    user32.GetWindowTextLengthW.restype = ctypes.c_int
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetWindowTextW.restype = ctypes.c_int
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.IsWindowVisible.argtypes = [wintypes.HWND]
+    user32.IsWindowVisible.restype = wintypes.BOOL
+    user32.EnumWindows.argtypes = [enum_proc, wintypes.LPARAM]
+    user32.EnumWindows.restype = wintypes.BOOL
+    user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user32.PostMessageW.restype = wintypes.BOOL
+    user32.IsWindow.argtypes = [wintypes.HWND]
+    user32.IsWindow.restype = wintypes.BOOL
+
+
+def _configure_process_api(kernel32, psapi):
+    """Declare process and PSAPI signatures used for window ownership lookup."""
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    psapi.GetModuleBaseNameW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.HANDLE,
+        wintypes.LPWSTR,
+        wintypes.DWORD,
+    ]
+    psapi.GetModuleBaseNameW.restype = wintypes.DWORD
+
+
 def _get_window_text(hwnd):
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         length = user32.GetWindowTextLengthW(hwnd)
         if length <= 0:
             return ""
@@ -21,6 +58,7 @@ def _get_window_text(hwnd):
 def _get_window_pid(hwnd):
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         pid = wintypes.DWORD()
         user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
         return int(pid.value) if pid.value else None
@@ -32,6 +70,7 @@ def _get_process_name(pid):
     try:
         kernel32 = ctypes.windll.kernel32
         psapi = ctypes.windll.psapi
+        _configure_process_api(kernel32, psapi)
         PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
         PROCESS_VM_READ = 0x0010
         handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, False, pid)
@@ -53,6 +92,7 @@ def list_top_level_windows():
     if platform.system().lower() != "windows":
         return []
     user32 = ctypes.windll.user32
+    _configure_user32(user32)
     windows = []
 
     @ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
@@ -86,6 +126,7 @@ def close_window(hwnd):
     """Attempt to close a window via WM_CLOSE."""
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         WM_CLOSE = 0x0010
         user32.PostMessageW(wintypes.HWND(hwnd), WM_CLOSE, 0, 0)
         return True
@@ -97,6 +138,7 @@ def is_window_open(hwnd):
     """Return True if the window handle is still valid."""
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         return bool(user32.IsWindow(wintypes.HWND(hwnd)))
     except Exception:
         return False

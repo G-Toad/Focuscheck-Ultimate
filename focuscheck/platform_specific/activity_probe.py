@@ -9,6 +9,20 @@ from .browser_info import try_get_browser_url
 from .cdp_browser import get_best_url_for_window
 
 
+def _configure_user32(user32):
+    """Declare the user32 calls used by foreground-window sampling."""
+    user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+    user32.GetWindowTextLengthW.restype = ctypes.c_int
+    user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetWindowTextW.restype = ctypes.c_int
+    user32.GetClassNameW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user32.GetClassNameW.restype = ctypes.c_int
+    user32.GetForegroundWindow.argtypes = []
+    user32.GetForegroundWindow.restype = wintypes.HWND
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+
+
 def _configure_process_api(kernel32):
     """Declare the process APIs before passing pointers across the Win32 boundary."""
     kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
@@ -27,6 +41,7 @@ def _configure_process_api(kernel32):
 def _get_window_text(hwnd):
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         length = user32.GetWindowTextLengthW(hwnd)
         if length <= 0:
             return ""
@@ -40,6 +55,7 @@ def _get_window_text(hwnd):
 def _get_window_class(hwnd):
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         buff = ctypes.create_unicode_buffer(256)
         if user32.GetClassNameW(hwnd, buff, 256) == 0:
             return ""
@@ -83,6 +99,7 @@ def get_active_window_info():
         }
     try:
         user32 = ctypes.windll.user32
+        _configure_user32(user32)
         hwnd = user32.GetForegroundWindow()
         if not hwnd:
             return {

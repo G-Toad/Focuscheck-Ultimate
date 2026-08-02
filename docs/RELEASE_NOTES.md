@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 180 unittest cases.
+- Automated test baseline: 182 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -26,3 +26,4 @@
 - Windows session shutdown now separates `query_end_session` preparation from committed `end_session` cleanup and avoids process-level forced exit.
 - Guard sampling is centralized through the runtime coordinator, so prompt, scheduler, and heartbeat paths share one effective-pause source of truth.
 - The activity process-path probe now declares its Win32 handle, buffer, and pointer signatures before crossing the ctypes boundary.
+- Foreground and top-level window enumeration now declare user32, process, and PSAPI signatures before crossing the ctypes boundary.
