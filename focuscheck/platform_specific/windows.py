@@ -413,15 +413,18 @@ class WinClickThroughOverlay:
                 pass
 
     def destroy(self):
+        brush = self._brush
+        hwnd = self.hwnd
+        self._brush = None
+        self.hwnd = None
         try:
-            if self._brush:
-                _gdi32().DeleteObject(self._brush)
+            if brush:
+                _gdi32().DeleteObject(brush)
         except Exception:
             pass
         try:
-            if self.hwnd:
-                _user32().DestroyWindow(self.hwnd)
-                self.hwnd = None
+            if hwnd:
+                _user32().DestroyWindow(hwnd)
         except Exception:
             pass
 

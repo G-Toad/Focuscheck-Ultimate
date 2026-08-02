@@ -119,6 +119,24 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
         self.assertNotEqual(Path.cwd() / "camera_photos", mixin._get_camera_photos_directory())
 
+    def test_native_overlay_destroy_releases_handles_once(self):
+        from focuscheck.platform_specific import windows
+
+        calls = {"brush": 0, "window": 0}
+        class FakeGdi:
+            def DeleteObject(self, handle):
+                calls["brush"] += 1
+        class FakeUser:
+            def DestroyWindow(self, handle):
+                calls["window"] += 1
+        overlay = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+        overlay._brush = 11
+        overlay.hwnd = 22
+        with mock.patch.object(windows, "_gdi32", return_value=FakeGdi()), mock.patch.object(windows, "_user32", return_value=FakeUser()):
+            overlay.destroy()
+            overlay.destroy()
+        self.assertEqual({"brush": 1, "window": 1}, calls)
+
 
 if __name__ == "__main__":
     unittest.main()

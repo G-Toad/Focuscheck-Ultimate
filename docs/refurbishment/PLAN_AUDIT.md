@@ -25,7 +25,7 @@ Status meanings:
 | 9 Startup and single-instance | Partial | Launcher and startup tests now include non-mutating registry inspection for valid and stale/moved-install commands. Duplicate-state correctness, repair execution, and manual registry evidence remain absent. |
 | 10 Application lifecycle/composition | Partial | Quit/lifecycle regression tests exist. No composition-root refactor or failure-injection coverage at every startup/shutdown stage was found. |
 | 11 Tray adapters | Partial | Command tests and self-test exist; Tk dispatch now targets the recorded owner thread and direct JSON persistence fallback was removed. Complete backend state machine and required native manual matrix are not proven. |
-| 12 Windows native wrappers | Unverified | Existing native modules and documentation exist, but the complete Win32 signature audit, resource ledger validation, native stress harness, and live evidence are absent. |
+| 12 Windows native wrappers | Partial | Native wrappers retain pointer-sized declarations for key window procedures, and overlay destruction now releases brush/window handles exactly once under a fake-DLL regression test. Complete Win32 signature audit, native stress harness, and live evidence remain absent. |
 | 13 Prompt coordinator | Partial | `PromptCoordinator` now owns one active prompt generation and makes polling, tray close, and destruction completion idempotent. Dialog-specific timer/grab cleanup and the complete close-path matrix remain unverified. |
 | 14 V1 prompt flow | Unverified | Existing source and tests cover selected flows; the plan's full visible UI, interruption, persistence, cleanup, and manual evidence matrix was not executed. |
 | 15 V2 prompt/activity model | Partial | V2 intervention outcome behavior has regression coverage. Full typed activity snapshots, provider isolation, stale/error behavior, and every intervention outcome are not proven. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and scripted non-destructive package promotion/rollback now executes in disposable tests. Installer shell integration, signing, and target-machine lifecycle evidence remain open. |
 | 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
-| 27 Automated test expansion | Partial | 122 unittest cases, self-tests, a bounded performance soak, and package lifecycle tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 123 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 122 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 123 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback and native overlay handle cleanup. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
