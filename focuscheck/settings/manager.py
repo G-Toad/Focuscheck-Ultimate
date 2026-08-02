@@ -163,6 +163,7 @@ def validate_settings(data):
     for b in [
         "always_on_top", "center_on_show", "follow_cursor_monitor", "specific_monitor_only",
         "anti_habit_enabled", "randomize_buttons", "overlays_enabled",
+        "phrase_acronym_enabled", "custom_button_phrases_enabled",
         "force_always_on", "paused", "pause_when_inactive_or_lid_closed", "pause_on_idle",
         "pause_on_lid_closed", "pause_on_lock", "pause_on_sleep",
         "overdrive_stage4_enabled",
@@ -223,14 +224,18 @@ def validate_settings(data):
         "spam_timing_check",
         # Camera feed
         "camera_feed_enabled", "camera_capture_on_click", "camera_face_maximize_in_display",
-        "camera_flip_horizontal", "camera_face_edge_aware_zoom",
+        "camera_flip_horizontal", "camera_face_edge_aware_zoom", "camera_show_face_detection",
+        "camera_invert_colors", "camera_manual_adjustments_enabled", "camera_auto_adapt",
         # Biodata display
         "biodata_enabled", "biodata_show_full_name", "biodata_show_days_lived",
         "biodata_show_lineage", "biodata_show_role",
+        "biodata_pulse_animation",
         # Audio alerts
         "audio_alerts_enabled", "audio_earphone_safe_mode", "audio_try_speaker_switch",
         # Snooze reminder
         "snooze_reminder_enabled",
+        "gentle_reminder_enabled", "gentle_reminder_drift_enabled",
+        "manual_crop_show_safe_zones", "manual_crop_lock_aspect",
     ]:
         s[b] = _bool(s.get(b, DEFAULT_SETTINGS[b]), DEFAULT_SETTINGS[b])
     # Strings
@@ -315,7 +320,7 @@ def validate_settings(data):
     s["monitoring_mode"] = mon_mode
 
     # Button label behavior validation
-    s["custom_button_phrases_enabled"] = bool(s.get("custom_button_phrases_enabled", False))
+    s["custom_button_phrases_enabled"] = _bool(s.get("custom_button_phrases_enabled", False), False)
     for prefix in ("study", "waste"):
         mode = str(s.get(f"{prefix}_phrase_mode", "random")).strip().lower()
         if mode not in ("random", "sequential", "override"):
@@ -403,8 +408,8 @@ def validate_settings(data):
     s["snooze_exact_required_phrase"] = phrase.strip()
 
     # Camera feed settings
-    s["camera_feed_enabled"] = bool(s.get("camera_feed_enabled", DEFAULT_SETTINGS["camera_feed_enabled"]))
-    s["camera_capture_on_click"] = bool(s.get("camera_capture_on_click", DEFAULT_SETTINGS["camera_capture_on_click"]))
+    s["camera_feed_enabled"] = _bool(s.get("camera_feed_enabled", DEFAULT_SETTINGS["camera_feed_enabled"]), DEFAULT_SETTINGS["camera_feed_enabled"])
+    s["camera_capture_on_click"] = _bool(s.get("camera_capture_on_click", DEFAULT_SETTINGS["camera_capture_on_click"]), DEFAULT_SETTINGS["camera_capture_on_click"])
     # Camera mode validation
     camera_mode = s.get("camera_feed_mode", DEFAULT_SETTINGS["camera_feed_mode"])
     if camera_mode not in ("live", "static"):
@@ -452,7 +457,7 @@ def validate_settings(data):
         s["camera_face_crop_height_multiplier"] = DEFAULT_SETTINGS["camera_face_crop_height_multiplier"]
 
     # Edge-aware zoom
-    s["camera_face_edge_aware_zoom"] = bool(s.get("camera_face_edge_aware_zoom", DEFAULT_SETTINGS["camera_face_edge_aware_zoom"]))
+    s["camera_face_edge_aware_zoom"] = _bool(s.get("camera_face_edge_aware_zoom", DEFAULT_SETTINGS["camera_face_edge_aware_zoom"]), DEFAULT_SETTINGS["camera_face_edge_aware_zoom"])
     try:
         s["camera_face_edge_threshold"] = max(0.05, min(0.3, float(s.get("camera_face_edge_threshold", DEFAULT_SETTINGS["camera_face_edge_threshold"]))))
     except Exception:
@@ -527,8 +532,8 @@ def validate_settings(data):
     if grid_overlay not in ("off", "rule_of_thirds", "4x4", "custom"):
         grid_overlay = DEFAULT_SETTINGS["manual_crop_grid_overlay"]
     s["manual_crop_grid_overlay"] = grid_overlay
-    s["manual_crop_show_safe_zones"] = bool(s.get("manual_crop_show_safe_zones", DEFAULT_SETTINGS["manual_crop_show_safe_zones"]))
-    s["manual_crop_lock_aspect"] = bool(s.get("manual_crop_lock_aspect", DEFAULT_SETTINGS["manual_crop_lock_aspect"]))
+    s["manual_crop_show_safe_zones"] = _bool(s.get("manual_crop_show_safe_zones", DEFAULT_SETTINGS["manual_crop_show_safe_zones"]), DEFAULT_SETTINGS["manual_crop_show_safe_zones"])
+    s["manual_crop_lock_aspect"] = _bool(s.get("manual_crop_lock_aspect", DEFAULT_SETTINGS["manual_crop_lock_aspect"]), DEFAULT_SETTINGS["manual_crop_lock_aspect"])
     try:
         s["manual_crop_preview_opacity"] = max(0.0, min(1.0, float(s.get("manual_crop_preview_opacity", DEFAULT_SETTINGS["manual_crop_preview_opacity"]))))
     except Exception:

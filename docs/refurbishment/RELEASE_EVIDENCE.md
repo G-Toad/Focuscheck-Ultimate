@@ -1,6 +1,6 @@
 # Release Evidence
 
-- Automated: `128` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Automated: `129` unittest cases pass in the isolated verification runner, including live-profile isolation assertion and the full-schema boolean coercion matrix.
 - Settings input budgets reject oversized collections/strings before normalization or persistence.
 - Task timestamps are normalized to UTC at the persistence boundary, with malformed inputs rejected by regression tests.
 - Settings load/save is covered by an OS-level sidecar lock regression test.

@@ -44,6 +44,15 @@ class SettingsValidationTests(unittest.TestCase):
         self.assertFalse(settings["tray_exit_button_enabled"])
         self.assertFalse(settings["overlays_enabled"])
 
+    def test_validate_settings_parses_every_boolean_default(self):
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.settings.manager import validate_settings
+        boolean_keys = [key for key, value in DEFAULT_SETTINGS.items() if isinstance(value, bool)]
+        false_values = validate_settings({key: "false" for key in boolean_keys})
+        true_values = validate_settings({key: "true" for key in boolean_keys})
+        self.assertTrue(all(false_values[key] is False for key in boolean_keys), false_values)
+        self.assertTrue(all(true_values[key] is True for key in boolean_keys), true_values)
+
     def test_default_settings_are_registered(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
         from focuscheck.settings.registry import SETTINGS_REGISTRY

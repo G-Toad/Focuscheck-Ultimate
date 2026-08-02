@@ -1,6 +1,6 @@
 # Refurbishment Plan Audit
 
-Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at commit `1b49756`.
+Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
 Status meanings:
 
@@ -20,7 +20,7 @@ Status meanings:
 | 4 Unified paths and data location | Partial | Frozen `AppPaths` covers canonical data/runtime paths, `FOCUS_DATA_DIR` precedence is fixed, and failed AppData resolution now uses controlled temp recovery rather than the source directory. Legacy hash/revision conflict resolution and complete atomic migration workflow remain absent. |
 | 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, rotating `.bak/.bak.1/.bak.2` recovery, migration journal, atomic readback-validated save, OS-level cross-process locking, recursive/file-size input budgets, typed schema descriptors, revision/conflict handling, and fixture classes now exist. Complete UI schema generation and broader migration fixtures remain incomplete. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` owns transactional pause/snooze mutation, expiry-aware state, refreshed settings adoption, exclusive prompt/intervention/shutdown leases, clock-injected prompt eligibility, prompt denial during effective pause, and an App-wired metadata-only transition journal. Full guard synchronization and crash/restart recovery evidence remain absent. |
-| 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers, with 1,000-cycle stress coverage. Dialog/remaining callback timers remain distributed, there is no injected clock, and the broader stress matrix is absent. |
+| 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers, with 1,000-cycle stress coverage. Runtime-state decisions use an injected clock, while Tk timer scheduling remains UI-controlled, dialog/remaining callback timers remain distributed, and the broader stress matrix is absent. |
 | 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, PID-bound JSON stop requests, stale checks, force-start correction, circuit breaker, and lifecycle tests now exist. Acknowledgement timeout, sleep-gap handling, and the complete failure matrix are not proven. |
 | 9 Startup and single-instance | Partial | Launcher and startup tests now include non-mutating registry inspection for valid and stale/moved-install commands. Duplicate-state correctness, repair execution, and manual registry evidence remain absent. |
 | 10 Application lifecycle/composition | Partial | Quit/lifecycle regression tests exist. No composition-root refactor or failure-injection coverage at every startup/shutdown stage was found. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and scripted non-destructive package promotion/rollback now executes in disposable tests. Installer shell integration, signing, and target-machine lifecycle evidence remain open. |
 | 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
-| 27 Automated test expansion | Partial | 128 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 129 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, a full-schema boolean coercion matrix, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 128 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, runtime transition metadata, cross-process settings locking, UTC task timestamp normalization, and settings input budgets. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 129 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, runtime transition metadata, cross-process settings locking, UTC task timestamp normalization, settings input budgets, and boolean coercion for every boolean default in the schema. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
