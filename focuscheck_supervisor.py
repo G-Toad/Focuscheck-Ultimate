@@ -522,7 +522,15 @@ class FocusCheckSupervisor:
             return
         proc = self.child
         self.child = None
+        inner_pid = None
+        if self.target_script.suffix.lower() == ".exe":
+            candidate = getattr(self, "_last_heartbeat_pid", None)
+            if candidate and candidate != proc.pid and _pid_is_alive(candidate):
+                inner_pid = candidate
         if proc.poll() is not None:
+            if inner_pid:
+                self.logger.log(f"Stopping frozen inner FocusCheck process (pid={inner_pid})")
+                kill_process_tree(inner_pid)
             return
         self.logger.log("Stopping FocusCheck")
         try:
@@ -540,6 +548,9 @@ class FocusCheckSupervisor:
                 proc.wait(timeout=5)
             except Exception:
                 pass
+        if inner_pid and _pid_is_alive(inner_pid):
+            self.logger.log(f"Stopping frozen inner FocusCheck process (pid={inner_pid})")
+            kill_process_tree(inner_pid)
     def _heartbeat_stale(self) -> bool:
         if self.child is None or self.child.poll() is not None:
             return False
@@ -695,6 +706,16 @@ class FocusCheckSupervisor:
                         break
                 self._launch_focuscheck()
                 continue
+            # A valid stop request is an explicit lifecycle command. Handle it
+            # while the child is still owned so frozen bootloader/inner-PID
+            # exits cannot race the acknowledgement path.
+            if self._intentional_stop_requested():
+                self._terminate_child()
+                self._acknowledge_stop_request()
+                self._clear_stop_request()
+                self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
+                self.stop_event.set()
+                break
             now = time.monotonic()
             gap = now - self.last_tick
             if gap >= self.resume_gap:

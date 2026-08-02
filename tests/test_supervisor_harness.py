@@ -319,6 +319,22 @@ class SupervisorHarnessTests(unittest.TestCase):
             self.assertEqual(1, harness.supervisor.terminations)
             self.assertTrue(harness.supervisor.launches[0].terminated)
 
+    def test_frozen_child_cleanup_terminates_validated_inner_pid(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.target_script = Path("C:/FocusCheck/FocusCheck.exe")
+        supervisor.child = FakeProcess(111)
+        supervisor._last_heartbeat_pid = 222
+        supervisor.logger = MemoryLogger()
+        with mock.patch.object(supervisor_module, "_pid_is_alive", return_value=True), \
+                mock.patch.object(supervisor_module, "kill_process_tree") as kill_tree:
+            supervisor._terminate_child()
+
+        kill_tree.assert_called_once_with(222)
+        self.assertTrue(supervisor.child is None)
+
     def test_restart_backoff_resets_only_after_stable_ready_window(self):
         import focuscheck_supervisor as supervisor_module
         from focuscheck_supervisor import FocusCheckSupervisor

@@ -422,6 +422,11 @@ class App:
         # quick first pop to prove it works
         self._schedule_next(2000)
         self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")
+        # The initial heartbeat is emitted during construction while the
+        # lifecycle is still STARTING. Publish READY immediately so a
+        # supervisor does not mistake the normal file-heartbeat cadence for a
+        # hung startup.
+        self._write_heartbeat()
 
     def _apply_initial_monitoring_state(self):
         desired, reason = resolve_initial_monitoring_state(self.settings)

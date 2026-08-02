@@ -8,6 +8,7 @@
 - Packaged child `--selftest`: exited `0` with `FOCUS_DATA_DIR` set to disposable `_package_frozen_probe_runtime`.
 - Frozen supervisor `--help`: exited `0`; frozen supervisor target resolution points at sibling `FocusCheck.exe`.
 - Packaged supervisor self-test: reached a protocol-version `1` ready heartbeat, captured a valid child PID, and reaped the supervisor process tree within the bounded timeout on Windows (forced tree termination reports exit code `1`).
+- Current packaged protocol rerun: reached `READY`, wrote a generation-bound intentional-stop request, received a matching durable acknowledgement, and exited cleanly after supervisor-owned cleanup of both the outer frozen child and validated inner heartbeat PID; no package-owned processes remained afterward.
 - Disposable package transaction simulation: promotion retained the previous package and wrote a SHA-256 manifest; rollback restored the previous executable and retained the failed package directory; install/upgrade/uninstall preserved the data root and archived binaries.
 
-This proves the source package build, dual frozen entrypoints, packaged child self-test, and scripted package lifecycle transactions. Installer shell integration, code signing, a long-running packaged supervisor launch, and native manual evidence remain open.
+This proves the source package build, dual frozen entrypoints, packaged child self-test, bounded packaged supervisor readiness/intentional-stop/reaping, and scripted package lifecycle transactions. Installer shell integration, code signing, production-duration packaged supervision, and native manual evidence remain open.

@@ -8,11 +8,12 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 from pathlib import Path
 
 
 def _terminate_process_tree(pid: int) -> None:
-    """Stop only the supervisor process launched by this test."""
+    """Stop only the requested test process tree."""
     if os.name == "nt":
         subprocess.run(
             ["taskkill", "/F", "/T", "/PID", str(pid)],
@@ -25,6 +26,34 @@ def _terminate_process_tree(pid: int) -> None:
         os.kill(pid, 15)
     except OSError:
         pass
+
+
+def _write_stop_request(path: Path, heartbeat: dict, child_pid: int) -> str:
+    """Write the same generation-bound stop contract used by the App."""
+    request_id = uuid.uuid4().hex
+    payload = {
+        "protocol_version": 1,
+        "request_id": request_id,
+        "supervisor_id": str(heartbeat.get("supervisor_id", "")),
+        "generation": str(heartbeat.get("generation", "")),
+        "pid": int(child_pid),
+        "process_start_utc": str(heartbeat.get("process_start_utc", "")),
+        "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "reason": "packaged_selftest",
+    }
+    temporary = path.with_name(f"{path.name}.{os.getpid()}.{request_id}.tmp")
+    try:
+        with temporary.open("w", encoding="ascii") as handle:
+            json.dump(payload, handle, separators=(",", ":"))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        try:
+            temporary.unlink()
+        except OSError:
+            pass
+    return request_id
 
 
 def main() -> int:
@@ -42,8 +71,9 @@ def main() -> int:
     data.mkdir(parents=True, exist_ok=True)
     heartbeat = data / "hb.txt"
     stop_file = data / "supervisor.stop"
+    stop_ack_file = data / "supervisor.stop.ack"
     log_file = data / "frozen-supervisor.log"
-    for path in (heartbeat, stop_file):
+    for path in (heartbeat, stop_file, stop_ack_file):
         try:
             path.unlink()
         except FileNotFoundError:
@@ -54,6 +84,7 @@ def main() -> int:
         "FOCUS_DATA_DIR": str(data),
         "FOCUSCHECK_SUPERVISOR_LOCK_FILE": str(data / "supervisor.lock"),
         "FOCUSCHECK_SUPERVISOR_STOP_FILE": str(stop_file),
+        "FOCUSCHECK_SUPERVISOR_STOP_ACK_FILE": str(stop_ack_file),
     })
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
     process = subprocess.Popen(
@@ -84,15 +115,18 @@ def main() -> int:
         child_pid = int(payload["pid"])
         if child_pid <= 0:
             raise RuntimeError("packaged supervisor reported an invalid child PID")
-        # The packaged app has no deterministic UI exit action in a headless
-        # test. Kill only this test's supervisor tree after readiness and
-        # verify that the supervisor process is reaped within the bound.
-        _terminate_process_tree(process.pid)
+        # Request an intentional stop. The supervisor must validate the
+        # request, terminate its owned child, and publish its durable ack.
+        request_id = _write_stop_request(stop_file, payload, child_pid)
         process.wait(timeout=15)
-        expected_forced_exit = os.name == "nt" and process.returncode == 1
-        if process.returncode != 0 and not expected_forced_exit:
+        if process.returncode != 0:
             raise RuntimeError(f"packaged supervisor exited with {process.returncode}")
-        print(f"packaged_supervisor_ready pid={process.pid} child_pid={child_pid} exit={process.returncode}")
+        if not stop_ack_file.exists():
+            raise RuntimeError("packaged supervisor exited without a stop acknowledgement")
+        acknowledgement = json.loads(stop_ack_file.read_text(encoding="utf-8"))
+        if acknowledgement.get("status") != "acknowledged" or acknowledgement.get("request_id") != request_id:
+            raise RuntimeError(f"invalid stop acknowledgement: {acknowledgement}")
+        print(f"packaged_supervisor_ready pid={process.pid} child_pid={child_pid} acknowledged={request_id}")
         return 0
     finally:
         if process.poll() is None:
