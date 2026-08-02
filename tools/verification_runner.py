@@ -18,6 +18,11 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from .process_guard import filtered_repository_snapshot, focuscheck_process_snapshot, new_processes
+except ImportError:  # Direct script execution puts tools on sys.path.
+    from process_guard import filtered_repository_snapshot, focuscheck_process_snapshot, new_processes
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "_verify_runtime"
@@ -101,6 +106,8 @@ def main() -> int:
     })
     live_profile = Path(os.environ.get("APPDATA", "")) / "FocusCheck"
     live_before = snapshot_tree(live_profile)
+    repository_before = filtered_repository_snapshot(ROOT, snapshot_tree)
+    process_before = focuscheck_process_snapshot(ROOT)
     py = sys.executable
     stages = [
         ("compileall", [py, "-m", "compileall", "main.py", "focuscheck", "focuscheck_supervisor.py", "tests", "tools"]),
@@ -123,6 +130,38 @@ def main() -> int:
         "elapsed_ms": 0,
         "files_before": len(live_before),
         "files_after": len(live_after),
+    })
+    repository_after = filtered_repository_snapshot(ROOT, snapshot_tree)
+    repository_writes = sorted(set(repository_before) ^ set(repository_after))
+    repository_writes.extend(sorted(
+        path for path in set(repository_before) & set(repository_after)
+        if repository_before[path] != repository_after[path]
+    ))
+    results.append({
+        "name": "repository_write_guard",
+        "command": ["snapshot", str(ROOT)],
+        "status": "passed" if not repository_writes else "failed",
+        "exit_code": 0 if not repository_writes else 1,
+        "elapsed_ms": 0,
+        "unexpected_paths": repository_writes,
+    })
+    try:
+        process_after = focuscheck_process_snapshot(ROOT)
+        leaked_processes = new_processes(process_before, process_after)
+        process_status = "passed" if not leaked_processes else "failed"
+        process_error = None
+    except Exception as exc:
+        leaked_processes = []
+        process_status = "failed" if os.name == "nt" else "passed"
+        process_error = type(exc).__name__ + ": " + str(exc)
+    results.append({
+        "name": "process_leak_guard",
+        "command": ["process_snapshot", str(ROOT)],
+        "status": process_status,
+        "exit_code": 0 if process_status == "passed" else 1,
+        "elapsed_ms": 0,
+        "leaked_processes": leaked_processes,
+        "error": process_error,
     })
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),

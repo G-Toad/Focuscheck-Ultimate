@@ -35,6 +35,30 @@ class VerificationRunnerTests(unittest.TestCase):
         payload = {"status": "passed", "manual_gates": ["Tk"]}
         self.assertEqual(payload, json.loads(json.dumps(payload)))
 
+    def test_new_processes_only_reports_pids_not_in_baseline(self):
+        from tools.process_guard import new_processes
+
+        before = {10: {"pid": 10, "name": "python.exe"}}
+        after = {
+            10: {"pid": 10, "name": "python.exe"},
+            11: {"pid": 11, "name": "python.exe"},
+        }
+        self.assertEqual([{"pid": 11, "name": "python.exe"}], new_processes(before, after))
+
+    def test_filtered_repository_snapshot_excludes_verifier_outputs(self):
+        from tools.process_guard import filtered_repository_snapshot
+
+        def fake_snapshot(_root):
+            return {
+                "focuscheck/app.py": "a",
+                "_verify_runtime/log.txt": "b",
+                "focuscheck/__pycache__/app.pyc": "c",
+                "docs/refurbishment/verification-report.json": "d",
+            }
+
+        result = filtered_repository_snapshot(Path("."), fake_snapshot)
+        self.assertEqual({"focuscheck/app.py": "a"}, result)
+
 
 if __name__ == "__main__":
     unittest.main()
