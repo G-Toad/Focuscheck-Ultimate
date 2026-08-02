@@ -9,7 +9,7 @@
 ## Release build
 
 1. Install pinned development dependencies with `py -3 -m pip install -r requirements-dev.txt`.
-2. Run `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1`.
+2. Run `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1`. PyInstaller’s work tree is kept outside the candidate directory.
 3. Validate the candidate before promotion:
 
 ```powershell

@@ -30,6 +30,12 @@ class PackagingContractTests(unittest.TestCase):
         ):
             self.assertTrue((root / relative).is_file(), relative)
 
+    def test_build_work_tree_is_outside_distributable_output(self):
+        root = Path(__file__).resolve().parents[1]
+        build = (root / "tools/build_package.ps1").read_text(encoding="utf-8")
+        self.assertIn(".pyinstaller-work", build)
+        self.assertNotIn('Join-Path $OutputDir "build"', build)
+
     def test_package_lifecycle_scripts_are_non_destructive_and_hash_artifacts(self):
         root = Path(__file__).resolve().parents[1]
         promote = (root / "tools/promote_package.ps1").read_text(encoding="utf-8")
