@@ -212,6 +212,30 @@ class FeatureGateTests(unittest.TestCase):
         self.assertEqual([], get_tick_count.argtypes)
         self.assertIs(ctypes.c_ulonglong, get_tick_count.restype)
 
+    def test_windows_idle_guard_exposes_native_api_failure_diagnostics(self):
+        from focuscheck.ui.guards import PauseGuard
+
+        class User32:
+            def GetLastInputInfo(self, _info):
+                return 0
+
+        class Kernel32:
+            GetTickCount64 = lambda self: 100
+
+        class Windll:
+            user32 = User32()
+            kernel32 = Kernel32()
+
+        guard = PauseGuard(lambda: {"pause_on_idle": True, "inactive_as_sleep_seconds": 45})
+        guard._os = "windows"
+        with mock.patch("focuscheck.ui.guards.platform.system", return_value="Windows"), \
+                mock.patch("focuscheck.ui.guards.ctypes.windll", Windll()):
+            self.assertFalse(guard._looks_inactive_by_idle())
+
+        diagnostics = guard.diagnostics()
+        self.assertFalse(diagnostics["healthy"])
+        self.assertIn(diagnostics["last_source"], {"windows.last_input_info", "windows.idle"})
+
 
 class StartupStateTests(unittest.TestCase):
     def test_resolve_initial_monitoring_state_env_overrides(self):

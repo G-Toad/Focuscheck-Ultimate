@@ -23,6 +23,24 @@ class PauseGuard:
         # Event-driven pause flags (Windows lock/sleep)
         self._locked = False
         self._sleeping = False
+        self._last_error = None
+        self._last_source = None
+
+    def diagnostics(self):
+        """Return safe health metadata for support diagnostics and heartbeats."""
+        return {
+            "platform": self._os,
+            "locked": bool(self._locked),
+            "sleeping": bool(self._sleeping),
+            "healthy": self._last_error is None,
+            "last_error": self._last_error,
+            "last_source": self._last_source,
+        }
+
+    def _record_error(self, source, error):
+        # Keep diagnostics bounded and avoid placing native paths or responses in logs.
+        self._last_source = str(source)
+        self._last_error = f"{type(error).__name__}:{str(error)[:120]}" if error else str(source)
 
     # Event hooks (called by platform watchers)
     def set_locked(self, is_locked: bool):
@@ -83,13 +101,14 @@ class PauseGuard:
                         # Handle wrap-around for 32-bit tick count (proper signed arithmetic)
                         idle_ms = (tick_now - int(plii.dwTime)) & 0xFFFFFFFF
                     return idle_ms >= thresh_ms
-                # If API fails, fall back to no-pause
+                self._record_error("windows.last_input_info", None)
                 return False
             else:
                 # On non-Windows, we don't have a clean idle API without deps.
                 # Treat as not-inactive here; lid checks may still pause.
                 return False
-        except Exception:
+        except Exception as exc:
+            self._record_error("windows.idle", exc)
             return False
 
     # ---- Linux laptop lid via ACPI ----
@@ -103,7 +122,8 @@ class PauseGuard:
                     txt = f.read().lower()
                     if "closed" in txt:
                         return True
-        except Exception:
+        except Exception as exc:
+            self._record_error("linux.lid", exc)
             pass
         return False
 
@@ -119,7 +139,8 @@ class PauseGuard:
             ).decode("utf-8", "ignore").lower()
             if "appleclamshellstate" in out and ("= yes" in out or "yes" in out):
                 return True
-        except Exception:
+        except Exception as exc:
+            self._record_error("macos.lid", exc)
             pass
         return False
 

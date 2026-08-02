@@ -1718,6 +1718,12 @@ class App:
                 pause_reason = "guard"
             else:
                 pause_reason = ""
+            guard_health = {}
+            guard_diagnostics = getattr(self.guard, "diagnostics", None)
+            if callable(guard_diagnostics):
+                candidate_health = guard_diagnostics()
+                if isinstance(candidate_health, dict):
+                    guard_health = candidate_health
             payload = {
                 "protocol_version": 1,
                 "supervisor_id": os.environ.get("FOCUSCHECK_SUPERVISOR_ID", ""),
@@ -1732,6 +1738,7 @@ class App:
                 "paused": bool(manual_paused or guard_paused),
                 "manual_paused": manual_paused,
                 "guard_paused": guard_paused,
+                "guard_health": guard_health,
                 "pause_reason": pause_reason,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
             }
