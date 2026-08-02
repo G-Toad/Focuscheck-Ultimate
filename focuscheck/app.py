@@ -1609,14 +1609,17 @@ class App:
         return self._call_on_ui_thread(_show_settings)
 
     def _open_task_dialog_from_tray(self):
-        if getattr(self, "taskdb", None) is None:
-            messagebox.showerror("Unavailable", "Task database not available.")
-            return False  # Failed - no database
-        try:
-            TaskEntryDialog(self.root, on_submit=self._on_new_task_from_tray)
-            return True  # Successfully opened dialog
-        except Exception:
-            return False  # Failed to open dialog
+        def _show_task_dialog():
+            if getattr(self, "taskdb", None) is None:
+                messagebox.showerror("Unavailable", "Task database not available.")
+                return False
+            try:
+                TaskEntryDialog(self.root, on_submit=self._on_new_task_from_tray)
+                return True
+            except Exception:
+                return False
+
+        return self._call_on_ui_thread(_show_task_dialog)
 
     def _on_new_task_from_tray(self, data):
         try:

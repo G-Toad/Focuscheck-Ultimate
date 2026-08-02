@@ -24,3 +24,21 @@ class UiContractTests(unittest.TestCase):
         with mock.patch("builtins.open", mock.mock_open()) as open_mock:
             tray._set_setting("interval_seconds", 30)
         open_mock.assert_not_called()
+
+    def test_tray_task_dialog_is_created_only_on_tk_owner_thread(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._tk_thread_id = 123
+        app.taskdb = object()
+        app.root = mock.Mock()
+        scheduled = []
+        app.root.after.side_effect = lambda _delay, callback: scheduled.append(callback)
+        with mock.patch("focuscheck.app.threading.get_ident", return_value=456), mock.patch(
+            "focuscheck.app.TaskEntryDialog"
+        ) as dialog:
+            self.assertTrue(App._open_task_dialog_from_tray(app))
+            dialog.assert_not_called()
+            self.assertEqual(1, len(scheduled))
+            scheduled[0]()
+            dialog.assert_called_once()
