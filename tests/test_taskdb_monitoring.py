@@ -53,6 +53,29 @@ class DueTimeTests(unittest.TestCase):
 
 
 class TaskDbLifecycleTests(unittest.TestCase):
+    def test_task_timestamps_are_persisted_as_utc(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"))
+            task_id = db.start_task(
+                title="UTC contract",
+                due_utc="2030-01-01T12:00:00+08:00",
+                why="",
+                consequences="",
+            )
+            self.assertEqual("2030-01-01T04:00:00+00:00", db.get_active()["due_utc"])
+            self.assertTrue(db.mark_completed(task_id, "2030-01-01T13:00:00+08:00"))
+            self.assertEqual("2030-01-01T05:00:00+00:00", db.list_history(limit=1)[0]["completed_utc"])
+
+    def test_invalid_task_timestamp_is_rejected_at_persistence_boundary(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"))
+            with self.assertRaises(ValueError):
+                db.start_task(title="bad", due_utc="not-a-date", why="", consequences="")
+
     def test_task_lifecycle_history_analytics_and_events(self):
         from focuscheck.database.task_db import TaskDB
 

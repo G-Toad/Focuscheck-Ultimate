@@ -8,6 +8,27 @@ from datetime import datetime, timezone, timedelta
 from ..utils.logging_utils import log_exception
 
 
+def _normalize_utc(value, *, allow_none=False):
+    """Normalize external timestamps to an explicit UTC ISO-8601 value."""
+    if value is None and allow_none:
+        return None
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        text = str(value or "").strip()
+        if not text:
+            if allow_none:
+                return None
+            raise ValueError("timestamp must not be empty")
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"invalid timestamp: {value!r}") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
 class TaskDB:
     """Manages tasks and sessions in SQLite database."""
     
@@ -153,6 +174,7 @@ class TaskDB:
 
     def start_task(self, *, title, due_utc, why, consequences):
         now = datetime.now(timezone.utc).isoformat()
+        due_utc = _normalize_utc(due_utc, allow_none=True)
         with self._conn() as con:
             cur = con.cursor()
             cur.execute(
@@ -169,6 +191,8 @@ class TaskDB:
     def mark_completed(self, task_id, when_utc=None):
         if when_utc is None:
             when_utc = datetime.now(timezone.utc).isoformat()
+        else:
+            when_utc = _normalize_utc(when_utc)
         with self._conn() as con:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='completed', completed_utc=? WHERE id=? AND status='active'", (when_utc, task_id))
@@ -178,6 +202,8 @@ class TaskDB:
     def mark_failed(self, task_id, when_utc=None, timed_out=False):
         if when_utc is None:
             when_utc = datetime.now(timezone.utc).isoformat()
+        else:
+            when_utc = _normalize_utc(when_utc)
         with self._conn() as con:
             cur = con.cursor()
             try:
@@ -300,6 +326,8 @@ class TaskDB:
         try:
             if when_utc is None:
                 when_utc = datetime.now(timezone.utc).isoformat()
+            else:
+                when_utc = _normalize_utc(when_utc)
             with self._conn() as con:
                 cur = con.cursor()
                 cur.execute(
@@ -317,6 +345,8 @@ class TaskDB:
         try:
             if when_utc is None:
                 when_utc = datetime.now(timezone.utc).isoformat()
+            else:
+                when_utc = _normalize_utc(when_utc)
             with self._conn() as con:
                 cur = con.cursor()
                 cur.execute(

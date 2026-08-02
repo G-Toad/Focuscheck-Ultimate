@@ -1,6 +1,7 @@
 # Release Evidence
 
-- Automated: `125` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Automated: `127` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Task timestamps are normalized to UTC at the persistence boundary, with malformed inputs rejected by regression tests.
 - Settings load/save is covered by an OS-level sidecar lock regression test.
 - Runtime transition journal is App-wired and covered by metadata-only transition tests.
 - Prompt acquisition is coordinator-denied during effective pause/snooze, with regression coverage.
