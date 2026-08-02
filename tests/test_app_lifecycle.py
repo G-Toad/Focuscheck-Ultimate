@@ -164,6 +164,14 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(Path(temp_dir), create_mock.call_args.args[0])
         self.assertEqual(output, Path(create_mock.call_args.args[1]))
 
+    def test_app_data_controls_use_frozen_path_snapshot(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.paths = type("Paths", (), {"root": Path("C:/frozen-focuscheck-root")})()
+        with mock.patch("focuscheck.app.get_data_dir", return_value="C:/different-root"):
+            self.assertEqual(Path("C:/frozen-focuscheck-root"), App._data_root(app))
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

@@ -199,7 +199,9 @@ if platform.system().lower() == "windows":
 
 class App:
     def __init__(self):
-        self._event_ledger = StructuredEventLedger(get_app_paths().structured_events)
+        # Freeze one path snapshot for every component composed by this App.
+        self.paths = get_app_paths()
+        self._event_ledger = StructuredEventLedger(self.paths.structured_events)
         self.lifecycle = LifecycleCoordinator(
             _sink=lambda event: self._event_ledger.append("lifecycle", event)
         )
@@ -234,12 +236,12 @@ class App:
             pass
         self.settings = load_settings()
         try:
-            migration_events = migrate_legacy_data(get_app_paths())
+            migration_events = migrate_legacy_data(self.paths)
             if migration_events:
                 get_logger().info("legacy data migration completed | events=%d", len(migration_events))
         except Exception:
             get_logger().exception("legacy data migration failed", exc_info=True)
-        self._runtime_journal = RuntimeTransitionJournal(get_app_paths().runtime_state)
+        self._runtime_journal = RuntimeTransitionJournal(self.paths.runtime_state)
 
         def record_runtime_event(event):
             self._runtime_journal.append(event)
@@ -269,11 +271,11 @@ class App:
             pass
         # Init task DB
         try:
-            self.taskdb = TaskDB(TASK_DB_PATH)
+            self.taskdb = TaskDB(self.paths.task_db)
         except Exception:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")
-        ensure_log_header()
+        ensure_log_header(self.paths.focus_log)
         self.guard = PauseGuard(lambda: self.settings)
         self._ensure_engine()
         self._scheduled = None
@@ -357,8 +359,8 @@ class App:
                     get_setting=_get,
                     set_setting=_set,
                     open_settings_ui=lambda: self._open_settings_from_tray(),
-                    logs_path=APP_LOG_PATH,
-                    config_path=SETTINGS_PATH,
+                    logs_path=str(self.paths.app_log),
+                    config_path=str(self.paths.settings),
                     icon_image=self._tray_icon_image,
                     on_failure=_on_failure,
                     on_alive=_on_alive,
@@ -1549,9 +1551,16 @@ class App:
                 return False
         return self._call_on_ui_thread(_do_uninstall)
 
+    def _data_root(self) -> Path:
+        """Return the App composition root, with a lifecycle-test fallback."""
+        paths = getattr(self, "paths", None)
+        if paths is not None:
+            return Path(paths.root)
+        return Path(get_data_dir())
+
     def _tray_open_data_folder(self):
         try:
-            path = get_data_dir()
+            path = str(self._data_root())
             if platform.system().lower() == 'windows':
                 os.startfile(path)
             else:
@@ -1562,7 +1571,9 @@ class App:
 
     def _tray_open_logs_folder(self):
         try:
-            path = os.path.dirname(APP_LOG_PATH)
+            paths = getattr(self, "paths", None)
+            log_path = Path(paths.app_log) if paths is not None else Path(APP_LOG_PATH)
+            path = str(log_path.parent)
             if platform.system().lower() == 'windows':
                 os.startfile(path)
             else:
@@ -1578,7 +1589,7 @@ class App:
             from .utils.data_export import export_data
 
             try:
-                data_dir = Path(get_data_dir())
+                data_dir = self._data_root()
                 export_dir = data_dir / "exports"
                 export_dir.mkdir(parents=True, exist_ok=True)
                 output = filedialog.asksaveasfilename(
@@ -1622,7 +1633,7 @@ class App:
             from .utils.data_export import inventory_data
 
             try:
-                report = inventory_data(get_data_dir())
+                report = inventory_data(self._data_root())
                 totals = {}
                 for item in report["files"]:
                     category = item["category"]
@@ -1652,7 +1663,7 @@ class App:
             ):
                 return False
             try:
-                report = clear_data(get_data_dir(), categories=("logs",), confirmed=True)
+                report = clear_data(self._data_root(), categories=("logs",), confirmed=True)
                 deleted = sum(1 for item in report["files"] if item.get("deleted"))
                 messagebox.showinfo("Logs cleared", f"Deleted {deleted} log files.")
                 return True
@@ -1675,7 +1686,7 @@ class App:
                 return False
             try:
                 report = clear_data(
-                    get_data_dir(),
+                    self._data_root(),
                     categories=("settings", "tasks", "camera"),
                     confirmed=True,
                 )
@@ -1707,7 +1718,7 @@ class App:
             if days is None:
                 return False
             try:
-                result = apply_retention(get_data_dir(), max_age_days=days, apply=True)
+                result = apply_retention(self._data_root(), max_age_days=days, apply=True)
                 deleted = sum(1 for item in result if item.get("deleted"))
                 messagebox.showinfo("Log cleanup complete", f"Deleted {deleted} old log files.")
                 return True
@@ -1724,7 +1735,7 @@ class App:
             from .utils.diagnostics import create_bundle, preview_bundle
 
             try:
-                data_dir = Path(get_data_dir())
+                data_dir = self._data_root()
                 preview = preview_bundle(data_dir)
                 files = preview["files"]
                 summary = "\n".join(

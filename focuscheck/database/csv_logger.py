@@ -109,18 +109,19 @@ def _rotate_jsonl_if_needed(path, max_bytes=5_000_000, backups=2):
         log_exception("rotate_jsonl_if_needed failed")
 
 
-def ensure_log_header():
+def ensure_log_header(path=None):
     """Ensure CSV log file exists with proper headers."""
+    path = str(path or LOG_PATH)
     def _write_header():
-        _rotate_csv_if_needed(LOG_PATH)
+        _rotate_csv_if_needed(path)
         needs_header = True
         try:
-            if os.path.exists(LOG_PATH):
+            if os.path.exists(path):
                 try:
-                    needs_header = os.path.getsize(LOG_PATH) == 0
+                    needs_header = os.path.getsize(path) == 0
                 except Exception:
                     needs_header = True
-            with open(LOG_PATH, "a", newline="", encoding="utf-8") as f:
+            with open(path, "a", newline="", encoding="utf-8") as f:
                 w = csv.writer(f)
                 if needs_header:
                     w.writerow([
@@ -134,7 +135,7 @@ def ensure_log_header():
         except Exception:
             log_exception("ensure_log_header: failed to open/write")
 
-    return _safe_csv_write(LOG_PATH, _write_header)
+    return _safe_csv_write(path, _write_header)
 
 
 def append_log(*, response, latency_ms, settings, intensity_level_reached,
