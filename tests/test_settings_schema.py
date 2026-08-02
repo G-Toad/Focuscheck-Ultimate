@@ -34,6 +34,17 @@ class SettingsSchemaContractTests(unittest.TestCase):
         self.assertEqual(sorted(item["key"] for item in manifest), [item["key"] for item in manifest])
         self.assertTrue(all({"key", "canonical_type", "default", "ui_section"}.issubset(item) for item in manifest))
 
+    def test_visible_settings_have_runtime_consumers_outside_editor(self):
+        from tools import settings_inventory
+
+        runtime_files = settings_inventory._runtime_source_files()
+        missing = [
+            key for key in settings_inventory._ui_save_keys()
+            if key != "settings_revision"
+            and not any(key in path.read_text(encoding="utf-8", errors="ignore") for path in runtime_files)
+        ]
+        self.assertEqual([], missing)
+
 
 if __name__ == "__main__":
     unittest.main()

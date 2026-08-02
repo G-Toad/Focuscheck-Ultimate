@@ -8,7 +8,7 @@ For exact per-key reference counts, run:
 py -3 tools\settings_inventory.py
 ```
 
-Current default key count: `230`.
+Current default key count: `231`.
 
 ## Active User-Facing Families
 

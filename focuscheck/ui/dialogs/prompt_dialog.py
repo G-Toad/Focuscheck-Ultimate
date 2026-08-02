@@ -349,10 +349,23 @@ class PromptDialog(
         if not self.settings.get("custom_button_phrases_enabled", False):
             return "Studying" if button_type == "study" else "Wasting time"
 
-        # Get settings
-        mode = self.settings.get(f"{button_type}_phrase_mode", "random")
-        override = (self.settings.get(f"{button_type}_phrase_override", "") or "").strip()
-        phrase_list = self.settings.get(f"{button_type}_phrase_list", [])
+        # Keep the runtime setting contract explicit so inventory tooling can
+        # prove that both persisted phrase families have a consumer.
+        phrase_keys = {
+            "study": {
+                "mode": "study_phrase_mode",
+                "override": "study_phrase_override",
+                "list": "study_phrase_list",
+            },
+            "waste": {
+                "mode": "waste_phrase_mode",
+                "override": "waste_phrase_override",
+                "list": "waste_phrase_list",
+            },
+        }[button_type]
+        mode = self.settings.get(phrase_keys["mode"], "random")
+        override = (self.settings.get(phrase_keys["override"], "") or "").strip()
+        phrase_list = self.settings.get(phrase_keys["list"], [])
 
         # Override mode - use single phrase
         if mode == "override" and override:
