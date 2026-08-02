@@ -455,6 +455,7 @@ def run_supervisor_scenarios(log: QaLog):
 def run_prompt_flow_scenarios(log: QaLog):
     import unittest.mock as mock
     from focuscheck.app import App
+    from focuscheck.monitoring.engine_v1 import EngineV1
     from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
 
     class Var:
@@ -489,6 +490,33 @@ def run_prompt_flow_scenarios(log: QaLog):
         dialog.slot_start_dt = None
         dialog._closed = False
         return dialog
+
+    with scenario(log, "v1.prompt_wiring"):
+        class V1App:
+            root = object()
+            taskdb = object()
+
+            @staticmethod
+            def _on_prompt_done():
+                return None
+
+        slot_info = {"utc_start": "2030-01-01T00:00:00+00:00"}
+        settings = {"monitoring_mode": "v1"}
+        with mock.patch("focuscheck.monitoring.engine_v1.PromptDialog") as prompt_cls:
+            dialog = EngineV1(V1App()).create_prompt(settings, slot_info)
+        kwargs = prompt_cls.call_args.kwargs
+        args = prompt_cls.call_args.args
+        checks = {
+            "returned_dialog": dialog is prompt_cls.return_value,
+            "root": args[0] is V1App.root,
+            "settings": args[1] is settings,
+            "submit_callback": kwargs["on_submit"] is V1App._on_prompt_done,
+            "slot": kwargs["slot_start_dt"] is slot_info,
+            "taskdb": kwargs["taskdb"] is V1App.taskdb,
+            "app_ref": kwargs["app_ref"] is not None,
+        }
+        log.event("v1.prompt_wiring", "assert_prompt_dependencies", all(checks.values()), checks=checks)
+        assert all(checks.values())
 
     with scenario(log, "v2.intervention_exception_resets_state"):
         dialog = make_dialog()
