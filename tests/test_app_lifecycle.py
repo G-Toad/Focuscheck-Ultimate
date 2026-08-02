@@ -162,6 +162,29 @@ class AppLifecycleTests(unittest.TestCase):
             self.assertEqual(["tray.stop", "watcher.close", "root.destroy"], events)
             exit_mock.assert_called_once_with(0)
 
+    def test_windows_shutdown_query_prepares_without_exiting(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._windows_shutdown_query = False
+        with mock.patch("focuscheck.app.get_logger") as logger:
+            App._handle_system_shutdown(app, "query_end_session")
+
+        self.assertTrue(app._windows_shutdown_query)
+        logger.return_value.info.assert_called_once()
+
+    def test_windows_end_session_uses_normal_cleanup_coordinator(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._shutdown_requested = False
+        calls = []
+        app._quit = lambda **kwargs: calls.append(kwargs)
+
+        App._handle_system_shutdown(app, "end_session")
+
+        self.assertEqual([{"reason": "windows_end_session"}], calls)
+
     def test_run_preserves_mainloop_exception_after_cleanup(self):
         from focuscheck.app import App
 

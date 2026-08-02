@@ -902,26 +902,14 @@ class App:
             pass
 
     def _handle_system_shutdown(self, stage: str):
-        if self._shutdown_requested:
+        if stage == "query_end_session":
             try:
-                get_logger().info("system shutdown already in progress (stage=%s)", stage)
+                get_logger().info("system shutdown query received; preparing without committing exit")
             except Exception:
                 pass
+            self._windows_shutdown_query = True
             return
-        self._shutdown_requested = True
-        lifecycle = getattr(self, "lifecycle", None)
-        if lifecycle is not None:
-            lifecycle.begin_shutdown(reason=f"windows_{stage}")
-        try:
-            get_logger().info("system shutdown requested | stage=%s", stage)
-        except Exception:
-            pass
-        try:
-            self.root.destroy()
-        except Exception:
-            pass
-        time.sleep(0.1)
-        os._exit(0)
+        self._quit(reason=f"windows_{stage}")
 
     def _on_prompt_done(self):
         prompt = self._current_prompt
@@ -1655,15 +1643,18 @@ class App:
         except Exception:
             pass
 
-    def _quit(self):
+    def _quit(self, *, reason: str = "user_exit"):
+        if getattr(self, "_shutdown_requested", False):
+            return
+        self._shutdown_requested = True
         try:
-            get_logger().info("quit requested")
+            get_logger().info("quit requested | reason=%s", reason)
         except Exception:
             pass
         lifecycle = getattr(self, "lifecycle", None)
         if lifecycle is not None:
-            lifecycle.begin_shutdown(reason="user_exit")
-        self._request_supervisor_stop()
+            lifecycle.begin_shutdown(reason=reason)
+        self._request_supervisor_stop(reason=reason)
         try:
             if getattr(self, "_runtime_state", None) is not None:
                 self._runtime_state.request_shutdown()
@@ -1689,7 +1680,7 @@ class App:
             lifecycle.mark_stopped(reason="user_exit_complete")
         sys.exit(0)
 
-    def _request_supervisor_stop(self):
+    def _request_supervisor_stop(self, *, reason: str = "user_exit"):
         stop_file = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE")
         if not stop_file:
             return
@@ -1705,7 +1696,7 @@ class App:
                 "pid": os.getpid(),
                 "process_start_utc": getattr(self, "_process_start_utc", ""),
                 "utc": datetime.now(timezone.utc).isoformat(),
-                "reason": "user_exit",
+                "reason": str(reason)[:80],
             }
             temp_path = stop_path.with_name(f"{stop_path.name}.{os.getpid()}.{request['request_id']}.tmp")
             with temp_path.open("w", encoding="ascii") as handle:

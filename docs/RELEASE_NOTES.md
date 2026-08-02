@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 176 unittest cases.
+- Automated test baseline: 178 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -23,3 +23,4 @@
 - Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.
 - Retention now rejects symlink candidates, accepts an injected clock for deterministic planning, and writes metadata-only deletion audit records.
 - A static settings contract now verifies every `_save()` key against the canonical schema and prevents runtime state keys from entering ordinary UI saves.
+- Windows session shutdown now separates `query_end_session` preparation from committed `end_session` cleanup and avoids process-level forced exit.
