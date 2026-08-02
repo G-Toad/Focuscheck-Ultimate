@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 
@@ -67,8 +68,10 @@ class HarnessSupervisor:
                     return
                 item = launch_plan.pop(0)
                 if item == "intentional-exit":
-                    Path(temp_dir, "supervisor.stop").write_text("1", encoding="ascii")
                     proc = FakeProcess(200 + len(inner_self.launches), exit_code=0)
+                    Path(temp_dir, "supervisor.stop").write_text(json.dumps({
+                        "protocol_version": 1, "pid": proc.pid, "reason": "user_exit",
+                    }), encoding="ascii")
                 elif item == "crash":
                     proc = FakeProcess(200 + len(inner_self.launches), exit_code=7)
                 else:

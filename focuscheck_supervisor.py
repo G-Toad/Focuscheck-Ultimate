@@ -440,10 +440,16 @@ class FocusCheckSupervisor:
         except OSError:
             pass
 
-    def _intentional_stop_requested(self) -> bool:
+    def _intentional_stop_requested(self, expected_pid: int | None = None) -> bool:
         try:
-            return self.stop_file.exists()
-        except OSError:
+            payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
+            if int(payload.get("protocol_version", 0)) != 1:
+                return False
+            requested_pid = int(payload.get("pid", 0))
+            if expected_pid is None and self.child is not None:
+                expected_pid = self.child.pid
+            return requested_pid > 0 and (expected_pid is None or requested_pid == expected_pid)
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
             return False
 
     def run(self) -> None:
@@ -451,10 +457,11 @@ class FocusCheckSupervisor:
         while not self.stop_event.is_set():
             if self.child is None or self.child.poll() is not None:
                 if self.child is not None:
+                    exited_pid = self.child.pid
                     exit_code = self.child.poll()
                     self.logger.log(f"FocusCheck exited with {exit_code}")
                     self.child = None
-                    if self._intentional_stop_requested():
+                    if self._intentional_stop_requested(exited_pid):
                         self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
                         self._clear_stop_request()
                         self.stop_event.set()

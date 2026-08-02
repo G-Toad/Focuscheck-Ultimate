@@ -1574,7 +1574,12 @@ class App:
         try:
             os.makedirs(os.path.dirname(stop_file), exist_ok=True)
             with open(stop_file, "w", encoding="ascii") as handle:
-                handle.write(str(time.time()))
+                json.dump({
+                    "protocol_version": 1,
+                    "pid": os.getpid(),
+                    "utc": datetime.now(timezone.utc).isoformat(),
+                    "reason": "user_exit",
+                }, handle)
         except Exception:
             try:
                 get_logger().warning("failed writing supervisor stop request", exc_info=True)
