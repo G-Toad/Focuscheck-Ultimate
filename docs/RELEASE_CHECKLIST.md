@@ -38,6 +38,5 @@ If `pytest` is not installed, use `unittest`; this repo does not require pytest 
 
 ## Known Deferred Work
 
-- `GentleReminderDialog` is intentionally deferred; no active launcher is wired.
 - `webhook_url` is intentionally deferred hidden legacy/default state; there is no webhook dispatch implementation.
 - Inline and standalone task forms now share payload construction; visual/layout duplication remains a lower-risk UI refactor.

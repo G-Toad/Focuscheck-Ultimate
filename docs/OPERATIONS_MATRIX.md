@@ -29,7 +29,7 @@ This matrix is the Phase 7 completion checklist. Each operation should have an e
 - Truth table: `docs/SETTINGS_TRUTH_TABLE.md` classifies active, state-only, internal, legacy, hidden, and dead/decision settings.
 - Isolated QA: `py -3 tools\qa_scenario_runner.py --reset` must produce `qa_failures=0` and `_qa_runtime/report.html`.
 - Known state-only keys: `paused`, `snooze_until_utc`.
-- Known legacy/dead keys to resolve in a later product decision: `webhook_url`, `tasks_decision_threshold_minutes`, `tasks_post_eval_minutes`, `gentle_reminder_enabled`, `gentle_reminder_interval`.
+- Known legacy/dead keys to resolve in a later product decision: `webhook_url`, `tasks_decision_threshold_minutes`, `tasks_post_eval_minutes`. Gentle reminder settings are active and scheduled by App.
 
 ## Pause, Resume, And Snooze
 

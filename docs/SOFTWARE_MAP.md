@@ -59,7 +59,7 @@ This document maps the extracted project by runtime phase, functional area, and 
 - Waste/distraction state can open `WastePromptDialog`.
 - Snooze confirmation can open `SnoozePromptDialog`.
 - Snooze reminder popups use `SnoozeReminderDialog`.
-- `GentleReminderDialog` exists in code but has no active launcher path; it is dormant until deliberately wired or archived.
+- `GentleReminderDialog` is launched by App's optional gentle-reminder scheduler and is closed through the shutdown cleanup path.
 - Prompt behavior can escalate through challenge validation, spam detection, intervention wizard, audio alarm, overlays, dimming, click-through overlays, camera feed, and task-management panels.
 
 ## Phase 8: Validation And Anti-Spam

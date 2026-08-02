@@ -799,12 +799,19 @@ class BehaviorTabMixin:
     def _save_camera_adjustment_settings(self, new_settings):
         """Persist camera adjustment settings from the adjustment window."""
         try:
-            # Merge into live settings dict so the rest of the app sees updates
-            for key, value in new_settings.items():
-                self.settings[key] = value
-
-            # Save to disk
-            save_settings(self.settings)
+            # Save to disk and do not report success unless the durable write
+            # contract accepted the complete settings document.
+            candidate = dict(self.settings)
+            candidate.update(new_settings)
+            result = save_settings(candidate)
+            if not result:
+                messagebox.showerror(
+                    "Save Error",
+                    getattr(result, "error", None) or "Camera settings could not be written durably.",
+                )
+                return
+            # Merge into live settings only after durable persistence succeeds.
+            self.settings.update(new_settings)
         except Exception as e:
             messagebox.showerror("Save Error", f"Failed to save camera settings: {e}")
             return
@@ -815,20 +822,12 @@ class BehaviorTabMixin:
         """Open the crop adjustment window with live preview."""
         try:
             from ..crop_adjustment_window import CropAdjustmentWindow
-            from ...settings.manager import save_settings
 
             def on_settings_updated(new_settings):
                 """Callback when crop settings are updated."""
                 # Update settings in memory
                 for key, value in new_settings.items():
                     self.settings[key] = value
-
-                # ACTUALLY SAVE TO DISK
-                try:
-                    save_settings(self.settings)
-                except Exception as e:
-                    messagebox.showerror("Save Error", f"Failed to save settings to disk: {e}")
-                    return
 
                 # Update summary display
                 if hasattr(self, 'crop_summary_label'):

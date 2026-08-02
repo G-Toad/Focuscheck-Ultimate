@@ -45,9 +45,9 @@ This document lists all the settings keys found in the codebase and where they a
 The current authoritative settings classification is in `docs/SETTINGS_TRUTH_TABLE.md`.
 
 - State-only defaults without a normal settings UI control: `paused`, `snooze_until_utc`.
-- Internal/default-only keys without a settings UI control: `settings_schema_version`, `overlays_enabled`, `study_phrase_index`, `waste_phrase_index`.
+- Internal/default-only keys without a settings UI control: `settings_schema_version`, `study_phrase_index`, `waste_phrase_index`.
 - Legacy normalized keys without active runtime behavior: `tasks_decision_threshold_minutes`, `tasks_post_eval_minutes`.
-- Defaults with no confirmed runtime consumer: `webhook_url`, `camera_face_fallback_mode`, `gentle_reminder_enabled`, `gentle_reminder_interval`.
+- Defaults with no product feature consumer: `webhook_url` (preserved and validated, but hidden until delivery exists).
 
 The authoritative regression entry point for settings semantics is:
 

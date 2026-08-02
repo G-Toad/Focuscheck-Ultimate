@@ -77,7 +77,7 @@ Tasks:
 
 - For each settings tab, verify every control saves the intended key.
 - For each saved key, verify the runtime actually consumes it.
-- Hide or label dead settings: `webhook_url`, `gentle_reminder_*`, and other no-consumer keys unless implemented.
+- Hide or label dead settings: `webhook_url` and other no-consumer keys unless implemented. Gentle reminders are now wired and must retain lifecycle coverage.
 - Decide whether legacy task decision keys stay as migration-only or are removed from visible UI.
 - Add settings round-trip tests for high-risk booleans and numeric clamps.
 
@@ -132,7 +132,7 @@ Acceptance:
 
 Objective: stop pretending unfinished features are complete.
 
-Status: completed for release-candidate scope. Dormant webhook and gentle-reminder paths are hidden/documented rather than presented as finished features.
+Status: completed for release-candidate scope. Webhook delivery remains deferred and hidden; gentle-reminder settings and launcher are active, with scheduler lifecycle coverage.
 
 Tasks:
 

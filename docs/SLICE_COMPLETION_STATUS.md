@@ -23,8 +23,8 @@ automated, deferred by explicit product decision, or manual Windows gated.
 ## Completed As Deferred Product Decisions
 
 6. Gentle reminder.
-   Decision: keep legacy settings and dormant dialog code readable for old configs/imports, but do not expose or launch it.
-   Evidence: settings save payload excludes `gentle_reminder_*`; release docs identify it as deferred.
+   Decision: keep gentle-reminder settings optional and expose them through schema-generated controls; launch and shutdown behavior is covered by App lifecycle tests.
+   Evidence: `gentle_reminder_*` is persisted by the generated settings binding and the scheduler lifecycle regression covers the dialog path.
 
 7. Webhook.
    Decision: keep `webhook_url` as hidden legacy/default state until a real dispatch implementation exists.

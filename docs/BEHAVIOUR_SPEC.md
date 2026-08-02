@@ -114,7 +114,7 @@ This file defines externally observable behaviour that agents must preserve unle
 2. Malformed settings fall back safely.
 3. Boolean strings such as `"false"` and `"no"` normalize to false.
 4. Unknown keys are classified before removal.
-5. Dormant keys such as `webhook_url` and gentle-reminder settings are not user-facing until implemented.
+5. `webhook_url` remains a hidden compatibility key until webhook delivery is implemented; gentle-reminder settings are user-facing optional configuration and schedule a non-blocking reminder when enabled.
 
 ## Dialog Controls
 
@@ -133,4 +133,3 @@ The following cannot be considered fully proven by current automated tests:
 - Sleep/resume and workstation lock/unlock notifications.
 - Real browser active-window URL detection.
 - Overlay behaviour across physical monitors.
-

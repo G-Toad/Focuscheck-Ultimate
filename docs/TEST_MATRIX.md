@@ -11,7 +11,7 @@ This matrix maps important behaviour to automated evidence and remaining manual 
 | Startup | Startup uninstall removes entry | `StartupCommandTests` mocked registry install/uninstall/query tests | Enable/disable from tray and inspect Run key |
 | Main app | Non-Windows API setup does not crash import | Compile/import/selftest | Not required |
 | Settings | Missing/malformed/default normalization, Stage 5 clamps, save payload clamps, and representative tab round-trips | Existing settings tests, `SettingsWindowSaveTests`, and QA harness | Save Settings once in live UI |
-| Settings | Dormant webhook and gentle-reminder keys hidden from save payload | Settings truth table, `SettingsWindowSaveTests`, code review | Confirm no visible webhook/gentle-reminder UI |
+| Settings | Webhook remains hidden while gentle-reminder settings round-trip through the generated Advanced tab | Settings truth table, `SettingsWindowSaveTests`, lifecycle tests | Confirm webhook is not exposed; enable gentle reminder and verify scheduler/close behavior |
 | Pause/snooze | Snooze fields and disabled validation paths | `test_dialog_keyboard`, QA harness | Snooze from tray and prompt |
 | Prompt | Prompt completion idempotency and intervention-active deferral | Existing V2 flow tests and QA harness app presenter scenario | Prompt Now and answer V1/V2 |
 | V2 intervention | Exception/cancel resets app state | `tests/test_v2_flows.py` | Trigger, cancel at selection and spotlight |

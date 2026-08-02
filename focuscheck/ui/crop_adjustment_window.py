@@ -1885,16 +1885,23 @@ class CropAdjustmentWindow(tk.Toplevel):
                 if key.startswith("manual_crop_"):
                     manual_crop_settings[key] = self.settings[key]
 
-            # Update the original settings dict (the one passed in)
+            # Write a candidate document first. The parent and editor state are
+            # updated only after the durable write succeeds.
+            candidate = dict(self.original_settings)
+            candidate.update(manual_crop_settings)
+            result = save_settings(candidate)
+            if not result:
+                messagebox.showerror(
+                    "Save Error",
+                    getattr(result, "error", None) or "Crop settings could not be written durably.",
+                    parent=self,
+                )
+                return False
+
             for key, value in manual_crop_settings.items():
                 self.original_settings[key] = value
-
-            # Call callback to update parent if provided
             if callable(self.on_settings_updated):
                 self.on_settings_updated(manual_crop_settings)
-
-            # ACTUALLY SAVE TO DISK - this is the critical part that was missing!
-            save_settings(self.original_settings)
 
             # Mark as saved
             self.has_unsaved_changes = False

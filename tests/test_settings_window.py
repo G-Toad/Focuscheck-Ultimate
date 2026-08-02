@@ -18,6 +18,55 @@ def _make_root():
 
 
 class SettingsWindowSaveTests(unittest.TestCase):
+    def test_crop_editor_does_not_apply_memory_changes_when_save_fails(self):
+        from focuscheck.ui.crop_adjustment_window import CropAdjustmentWindow
+
+        updated = []
+        editor = CropAdjustmentWindow.__new__(CropAdjustmentWindow)
+        editor.settings = {"manual_crop_zoom": 2.0}
+        editor.original_settings = {"manual_crop_zoom": 1.0}
+        editor.on_settings_updated = updated.append
+        editor.has_unsaved_changes = True
+        editor.title = mock.Mock()
+
+        with mock.patch("focuscheck.ui.crop_adjustment_window.save_settings", return_value=False), \
+                mock.patch("focuscheck.ui.crop_adjustment_window.messagebox.showerror") as showerror:
+            self.assertFalse(editor._save_to_disk())
+
+        self.assertEqual(1.0, editor.original_settings["manual_crop_zoom"])
+        self.assertEqual([], updated)
+        showerror.assert_called_once()
+
+    def test_crop_editor_applies_memory_changes_after_durable_save(self):
+        from focuscheck.ui.crop_adjustment_window import CropAdjustmentWindow
+
+        updated = []
+        editor = CropAdjustmentWindow.__new__(CropAdjustmentWindow)
+        editor.settings = {"manual_crop_zoom": 2.0}
+        editor.original_settings = {"manual_crop_zoom": 1.0}
+        editor.on_settings_updated = updated.append
+        editor.has_unsaved_changes = True
+        editor.title = mock.Mock()
+
+        with mock.patch("focuscheck.ui.crop_adjustment_window.save_settings", return_value=True):
+            self.assertTrue(editor._save_to_disk())
+
+        self.assertEqual(2.0, editor.original_settings["manual_crop_zoom"])
+        self.assertEqual([{"manual_crop_zoom": 2.0}], updated)
+
+    def test_camera_editor_does_not_apply_memory_changes_when_save_fails(self):
+        from focuscheck.ui.settings_tabs.behavior_tab import BehaviorTabMixin
+
+        owner = type("Owner", (), {"settings": {"camera_manual_brightness": 0.5}})()
+        with mock.patch("focuscheck.ui.settings_tabs.behavior_tab.save_settings", return_value=False), \
+                mock.patch("focuscheck.ui.settings_tabs.behavior_tab.messagebox.showerror") as showerror:
+            BehaviorTabMixin._save_camera_adjustment_settings(
+                owner, {"camera_manual_brightness": 0.9}
+            )
+
+        self.assertEqual(0.5, owner.settings["camera_manual_brightness"])
+        showerror.assert_called_once()
+
     def _save_window_payload(self, root, settings):
         from focuscheck.ui.windows import AdvancedSettingsWindow
 
