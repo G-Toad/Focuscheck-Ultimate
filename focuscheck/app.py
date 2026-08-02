@@ -67,6 +67,7 @@ from .utils import (
     log_exception,
     get_data_dir,
     get_base_dir,
+    migrate_legacy_data,
     resource_path,
 )
 
@@ -225,6 +226,12 @@ class App:
         except Exception:
             pass
         self.settings = load_settings()
+        try:
+            migration_events = migrate_legacy_data(get_app_paths())
+            if migration_events:
+                get_logger().info("legacy data migration completed | events=%d", len(migration_events))
+        except Exception:
+            get_logger().exception("legacy data migration failed", exc_info=True)
         self._runtime_journal = RuntimeTransitionJournal(get_app_paths().runtime_state)
         self._runtime_state = RuntimeStateCoordinator(
             self.settings,

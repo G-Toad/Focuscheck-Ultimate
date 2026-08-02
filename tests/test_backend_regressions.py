@@ -68,6 +68,26 @@ class SettingsSaveTests(unittest.TestCase):
                     with settings_file_lock(settings_path, timeout=0.1):
                         pass
 
+    def test_legacy_task_and_log_data_migrates_without_destroying_conflicts(self):
+        from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            canonical = get_app_paths(root / "canonical")
+            legacy = root / "legacy"
+            legacy.mkdir()
+            (legacy / "focus_tasks.sqlite3").write_bytes(b"legacy-db")
+            (legacy / "focus_log.csv").write_text("legacy-log", encoding="utf-8")
+            canonical.focus_log.write_text("canonical-log", encoding="utf-8")
+
+            events = migrate_legacy_data(canonical, legacy_root=legacy)
+
+            self.assertEqual(b"legacy-db", canonical.task_db.read_bytes())
+            self.assertEqual("canonical-log", canonical.focus_log.read_text(encoding="utf-8"))
+            self.assertTrue(list(canonical.root.glob("focus_log.csv.legacy-conflict-*")))
+            self.assertEqual({"imported", "conflict_preserved"}, {event["outcome"] for event in events})
+            self.assertTrue((canonical.root / "data_migration.jsonl").exists())
+
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager
 

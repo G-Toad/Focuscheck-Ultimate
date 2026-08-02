@@ -18,6 +18,7 @@ from .paths import (
     get_app_paths,
     get_base_dir,
     get_data_dir,
+    migrate_legacy_data,
     resource_path,
 )
 from .timers import TimerRegistry
@@ -47,6 +48,7 @@ __all__ = [
     "get_audio_alarm",
     "get_base_dir",
     "get_data_dir",
+    "migrate_legacy_data",
     "get_file_lock",
     "get_logger",
     "log_exception",

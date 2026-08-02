@@ -9,7 +9,10 @@ import os
 import sys
 import platform
 import tempfile
+import hashlib
+import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -117,6 +120,81 @@ def choose_path(filename):
 def legacy_path(filename):
     """Return the historical package-directory location for migration only."""
     return os.path.join(get_base_dir(), filename)
+
+
+_MIGRATABLE_DATA_FILES = (
+    "focus_tasks.sqlite3",
+    "focus_log.csv",
+    "focus_waste_log.csv",
+    "focus_study_log.csv",
+    "focus_intervention_reflections.jsonl",
+)
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def migrate_legacy_data(app_paths: "AppPaths | None" = None, *, legacy_root: str | os.PathLike[str] | None = None) -> list[dict]:
+    """Import legacy task/log artifacts without deleting or merging silently."""
+    if legacy_root is None and os.environ.get("FOCUS_DATA_DIR"):
+        return []
+    paths = app_paths or get_app_paths()
+    source_root = Path(legacy_root) if legacy_root is not None else Path(get_base_dir())
+    journal = paths.root / "data_migration.jsonl"
+    events: list[dict] = []
+
+    for name in _MIGRATABLE_DATA_FILES:
+        source = source_root / name
+        target = paths.root / name
+        if source.resolve() == target.resolve() or not source.is_file():
+            continue
+        try:
+            source_hash = _file_sha256(source)
+            if target.exists():
+                target_hash = _file_sha256(target)
+                if target_hash == source_hash:
+                    outcome = "duplicate_preserved"
+                else:
+                    conflict = target.with_name(f"{target.name}.legacy-conflict-{source_hash[:12]}")
+                    if not conflict.exists():
+                        conflict.write_bytes(source.read_bytes())
+                    outcome = "conflict_preserved"
+                events.append({"file": name, "outcome": outcome, "sha256": source_hash[:12]})
+                continue
+
+            temp = target.with_name(f"{target.name}.{os.getpid()}.legacy.tmp")
+            try:
+                with source.open("rb") as source_handle, temp.open("wb") as target_handle:
+                    for chunk in iter(lambda: source_handle.read(1024 * 1024), b""):
+                        target_handle.write(chunk)
+                    target_handle.flush()
+                    os.fsync(target_handle.fileno())
+                os.replace(temp, target)
+            finally:
+                try:
+                    temp.unlink()
+                except OSError:
+                    pass
+            events.append({"file": name, "outcome": "imported", "sha256": source_hash[:12]})
+        except (OSError, ValueError) as exc:
+            events.append({"file": name, "outcome": "failed", "error_type": type(exc).__name__})
+
+    if events:
+        try:
+            with journal.open("a", encoding="utf-8") as handle:
+                for event in events:
+                    event["utc"] = datetime.now(timezone.utc).isoformat()
+                    handle.write(json.dumps(event, separators=(",", ":")) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+        except OSError:
+            pass
+    return events
 
 
 @dataclass(frozen=True)
