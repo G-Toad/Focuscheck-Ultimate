@@ -38,6 +38,7 @@ SUPERVISOR_LOCK_FILENAME = "supervisor.lock"
 SUPERVISOR_STOP_FILENAME = "supervisor.stop"
 HEARTBEAT_MAX_AGE = 12.0
 HEARTBEAT_GRACE_PERIOD = 15.0
+FILE_HEARTBEAT_INTERVAL_SECONDS = 60.0
 STOP_REQUEST_MAX_AGE = 120.0
 STOP_REQUEST_FUTURE_SKEW = 30.0
 FORCED_RESTART_PAUSE = 0.2
@@ -366,6 +367,8 @@ class FocusCheckSupervisor:
         self.child_generation: str | None = None
         self._last_heartbeat_pid: int | None = None
         self._last_heartbeat_process_start_utc: str | None = None
+        self._last_heartbeat_sequence: int | None = None
+        self._heartbeat_receipt_mono: float | None = None
         self._restart_history: list[float] = []
         self._degraded_until = 0.0
         suppress_windows_error_dialogs()
@@ -411,6 +414,8 @@ class FocusCheckSupervisor:
         self.child_generation = uuid.uuid4().hex
         self._last_heartbeat_pid = None
         self._last_heartbeat_process_start_utc = None
+        self._last_heartbeat_sequence = None
+        self._heartbeat_receipt_mono = None
         env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
         env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
@@ -528,6 +533,18 @@ class FocusCheckSupervisor:
                 frozen_child = self.target_script.suffix.lower() == ".exe"
                 if not frozen_child or not _pid_is_alive(heartbeat_pid):
                     return True
+            sequence = int(payload.get("sequence", -1))
+            interval = float(payload.get("heartbeat_interval_seconds", FILE_HEARTBEAT_INTERVAL_SECONDS))
+            timeout = max(HEARTBEAT_MAX_AGE, interval * 2.0 + 5.0)
+            if sequence >= 0:
+                receipt = time.monotonic()
+                if (
+                    getattr(self, "_last_heartbeat_sequence", None) != sequence
+                    or getattr(self, "_heartbeat_receipt_mono", None) is None
+                ):
+                    self._last_heartbeat_sequence = sequence
+                    self._heartbeat_receipt_mono = receipt
+                return receipt - self._heartbeat_receipt_mono > timeout
             from datetime import datetime, timezone
             timestamp = datetime.fromisoformat(str(heartbeat_utc).replace("Z", "+00:00"))
             age = time.time() - timestamp.astimezone(timezone.utc).timestamp()

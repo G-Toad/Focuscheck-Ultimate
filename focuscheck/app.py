@@ -79,6 +79,8 @@ from .utils.paths import (
     get_app_paths,
 )
 
+FILE_HEARTBEAT_INTERVAL_SECONDS = 60_000
+
 
 def resolve_initial_monitoring_state(settings):
     """Return (started_bool, reason) for initial monitoring state."""
@@ -1699,6 +1701,7 @@ class App:
                 "pid": os.getpid(),
                 "process_start_utc": process_start_utc,
                 "sequence": self._heartbeat_sequence,
+                "heartbeat_interval_seconds": FILE_HEARTBEAT_INTERVAL_SECONDS / 1000,
                 "readiness": "ready",
                 "tk_pulse": True,
                 "paused": bool(manual_paused or guard_paused),
@@ -1718,10 +1721,15 @@ class App:
                 self._write_heartbeat()
             finally:
                 if not hasattr(self, "_timers"):
-                    self.root.after(60_000, hb)
+                    self.root.after(FILE_HEARTBEAT_INTERVAL_SECONDS, hb)
         hb()
         if hasattr(self, "_timers"):
-            self._timers.schedule("file-heartbeat", 60_000, hb, interval_ms=60_000)
+            self._timers.schedule(
+                "file-heartbeat",
+                FILE_HEARTBEAT_INTERVAL_SECONDS,
+                hb,
+                interval_ms=FILE_HEARTBEAT_INTERVAL_SECONDS,
+            )
 
     def _start_snooze_reminder_check(self):
         """Start periodic check for showing snooze reminder."""

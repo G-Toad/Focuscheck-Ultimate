@@ -44,4 +44,30 @@ class HeartbeatProtocolTests(unittest.TestCase):
         self.assertEqual(1, payload["protocol_version"])
         self.assertEqual("gen", payload["generation"])
         self.assertEqual(1, payload["sequence"])
+        self.assertEqual(60, payload["heartbeat_interval_seconds"])
         self.assertEqual("ready", payload["readiness"])
+
+    def test_supervisor_uses_sequence_receipt_time_not_wall_clock_age(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            heartbeat = Path(temp_dir) / "hb.txt"
+            supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+            supervisor.heartbeat_path = heartbeat
+            supervisor.child_generation = "current"
+            supervisor._heartbeat_grace_deadline = 0.0
+            supervisor.child = mock.Mock(pid=123, poll=lambda: None)
+            payload = {
+                "protocol_version": 1,
+                "readiness": "ready",
+                "generation": "current",
+                "utc": "2000-01-01T00:00:00+00:00",
+                "pid": 123,
+                "process_start_utc": "2030-01-01T00:00:00+00:00",
+                "sequence": 1,
+                "heartbeat_interval_seconds": 1,
+            }
+            heartbeat.write_text(json.dumps(payload), encoding="utf-8")
+            with mock.patch("focuscheck_supervisor.time.monotonic", side_effect=[0.0, 0.0, 13.0, 13.0]):
+                self.assertFalse(supervisor._heartbeat_stale())
+                self.assertTrue(supervisor._heartbeat_stale())
