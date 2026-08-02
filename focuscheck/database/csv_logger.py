@@ -19,6 +19,13 @@ FOCUS_LOG_PATH = choose_path("focus_study_log.csv")
 INTERVENTION_REFLECTION_PATH = choose_path("focus_intervention_reflections.jsonl")
 
 
+def _excel_safe(value):
+    """Prevent spreadsheet formula execution in exported text fields."""
+    if isinstance(value, str) and value[:1] in {"=", "+", "-", "@"}:
+        return "'" + value
+    return value
+
+
 def _get_csv_lock(file_path):
     """Get or create a lock for a specific CSV file."""
     with _csv_locks_mutex:
@@ -176,7 +183,7 @@ def append_log(*, response, latency_ms, settings, intensity_level_reached,
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_dt["utc_start"].isoformat(),
                 slot_start_dt["local_minute"],
-                response, on_time, late_by_ms,
+                _excel_safe(response), on_time, late_by_ms,
                 int(latency_ms),
                 int(settings["interval_seconds"]),
                 int(settings["intensify_after_seconds"]),
@@ -269,8 +276,8 @@ def append_waste_log(*, slot_start_dt, latency_ms, what, consequences, active_ta
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_utc,
                 int(latency_ms),
-                what or "",
-                consequences or "",
+                _excel_safe(what or ""),
+                _excel_safe(consequences or ""),
                 (active_task.get("id") if active_task else None),
                 (active_task.get("title") if active_task else "")
             ])
@@ -328,8 +335,8 @@ def append_focus_log(*, slot_start_dt, latency_ms, doing, benefits, active_task)
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_utc,
                 int(latency_ms),
-                doing or "",
-                benefits or "",
+                _excel_safe(doing or ""),
+                _excel_safe(benefits or ""),
                 (active_task.get("id") if active_task else None),
                 (active_task.get("title") if active_task else "")
             ])

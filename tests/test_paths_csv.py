@@ -35,6 +35,13 @@ class PathHelperTests(unittest.TestCase):
 
 
 class CsvLoggerTests(unittest.TestCase):
+    def test_csv_text_is_safe_from_spreadsheet_formulas(self):
+        from focuscheck.database.csv_logger import _excel_safe
+
+        self.assertEqual("'=SUM(A1)", _excel_safe("=SUM(A1)"))
+        self.assertEqual("'@cmd", _excel_safe("@cmd"))
+        self.assertEqual("normal", _excel_safe("normal"))
+
     def test_csv_headers_and_append_rows(self):
         import focuscheck.database.csv_logger as logger
 
