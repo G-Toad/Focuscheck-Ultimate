@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -87,6 +88,54 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertTrue(list(canonical.root.glob("focus_log.csv.legacy-conflict-*")))
             self.assertEqual({"imported", "conflict_preserved"}, {event["outcome"] for event in events})
             self.assertTrue((canonical.root / "data_migration.jsonl").exists())
+
+    def test_legacy_data_manifest_covers_every_durable_task_and_log_artifact(self):
+        from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
+
+        durable_artifacts = {
+            "focus_tasks.sqlite3": b"legacy-db",
+            "focus_log.csv": b"legacy-focus-log",
+            "focus_waste_log.csv": b"legacy-waste-log",
+            "focus_study_log.csv": b"legacy-study-log",
+            "focus_intervention_reflections.jsonl": b"legacy-intervention-log",
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            canonical = get_app_paths(root / "canonical")
+            legacy = root / "legacy"
+            legacy.mkdir()
+            for name, payload in durable_artifacts.items():
+                (legacy / name).write_bytes(payload)
+
+            # A byte-identical target is retained as a duplicate, while a
+            # different target keeps the legacy bytes in a hash-addressed copy.
+            canonical.task_db.write_bytes(durable_artifacts["focus_tasks.sqlite3"])
+            canonical.focus_log.write_bytes(b"canonical-focus-log")
+
+            events = migrate_legacy_data(canonical, legacy_root=legacy)
+            outcomes = {event["file"]: event["outcome"] for event in events}
+
+            self.assertEqual("duplicate_preserved", outcomes["focus_tasks.sqlite3"])
+            self.assertEqual("conflict_preserved", outcomes["focus_log.csv"])
+            self.assertEqual(
+                {"imported", "duplicate_preserved", "conflict_preserved"},
+                set(outcomes.values()),
+            )
+            for name in (
+                "focus_waste_log.csv",
+                "focus_study_log.csv",
+                "focus_intervention_reflections.jsonl",
+            ):
+                self.assertEqual(durable_artifacts[name], (canonical.root / name).read_bytes())
+
+            journal = canonical.root / "data_migration.jsonl"
+            journal_events = [
+                json.loads(line)
+                for line in journal.read_text(encoding="utf-8").splitlines()
+            ]
+            self.assertEqual(set(durable_artifacts), {event["file"] for event in journal_events})
+            self.assertTrue(list(canonical.root.glob("focus_log.csv.legacy-conflict-*")))
 
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager
