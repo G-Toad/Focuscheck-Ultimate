@@ -561,7 +561,11 @@ class App:
                 self._set_paused(False, source="snooze_expired_startup")
                 self._schedule_next(0)
 
-            self._snooze_unpause_timer_id = self.root.after(remaining_ms, _expire_snooze)
+            if hasattr(self, "_timers"):
+                self._timers.schedule("snooze-expiry", remaining_ms, _expire_snooze)
+                self._snooze_unpause_timer_id = self._timers.callback_id("snooze-expiry")
+            else:
+                self._snooze_unpause_timer_id = self.root.after(remaining_ms, _expire_snooze)
         except Exception:
             self.settings["snooze_until_utc"] = ""
             save_settings(self.settings)

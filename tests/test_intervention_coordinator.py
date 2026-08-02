@@ -68,11 +68,11 @@ class InterventionCoordinatorTests(unittest.TestCase):
         dialog = object.__new__(WindowSelectionDialog)
         dialog._front_timer_id = "front"
         dialog._tab_scan_timer_id = "tabs"
-        dialog.after_cancel = mock.Mock()
+        dialog._timers = mock.Mock()
 
         dialog._cancel_scheduled_callbacks()
 
-        self.assertEqual([mock.call("front"), mock.call("tabs")], dialog.after_cancel.call_args_list)
+        dialog._timers.close.assert_called_once_with()
         self.assertIsNone(dialog._front_timer_id)
         self.assertIsNone(dialog._tab_scan_timer_id)
 

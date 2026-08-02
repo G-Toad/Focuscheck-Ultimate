@@ -5,7 +5,7 @@
 | Tk root and callbacks | `App` | `_quit` destroys root after component cleanup. |
 | Prompt instance | `App` plus prompt lifecycle methods | `_close`/cleanup is idempotent. |
 | V2 subpopup timer | `EngineV2` | `shutdown` cancels timer. |
-| Intervention wizard/overlay | `InterventionWizard` | wizard cleanup and cancellation path. |
+| Intervention wizard/selection/overlay timers | `InterventionWizard`, `WindowSelectionDialog`, `SpotlightOverlay` | local registries close recurring callbacks before Tk/native destruction. |
 | Settings persistence | `settings.manager` | process lock, temp file, backup, quarantine. |
 | Task SQLite connection | `TaskDB` | context-managed connection per operation. |
 | Supervisor child | `FocusCheckSupervisor` | terminate/kill tree on shutdown. |

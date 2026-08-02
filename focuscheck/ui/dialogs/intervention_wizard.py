@@ -72,6 +72,7 @@ class WindowSelectionDialog(tk.Toplevel):
         self._tab_threads = []
         self._front_timer_id = None
         self._tab_scan_timer_id = None
+        self._timers = TimerRegistry(self)
 
         try:
             self._build_ui(preselect_hwnd, preselect_title)
@@ -239,14 +240,9 @@ class WindowSelectionDialog(tk.Toplevel):
 
     def _cancel_scheduled_callbacks(self):
         """Cancel recurring callbacks before the Toplevel is destroyed."""
-        for attr in ("_front_timer_id", "_tab_scan_timer_id"):
-            timer_id = getattr(self, attr, None)
-            if timer_id:
-                try:
-                    self.after_cancel(timer_id)
-                except Exception:
-                    pass
-                setattr(self, attr, None)
+        self._timers.close()
+        self._front_timer_id = None
+        self._tab_scan_timer_id = None
 
     def destroy(self):
         self._cancel_scheduled_callbacks()
@@ -264,7 +260,8 @@ class WindowSelectionDialog(tk.Toplevel):
         except Exception:
             pass
         try:
-            self._front_timer_id = self.after(800, self._force_front_loop)
+            self._timers.schedule("force-front", 800, self._force_front_loop)
+            self._front_timer_id = self._timers.callback_id("force-front")
         except Exception:
             pass
 
@@ -292,7 +289,8 @@ class WindowSelectionDialog(tk.Toplevel):
             self._tab_threads.append(t)
             t.start()
         try:
-            self._tab_scan_timer_id = self.after(200, self._drain_tab_queue)
+            self._timers.schedule("tab-scan", 200, self._drain_tab_queue)
+            self._tab_scan_timer_id = self._timers.callback_id("tab-scan")
         except Exception:
             pass
 
@@ -325,13 +323,10 @@ class WindowSelectionDialog(tk.Toplevel):
                         self.listbox.selection_set(len(self._items) - 1)
                     except Exception:
                         pass
-        try:
-            if not drained:
-                self._tab_scan_timer_id = self.after(200, self._drain_tab_queue)
-            else:
-                self._tab_scan_timer_id = self.after(400, self._drain_tab_queue)
-        except Exception:
-            pass
+        # Replace the one-shot scan through the registry so the slower
+        # cadence after a productive drain is preserved without raw Tk IDs.
+        self._timers.schedule("tab-scan", 200 if not drained else 400, self._drain_tab_queue)
+        self._tab_scan_timer_id = self._timers.callback_id("tab-scan")
 
     @staticmethod
     def prompt(parent, windows, preselect_hwnd=None, preselect_title=None, raise_above=None):
@@ -362,6 +357,7 @@ class SpotlightOverlay(tk.Toplevel):
         self._last_tick_log = 0.0
         self._last_region_log = 0.0
         self._after_id = None
+        self._timers = TimerRegistry(self)
         self.overrideredirect(True)
         self.attributes("-topmost", True)
         origin_x, origin_y, screen_w, screen_h = _get_virtual_screen_rect()
@@ -510,7 +506,8 @@ class SpotlightOverlay(tk.Toplevel):
                         get_logger().info("spotlight: update tick running (no overlay)")
                 except Exception:
                     pass
-                self._after_id = self.after(200, self._update_spotlight)
+                self._timers.schedule("spotlight-update", 200, self._update_spotlight)
+                self._after_id = self._timers.callback_id("spotlight-update")
                 return
             if self._use_native and self._native_overlay:
                 try:
@@ -546,7 +543,8 @@ class SpotlightOverlay(tk.Toplevel):
                 pass
             self.close()
             return
-        self._after_id = self.after(50, self._update_spotlight)
+        self._timers.schedule("spotlight-update", 50, self._update_spotlight)
+        self._after_id = self._timers.callback_id("spotlight-update")
 
     def _enable_click_through(self):
         try:
@@ -571,12 +569,8 @@ class SpotlightOverlay(tk.Toplevel):
         if self._closed:
             return
         self._closed = True
-        if self._after_id:
-            try:
-                self.after_cancel(self._after_id)
-            except Exception:
-                pass
-            self._after_id = None
+        self._timers.close()
+        self._after_id = None
         try:
             if self._native_overlay is not None:
                 self._native_overlay.destroy()

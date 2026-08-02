@@ -312,6 +312,29 @@ class SnoozeStateTests(unittest.TestCase):
             self.assertEqual("", app.settings["snooze_until_utc"])
             save_settings.assert_called_once()
 
+    def test_startup_snooze_expiry_uses_timer_registry(self):
+        from focuscheck.app import App
+        app = App.__new__(App)
+        app.root = FakeRoot()
+        app._timers = mock.Mock()
+        app._timers.callback_id.return_value = "registry-timer-1"
+        app.settings = {
+            "snooze_until_utc": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+            "paused": False,
+        }
+        app._snooze_unpause_timer_id = None
+        app._set_paused = mock.Mock()
+        app._schedule_next = mock.Mock()
+
+        with mock.patch("focuscheck.app.save_settings"):
+            App._reconcile_snooze_state_on_startup(app)
+
+        self.assertIsNotNone(app._snooze_unpause_timer_id)
+        app._timers.schedule.assert_called_once()
+        self.assertEqual("snooze-expiry", app._timers.schedule.call_args.args[0])
+        self.assertIsNotNone(app._timers.callback_id("snooze-expiry"))
+        self.assertEqual([], app.root.scheduled)
+
     def test_snooze_state_preserves_manual_pause_and_expires_without_clearing_it(self):
         from focuscheck.runtime.state import RuntimeStateCoordinator
 

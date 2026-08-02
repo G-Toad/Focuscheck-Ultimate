@@ -4,7 +4,9 @@
 | --- | --- | --- | --- |
 | Named EngineV2 timers | `TimerRegistry.schedule` | generation-aware `cancel`/`close` | runtime-foundation tests; verification runner |
 | Main prompt timer | `App._schedule_next` / `TimerRegistry` | named replacement and generation cancellation. | unit tests |
-| Snooze expiry timer | `App._tray_snooze` | `_cancel_snooze`. | unit tests |
+| Snooze expiry timer | `App._tray_snooze` and startup reconciliation | named `TimerRegistry` entry `snooze-expiry`, `_cancel_snooze`. | unit tests |
+| Intervention selection timers | `WindowSelectionDialog` | local `TimerRegistry` closes fronting and browser-tab polling on close/destroy. | intervention coordinator tests |
+| Spotlight update timer | `SpotlightOverlay` | local `TimerRegistry` closes cursor/region updates before native overlay destruction. | compile/QA; live overlay manual pending |
 | V2 subpopup timer | `EngineV2._schedule_subpopup_check` | `EngineV2.shutdown`. | unit tests/QA |
 | Tk dialog timers | dialog cleanup methods | dialog close/destructor paths. | keyboard tests; manual UI pending |
 | Supervisor child process | `subprocess.Popen` | process-tree termination. | fake supervisor harness |
