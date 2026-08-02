@@ -16,6 +16,43 @@ from .file_lock import settings_file_lock
 
 
 _settings_lock = threading.Lock()
+MAX_SETTINGS_FILE_BYTES = 2 * 1024 * 1024
+MAX_SETTINGS_KEYS = 1000
+MAX_SETTINGS_COLLECTION_ITEMS = 500
+MAX_SETTINGS_STRING_LENGTH = 8192
+MAX_SETTINGS_DEPTH = 12
+
+
+def _assert_settings_budget(value, *, depth=0, seen=None):
+    """Reject unbounded external JSON before normalization or persistence."""
+    if seen is None:
+        seen = set()
+    if depth > MAX_SETTINGS_DEPTH:
+        raise ValueError("settings nesting exceeds safety limit")
+    if isinstance(value, str):
+        if len(value) > MAX_SETTINGS_STRING_LENGTH:
+            raise ValueError("settings string exceeds safety limit")
+        return
+    if isinstance(value, dict):
+        if id(value) in seen:
+            raise ValueError("settings contains a cyclic value")
+        if len(value) > MAX_SETTINGS_KEYS:
+            raise ValueError("settings key count exceeds safety limit")
+        seen.add(id(value))
+        for key, item in value.items():
+            _assert_settings_budget(str(key), depth=depth + 1, seen=seen)
+            _assert_settings_budget(item, depth=depth + 1, seen=seen)
+        seen.remove(id(value))
+        return
+    if isinstance(value, (list, tuple)):
+        if len(value) > MAX_SETTINGS_COLLECTION_ITEMS:
+            raise ValueError("settings collection exceeds safety limit")
+        if id(value) in seen:
+            raise ValueError("settings contains a cyclic value")
+        seen.add(id(value))
+        for item in value:
+            _assert_settings_budget(item, depth=depth + 1, seen=seen)
+        seen.remove(id(value))
 
 
 def _settings_sidecar_paths(settings_path):
@@ -59,6 +96,9 @@ def _read_valid_settings_backup(path):
 
 def validate_settings(data):
     """Coerce and clamp settings to safe ranges; fill defaults; preserve unknown keys."""
+    if not isinstance(data, dict):
+        raise ValueError("settings root must be a JSON object")
+    _assert_settings_budget(data)
     s = DEFAULT_SETTINGS.copy()
 
     # FIRST: Merge ALL keys from data (including unknown ones from plugins/future versions)
@@ -596,6 +636,8 @@ def load_settings():
             try:
                 logger.info("    Opening file for reading...")
                 with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+                    if os.path.getsize(SETTINGS_PATH) > MAX_SETTINGS_FILE_BYTES:
+                        raise ValueError("settings file exceeds safety limit")
                     logger.info("    File opened successfully")
                     logger.info("    Parsing JSON...")
                     data = json.load(f)

@@ -10,6 +10,14 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_settings_input_budget_rejects_large_collections_and_strings(self):
+        from focuscheck.settings.manager import validate_settings
+
+        with self.assertRaises(ValueError):
+            validate_settings({"future_values": ["x"] * 501})
+        with self.assertRaises(ValueError):
+            validate_settings({"future_value": "x" * 8193})
+
     def test_settings_file_lock_serializes_same_process_access(self):
         from focuscheck.settings.file_lock import settings_file_lock
 
