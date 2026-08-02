@@ -75,6 +75,10 @@ class FakeTrayApp:
         self.calls.append("diagnostic")
         return True
 
+    def _tray_show_status(self):
+        self.calls.append("status")
+        return True
+
     def _is_startup_enabled(self):
         return self.startup_enabled
 
@@ -113,9 +117,10 @@ class SystemTrayCommandTests(unittest.TestCase):
         tray._clear_data(None, None)
         tray._retain_logs(None, None)
         tray._diagnostic_bundle(None, None)
+        tray._show_status(None, None)
 
         self.assertEqual(
-            ["pause", "resume", "prompt_now", ("snooze", 5), "task", "data", "logs", "export", "inventory", "clear_logs", "clear_data", "retain_logs", "diagnostic"],
+            ["pause", "resume", "prompt_now", ("snooze", 5), "task", "data", "logs", "export", "inventory", "clear_logs", "clear_data", "retain_logs", "diagnostic", "status"],
             app.calls,
         )
 

@@ -740,6 +740,9 @@ class SystemTray:
     def _diagnostic_bundle(self, icon: Any, item: Any) -> None:
         self._call_app("_tray_diagnostic_bundle")
 
+    def _show_status(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_show_status")
+
     def _show_data_inventory(self, icon: Any, item: Any) -> None:
         self._call_app("_tray_show_data_inventory")
 
@@ -986,6 +989,9 @@ class SystemTray:
 
         logger.info("  Adding menu item: 'Create diagnostic bundle'")
         items.append(pystray.MenuItem("Create diagnostic bundle", self._diagnostic_bundle))
+
+        logger.info("  Adding menu item: 'FocusCheck status'")
+        items.append(pystray.MenuItem("FocusCheck status", self._show_status))
 
         logger.info("  Adding separator")
         items.append(pystray.Menu.SEPARATOR)

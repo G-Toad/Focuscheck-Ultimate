@@ -1141,6 +1141,7 @@ class App:
                 CMD_RETAIN_LOGS = 1015
                 CMD_DIAGNOSTIC = 1016
                 CMD_EXIT = 1017
+                CMD_STATUS = 1018
 
                 actions = {}
                 labels = []
@@ -1186,6 +1187,7 @@ class App:
                         _append(CMD_CLEAR_DATA, "Clear Personal Data", action=self._tray_clear_data)
                         _append(CMD_RETAIN_LOGS, "Clean Old Logs", action=self._tray_retain_logs)
                         _append(CMD_DIAGNOSTIC, "Create Diagnostic Bundle", action=self._tray_diagnostic_bundle)
+                        _append(CMD_STATUS, "FocusCheck Status", action=self._tray_show_status)
                         _separator()
                         _append(CMD_EXIT, "Exit", enabled=exit_enabled, action=self._tray_exit)
 
@@ -1617,6 +1619,105 @@ class App:
         if paths is not None:
             return Path(paths.root)
         return Path(get_data_dir())
+
+    def _diagnostic_status_snapshot(self) -> dict:
+        """Return only health metadata suitable for display to the user."""
+        guard_status = "unknown"
+        try:
+            health = self.guard.diagnostics()
+            if isinstance(health, dict):
+                guard_status = "healthy" if bool(health.get("healthy", True)) else "degraded"
+        except Exception:
+            guard_status = "unavailable"
+        try:
+            lifecycle = getattr(getattr(self, "lifecycle", None), "phase", None)
+            lifecycle = getattr(lifecycle, "value", lifecycle) or "unknown"
+        except Exception:
+            lifecycle = "unknown"
+        try:
+            from .doctor import get_anomalies
+            anomaly_count = len(get_anomalies())
+        except Exception:
+            anomaly_count = 0
+        try:
+            from .settings.schema import get_settings_schema
+            schema_key_count = len(get_settings_schema())
+        except Exception:
+            schema_key_count = "unknown"
+        if bool(getattr(self, "_using_pystray", False)):
+            tray_backend = "pystray"
+        elif bool(getattr(self, "_native_tray_fallback_active", False)):
+            tray_backend = "native fallback"
+        else:
+            tray_backend = "unavailable"
+        return {
+            "application": APP_NAME,
+            "version": APP_VERSION,
+            "lifecycle": lifecycle,
+            "monitoring": "running" if getattr(self, "_engine", None) is not None and not getattr(self, "_engine_shutdown", False) else "stopped",
+            "paused": bool(getattr(self, "settings", {}).get("paused", False)),
+            "prompt_active": getattr(self, "_current_prompt", None) is not None,
+            "intervention_active": bool(getattr(self, "_intervention_active", False)),
+            "guard_status": guard_status,
+            "tray_backend": tray_backend,
+            "settings_schema_keys": schema_key_count,
+            "doctor_anomalies": anomaly_count,
+            "pid": os.getpid(),
+            "data_root": str(self._data_root()),
+        }
+
+    def _tray_show_status(self):
+        """Show a small privacy-safe health window on the Tk owner thread."""
+        def _show():
+            existing = getattr(self, "_diagnostic_status_window", None)
+            try:
+                if existing is not None and existing.winfo_exists():
+                    existing.lift()
+                    existing.focus_force()
+                    existing._refresh()
+                    return True
+            except Exception:
+                pass
+            from .utils.diagnostics import format_status_snapshot
+            window = tk.Toplevel(self.root)
+            window.title("FocusCheck Status")
+            window.geometry("560x430")
+            window.minsize(480, 320)
+            window.transient(self.root)
+            ttk_label = tk.Label(
+                window,
+                text="Operational health only. User responses, task text, URLs, and camera data are not shown.",
+                anchor="w",
+                justify="left",
+                wraplength=520,
+            )
+            ttk_label.pack(fill="x", padx=12, pady=(12, 6))
+            text = tk.Text(window, height=16, width=70, state="disabled", wrap="word")
+            text.pack(fill="both", expand=True, padx=12, pady=6)
+            buttons = tk.Frame(window)
+            buttons.pack(fill="x", padx=12, pady=(0, 12))
+
+            def refresh():
+                rendered = format_status_snapshot(self._diagnostic_status_snapshot())
+                text.configure(state="normal")
+                text.delete("1.0", tk.END)
+                text.insert("1.0", rendered)
+                text.configure(state="disabled")
+
+            def close():
+                self._diagnostic_status_window = None
+                window.destroy()
+
+            tk.Button(buttons, text="Refresh", command=refresh).pack(side="left")
+            tk.Button(buttons, text="Close", command=close).pack(side="right")
+            window.protocol("WM_DELETE_WINDOW", close)
+            window._refresh = refresh
+            self._diagnostic_status_window = window
+            refresh()
+            window.focus_force()
+            return True
+
+        return self._call_on_ui_thread(_show)
 
     def _tray_open_data_folder(self):
         try:

@@ -21,6 +21,28 @@ _PRIVATE_FIELD_PATTERNS = (
 )
 
 
+def format_status_snapshot(snapshot: dict) -> str:
+    """Render a bounded, privacy-safe health snapshot for the status window."""
+    if not isinstance(snapshot, dict):
+        raise TypeError("diagnostic status snapshot must be a mapping")
+    rows = (
+        ("Application", snapshot.get("application", "FocusCheck")),
+        ("Version", snapshot.get("version", "unknown")),
+        ("Lifecycle", snapshot.get("lifecycle", "unknown")),
+        ("Monitoring", snapshot.get("monitoring", "unknown")),
+        ("Paused", snapshot.get("paused", "unknown")),
+        ("Prompt active", snapshot.get("prompt_active", "unknown")),
+        ("Intervention active", snapshot.get("intervention_active", "unknown")),
+        ("Guard", snapshot.get("guard_status", "unknown")),
+        ("Tray backend", snapshot.get("tray_backend", "unknown")),
+        ("Settings schema keys", snapshot.get("settings_schema_keys", "unknown")),
+        ("Doctor anomalies", snapshot.get("doctor_anomalies", "unknown")),
+        ("Process ID", snapshot.get("pid", "unknown")),
+        ("Data root", snapshot.get("data_root", "unknown")),
+    )
+    return "\n".join(f"{label}: {value}" for label, value in rows)
+
+
 def _candidates(root: Path) -> list[Path]:
     paths = sorted(root.glob("*.log"))
     paths.extend((root / name for name in ("verification.json", "structured_events.jsonl", "runtime_state.jsonl")))
@@ -102,4 +124,4 @@ def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Pa
                 pass
 
 
-__all__ = ["create_bundle", "preview_bundle", "sanitize"]
+__all__ = ["create_bundle", "format_status_snapshot", "preview_bundle", "sanitize"]

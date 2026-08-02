@@ -9,6 +9,22 @@ from tools.create_diagnostic_bundle import create_bundle, sanitize
 
 
 class DiagnosticBundleTests(unittest.TestCase):
+    def test_status_formatter_uses_only_whitelisted_health_fields(self):
+        from focuscheck.utils.diagnostics import format_status_snapshot
+
+        rendered = format_status_snapshot({
+            "version": "1.2.3",
+            "lifecycle": "ready",
+            "data_root": "C:/FocusCheck",
+            "private_response": "should not appear",
+            "url": "https://private.example/path",
+        })
+
+        self.assertIn("Version: 1.2.3", rendered)
+        self.assertIn("Lifecycle: ready", rendered)
+        self.assertNotIn("should not appear", rendered)
+        self.assertNotIn("private.example", rendered)
+
     def test_sanitize_redacts_paths_and_credentials(self):
         root = Path("C:/verification")
         value = f"{root}{Path('/log')} password=secret Bearer abc123"

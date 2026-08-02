@@ -26,7 +26,7 @@ from .clock import FakeClock, SystemClock
 from .ui_utils import log_window_state
 from .data_export import clear_data, export_data, inventory_data
 from .data_retention import apply_retention, retention_plan
-from .diagnostics import create_bundle, preview_bundle
+from .diagnostics import create_bundle, format_status_snapshot, preview_bundle
 
 # Backwards-compatible name used by older callers.
 AudioEngine = AudioAlarm
@@ -60,6 +60,7 @@ __all__ = [
     "apply_retention",
     "retention_plan",
     "create_bundle",
+    "format_status_snapshot",
     "preview_bundle",
     "get_logger",
     "configure_log_path",
