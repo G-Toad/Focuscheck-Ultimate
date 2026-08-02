@@ -42,6 +42,8 @@ class SettingsSchemaContractTests(unittest.TestCase):
         self.assertNotIn("paused", SCHEMA_CONTROL_KEYS)
         self.assertNotIn("snooze_until_utc", SCHEMA_CONTROL_KEYS)
         self.assertNotIn("settings_revision", SCHEMA_CONTROL_KEYS)
+        self.assertNotIn("webhook_url", SCHEMA_CONTROL_KEYS)
+        self.assertIn("gentle_reminder_interval", SCHEMA_CONTROL_KEYS)
 
         from tools import settings_inventory
 

@@ -13,7 +13,6 @@ from ..settings.schema import SettingDescriptor, get_settings_schema
 # These settings are runtime state, migration bookkeeping, or have a dedicated
 # editor. They must not be presented as ordinary configuration controls.
 SCHEMA_CONTROL_KEYS = (
-    "webhook_url",
     "overlays_enabled",
     "phrase_acronym_box_size",
     "phrase_acronym_letter_size",

@@ -22,8 +22,9 @@ Current default key count: `231`.
 - Button phrases/acronym: `custom_button_phrases_enabled`, `study_phrase_*`, `waste_phrase_*`, `phrase_acronym_*`.
 - Alerts/overdrive/audio: all `overdrive_stage4_*`, `overdrive_stage5_*`, `jiggle_style`, `disable_jiggling`, `enable_intensity_*`, `enable_overdrive_*`, `audio_*`.
 - Snooze: `snooze_prompt_enabled`, `snooze_prompt_ask_reason`, `snooze_prompt_validation_enabled`, `snooze_prompt_exact_enabled`, `snooze_exact_*`, `snooze_sentence_case_sensitive`, `snooze_prompt_sentences`, `snooze_reminder_*`.
-- Camera/biodata: `camera_feed_*`, `camera_capture_on_click`, `camera_flip_horizontal`, `camera_device_index`, `camera_fps`, `camera_sizing_mode`, face tracking keys, manual crop keys, manual camera adjustment keys, `camera_auto_adapt`, `camera_show_face_detection`, `camera_invert_colors`, all `biodata_*`.
+- Camera/biodata: `camera_feed_*`, `camera_capture_on_click`, `camera_flip_horizontal`, `camera_device_index`, `camera_fps`, `camera_sizing_mode`, face tracking keys, manual crop keys, manual camera adjustment keys, `camera_auto_adapt`, `camera_show_face_detection`, `camera_invert_colors`, all `biodata_*`. The schema-generated Advanced tab exposes the camera tuning values; the crop and live adjustment windows remain specialized editors.
 - Website flags: `website_flags`.
+- Additional generated configuration: `overlays_enabled`, `gentle_reminder_*`, phrase-acronym sizing, snooze exact-typing heuristics, and spam word lists.
 
 ## State-Only Or Internal
 
@@ -31,7 +32,6 @@ Current default key count: `231`.
 - `paused`: durable manual pause state.
 - `snooze_until_utc`: durable snooze expiry state.
 - `study_phrase_index`, `waste_phrase_index`: runtime sequential phrase state.
-- `overlays_enabled`: internal intervention overlay gate. It is active but not exposed in normal settings; expose later only if users need a clear "disable intervention overlays" switch.
 
 ## Legacy/Migration-Only
 
@@ -40,30 +40,22 @@ Current default key count: `231`.
 
 These should stay hidden from UI and eventually be removed after a migration window.
 
-## Hidden Runtime Knobs
+## Specialized Editors
 
-These defaults are consumed but intentionally not normal user controls yet:
+These values are visible in the generated Advanced tab and also have richer
+specialized editors where applicable:
 
-- `camera_face_max_misses`
-- `camera_manual_adjustments_enabled`
-- `camera_manual_brightness`
-- `camera_manual_contrast`
-- `camera_manual_saturation`
-- `camera_manual_sharpness`
-- `camera_manual_gamma`
-- `camera_manual_tint`
-- `camera_auto_adapt`
-- `snooze_exact_min_time_seconds`
-- `snooze_exact_time_per_char`
-- `snooze_exact_min_keypress_ratio`
-- `snooze_exact_max_jump_chars`
-- `snooze_exact_require_focus_during_typing`
+- Camera tuning: `camera_face_max_misses`, `camera_manual_adjustments_enabled`, `camera_manual_brightness`, `camera_manual_contrast`, `camera_manual_saturation`, `camera_manual_sharpness`, `camera_manual_gamma`, `camera_manual_tint`, `camera_auto_adapt`.
+- Snooze exact-typing heuristics: `snooze_exact_min_time_seconds`, `snooze_exact_time_per_char`, `snooze_exact_min_keypress_ratio`, `snooze_exact_max_jump_chars`, `snooze_exact_require_focus_during_typing`.
 
-## Dormant Or Product Decision Required
+## Active Optional Features
 
-- `webhook_url`: legacy/default key with no dispatch implementation. The Settings UI does not save edits to it; keep hidden unless webhook delivery is implemented.
-- `gentle_reminder_enabled`, `gentle_reminder_interval`: no active app launcher. Hide/remove or wire `GentleReminderDialog`.
-- `gentle_reminder_drift_enabled`, `gentle_reminder_drift_delay`, `gentle_reminder_drift_speed`: only read by unlaunched gentle reminder UI. Keep hidden until gentle reminders are active.
+- `webhook_url` is persisted and editable, but delivery remains intentionally outside the current product contract.
+- `gentle_reminder_*` is active through the App scheduler and `GentleReminderDialog`; the configured interval is measured in minutes and the dialog is closed during shutdown.
+
+## Deferred Legacy Configuration
+
+- `webhook_url` remains hidden because the repository has no webhook delivery implementation. It is preserved for compatibility and validated on load/save, but is not presented as an active feature.
 
 ## Decisions Made In This Pass
 
@@ -71,5 +63,5 @@ These defaults are consumed but intentionally not normal user controls yet:
 - `snooze_prompt_ask_reason` and `snooze_prompt_exact_enabled` are now respected by the snooze dialog and preserved by settings save.
 - `camera_face_fallback_mode` is now consumed by the camera runtime.
 - The settings window no longer writes non-default `camera_adaptive_brightness_*` keys; the active runtime key is `camera_auto_adapt` from the live adjustment flow.
-- The settings window no longer saves `webhook_url`; it remains a hidden legacy/default key until delivery exists.
+- Overlay gating, camera tuning, snooze heuristics, spam word lists, and gentle-reminder settings are now included in the generated Advanced settings save transaction.
 - Supervisor startup is now the canonical startup path; tray/main startup registration writes a Run key that launches `focuscheck_supervisor.py --run`.

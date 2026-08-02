@@ -45,8 +45,6 @@ class SettingsWindowSaveTests(unittest.TestCase):
             window.tray_start_stop_enabled_var.set(False)
             window.tray_settings_enabled_var.set(False)
             window.tray_exit_enabled_var.set(False)
-            window.webhook_var.set("https://example.invalid/hook")
-
             with mock.patch("focuscheck.settings.manager.save_settings") as save_settings:
                 window._save()
 
@@ -59,7 +57,7 @@ class SettingsWindowSaveTests(unittest.TestCase):
             self.assertFalse(payload["tray_start_stop_enabled"])
             self.assertFalse(payload["tray_settings_button_enabled"])
             self.assertFalse(payload["tray_exit_button_enabled"])
-            self.assertEqual("https://example.invalid/hook", payload["webhook_url"])
+            self.assertEqual("", payload["webhook_url"])
             self.assertTrue(payload["paused"])
             self.assertEqual("2030-01-01T00:00:00+00:00", payload["snooze_until_utc"])
             self.assertEqual({"enabled": True}, payload["plugin_future_key"])

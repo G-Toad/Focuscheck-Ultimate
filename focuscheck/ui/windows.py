@@ -388,7 +388,6 @@ class AdvancedSettingsWindow(
         # The remaining editable schema keys are rendered by the generated
         # Advanced tab rather than silently disappearing from the UI.
         self._schema_settings = SchemaSettingsBinding(self.settings)
-        self.webhook_var = self._schema_settings.variables["webhook_url"]
 
     def _build_ui(self):
         """Build the main UI."""
