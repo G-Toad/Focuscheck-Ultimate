@@ -1,6 +1,6 @@
 # Refurbishment Plan Audit
 
-Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at commit `59f665e`.
+Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at commit `1b49756`.
 
 Status meanings:
 
@@ -48,9 +48,46 @@ Status meanings:
 
 All 15 named documentation/report files exist, and migration fixtures plus a diagnostic bundle generator exist. File presence is not completion evidence: `manual-evidence.json` is explicitly `not_run`, and the defect register covers only a subset of the plan's defect register with incomplete required fields such as reproduction, commit/PR, and per-defect manual verification.
 
+The plan's final-release deliverables were also checked individually:
+
+| Required deliverable | Status |
+| --- | --- |
+| Updated architecture and behaviour specs | Partial; refurbishment maps exist, but the required coordinator architecture is not implemented. |
+| Current operation matrix | Missing as a clearly identified current matrix. |
+| Settings schema/truth table generated or verified | Partial; schema map exists, but it is not generated from typed descriptors and does not cover revision/conflict behavior. |
+| Lifecycle/state-machine documentation | Present; implementation and full evidence remain partial. |
+| Defect/contradiction registers with no untriaged severity 0/1 | Not met; the defect register is incomplete and several severity-1 items remain unverified. |
+| Deterministic verification report | Partial; report is machine-readable, but deterministic clock and leak assertions are absent. |
+| Manual evidence bundle | Present only as a not-run template. |
+| Migration fixtures | Partial; one legacy fixture exists, not the full required fixture set. |
+| Release notes | Missing as a release artifact. |
+| Rollback instructions | Missing. |
+| Packaging/install instructions | Missing as a reproducible process. |
+| Privacy/data-retention documentation | Partial; privacy notes exist, but retention/data inventory controls are incomplete. |
+| Support diagnostic instructions | Partial; generator exists, but user-facing support instructions are absent. |
+
 ## Automated Evidence
 
 The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, unittest, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+
+## Final Acceptance Gates
+
+| Gate | Status | Reason |
+| --- | --- | --- |
+| A Repository/build | Partial | The tree is clean and source checks pass, but dependencies are unpinned and no reproducible packaged build exists. |
+| B Automated verification | Partial | The seven bounded stages pass; integration breadth, leak checks, and full test-category coverage are absent. |
+| C Settings/data | Partial | Migration, recovery, backup, and atomic save are tested; revision conflict, complete one-root architecture, and all migration fixtures are absent. |
+| D Runtime state | Unverified | No complete truth-table/manual evidence proves pause, snooze, guards, effective pause, and duplicate-prompt invariants. |
+| E Supervisor/startup | Partial | Several supervisor regressions pass; circuit breaker, generation-bound stop protocol, and native startup evidence are absent. |
+| F Tk/tray/UI | Unverified | Source tests and self-tests exist, but owner-thread, tray uniqueness, deterministic dialog cleanup, and persistence-error UI evidence are incomplete. |
+| G Prompts/interventions | Partial | Selected cancellation/cooldown behavior is tested; full V1/V2 matrices and orphan-overlay evidence are absent. |
+| H Windows native | Unverified | No complete ctypes/resource audit or live lock/sleep/resume/multi-monitor/DPI evidence. |
+| I Tasks/logs/privacy | Partial | Some DB and log hardening passes; retention, safe exports, complete privacy controls, and versioned recovery are incomplete. |
+| J Release evidence | Not met | Manual checklist is `not_run`; upgrade/rollback and release notes/package consistency are not tested. |
+
+## Explicit Scope Boundary
+
+The plan itself says that static inspection must not be treated as proof of application launch, startup registry behavior, lock/sleep/resume, real browser detection, overlays, packaging, or user-data migration. Those items were checked for evidence and remain unverified or missing; they are not silently inferred from source presence or green automated tests.
 
 ## Verdict
 
