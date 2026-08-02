@@ -90,7 +90,9 @@ class SnoozePromptDialog(tk.Toplevel):
                 self.attributes("-topmost", True)
             except Exception:
                 pass
-        self._ensure_visible_timer_id = self.after(200, self._ensure_visible)
+        self._ensure_visible_timer_id = self._schedule_owned_timer(
+            "_ensure_visible_timer_id", 200, self._ensure_visible
+        )
 
         # Key bindings
         self.protocol("WM_DELETE_WINDOW", self._cancel)
@@ -103,7 +105,9 @@ class SnoozePromptDialog(tk.Toplevel):
         self._center_on_parent()
 
         # Initial focus
-        self._initial_focus_timer_id = self.after(30, self._set_initial_focus)
+        self._initial_focus_timer_id = self._schedule_owned_timer(
+            "_initial_focus_timer_id", 30, self._set_initial_focus
+        )
 
     def _log(self, message):
         logger = getattr(self, "_logger", None)
@@ -113,6 +117,14 @@ class SnoozePromptDialog(tk.Toplevel):
             logger.info("snooze_prompt: %s", message)
         except Exception:
             pass
+
+    def _schedule_owned_timer(self, attribute, delay_ms, callback):
+        """Clear a one-shot timer handle before invoking its callback."""
+        def run():
+            setattr(self, attribute, None)
+            callback()
+
+        return self.after(delay_ms, run)
 
     # ----- UI building -----
     def _build_ui(self):

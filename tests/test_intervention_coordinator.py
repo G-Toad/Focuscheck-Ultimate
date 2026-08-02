@@ -27,6 +27,24 @@ class InterventionCoordinatorTests(unittest.TestCase):
         dialog.destroy.assert_called_once_with()
         self.assertEqual([True], cancelled)
 
+    def test_snooze_prompt_owned_timer_clears_handle_before_callback(self):
+        from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+
+        dialog = object.__new__(SnoozePromptDialog)
+        dialog._ensure_visible_timer_id = "old"
+        scheduled = []
+        events = []
+        dialog.after = lambda delay, callback: (scheduled.append((delay, callback)) or "new")
+
+        timer_id = dialog._schedule_owned_timer(
+            "_ensure_visible_timer_id", 200, lambda: events.append(dialog._ensure_visible_timer_id)
+        )
+        dialog._ensure_visible_timer_id = timer_id
+        scheduled[0][1]()
+
+        self.assertEqual([None], events)
+        self.assertIsNone(dialog._ensure_visible_timer_id)
+
     def test_selection_dialog_cancels_recurring_callbacks(self):
         from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
 
