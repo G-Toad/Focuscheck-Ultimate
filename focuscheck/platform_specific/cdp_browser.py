@@ -22,13 +22,20 @@ def _fetch_json(url, timeout=0.2):
         return None
 
 
-def _discover_targets():
+def _discover_targets(timeout=1.0):
     targets = []
+    deadline = time.monotonic() + max(0.0, float(timeout))
     for port in _CANDIDATE_PORTS:
-        version = _fetch_json(f"http://127.0.0.1:{port}/json/version")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        version = _fetch_json(f"http://127.0.0.1:{port}/json/version", timeout=min(0.2, remaining))
         if not isinstance(version, dict):
             continue
-        listing = _fetch_json(f"http://127.0.0.1:{port}/json/list")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        listing = _fetch_json(f"http://127.0.0.1:{port}/json/list", timeout=min(0.2, remaining))
         if not isinstance(listing, list):
             continue
         for entry in listing:
@@ -43,10 +50,10 @@ def _discover_targets():
     return targets
 
 
-def get_cdp_targets(max_age=2.0):
+def get_cdp_targets(max_age=2.0, timeout=1.0):
     now = time.time()
     if now - _CACHE["timestamp"] > max_age:
-        _CACHE["targets"] = _discover_targets()
+        _CACHE["targets"] = _discover_targets(timeout=timeout)
         _CACHE["timestamp"] = now
     return list(_CACHE["targets"])
 
