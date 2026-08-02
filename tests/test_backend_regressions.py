@@ -709,6 +709,23 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertIs(core_proc, core_overlay._proc)
         self.assertIs(dialog_proc, dialog_overlay._wnd_proc)
 
+    def test_spotlight_region_cleanup_respects_window_ownership(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        class Gdi:
+            def __init__(self):
+                self.deleted = []
+
+            def DeleteObject(self, handle):
+                self.deleted.append(handle)
+
+        gdi = Gdi()
+        intervention_wizard._release_spotlight_regions(gdi, 1, 2, 3, True)
+        self.assertEqual([1, 2], gdi.deleted)
+
+        intervention_wizard._release_spotlight_regions(gdi, 4, 5, 6, False)
+        self.assertEqual([1, 2, 4, 5, 6], gdi.deleted)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

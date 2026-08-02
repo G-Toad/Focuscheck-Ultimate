@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `275` unittest cases passing.
+- Current automated baseline after hardening: `276` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -52,6 +52,7 @@
 - The core native overlay now declares registration, creation, paint, compositing, positioning, and cleanup signatures; the overlay self-test and fake-DLL lifecycle regression pass.
 - The dialog-owned intensification overlay now declares its registration, creation, compositing, positioning, and cleanup signatures with a matching fake-DLL regression.
 - Both registered overlay classes retain their process-global WNDPROC callbacks beyond individual instance lifetime, with reuse-path regression coverage.
+- Spotlight region cleanup now tracks `SetWindowRgn` ownership and releases temporary regions on success, failure, and construction exceptions.
 - Intervention reflection JSONL now rejects records over `256 KiB`, rotates bounded backups, and exposes a corruption-tolerant reader that skips malformed or oversized lines.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.

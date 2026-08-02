@@ -75,6 +75,21 @@ def _configure_window_position_api(user32):
     user32.SetWindowPos.restype = wintypes.BOOL
 
 
+def _release_spotlight_regions(gdi32, full, hole, combined, window_owns_combined):
+    """Release temporary regions while respecting SetWindowRgn ownership."""
+    for handle in (full, hole):
+        if handle:
+            try:
+                gdi32.DeleteObject(handle)
+            except Exception:
+                pass
+    if combined and not window_owns_combined:
+        try:
+            gdi32.DeleteObject(combined)
+        except Exception:
+            pass
+
+
 class WindowSelectionDialog(tk.Toplevel):
     """Select open windows to close."""
 
@@ -485,6 +500,8 @@ class SpotlightOverlay(tk.Toplevel):
             return False
 
     def _apply_region_spotlight(self, x, y):
+        full = hole = combined = None
+        window_owns_combined = False
         try:
             hwnd = self.winfo_id()
             r = self._radius
@@ -497,18 +514,23 @@ class SpotlightOverlay(tk.Toplevel):
             combined = self._gdi32.CreateRectRgn(0, 0, 1, 1)
             self._gdi32.CombineRgn(combined, full, hole, self._RGN_DIFF)
             ok = self._user32.SetWindowRgn(hwnd, combined, True)
+            window_owns_combined = bool(ok)
             if not ok:
                 try:
                     code, msg = _get_last_error_info()
                     get_logger().error("spotlight: SetWindowRgn failed | err=%s msg=%s", code, msg)
                 except Exception:
                     pass
-            self._gdi32.DeleteObject(full)
-            self._gdi32.DeleteObject(hole)
         except Exception:
             self._region_supported = False
+        finally:
+            _release_spotlight_regions(
+                getattr(self, "_gdi32", None), full, hole, combined, window_owns_combined,
+            )
 
     def _apply_region_spotlight_native(self, x, y):
+        full = hole = combined = None
+        window_owns_combined = False
         try:
             if not self._native_overlay or not self._region_supported:
                 return
@@ -522,9 +544,7 @@ class SpotlightOverlay(tk.Toplevel):
             hole = self._gdi32.CreateEllipticRgn(left, top, right, bottom)
             combined = self._gdi32.CreateRectRgn(0, 0, 1, 1)
             self._gdi32.CombineRgn(combined, full, hole, self._RGN_DIFF)
-            self._user32.SetWindowRgn(hwnd, combined, True)
-            self._gdi32.DeleteObject(full)
-            self._gdi32.DeleteObject(hole)
+            window_owns_combined = bool(self._user32.SetWindowRgn(hwnd, combined, True))
             try:
                 now = time.monotonic()
                 if (now - self._last_region_log) > 2.0:
@@ -538,6 +558,10 @@ class SpotlightOverlay(tk.Toplevel):
                 get_logger().exception("native spotlight region failed", exc_info=True)
             except Exception:
                 pass
+        finally:
+            _release_spotlight_regions(
+                getattr(self, "_gdi32", None), full, hole, combined, window_owns_combined,
+            )
 
     def _update_spotlight(self):
         if self._closed:
