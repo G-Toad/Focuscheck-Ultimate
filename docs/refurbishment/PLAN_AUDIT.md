@@ -20,7 +20,7 @@ Status meanings:
 | 4 Unified paths and data location | Partial | Frozen `AppPaths` now covers the canonical data/runtime paths and `FOCUS_DATA_DIR` precedence was fixed. Legacy hash/revision conflict resolution, migration journal, and complete atomic migration workflow remain absent. |
 | 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, backup recovery, atomic save, typed schema descriptors, revision/conflict handling, and fixture classes now exist. `.bak.1/.bak.2`, migration journal, complete UI schema generation, and bounded-input coverage remain incomplete. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` owns transactional pause/snooze mutation, expiry-aware state, refreshed settings adoption, and exclusive prompt/intervention/shutdown leases. Full App integration, guard synchronization, and transition journal remain absent. |
-| 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers. Dialog/remaining callback timers remain distributed, there is no injected clock, and the required stress matrix is absent. |
+| 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers, with 1,000-cycle stress coverage. Dialog/remaining callback timers remain distributed, there is no injected clock, and the broader stress matrix is absent. |
 | 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, PID-bound JSON stop requests, stale checks, force-start correction, circuit breaker, and lifecycle tests now exist. Acknowledgement timeout, sleep-gap handling, and the complete failure matrix are not proven. |
 | 9 Startup and single-instance | Partial | Launcher and startup tests exist. Correctness inspection across absent/stale/legacy/duplicate/repairable states, moved-install tests, and manual registry evidence are absent. |
 | 10 Application lifecycle/composition | Partial | Quit/lifecycle regression tests exist. No composition-root refactor or failure-injection coverage at every startup/shutdown stage was found. |
@@ -32,7 +32,7 @@ Status meanings:
 | 16 Website flags | Partial | Matching/cooldown tests exist. Confidence model, all paused/locked suppression states, provider matrix, and live browser coverage are absent. |
 | 17 Intervention coordinator/overlays | Partial | Cancellation no longer consumes cooldown and App now owns an intervention lease/coordinator entry point. Generation cancellation proof, full cleanup matrix, and overlay manual matrix remain absent. |
 | 18 Settings UI | Partial | Existing UI tests, revision conflict result handling, and owner-thread/tray contract tests exist. Schema-generated controls, complete visible-control round trips, runtime-consumer proof, and manual UI evidence are absent. |
-| 19 Task database | Partial | Stronger SQLite setup, active-task index, transition returns, versioned migration journal, checkpointed backup/restore, and tests now exist. Concurrent writers, timezone contract, and UI flow tests remain incomplete. |
+| 19 Task database | Partial | Stronger SQLite setup, active-task index, transition returns, versioned migration journal, checkpointed backup/restore, and concurrent-writer tests now exist. Timezone contract and UI flow tests remain incomplete. |
 | 20 Logs/export/privacy/retention | Partial | CSV locking, JSONL rotation, spreadsheet-formula neutralization, data inventory, and a dry-run-by-default retention tool now exist. Export privacy evidence and bounded doctor anomalies remain incomplete. |
 | 21 Camera/optional dependencies | Unverified | Existing camera code is present, but dependency isolation, no-frame-persistence proof, missing-dependency behavior, and live validation are absent. |
 | 22 Browser/activity providers | Partial | Typed activity snapshots now normalize provider errors, freshness/confidence, and strip URL query/fragment data. Provider timeouts, fake-provider matrix breadth, and live supported-browser evidence remain incomplete. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 107 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 109 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 107 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 109 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 

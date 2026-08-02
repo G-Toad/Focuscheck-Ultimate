@@ -56,3 +56,12 @@ class RuntimeFoundationTests(unittest.TestCase):
         self.assertTrue(registry.closed)
         self.assertFalse(registry.schedule("later", 1, lambda: None))
         self.assertFalse(scheduler.callbacks)
+
+    def test_schedule_cancel_stress_leaves_no_owned_callbacks(self):
+        scheduler = FakeScheduler()
+        registry = TimerRegistry(scheduler)
+        for index in range(1000):
+            registry.schedule("stress", index, lambda: None)
+            registry.cancel("stress")
+        self.assertFalse(scheduler.callbacks)
+        registry.close()

@@ -3,10 +3,33 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import unittest
+import threading
 from pathlib import Path
 
 
 class TaskDbRecoveryTests(unittest.TestCase):
+    def test_concurrent_writers_preserve_one_active_task(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = str(Path(temp_dir) / "tasks.sqlite3")
+            errors = []
+
+            def writer(index):
+                try:
+                    TaskDB(path).start_task(title=f"Task {index}", due_utc=None, why="", consequences="")
+                except Exception as exc:
+                    errors.append(exc)
+
+            threads = [threading.Thread(target=writer, args=(index,)) for index in range(4)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            self.assertFalse(errors)
+            rows = TaskDB(path).list_history(limit=20)
+            self.assertEqual(1, sum(row["status"] == "active" for row in rows))
+
     def test_schema_version_journal_and_backup_restore(self):
         from focuscheck.database.task_db import TaskDB
 
