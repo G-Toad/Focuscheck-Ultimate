@@ -45,6 +45,7 @@ FORCED_RESTART_PAUSE = 0.2
 RESTART_WINDOW_SECONDS = 300.0
 MAX_RESTARTS_IN_WINDOW = 5
 DEGRADED_COOLDOWN_SECONDS = 300.0
+STABLE_RUNTIME_SECONDS = 30.0
 
 
 def _resolve_focuscheck_dir() -> Path:
@@ -369,6 +370,7 @@ class FocusCheckSupervisor:
         self._last_heartbeat_process_start_utc: str | None = None
         self._last_heartbeat_sequence: int | None = None
         self._heartbeat_receipt_mono: float | None = None
+        self._ready_since_mono: float | None = None
         self._restart_history: list[float] = []
         self._degraded_until = 0.0
         suppress_windows_error_dialogs()
@@ -416,6 +418,7 @@ class FocusCheckSupervisor:
         self._last_heartbeat_process_start_utc = None
         self._last_heartbeat_sequence = None
         self._heartbeat_receipt_mono = None
+        self._ready_since_mono = None
         env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
         env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
@@ -482,6 +485,24 @@ class FocusCheckSupervisor:
             self.logger.log("Circuit breaker cooldown elapsed; resuming supervised launch")
             return False
         return True
+
+    def _maybe_reset_after_stable(self) -> None:
+        """Reset crash backoff only after a ready child stays healthy."""
+        now = time.monotonic()
+        if self._ready_since_mono is None:
+            self._ready_since_mono = now
+            return
+        if now - self._ready_since_mono < STABLE_RUNTIME_SECONDS:
+            return
+        if (
+            self.current_delay != self.restart_delay
+            or self._restart_history
+            or self._degraded_until
+        ):
+            self.current_delay = self.restart_delay
+            self._restart_history.clear()
+            self._degraded_until = 0.0
+            self.logger.log("FocusCheck stable; restart backoff reset")
 
 
     def _terminate_child(self) -> None:
@@ -631,10 +652,8 @@ class FocusCheckSupervisor:
             if self._heartbeat_stale():
                 self._force_restart("Heartbeat stale; FocusCheck unresponsive")
                 continue
+            self._maybe_reset_after_stable()
             self.last_tick = now
-            if now - self._heartbeat_grace_deadline > 300:
-                self.current_delay = self.restart_delay
-                self._restart_history.clear()
             self.stop_event.wait(self.check_interval)
         self.logger.log("Supervisor loop stopping")
         self._terminate_child()

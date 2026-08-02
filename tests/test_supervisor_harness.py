@@ -275,6 +275,26 @@ class SupervisorHarnessTests(unittest.TestCase):
             self.assertEqual(1, harness.supervisor.terminations)
             self.assertTrue(harness.supervisor.launches[0].terminated)
 
+    def test_restart_backoff_resets_only_after_stable_ready_window(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.restart_delay = 1.0
+        supervisor.current_delay = 8.0
+        supervisor._restart_history = [1.0]
+        supervisor._degraded_until = 99.0
+        supervisor._ready_since_mono = 10.0
+        supervisor.logger = MemoryLogger()
+        with mock.patch.object(supervisor_module.time, "monotonic", return_value=39.9):
+            supervisor._maybe_reset_after_stable()
+        self.assertEqual(8.0, supervisor.current_delay)
+        with mock.patch.object(supervisor_module.time, "monotonic", return_value=40.0):
+            supervisor._maybe_reset_after_stable()
+        self.assertEqual(1.0, supervisor.current_delay)
+        self.assertEqual([], supervisor._restart_history)
+        self.assertEqual(0.0, supervisor._degraded_until)
+
 
 if __name__ == "__main__":
     unittest.main()
