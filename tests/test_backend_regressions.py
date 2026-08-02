@@ -488,6 +488,26 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual(0, capture.reads)
         self.assertEqual(1, capture.releases)
 
+    def test_camera_adjustment_close_cancels_save_feedback_timer(self):
+        from focuscheck.ui.camera_adjustment_window import CameraAdjustmentWindow
+
+        window = CameraAdjustmentWindow.__new__(CameraAdjustmentWindow)
+        window._closed = False
+        window._camera_generation = 2
+        window._save_feedback_timer = "feedback-timer"
+        window._save_feedback_label = object()
+        window._update_timer = None
+        window._camera_capture = None
+        window.after_cancel = mock.Mock()
+        window.destroy = mock.Mock()
+
+        window._on_close()
+
+        window.after_cancel.assert_called_once_with("feedback-timer")
+        self.assertIsNone(window._save_feedback_timer)
+        self.assertIsNone(window._save_feedback_label)
+        window.destroy.assert_called_once_with()
+
     def test_native_overlay_destroy_releases_handles_once(self):
         from focuscheck.platform_specific import windows
 

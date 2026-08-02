@@ -36,6 +36,8 @@ class CameraAdjustmentWindow(tk.Toplevel):
         self._closed = False
         self._camera_capture = None
         self._update_timer = None
+        self._save_feedback_timer = None
+        self._save_feedback_label = None
         self._camera_generation = 0
 
         # Manual adjustment values (0.0 - 1.0 range for all)
@@ -318,13 +320,34 @@ class CameraAdjustmentWindow(tk.Toplevel):
                 self.master._save_camera_adjustment_settings(settings)
 
             # Show confirmation
-            save_label = tk.Label(self, text="✓ Settings saved!",
-                                 fg="#0f0", bg="#111", font=("Segoe UI", 10, "bold"))
-            save_label.place(relx=0.5, rely=0.5, anchor="center")
-            self.after(1500, save_label.destroy)
+            if self._save_feedback_timer is not None:
+                try:
+                    self.after_cancel(self._save_feedback_timer)
+                except Exception:
+                    pass
+                self._save_feedback_timer = None
+            if self._save_feedback_label is not None:
+                try:
+                    self._save_feedback_label.destroy()
+                except Exception:
+                    pass
+            self._save_feedback_label = tk.Label(self, text="✓ Settings saved!",
+                                                 fg="#0f0", bg="#111", font=("Segoe UI", 10, "bold"))
+            self._save_feedback_label.place(relx=0.5, rely=0.5, anchor="center")
+            self._save_feedback_timer = self.after(1500, self._clear_save_feedback)
 
         except Exception as e:
             print(f"Save error: {e}")
+
+    def _clear_save_feedback(self):
+        label = self._save_feedback_label
+        self._save_feedback_label = None
+        self._save_feedback_timer = None
+        if label is not None:
+            try:
+                label.destroy()
+            except Exception:
+                pass
 
     def _show_error(self, message):
         """Show error message."""
@@ -336,6 +359,15 @@ class CameraAdjustmentWindow(tk.Toplevel):
         """Clean up and close window."""
         self._closed = True
         self._camera_generation = getattr(self, "_camera_generation", 0) + 1
+
+        feedback_timer = getattr(self, "_save_feedback_timer", None)
+        if feedback_timer is not None:
+            try:
+                self.after_cancel(feedback_timer)
+            except Exception:
+                pass
+            self._save_feedback_timer = None
+        self._save_feedback_label = None
 
         # Cancel pending update timer
         if self._update_timer is not None:
