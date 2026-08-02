@@ -9,7 +9,7 @@
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
-- Isolated native overlay self-test: passing with virtual-screen region updates.
+- Isolated native overlay self-test: passing with explicit native signatures, repeated `3/3` create/update/destroy cycles, and virtual-screen region updates.
 - Safe QA runner: passing with `qa_failures=0`; verification asserts the live profile is unchanged.
 - Release decision: `NOT_READY`.
 - Manual blocker: live Tk/tray, Windows supervisor/startup, browser/window APIs, native lock/sleep/resume, overlays, and packaging require target Windows evidence.
