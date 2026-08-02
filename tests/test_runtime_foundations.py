@@ -104,6 +104,29 @@ class RuntimeFoundationTests(unittest.TestCase):
             self.assertEqual(["fired"], calls)
             self.assertNotIn(timer_id, dialog._active_timers)
 
+    def test_prompt_dialog_registry_invalidates_queued_callbacks_on_cleanup(self):
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        for dialog_type in (PromptDialog, V2PromptDialog):
+            scheduler = FakeScheduler()
+            dialog = object.__new__(dialog_type)
+            dialog._active_timers = set()
+            dialog._timer_names = {}
+            dialog._timer_sequence = 0
+            dialog._closed = False
+            dialog._timers = TimerRegistry(scheduler)
+            calls = []
+
+            timer_id = dialog._schedule_timer(10, lambda: calls.append("stale"))
+            callback = scheduler.callbacks[timer_id]
+            dialog._cleanup_all_timers()
+            callback()
+
+            self.assertEqual([], calls)
+            self.assertEqual(set(), dialog._active_timers)
+            self.assertTrue(dialog._timers.closed)
+
     def test_phrase_challenge_closes_owned_timers(self):
         from focuscheck.ui.dialogs.phrase_acronym_dialog import PhraseAcronymDialog
 

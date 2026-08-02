@@ -33,6 +33,8 @@ except ImportError:
     def append_log(**kwargs):
         pass
 
+from ...utils.timers import TimerRegistry
+
 
 class PromptDialog(
     ButtonHandlingMixin,
@@ -96,6 +98,9 @@ class PromptDialog(
         self._hold_start = None
         # Timer registry for cleanup
         self._active_timers = set()
+        self._timer_names = {}
+        self._timer_sequence = 0
+        self._timers = TimerRegistry(self)
         self._time_lbl = None
         self._info_lbl = None
         self._task_panel = None
@@ -737,6 +742,28 @@ class PromptDialog(
         """
         if self._closed:
             return None
+
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            self._timer_sequence = getattr(self, "_timer_sequence", 0) + 1
+            name = f"prompt-{self._timer_sequence}"
+            timer_id_holder = {}
+
+            def run_once():
+                timer_id = timer_id_holder.get("id")
+                if timer_id is not None:
+                    self._active_timers.discard(timer_id)
+                    self._timer_names.pop(timer_id, None)
+                if not self._closed:
+                    callback()
+
+            timers.schedule(name, delay_ms, run_once)
+            timer_id = timers.callback_id(name)
+            timer_id_holder["id"] = timer_id
+            self._timer_names[timer_id] = name
+            self._active_timers.add(timer_id)
+            return timer_id
+
         timer_id_holder = {}
 
         def _run_once():
@@ -760,10 +787,15 @@ class PromptDialog(
             timer_id: Timer ID to cancel
         """
         if timer_id and timer_id in self._active_timers:
-            try:
-                self.after_cancel(timer_id)
-            except Exception:
-                pass
+            timers = getattr(self, "_timers", None)
+            timer_name = getattr(self, "_timer_names", {}).pop(timer_id, None)
+            if timers is not None and timer_name is not None:
+                timers.cancel(timer_name)
+            else:
+                try:
+                    self.after_cancel(timer_id)
+                except Exception:
+                    pass
             self._active_timers.discard(timer_id)
 
     def _cleanup_all_timers(self):
@@ -772,9 +804,14 @@ class PromptDialog(
 
         Called before destroying the dialog to ensure clean shutdown.
         """
-        for timer_id in list(self._active_timers):
-            try:
-                self.after_cancel(timer_id)
-            except Exception:
-                pass
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+            self._timer_names.clear()
+        else:
+            for timer_id in list(self._active_timers):
+                try:
+                    self.after_cancel(timer_id)
+                except Exception:
+                    pass
         self._active_timers.clear()
