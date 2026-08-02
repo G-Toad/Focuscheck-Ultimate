@@ -69,6 +69,8 @@ class WindowSelectionDialog(tk.Toplevel):
         self._closed = False
         self._tab_queue = queue.Queue()
         self._tab_threads = []
+        self._front_timer_id = None
+        self._tab_scan_timer_id = None
 
         try:
             self._build_ui(preselect_hwnd, preselect_title)
@@ -220,6 +222,7 @@ class WindowSelectionDialog(tk.Toplevel):
         self._close()
 
     def _close(self):
+        self._cancel_scheduled_callbacks()
         try:
             self.grab_release()
         except Exception:
@@ -233,6 +236,21 @@ class WindowSelectionDialog(tk.Toplevel):
             except Exception:
                 pass
 
+    def _cancel_scheduled_callbacks(self):
+        """Cancel recurring callbacks before the Toplevel is destroyed."""
+        for attr in ("_front_timer_id", "_tab_scan_timer_id"):
+            timer_id = getattr(self, attr, None)
+            if timer_id:
+                try:
+                    self.after_cancel(timer_id)
+                except Exception:
+                    pass
+                setattr(self, attr, None)
+
+    def destroy(self):
+        self._cancel_scheduled_callbacks()
+        return super().destroy()
+
     def _force_front_loop(self):
         if self._closed:
             return
@@ -245,7 +263,7 @@ class WindowSelectionDialog(tk.Toplevel):
         except Exception:
             pass
         try:
-            self.after(800, self._force_front_loop)
+            self._front_timer_id = self.after(800, self._force_front_loop)
         except Exception:
             pass
 
@@ -273,7 +291,7 @@ class WindowSelectionDialog(tk.Toplevel):
             self._tab_threads.append(t)
             t.start()
         try:
-            self.after(200, self._drain_tab_queue)
+            self._tab_scan_timer_id = self.after(200, self._drain_tab_queue)
         except Exception:
             pass
 
@@ -308,9 +326,9 @@ class WindowSelectionDialog(tk.Toplevel):
                         pass
         try:
             if not drained:
-                self.after(200, self._drain_tab_queue)
+                self._tab_scan_timer_id = self.after(200, self._drain_tab_queue)
             else:
-                self.after(400, self._drain_tab_queue)
+                self._tab_scan_timer_id = self.after(400, self._drain_tab_queue)
         except Exception:
             pass
 
@@ -815,8 +833,20 @@ class InterventionWizard:
             return False
 
         fail_safe = {"fired": False}
+        selection_visibility_timer = None
+
+        def _cancel_selection_visibility_check():
+            nonlocal selection_visibility_timer
+            timer_id = selection_visibility_timer
+            selection_visibility_timer = None
+            if timer_id:
+                try:
+                    self.parent.after_cancel(timer_id)
+                except Exception:
+                    pass
 
         def _restore_prompt_with_error(reason):
+            _cancel_selection_visibility_check()
             if fail_safe["fired"]:
                 return
             fail_safe["fired"] = True
@@ -859,6 +889,8 @@ class InterventionWizard:
                     logger.exception("intervention: failed to show fail-safe error", exc_info=True)
 
         def _selection_visibility_check():
+            nonlocal selection_visibility_timer
+            selection_visibility_timer = None
             if fail_safe["fired"]:
                 return
             if selection_dialog is None or getattr(selection_dialog, "_closed", False):
@@ -901,7 +933,7 @@ class InterventionWizard:
                     _restore_prompt_with_error(reason)
 
         try:
-            self.parent.after(500, _selection_visibility_check)
+            selection_visibility_timer = self.parent.after(500, _selection_visibility_check)
         except Exception:
             if logger:
                 logger.exception("intervention: failed to schedule selection fail-safe", exc_info=True)
@@ -911,6 +943,7 @@ class InterventionWizard:
         except Exception:
             if logger:
                 logger.exception("intervention: wait_window failed", exc_info=True)
+        _cancel_selection_visibility_check()
 
         try:
             if blackout is not None:
