@@ -10,6 +10,16 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_settings_file_lock_serializes_same_process_access(self):
+        from focuscheck.settings.file_lock import settings_file_lock
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = str(Path(temp_dir) / "focus_settings.json")
+            with settings_file_lock(settings_path):
+                with self.assertRaises(TimeoutError):
+                    with settings_file_lock(settings_path, timeout=0.1):
+                        pass
+
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager
 

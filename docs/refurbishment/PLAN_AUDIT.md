@@ -14,11 +14,11 @@ Status meanings:
 | Plan phase | Status | Evidence and gap |
 | --- | --- | --- |
 | 0 Repository truth and baseline | Partial | Baseline tests, compile, self-tests, and inventory were captured. Behavior snapshots, profile/registry non-mutation proof, and manual release baseline are absent. |
-| 1 Safety and test isolation | Partial | WerFault broad kill was removed, verification uses a disposable data root, and the runner now hashes the live profile before/after stages. No filesystem write guard or process-leak guard was found; direct `unittest -s tests` still produced live-profile logger contention. |
+| 1 Safety and test isolation | Partial | WerFault broad kill was removed, verification uses a disposable data root, and the runner hashes the live profile before/after stages. Settings writes now use an OS-level sidecar lock. No filesystem write guard or process-leak guard was found; direct `unittest -s tests` still produced live-profile logger contention. |
 | 2 Product contract and contradictions | Partial | Registers and several regression tests exist. The full contradiction/contract closure and complete transition truth tables do not. |
 | 3 Verification refurbishment | Partial | Bounded stages, JSON reporting, timeouts, live-profile isolation assertion, and an injectable service clock exist. Comprehensive fault-injection harnesses, process/thread/window leak checks, and all required test categories do not. |
 | 4 Unified paths and data location | Partial | Frozen `AppPaths` covers canonical data/runtime paths, `FOCUS_DATA_DIR` precedence is fixed, and failed AppData resolution now uses controlled temp recovery rather than the source directory. Legacy hash/revision conflict resolution and complete atomic migration workflow remain absent. |
-| 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, rotating `.bak/.bak.1/.bak.2` recovery, migration journal, atomic readback-validated save, typed schema descriptors, revision/conflict handling, and fixture classes now exist. Cross-process locking, complete UI schema generation, and bounded-input coverage remain incomplete. |
+| 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, rotating `.bak/.bak.1/.bak.2` recovery, migration journal, atomic readback-validated save, OS-level cross-process locking, typed schema descriptors, revision/conflict handling, and fixture classes now exist. Complete UI schema generation and bounded-input coverage remain incomplete. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` owns transactional pause/snooze mutation, expiry-aware state, refreshed settings adoption, exclusive prompt/intervention/shutdown leases, clock-injected prompt eligibility, prompt denial during effective pause, and an App-wired metadata-only transition journal. Full guard synchronization and crash/restart recovery evidence remain absent. |
 | 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` now owns App prompt, heartbeat, snooze, and EngineV2 timers, with 1,000-cycle stress coverage. Dialog/remaining callback timers remain distributed, there is no injected clock, and the broader stress matrix is absent. |
 | 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, PID-bound JSON stop requests, stale checks, force-start correction, circuit breaker, and lifecycle tests now exist. Acknowledgement timeout, sleep-gap handling, and the complete failure matrix are not proven. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and scripted non-destructive package promotion/rollback now executes in disposable tests. Installer shell integration, signing, and target-machine lifecycle evidence remain open. |
 | 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
-| 27 Automated test expansion | Partial | 124 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 125 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -60,7 +60,7 @@ The plan's final-release deliverables were also checked individually:
 | Deterministic verification report | Partial; report is machine-readable and includes a bounded resource-stability gate, but deterministic clock and process/thread/window leak assertions are absent. |
 | Manual evidence bundle | Present only as a not-run template. |
 | Migration fixtures | Partial; one legacy fixture exists, not the full required fixture set. |
-| Release notes | Missing as a release artifact. |
+| Release notes | Present in `docs/RELEASE_NOTES.md`; release status remains `NOT_READY`. |
 | Rollback instructions | Present in `docs/ROLLBACK.md` and exercised by the disposable package transaction test; target-machine evidence remains open. |
 | Packaging/install instructions | Present with scripted promotion/rollback and PyInstaller build contract; installer shell integration and target-machine evidence remain open. |
 | Privacy/data-retention documentation | Partial; privacy notes exist, but retention/data inventory controls are incomplete. |
@@ -68,14 +68,14 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 124 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, and runtime transition metadata. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 125 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, runtime transition metadata, and cross-process settings locking. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
 | --- | --- | --- |
 | A Repository/build | Partial | The source tree and pinned dependency contract are verified, and a disposable PyInstaller build/self-test is evidenced; installer, signing, and deployment verification remain open. |
-| B Automated verification | Partial | The seven bounded stages pass; integration breadth, leak checks, and full test-category coverage are absent. |
+| B Automated verification | Partial | All nine bounded stages pass; integration breadth, leak checks, and full test-category coverage are absent. |
 | C Settings/data | Partial | Migration, recovery, backup, atomic save, and revision conflict are tested; complete one-root architecture, migration journal, and all bounded-input fixtures are absent. |
 | D Runtime state | Unverified | No complete truth-table/manual evidence proves pause, snooze, guards, effective pause, and duplicate-prompt invariants. |
 | E Supervisor/startup | Partial | Several supervisor regressions pass; circuit breaker, generation-bound stop protocol, and native startup evidence are absent. |

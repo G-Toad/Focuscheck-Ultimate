@@ -12,6 +12,7 @@ from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
 from ..utils.paths import choose_path
 from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode
 from .registry import SETTINGS_REGISTRY
+from .file_lock import settings_file_lock
 
 
 _settings_lock = threading.Lock()
@@ -584,7 +585,7 @@ def load_settings():
     logger.info("  SETTINGS_PATH: %s", SETTINGS_PATH)
     logger.info("  Acquiring settings lock...")
 
-    with _settings_lock:
+    with _settings_lock, settings_file_lock(SETTINGS_PATH):
         logger.info("  Lock acquired")
         logger.info("  Checking if settings file exists...")
         exists = os.path.exists(SETTINGS_PATH)
@@ -682,7 +683,7 @@ def save_settings(s, expected_revision=None):
     logger.info("  Input settings keys: %s", len(s) if isinstance(s, dict) else "N/A")
     logger.info("  Acquiring settings lock...")
 
-    with _settings_lock:
+    with _settings_lock, settings_file_lock(SETTINGS_PATH):
         logger.info("  Lock acquired")
         logger.info("  Creating data directory if needed...")
 
