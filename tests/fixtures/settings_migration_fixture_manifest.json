@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {"name": "missing_file", "file": null, "expected": "defaults"},
+    {"name": "empty_file", "file": "settings_empty.json", "expected": "quarantine_defaults"},
+    {"name": "malformed_json", "file": "settings_malformed.json", "expected": "quarantine_defaults"},
+    {"name": "non_dict_json", "file": "settings_non_dict.json", "expected": "quarantine_defaults"},
+    {"name": "old_keys", "file": "settings_v1_legacy.json", "expected": "migrates_to_v2"},
+    {"name": "unknown_keys", "file": "settings_unknown.json", "expected": "preserves_unknown"},
+    {"name": "string_booleans", "file": "settings_string_booleans.json", "expected": "coerces_booleans"},
+    {"name": "impossible_dates", "file": "settings_impossible_date.json", "expected": "safe_date_default"},
+    {"name": "malformed_website_flags", "file": "settings_malformed_flags.json", "expected": "drops_invalid_flags"},
+    {"name": "huge_lists", "file": "settings_huge_lists.json", "expected": "rejects_budget"},
+    {"name": "partial_write", "file": null, "expected": "atomic_save_failure"},
+    {"name": "future_schema", "file": "settings_future_schema.json", "expected": "rejects_future_schema"}
+  ]
+}

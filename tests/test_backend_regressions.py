@@ -11,6 +11,59 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_settings_migration_fixture_matrix_covers_plan_inputs(self):
+        from focuscheck.settings.manager import validate_settings
+        from focuscheck.settings.migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
+
+        fixture_root = Path(__file__).parent / "fixtures"
+        manifest = json.loads((fixture_root / "settings_migration_fixture_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(1, manifest["schema_version"])
+        cases = {item["name"]: item for item in manifest["fixtures"]}
+
+        self.assertEqual(
+            {
+                "missing_file", "empty_file", "malformed_json", "non_dict_json",
+                "old_keys", "unknown_keys", "string_booleans", "impossible_dates",
+                "malformed_website_flags", "huge_lists", "partial_write", "future_schema",
+            },
+            set(cases),
+        )
+
+        for name in ("empty_file", "malformed_json", "non_dict_json"):
+            raw = (fixture_root / cases[name]["file"]).read_text(encoding="utf-8")
+            with self.subTest(name=name):
+                with self.assertRaises((ValueError, TypeError, json.JSONDecodeError)):
+                    parsed = json.loads(raw)
+                    validate_settings(parsed)
+
+        old = json.loads((fixture_root / cases["old_keys"]["file"]).read_text(encoding="utf-8"))
+        migrated = migrate_settings(old)
+        self.assertEqual(CURRENT_SETTINGS_SCHEMA_VERSION, migrated["settings_schema_version"])
+        self.assertEqual(migrated["snooze_until"], migrated["snooze_until_utc"])
+        self.assertIsInstance(validate_settings(migrated)["website_flags"], list)
+
+        unknown = json.loads((fixture_root / cases["unknown_keys"]["file"]).read_text(encoding="utf-8"))
+        self.assertEqual("preserve-me", validate_settings(unknown)["future_plugin_setting"])
+
+        booleans = json.loads((fixture_root / cases["string_booleans"]["file"]).read_text(encoding="utf-8"))
+        normalized = validate_settings(booleans)
+        self.assertFalse(normalized["paused"])
+        self.assertTrue(normalized["force_always_on"])
+
+        dates = json.loads((fixture_root / cases["impossible_dates"]["file"]).read_text(encoding="utf-8"))
+        self.assertEqual("2005-01-01", validate_settings(dates)["biodata_birthdate"])
+
+        website_flags = json.loads((fixture_root / cases["malformed_website_flags"]["file"]).read_text(encoding="utf-8"))
+        self.assertEqual([], validate_settings(website_flags)["website_flags"])
+
+        huge = json.loads((fixture_root / cases["huge_lists"]["file"]).read_text(encoding="utf-8"))
+        with self.assertRaises(ValueError):
+            validate_settings(huge)
+
+        future = json.loads((fixture_root / cases["future_schema"]["file"]).read_text(encoding="utf-8"))
+        with self.assertRaises(ValueError):
+            migrate_settings(future)
+
     def test_valid_legacy_settings_are_imported_atomically(self):
         import json
         import focuscheck.settings.manager as manager
