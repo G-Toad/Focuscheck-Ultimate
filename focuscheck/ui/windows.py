@@ -874,8 +874,12 @@ class AdvancedSettingsWindow(
                     self.wasting_challenge_vars[challenge_id].get()
                 )
 
-            if save_settings(s) is False:
-                messagebox.showerror("Save Error", "Settings changed elsewhere; reload before saving.")
+            result = save_settings(s)
+            if not result:
+                message = "Settings changed elsewhere; reload before saving." if getattr(result, "conflict", False) else (
+                    getattr(result, "error", None) or "Settings could not be written durably."
+                )
+                messagebox.showerror("Save Error", message)
                 return
             self.on_save(s)
             self.destroy()

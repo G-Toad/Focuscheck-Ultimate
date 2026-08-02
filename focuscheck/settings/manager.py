@@ -7,6 +7,7 @@ import platform
 import shutil
 import threading
 import uuid
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from .defaults import DEFAULT_SETTINGS
 from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
@@ -23,6 +24,22 @@ MAX_SETTINGS_KEYS = 1000
 MAX_SETTINGS_COLLECTION_ITEMS = 500
 MAX_SETTINGS_STRING_LENGTH = 8192
 MAX_SETTINGS_DEPTH = 12
+
+
+@dataclass(frozen=True)
+class SettingsSaveResult:
+    """Durability outcome for one settings write."""
+
+    path: str
+    revision: int | None
+    durable_write: bool
+    backup_created: bool
+    validation_passed: bool
+    error: str | None = None
+    conflict: bool = False
+
+    def __bool__(self) -> bool:
+        return self.durable_write
 
 
 def _assert_settings_budget(value, *, depth=0, seen=None):
@@ -786,7 +803,7 @@ def load_settings():
 
 
 def save_settings(s, expected_revision=None):
-    """Save settings to JSON file atomically."""
+    """Save settings atomically and return an observable durability result."""
     logger = get_logger()
     SETTINGS_PATH = choose_path("focus_settings.json")
     sidecars = _settings_sidecar_paths(SETTINGS_PATH)
@@ -809,15 +826,25 @@ def save_settings(s, expected_revision=None):
             logger.info("    Directory created/verified")
         except Exception as e:
             logger.error("    ERROR creating directory: %s", e)
+            return SettingsSaveResult(
+                path=SETTINGS_PATH,
+                revision=None,
+                durable_write=False,
+                backup_created=False,
+                validation_passed=False,
+                error=f"data directory unavailable: {e}",
+            )
 
         temp_path = f"{SETTINGS_PATH}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
         logger.info("  Temporary file path: %s", temp_path)
+        current_revision = 0
+        validated = None
+        backup_created = False
 
         try:
             logger.info("  Starting atomic write...")
             logger.info("    Validating settings before save...")
             validated = validate_settings(s)
-            current_revision = 0
             if os.path.exists(SETTINGS_PATH):
                 try:
                     with open(SETTINGS_PATH, "r", encoding="utf-8") as existing_file:
@@ -831,7 +858,15 @@ def save_settings(s, expected_revision=None):
                 expected_revision = int(s.get("settings_revision", 0))
             if expected_revision is not None and os.path.exists(SETTINGS_PATH) and int(expected_revision) != current_revision:
                 logger.warning("settings revision conflict: expected=%s current=%s", expected_revision, current_revision)
-                return False
+                return SettingsSaveResult(
+                    path=SETTINGS_PATH,
+                    revision=current_revision,
+                    durable_write=False,
+                    backup_created=False,
+                    validation_passed=True,
+                    error="settings revision conflict",
+                    conflict=True,
+                )
             validated["settings_revision"] = current_revision + 1
             logger.info("    Settings validated")
             logger.info("      Validated keys: %s", len(validated))
@@ -861,6 +896,7 @@ def save_settings(s, expected_revision=None):
                     if os.path.exists(sidecars[source_key]):
                         shutil.copy2(sidecars[source_key], sidecars[target_key])
                 shutil.copy2(SETTINGS_PATH, sidecars["backup"])
+                backup_created = True
             logger.info("  Replacing settings file atomically...")
             os.replace(temp_path, SETTINGS_PATH)
             logger.info("    Replace completed successfully")
@@ -885,7 +921,13 @@ def save_settings(s, expected_revision=None):
             get_logger().info("settings saved")
             logger.info("save_settings() COMPLETED - SUCCESS")
             logger.info("=" * 80)
-            return True
+            return SettingsSaveResult(
+                path=SETTINGS_PATH,
+                revision=validated.get("settings_revision"),
+                durable_write=True,
+                backup_created=backup_created,
+                validation_passed=True,
+            )
 
         except Exception as e:
             logger.error("  ERROR during save operation: %s", e)
@@ -906,4 +948,11 @@ def save_settings(s, expected_revision=None):
             log_exception("save_settings: failed to write file")
             logger.info("save_settings() COMPLETED - FAILED")
             logger.info("=" * 80)
-            return False
+            return SettingsSaveResult(
+                path=SETTINGS_PATH,
+                revision=current_revision,
+                durable_write=False,
+                backup_created=backup_created,
+                validation_passed=validated is not None,
+                error=str(e),
+            )

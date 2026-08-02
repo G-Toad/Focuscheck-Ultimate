@@ -3,7 +3,7 @@
 | ID | Severity | Classification | Evidence | Fix | Tests | Manual verification | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | CFG-001 | 1 | confirmed defect | Malformed settings silently fell back and destroyed recovery context. | Quarantine corrupt file and recover `.bak`. | `SettingsSaveTests`. | Not run. | fixed |
-| CFG-002 | 2 | confirmed defect | Save had no observable result. | `save_settings` returns `True`/`False`. | write-failure regression. | Not run. | fixed |
+| CFG-002 | 1 | confirmed defect | Save had no structured observable durability result. | `SettingsSaveResult` exposes path, revision, durable-write, backup, validation, conflict, and error fields while remaining bool-compatible. | settings result and write-failure regressions. | Not run. | fixed |
 | CFG-003 | 2 | confirmed defect | Date validation accepted impossible calendar dates. | `datetime.date` validation. | settings validation regression. | Not run. | fixed |
 | SUP-003 | 1 | confirmed defect | Supervisor killed every `WerFault.exe` process system-wide. | Compatibility hook is a no-op; no call sites remain. | source review and compile. | Target Windows crash test required. | fixed |
 | SUP-001 | 1 | confirmed defect | Normal launcher forced start over durable pause. | Removed force-start from normal launcher. | launch script regression. | Live supervised pause test required. | fixed |

@@ -74,10 +74,35 @@ class SettingsSaveTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             settings_path = str(Path(temp_dir) / "focus_settings.json")
             with mock.patch.object(manager, "choose_path", return_value=settings_path), mock.patch.object(manager.os, "replace", wraps=manager.os.replace) as replace_mock:
-                manager.save_settings({"interval_seconds": 120})
+                result = manager.save_settings({"interval_seconds": 120})
 
             replace_mock.assert_called_once()
             self.assertTrue(Path(settings_path).exists())
+            self.assertTrue(result)
+            self.assertTrue(result.durable_write)
+            self.assertEqual(1, result.revision)
+            self.assertTrue(result.validation_passed)
+            self.assertFalse(result.backup_created)
+
+    def test_save_settings_result_reports_backup_and_failure_details(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = str(Path(temp_dir) / "focus_settings.json")
+            with mock.patch.object(manager, "choose_path", return_value=settings_path):
+                first = manager.save_settings({"interval_seconds": 120})
+                second = manager.save_settings({"interval_seconds": 121})
+            self.assertTrue(first)
+            self.assertTrue(second)
+            self.assertTrue(second.backup_created)
+            self.assertEqual(2, second.revision)
+
+            with mock.patch.object(manager, "choose_path", return_value=settings_path), mock.patch.object(manager.os, "replace", side_effect=OSError("disk full")):
+                failed = manager.save_settings({"interval_seconds": 30})
+            self.assertFalse(failed)
+            self.assertFalse(failed.durable_write)
+            self.assertTrue(failed.validation_passed)
+            self.assertIn("disk full", failed.error)
 
     def test_save_settings_returns_false_and_keeps_existing_file_on_write_failure(self):
         import focuscheck.settings.manager as manager
