@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 from ...camera.manual_crop_utils import process_manual_crop_frame
+from ...camera.capability import build_camera_capability
 from ..camera_feed_helpers import (
     resize_maintain_aspect,
     resize_fixed,
@@ -79,6 +80,11 @@ class CameraFeedMixin:
         self._camera_last_face_rect = None  # Cache last detected face position
         self._camera_frame_count = 0  # For face detection throttling (performance)
         self._camera_face_miss_count = 0  # Track consecutive frames without face detection
+        self._camera_capability = build_camera_capability(
+            enabled=self._camera_enabled,
+            opencv_available=CV2_AVAILABLE,
+            pillow_available=PIL_AVAILABLE,
+        )
 
         # Apply UI scaling to camera dimensions
         scale = getattr(self, '_ui_scale', 1.0)
@@ -114,6 +120,12 @@ class CameraFeedMixin:
                 except Exception:
                     pass
                 self._camera_capture = None
+                self._camera_capability = build_camera_capability(
+                    enabled=True,
+                    opencv_available=CV2_AVAILABLE,
+                    pillow_available=PIL_AVAILABLE,
+                    device_open=False,
+                )
                 return
 
             # Set high camera resolution to allow for cropping/zooming
@@ -164,6 +176,13 @@ class CameraFeedMixin:
                 get_logger().info(f"Camera initialized successfully in {self._camera_mode} mode with {self._camera_sizing_mode} sizing")
             except Exception:
                 pass
+            self._camera_capability = build_camera_capability(
+                enabled=True,
+                opencv_available=CV2_AVAILABLE,
+                pillow_available=PIL_AVAILABLE,
+                device_open=True,
+                access="granted",
+            )
 
         except Exception as e:
             try:
@@ -171,6 +190,14 @@ class CameraFeedMixin:
             except Exception:
                 pass
             self._camera_capture = None
+            self._camera_capability = build_camera_capability(
+                enabled=True,
+                opencv_available=CV2_AVAILABLE,
+                pillow_available=PIL_AVAILABLE,
+                device_open=False,
+                access="failed",
+                error=e,
+            )
 
     def _create_camera_feed_widget(self, parent_container):
         """
@@ -227,6 +254,15 @@ class CameraFeedMixin:
                 # Start live feed updates
                 self._start_camera_feed_updates()
 
+            self._camera_capability = build_camera_capability(
+                enabled=True,
+                opencv_available=CV2_AVAILABLE,
+                pillow_available=PIL_AVAILABLE,
+                device_open=True,
+                stream_active=True,
+                access="granted",
+            )
+
             return self._camera_feed_container
 
         except Exception as e:
@@ -280,6 +316,16 @@ class CameraFeedMixin:
             ret, frame = self._camera_capture.read()
             if ret:
                 self._display_camera_frame(frame)
+            else:
+                self._camera_capability = build_camera_capability(
+                    enabled=True,
+                    opencv_available=CV2_AVAILABLE,
+                    pillow_available=PIL_AVAILABLE,
+                    device_open=True,
+                    stream_active=True,
+                    access="granted",
+                    degraded=True,
+                )
 
             # Schedule next update
             fps = int(self.settings.get("camera_fps", 30))
@@ -1272,6 +1318,11 @@ class CameraFeedMixin:
         # Invalidate callbacks before cancelling the Tk handle. A callback
         # already dequeued by Tk must still become a no-op after cleanup.
         self._camera_generation = getattr(self, "_camera_generation", 0) + 1
+        if getattr(self, "_camera_capability", None) is not None:
+            capability = dict(self._camera_capability)
+            capability["stream"] = "inactive"
+            capability["state"] = "stopped"
+            self._camera_capability = capability
 
         # Cancel camera update timer
         if self._camera_update_timer:

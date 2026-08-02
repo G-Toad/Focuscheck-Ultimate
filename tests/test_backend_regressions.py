@@ -255,6 +255,44 @@ class TaskDbTests(unittest.TestCase):
 
 
 class ImportHardeningTests(unittest.TestCase):
+    def test_camera_capability_reports_bounded_states(self):
+        from focuscheck.ui.camera.capability import build_camera_capability
+
+        self.assertEqual(
+            "disabled",
+            build_camera_capability(
+                enabled=False,
+                opencv_available=False,
+                pillow_available=False,
+            )["state"],
+        )
+        self.assertEqual(
+            "dependency_missing",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=False,
+                pillow_available=True,
+            )["state"],
+        )
+        self.assertEqual(
+            "device_unavailable",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+                device_open=False,
+            )["state"],
+        )
+        active = build_camera_capability(
+            enabled=True,
+            opencv_available=True,
+            pillow_available=True,
+            device_open=True,
+            stream_active=True,
+        )
+        self.assertEqual("active", active["state"])
+        self.assertEqual("granted", active["access"])
+
     def test_camera_modules_import_without_opencv(self):
         import focuscheck.ui.camera.adjustment_helpers as helpers
         import focuscheck.ui.camera_adjustment_window as window

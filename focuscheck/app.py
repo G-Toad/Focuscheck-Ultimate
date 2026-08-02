@@ -1660,6 +1660,12 @@ class App:
             tray_backend = "native fallback"
         else:
             tray_backend = "unavailable"
+        prompt = getattr(self, "_current_prompt", None)
+        camera = getattr(prompt, "_camera_capability", None)
+        if not isinstance(camera, dict):
+            camera = {"state": "inactive"}
+        else:
+            camera = {"state": str(camera.get("state", "unknown"))}
         return {
             "application": APP_NAME,
             "version": APP_VERSION,
@@ -1668,6 +1674,7 @@ class App:
             "paused": bool(getattr(self, "settings", {}).get("paused", False)),
             "prompt_active": getattr(self, "_current_prompt", None) is not None,
             "intervention_active": bool(getattr(self, "_intervention_active", False)),
+            "camera": camera,
             "guard_status": guard_status,
             "tray_backend": tray_backend,
             "settings_schema_keys": schema_key_count,

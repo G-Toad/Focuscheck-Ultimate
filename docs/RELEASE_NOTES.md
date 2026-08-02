@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 219 unittest cases.
+- Automated test baseline: 220 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -27,6 +27,7 @@
 - Camera feed callbacks carry a generation token, so callbacks already dequeued by Tk become no-ops after camera cleanup.
 - Camera test, adjustment, and crop preview windows use the same generation-bound cleanup contract, including delayed crop-camera initialization.
 - Hidden prompts that fail visibility recovery now close through the full prompt cleanup contract instead of calling `destroy()` directly.
+- Camera capability state now distinguishes disabled, missing dependencies, unavailable device, ready, active, degraded, failed, and stopped without exposing private camera data.
 - Single-instance mutex API signatures are explicit and the owned Windows handle is released through the main lifecycle finally block.
 - App lifecycle phases are now explicit and published in the heartbeat: `starting`, `ready`, `stopping`, `stopped`, and `failed`.
 - Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.

@@ -33,6 +33,7 @@ def format_status_snapshot(snapshot: dict) -> str:
         ("Paused", snapshot.get("paused", "unknown")),
         ("Prompt active", snapshot.get("prompt_active", "unknown")),
         ("Intervention active", snapshot.get("intervention_active", "unknown")),
+        ("Camera", snapshot.get("camera", {}).get("state", "unknown") if isinstance(snapshot.get("camera"), dict) else "unknown"),
         ("Guard", snapshot.get("guard_status", "unknown")),
         ("Tray backend", snapshot.get("tray_backend", "unknown")),
         ("Settings schema keys", snapshot.get("settings_schema_keys", "unknown")),
