@@ -142,6 +142,28 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(30, retain_mock.call_args.kwargs["max_age_days"])
         self.assertTrue(retain_mock.call_args.kwargs["apply"])
 
+    def test_tray_diagnostic_bundle_previews_before_saving(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._call_on_ui_thread = lambda callback: callback()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "diagnostic.zip"
+            with (
+                mock.patch("focuscheck.app.get_data_dir", return_value=temp_dir),
+                mock.patch("focuscheck.app.messagebox.askyesno", return_value=True),
+                mock.patch("focuscheck.app.messagebox.showinfo"),
+                mock.patch("tkinter.filedialog.asksaveasfilename", return_value=str(output)),
+                mock.patch("focuscheck.utils.diagnostics.preview_bundle", return_value={"files": [], "excluded": []}),
+                mock.patch("focuscheck.utils.diagnostics.create_bundle") as create_mock,
+            ):
+                result = App._tray_diagnostic_bundle(app)
+
+        self.assertTrue(result)
+        create_mock.assert_called_once()
+        self.assertEqual(Path(temp_dir), create_mock.call_args.args[0])
+        self.assertEqual(output, Path(create_mock.call_args.args[1]))
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

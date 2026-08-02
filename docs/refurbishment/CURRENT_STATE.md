@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `195` unittest cases passing.
+- Current automated baseline after hardening: `197` unittest cases passing.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
 - Isolated native overlay self-test: passing with virtual-screen region updates.
@@ -26,5 +26,6 @@
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
 - `tools/export_data.py` and tray/App data controls provide atomic allowlisted export, metadata-only inventory, confirmed clear-log/personal-data actions, and explicit-age log retention with sensitive-category safeguards and metadata-only audit records; the bounded runner exercises the export path in a disposable root.
+- The tray diagnostic bundle action previews allowlisted operational files and creates a sanitized bundle that excludes settings, tasks, camera files, and exports.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

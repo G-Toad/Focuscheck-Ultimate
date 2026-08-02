@@ -737,6 +737,9 @@ class SystemTray:
     def _retain_logs(self, icon: Any, item: Any) -> None:
         self._call_app("_tray_retain_logs")
 
+    def _diagnostic_bundle(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_diagnostic_bundle")
+
     def _show_data_inventory(self, icon: Any, item: Any) -> None:
         self._call_app("_tray_show_data_inventory")
 
@@ -980,6 +983,9 @@ class SystemTray:
 
         logger.info("  Adding menu item: 'Clean old logs'")
         items.append(pystray.MenuItem("Clean old logs", self._retain_logs))
+
+        logger.info("  Adding menu item: 'Create diagnostic bundle'")
+        items.append(pystray.MenuItem("Create diagnostic bundle", self._diagnostic_bundle))
 
         logger.info("  Adding separator")
         items.append(pystray.Menu.SEPARATOR)

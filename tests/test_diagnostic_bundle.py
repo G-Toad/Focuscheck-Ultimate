@@ -24,5 +24,31 @@ class DiagnosticBundleTests(unittest.TestCase):
             (runtime / "verification.json").write_text("{}", encoding="utf-8")
             output = create_bundle(runtime, runtime / "bundle.zip")
             with zipfile.ZipFile(output) as archive:
-                self.assertEqual({"stage.log", "verification.json"}, set(archive.namelist()))
+                self.assertEqual(
+                    {"stage.log", "verification.json", "DIAGNOSTIC_MANIFEST.json"},
+                    set(archive.namelist()),
+                )
                 self.assertNotIn("secret", archive.read("stage.log").decode())
+
+    def test_preview_excludes_sensitive_categories_and_bundle_redacts_private_fields(self):
+        from focuscheck.utils.diagnostics import create_bundle, preview_bundle
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "focus_app.log").write_text(
+                "title=Private title url=https://example.test/path?q=secret password=hunter2",
+                encoding="utf-8",
+            )
+            (root / "focus_settings.json").write_text('{"private":"value"}', encoding="utf-8")
+            (root / "focus_tasks.sqlite3").write_bytes(b"task")
+
+            preview = preview_bundle(root)
+            self.assertEqual(["focus_app.log"], [item["path"] for item in preview["files"]])
+            self.assertEqual({"settings", "tasks", "camera", "exports"}, set(preview["excluded"]))
+            output = root / "bundle.zip"
+            create_bundle(root, output)
+            with zipfile.ZipFile(output) as archive:
+                content = archive.read("focus_app.log").decode()
+            self.assertNotIn("Private title", content)
+            self.assertNotIn("secret", content)
+            self.assertNotIn("hunter2", content)

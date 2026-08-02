@@ -1077,7 +1077,8 @@ class App:
                 CMD_CLEAR_LOGS = 1013
                 CMD_CLEAR_DATA = 1014
                 CMD_RETAIN_LOGS = 1015
-                CMD_EXIT = 1016
+                CMD_DIAGNOSTIC = 1016
+                CMD_EXIT = 1017
 
                 actions = {}
                 labels = []
@@ -1122,6 +1123,7 @@ class App:
                         _append(CMD_CLEAR_LOGS, "Clear Logs", action=self._tray_clear_logs)
                         _append(CMD_CLEAR_DATA, "Clear Personal Data", action=self._tray_clear_data)
                         _append(CMD_RETAIN_LOGS, "Clean Old Logs", action=self._tray_retain_logs)
+                        _append(CMD_DIAGNOSTIC, "Create Diagnostic Bundle", action=self._tray_diagnostic_bundle)
                         _separator()
                         _append(CMD_EXIT, "Exit", enabled=exit_enabled, action=self._tray_exit)
 
@@ -1708,6 +1710,46 @@ class App:
                 return False
 
         return self._call_on_ui_thread(_retain_logs)
+
+    def _tray_diagnostic_bundle(self):
+        """Preview and create a sanitized bundle from operational data only."""
+        def _create_bundle():
+            from tkinter import filedialog
+            from .utils.diagnostics import create_bundle, preview_bundle
+
+            try:
+                data_dir = Path(get_data_dir())
+                preview = preview_bundle(data_dir)
+                files = preview["files"]
+                summary = "\n".join(
+                    f"- {item['path']} ({item['size']} bytes)" for item in files
+                ) or "- No operational files found"
+                if not messagebox.askyesno(
+                    "Diagnostic bundle preview",
+                    "Only operational logs and metadata will be included.\n"
+                    "Settings, tasks, camera files, and exports are excluded.\n\n"
+                    f"Files:\n{summary}\n\nCreate the bundle?",
+                ):
+                    return False
+                export_dir = data_dir / "exports"
+                export_dir.mkdir(parents=True, exist_ok=True)
+                output = filedialog.asksaveasfilename(
+                    title="Save diagnostic bundle",
+                    initialdir=str(export_dir),
+                    initialfile="focuscheck-diagnostic.zip",
+                    defaultextension=".zip",
+                    filetypes=[("Diagnostic bundle", "*.zip"), ("All files", "*.*")],
+                )
+                if not output:
+                    return False
+                create_bundle(data_dir, output)
+                messagebox.showinfo("Diagnostic bundle", f"Created sanitized bundle:\n{output}")
+                return True
+            except Exception as exc:
+                messagebox.showerror("Diagnostic bundle failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_create_bundle)
 
     def _tray_exit(self):
         def _do_exit():
