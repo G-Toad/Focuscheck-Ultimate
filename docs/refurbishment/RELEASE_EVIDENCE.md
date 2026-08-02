@@ -1,6 +1,6 @@
 # Release Evidence
 
-- Automated: `115` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Automated: `116` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
 - Compileall, application self-test, tray self-test, QA scenario runner, and settings inventory pass.
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.

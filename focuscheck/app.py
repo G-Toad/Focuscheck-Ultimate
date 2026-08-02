@@ -38,6 +38,7 @@ from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
+from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
 
@@ -247,6 +248,7 @@ class App:
         self._ensure_engine()
         self._scheduled = None
         self._current_prompt = None
+        self._prompt_coordinator = PromptCoordinator()
         self._intervention_active = False
         self._last_resume_mono = 0.0
         self._next_due_mono = None
@@ -718,6 +720,11 @@ class App:
 
         self._ensure_engine()
 
+        runtime_state = getattr(self, "_runtime_state", None)
+        if runtime_state is not None and not runtime_state.begin_prompt():
+            self._schedule_next(1500)
+            return
+
         slot_info = self._slot_start_info()
         try:
             get_logger().info("showing prompt @ %s", slot_info["local_minute"])  # best-effort
@@ -731,12 +738,23 @@ class App:
             dlg = self._engine.create_prompt(self.settings, slot_info)
         except Exception:
             log_exception("monitoring engine failed to create prompt")
+            if runtime_state is not None:
+                runtime_state.end_prompt()
             self._schedule_next()
             return
         if dlg is None:
+            if runtime_state is not None:
+                runtime_state.end_prompt()
             self._schedule_next()
             return
         self._current_prompt = dlg
+        prompt_generation = self._prompt_coordinator.open(dlg)
+        if prompt_generation is None:
+            self._current_prompt = None
+            if runtime_state is not None:
+                runtime_state.end_prompt()
+            self._schedule_next(1500)
+            return
         try:
             dlg.update_idletasks()
             dlg.deiconify()
@@ -787,7 +805,7 @@ class App:
         # Use non-blocking approach instead of wait_window() to avoid GIL issues with pystray
         def _check_dialog_closed():
             try:
-                if self._current_prompt is not dlg:
+                if not self._prompt_coordinator.is_current(dlg, prompt_generation):
                     return
                 # Check if dialog window still exists
                 if dlg.winfo_exists():
@@ -872,12 +890,18 @@ class App:
         os._exit(0)
 
     def _on_prompt_done(self):
-        if self._current_prompt is None:
+        prompt = self._current_prompt
+        if prompt is None:
             return
-        try:
-            self._current_prompt = None
-        except Exception:
-            pass
+        coordinator = getattr(self, "_prompt_coordinator", None)
+        if coordinator is None:
+            coordinator = PromptCoordinator()
+            self._prompt_coordinator = coordinator
+        coordinator.complete(prompt)
+        self._current_prompt = None
+        state = getattr(self, "_runtime_state", None)
+        if state is not None:
+            state.end_prompt()
         self._schedule_next()
 
     def run_intervention(self, settings, *, preselect_hwnd=None, preselect_title=None) -> bool:
@@ -1232,7 +1256,15 @@ class App:
             prompt.destroy()
         except Exception:
             pass
+        coordinator = getattr(self, "_prompt_coordinator", None)
+        if coordinator is None:
+            coordinator = PromptCoordinator()
+            self._prompt_coordinator = coordinator
+        coordinator.close(prompt)
         self._current_prompt = None
+        state = getattr(self, "_runtime_state", None)
+        if state is not None:
+            state.end_prompt()
         try:
             get_logger().info("current prompt closed via %s", source)
         except Exception:

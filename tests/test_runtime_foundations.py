@@ -27,6 +27,19 @@ class FakeScheduler:
 
 
 class RuntimeFoundationTests(unittest.TestCase):
+    def test_prompt_coordinator_ignores_duplicate_and_stale_completion(self):
+        from focuscheck.ui.prompt_coordinator import PromptCoordinator
+
+        coordinator = PromptCoordinator()
+        first = object()
+        second = object()
+        generation = coordinator.open(first)
+        self.assertIsNone(coordinator.open(second))
+        self.assertFalse(coordinator.complete(second))
+        self.assertTrue(coordinator.complete(first, generation))
+        self.assertFalse(coordinator.complete(first, generation))
+        self.assertEqual(2, coordinator.open(second))
+
     def test_app_paths_are_complete_and_rooted(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = get_app_paths(temp_dir)
