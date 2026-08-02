@@ -6,7 +6,7 @@ This is the current repository-grounded operation matrix. `automated` means the 
 | --- | --- | --- | --- |
 | Launch | Direct child start | `main.py` performs single-instance enforcement before App composition. | `automated` |
 | Launch | Supervised start | `focuscheck_supervisor.py` owns heartbeat, generation, nonce-bound stop requests, process-start-token lock ownership, stale detection, and bounded restart behavior. | `automated`; live restart `manual_pending` |
-| Startup | Run-key registration | Per-user startup points at the supervised entry point; inspection distinguishes absent, valid, stale, malformed, and error states. | `automated`; registry `manual_pending` |
+| Startup | Run-key registration | Per-user registry startup is canonical; inspection distinguishes absent, valid, stale, malformed, legacy, duplicate, and error states, with explicit repair. | `automated`; registry/moved-install `manual_pending` |
 | Runtime | Manual pause | Durable settings mutation is transactional and cross-process serialized. | `automated` |
 | Runtime | Snooze | Durable UTC expiry is stored and effective pause is clock-testable. | `automated`; tray/Tk `manual_pending` |
 | Runtime | Guard pause | Guard reasons are tracked separately from manual intent. | `automated`/source; lock/sleep `manual_pending` |

@@ -15,14 +15,24 @@ class StartupInspection:
     command: str = ""
     expected_command: str = ""
     detail: str = ""
+    launcher_path: str = ""
+    launcher_present: bool = False
 
     @property
     def present(self) -> bool:
-        return self.status in {"valid", "stale", "malformed"}
+        return self.status in {"valid", "stale", "malformed", "legacy", "duplicate"}
 
     @property
     def repairable(self) -> bool:
-        return self.status in {"stale", "malformed"}
+        return self.status in {"stale", "malformed", "legacy", "duplicate"}
+
+
+def _startup_launcher_path() -> Path | None:
+    """Return the legacy Startup-folder launcher path when discoverable."""
+    appdata = os.environ.get("APPDATA")
+    if not appdata:
+        return None
+    return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "RunFocusCheckSupervisor.cmd"
 
 
 def compose_startup_command(entrypoint=None):
@@ -115,6 +125,26 @@ def uninstall_startup(name: str = "FocusCheck"):
         return False
 
 
+def repair_startup(name: str = "FocusCheck") -> bool:
+    """Repair startup to the canonical registry route and remove its legacy duplicate."""
+    inspection = inspect_startup(name)
+    if inspection.status == "unsupported":
+        return False
+    if inspection.status == "valid":
+        return True
+    if not install_startup(name):
+        return False
+    if inspection.launcher_present and inspection.launcher_path:
+        try:
+            legacy_launcher = Path(inspection.launcher_path)
+            # The path came from the fixed Startup-folder filename in inspection.
+            if legacy_launcher.name == "RunFocusCheckSupervisor.cmd":
+                legacy_launcher.unlink(missing_ok=True)
+        except OSError:
+            return False
+    return True
+
+
 def is_startup_installed(name: str = "FocusCheck") -> bool:
     """Check whether a non-empty startup entry exists."""
     return inspect_startup(name).present
@@ -124,6 +154,9 @@ def inspect_startup(name: str = "FocusCheck") -> StartupInspection:
     """Inspect the current user's startup value without modifying the registry."""
     if _platform.system().lower() != 'windows':
         return StartupInspection("unsupported", detail="Windows startup registry is unavailable")
+    launcher = _startup_launcher_path()
+    launcher_present = bool(launcher and launcher.exists())
+    launcher_text = str(launcher) if launcher else ""
     try:
         import winreg
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -132,25 +165,59 @@ def inspect_startup(name: str = "FocusCheck") -> StartupInspection:
             val, typ = winreg.QueryValueEx(key, name)
             command = str(val or "").strip()
         except FileNotFoundError:
-            return StartupInspection("absent")
+            if launcher_present:
+                return StartupInspection(
+                    "legacy",
+                    detail="legacy Startup-folder launcher exists without the official registry entry",
+                    launcher_path=launcher_text,
+                    launcher_present=True,
+                )
+            return StartupInspection("absent", launcher_path=launcher_text, launcher_present=False)
         finally:
             winreg.CloseKey(key)
     except FileNotFoundError:
-        return StartupInspection("absent")
+        if launcher_present:
+            return StartupInspection(
+                "legacy",
+                detail="legacy Startup-folder launcher exists without the official registry entry",
+                launcher_path=launcher_text,
+                launcher_present=True,
+            )
+        return StartupInspection("absent", launcher_path=launcher_text, launcher_present=False)
     except Exception as exc:
-        return StartupInspection("error", detail=str(exc))
+        return StartupInspection("error", detail=str(exc), launcher_path=launcher_text, launcher_present=launcher_present)
 
     if not command:
-        return StartupInspection("malformed", detail="startup value is empty")
+        return StartupInspection(
+            "duplicate" if launcher_present else "malformed",
+            detail="startup value is empty" if not launcher_present else "registry entry is empty and legacy launcher also exists",
+            launcher_path=launcher_text,
+            launcher_present=launcher_present,
+        )
 
     expected = compose_startup_command()
     normalize = lambda value: " ".join(str(value).replace("/", "\\").casefold().split())
     if normalize(command) == normalize(expected):
+        if launcher_present:
+            return StartupInspection(
+                "duplicate",
+                command=command,
+                expected_command=expected,
+                detail="official registry entry is valid but legacy Startup-folder launcher also exists",
+                launcher_path=launcher_text,
+                launcher_present=True,
+            )
         return StartupInspection("valid", command=command, expected_command=expected)
     return StartupInspection(
-        "stale",
+        "duplicate" if launcher_present else "stale",
         command=command,
         expected_command=expected,
-        detail="startup command does not target the current installation",
+        detail=(
+            "startup command is stale and legacy Startup-folder launcher also exists"
+            if launcher_present
+            else "startup command does not target the current installation"
+        ),
+        launcher_path=launcher_text,
+        launcher_present=launcher_present,
     )
 

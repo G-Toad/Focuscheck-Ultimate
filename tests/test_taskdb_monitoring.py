@@ -508,6 +508,73 @@ class StartupCommandTests(unittest.TestCase):
         self.assertEqual("valid", inspection.status)
         self.assertFalse(inspection.repairable)
 
+    def test_inspect_startup_classifies_legacy_startup_folder_launcher(self):
+        from focuscheck.platform_specific import startup
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            OpenKey=lambda *_args: (_ for _ in ()).throw(FileNotFoundError()),
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            launcher = Path(temp_dir) / "RunFocusCheckSupervisor.cmd"
+            launcher.write_text("@echo off", encoding="ascii")
+            with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                    mock.patch.object(startup._platform, "system", return_value="Windows"), \
+                    mock.patch.object(startup, "_startup_launcher_path", return_value=launcher):
+                inspection = startup.inspect_startup("FocusCheckTest")
+
+        self.assertEqual("legacy", inspection.status)
+        self.assertTrue(inspection.launcher_present)
+        self.assertTrue(inspection.repairable)
+
+    def test_inspect_startup_classifies_registry_and_folder_duplicate(self):
+        from focuscheck.platform_specific import startup
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            OpenKey=lambda *_args: "key",
+            QueryValueEx=lambda *_args: ('"C:\\FocusCheck\\focuscheck_supervisor.py" --run', 1),
+            CloseKey=lambda _key: None,
+        )
+        launcher = Path("C:/FocusCheck/RunFocusCheckSupervisor.cmd")
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                mock.patch.object(startup._platform, "system", return_value="Windows"), \
+                mock.patch.object(startup, "compose_startup_command", return_value='"C:\\FocusCheck\\focuscheck_supervisor.py" --run'), \
+                mock.patch.object(startup, "_startup_launcher_path", return_value=launcher), \
+                mock.patch.object(Path, "exists", return_value=True):
+            inspection = startup.inspect_startup("FocusCheckTest")
+
+        self.assertEqual("duplicate", inspection.status)
+        self.assertTrue(inspection.launcher_present)
+        self.assertTrue(inspection.repairable)
+
+    def test_repair_startup_promotes_registry_route_and_removes_legacy_launcher(self):
+        from focuscheck.platform_specific import startup
+
+        calls = {}
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            KEY_SET_VALUE=4,
+            REG_SZ=1,
+            OpenKey=lambda *_args: (_ for _ in ()).throw(FileNotFoundError()),
+            CreateKey=lambda *_args: "key",
+            SetValueEx=lambda _key, name, _reserved, _typ, value: calls.update({"name": name, "value": value}),
+            CloseKey=lambda _key: None,
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            launcher = Path(temp_dir) / "RunFocusCheckSupervisor.cmd"
+            launcher.write_text("@echo off", encoding="ascii")
+            with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                    mock.patch.object(startup._platform, "system", return_value="Windows"), \
+                    mock.patch.object(startup, "_startup_launcher_path", return_value=launcher):
+                self.assertTrue(startup.repair_startup("FocusCheckTest"))
+
+            self.assertEqual("FocusCheckTest", calls["name"])
+            self.assertFalse(launcher.exists())
+
 
 class SupervisorLifecycleTests(unittest.TestCase):
     def test_supervisor_lock_rejects_duplicate_and_cleans_up(self):
