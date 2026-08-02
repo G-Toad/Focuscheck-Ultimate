@@ -45,6 +45,29 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertEqual([None], events)
         self.assertIsNone(dialog._ensure_visible_timer_id)
 
+    def test_snooze_prompt_registry_invalidates_callbacks_on_close(self):
+        from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+        from focuscheck.utils.timers import TimerRegistry
+
+        dialog = object.__new__(SnoozePromptDialog)
+        dialog._ensure_visible_timer_id = None
+        dialog._initial_focus_timer_id = None
+        scheduled = []
+        events = []
+        dialog.after = lambda delay, callback: (scheduled.append(callback) or f"timer-{len(scheduled)}")
+        dialog.after_cancel = lambda _timer_id: None
+        dialog._timers = TimerRegistry(dialog)
+
+        dialog._ensure_visible_timer_id = dialog._schedule_owned_timer(
+            "_ensure_visible_timer_id", 200, lambda: events.append("stale")
+        )
+        dialog._cancel_pending_timers()
+        scheduled[0]()
+
+        self.assertEqual([], events)
+        self.assertIsNone(dialog._ensure_visible_timer_id)
+        self.assertTrue(dialog._timers.closed)
+
     def test_snooze_reminder_close_cancels_focus_timer(self):
         from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 

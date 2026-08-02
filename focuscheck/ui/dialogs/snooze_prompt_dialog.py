@@ -21,6 +21,7 @@ import time
 
 from .spam_detection import SpamDetector
 from ...settings.gates import is_spam_detection_enabled
+from ...utils.timers import TimerRegistry
 
 try:
     from ...utils import get_logger
@@ -54,6 +55,7 @@ class SnoozePromptDialog(tk.Toplevel):
         self._focus_order = []
         self._prevent_paste = bool(self.settings.get("snooze_exact_prevent_paste", True))
         self._case_sensitive = bool(self.settings.get("snooze_sentence_case_sensitive", True))
+        self._timers = TimerRegistry(self)
 
         self.reason_required = bool(self.settings.get("snooze_prompt_ask_reason", True))
         self.exact_required = bool(self.settings.get("snooze_prompt_exact_enabled", True))
@@ -120,6 +122,11 @@ class SnoozePromptDialog(tk.Toplevel):
 
     def _schedule_owned_timer(self, attribute, delay_ms, callback):
         """Clear a one-shot timer handle before invoking its callback."""
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.schedule(attribute, delay_ms, callback)
+            return timers.callback_id(attribute)
+
         def run():
             setattr(self, attribute, None)
             callback()
@@ -380,6 +387,16 @@ class SnoozePromptDialog(tk.Toplevel):
             self._log(f"ensure_visible: FAILED - {e}")
 
     def _cancel_pending_timers(self):
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+            for attr in ("_ensure_visible_timer_id", "_initial_focus_timer_id"):
+                try:
+                    setattr(self, attr, None)
+                except Exception:
+                    pass
+            return
+
         for attr in ("_ensure_visible_timer_id", "_initial_focus_timer_id"):
             timer_id = getattr(self, attr, None)
             if timer_id is None:
