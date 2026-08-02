@@ -81,6 +81,33 @@ class AppLifecycleTests(unittest.TestCase):
 
         self.assertEqual(["dispatch"], calls)
 
+    def test_native_tray_fallback_stops_pystray_before_activation(self):
+        from focuscheck.app import App
+
+        events = []
+
+        class Tray:
+            def stop(self):
+                events.append("pystray_stop")
+
+        class Watcher:
+            def _tray_add(self, tooltip):
+                events.append(("native_add", tooltip))
+
+        app = App.__new__(App)
+        app._tray = Tray()
+        app._winwatch = Watcher()
+        app._pystray_started = True
+        app._using_pystray = True
+        app._native_tray_fallback_active = False
+        app._activate_native_tray_fallback()
+        app._activate_native_tray_fallback()
+
+        self.assertEqual(["pystray_stop", ("native_add", "Focus Check")], events)
+        self.assertFalse(app._pystray_started)
+        self.assertFalse(app._using_pystray)
+        self.assertTrue(app._native_tray_fallback_active)
+
     def test_tray_export_dispatches_ui_flow_and_requires_sensitive_confirmation(self):
         from focuscheck.app import App
 

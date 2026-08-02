@@ -311,6 +311,7 @@ class App:
         # Optional cross-platform tray using pystray (preferred when available)
         self._pystray_started = False  # started (requested)
         self._using_pystray = False    # proven alive
+        self._native_tray_fallback_active = False
         self._tray = None
         try:
             if SystemTray is not None:
@@ -338,20 +339,13 @@ class App:
                         pass
                     self._using_pystray = True
                 def _on_failure():
-                    # pystray failed - enable native tray if available
+                    # Fallback must run on the Tk owner thread and stop
+                    # pystray before enabling a second tray backend.
                     try:
                         get_logger().error("pystray post-start check failed", exc_info=True)
                     except Exception:
                         pass
-                    # If we have a Windows watcher but tray is disabled, enable it
-                    if platform.system().lower() == "windows" and getattr(self, "_winwatch", None) is not None:
-                        try:
-                            # Try to enable the native tray on the existing watcher
-                            if hasattr(self._winwatch, '_tray_add'):
-                                self._winwatch._tray_add("Focus Check")
-                                get_logger().info("fallback: enabled native tray after pystray failure")
-                        except Exception:
-                            get_logger().exception("failed to enable native tray fallback", exc_info=True)
+                    self._call_on_ui_thread(self._activate_native_tray_fallback)
 
                 self._tray = SystemTray(
                     app=self,
@@ -1065,6 +1059,31 @@ class App:
                 self._show_tray_menu()
         except Exception:
             pass
+
+    def _activate_native_tray_fallback(self):
+        """Switch tray backends only after the preferred adapter has stopped."""
+        if getattr(self, "_native_tray_fallback_active", False):
+            return False
+        tray = getattr(self, "_tray", None)
+        if tray is not None and getattr(self, "_pystray_started", False):
+            try:
+                tray.stop()
+            except Exception:
+                get_logger().exception("fallback: failed stopping pystray; native tray not enabled", exc_info=True)
+                return False
+        self._pystray_started = False
+        self._using_pystray = False
+        watcher = getattr(self, "_winwatch", None)
+        if platform.system().lower() != "windows" or watcher is None or not hasattr(watcher, "_tray_add"):
+            return False
+        try:
+            watcher._tray_add("Focus Check")
+            self._native_tray_fallback_active = True
+            get_logger().info("fallback: enabled native tray after pystray failure")
+            return True
+        except Exception:
+            get_logger().exception("failed to enable native tray fallback", exc_info=True)
+            return False
 
     def _show_tray_menu(self):
         try:
