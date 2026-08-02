@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 185 unittest cases.
+- Automated test baseline: 186 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -28,3 +28,4 @@
 - The activity process-path probe now declares its Win32 handle, buffer, and pointer signatures before crossing the ctypes boundary.
 - Foreground and top-level window enumeration now declare user32, process, and PSAPI signatures before crossing the ctypes boundary.
 - Task analytics now store UTC while accepting an explicit timezone and injected clock for local-day/DST boundaries; existing callers retain an explicit UTC default.
+- TaskDB schema migration version 3 normalizes recoverable legacy timestamps and clears invalid legacy due dates with an auditable repair reason; a checked-in legacy SQL fixture covers the path.

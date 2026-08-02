@@ -132,6 +132,48 @@ class TaskDB:
                         (2, datetime.now(timezone.utc).isoformat()),
                     )
                     cur.execute("PRAGMA user_version = 2")
+                if schema_version < 3:
+                    # Normalize recoverable legacy timestamps and make invalid
+                    # due dates visible instead of silently exempting tasks.
+                    cur.execute(
+                        "SELECT id, created_utc, due_utc, completed_utc, change_reason FROM tasks"
+                    )
+                    for task_id, created_utc, due_utc, completed_utc, reason in cur.fetchall():
+                        updates = {}
+                        reasons = []
+                        for column, value, allow_none in (
+                            ("created_utc", created_utc, False),
+                            ("due_utc", due_utc, True),
+                            ("completed_utc", completed_utc, True),
+                        ):
+                            if value is None and allow_none:
+                                continue
+                            try:
+                                normalized = _normalize_utc(value, allow_none=allow_none)
+                            except ValueError:
+                                if column == "created_utc":
+                                    reasons.append("legacy invalid created_utc retained")
+                                else:
+                                    updates[column] = None
+                                    reasons.append(f"legacy invalid {column} cleared")
+                                continue
+                            if normalized != value:
+                                updates[column] = normalized
+                        if reasons:
+                            existing = str(reason or "").strip()
+                            marker = "; ".join(reasons)
+                            updates["change_reason"] = f"{existing}; {marker}".strip("; ")
+                        if updates:
+                            assignments = ", ".join(f"{column}=?" for column in updates)
+                            cur.execute(
+                                f"UPDATE tasks SET {assignments} WHERE id=?",
+                                (*updates.values(), task_id),
+                            )
+                    cur.execute(
+                        "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
+                        (3, datetime.now(timezone.utc).isoformat()),
+                    )
+                    cur.execute("PRAGMA user_version = 3")
                 con.commit()
         except Exception as exc:
             log_exception("TaskDB: failed ensuring schema")
