@@ -20,6 +20,15 @@ Promote a tested package without modifying user data:
 powershell -ExecutionPolicy Bypass -File tools\promote_package.ps1 -PackageDir .\dist\FocusCheck -InstallDir "$env:LOCALAPPDATA\FocusCheck\app" -Version 1.0.0
 ```
 
+For a disposable install/upgrade/uninstall lifecycle check, use
+`tools\package_lifecycle.ps1`. Install and upgrade promote the package; uninstall
+archives the binary and never removes the data root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Install -PackageDir .\dist\FocusCheck -InstallDir "$env:LOCALAPPDATA\FocusCheck\app" -DataDir "$env:APPDATA\FocusCheck" -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Uninstall -InstallDir "$env:LOCALAPPDATA\FocusCheck\app" -DataDir "$env:APPDATA\FocusCheck"
+```
+
 The previous package is retained beside the install directory and the promoted executable receives a SHA-256 manifest.
 
 The supervisor owns the application process. Do not create an independent startup entry for the child executable.

@@ -1,6 +1,6 @@
 # Release Evidence
 
-- Automated: `144` unittest cases pass in the isolated verification runner, including live-profile isolation assertion, repository-write and process-leak guards, canonical path/legacy settings conflict handling, busy-file-safe logging, diagnostic response redaction, coordinator-owned website pause suppression, durable `allow_once` consumption, injected cooldown-clock boundaries, activity-confidence policy, the full-schema boolean coercion matrix, and canonical website-domain matching.
+- Automated: `146` unittest cases pass in the isolated verification runner, including live-profile isolation assertion, repository-write and process-leak guards, canonical path/legacy settings conflict handling, busy-file-safe logging, disposable install/upgrade/uninstall and package promotion/rollback, diagnostic response redaction, coordinator-owned website pause suppression, durable `allow_once` consumption, injected cooldown-clock boundaries, activity-confidence policy, the full-schema boolean coercion matrix, and canonical website-domain matching.
 - Settings input budgets reject oversized collections/strings before normalization or persistence.
 - Task timestamps are normalized to UTC at the persistence boundary, with malformed inputs rejected by regression tests.
 - Settings load/save is covered by an OS-level sidecar lock regression test.
@@ -10,5 +10,5 @@
 - Isolated native overlay self-test passes virtual-screen region updates without live-profile logging contention.
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.
-- Pinned PyInstaller packaging, packaged self-test, and scripted package promotion/rollback evidence are present; installer shell lifecycle and signing remain unverified.
+- Pinned PyInstaller packaging, packaged self-test, scripted package promotion/rollback, and disposable install/upgrade/uninstall evidence are present; real installer shell lifecycle and signing remain unverified.
 - Native Windows and UI evidence is pending and must be attached before release claims.
