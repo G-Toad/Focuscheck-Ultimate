@@ -1,0 +1,26 @@
+<Window x:Class="FocusCheck.Wpf.PromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Check-in" Height="360" Width="420" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="16" Background="#111">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Right now - be honest:" Foreground="#eaeaea" FontSize="18" FontWeight="Bold"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0 10 0 10" HorizontalAlignment="Center">
+            <Button Content="Studying" Width="140" Margin="0 0 8 0"/>
+            <Button Content="Wasting time" Width="140"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Margin="0 6 0 6">
+            <TextBlock Text="Follow-up fields would live here" Foreground="#aaa" />
+            <TextBox Height="80" TextWrapping="Wrap" Margin="0 6 0 0"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Cancel" Width="90" Margin="0 0 8 0"/>
+            <Button Content="Continue" Width="90"/>
+        </StackPanel>
+    </Grid>
+</Window>

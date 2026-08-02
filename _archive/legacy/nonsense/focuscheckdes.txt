@@ -1,0 +1,1413 @@
+● COMPREHENSIVE FOCUSCHECK CODEBASE ANALYSIS & DOCUMENTATION
+
+  EXECUTIVE SUMMARY
+
+  FocusCheck is a sophisticated, Windows-focused productivity application designed to help users maintain focus and track time management through
+  periodic prompts and behavioral interventions. The application employs a unique psychological approach combining periodic check-ins, progressive
+  escalation mechanics, task management, and anti-habit patterns to prevent mindless responses.
+
+  Primary Purpose: Interrupt the user at configurable intervals to ask: "What are you doing right now?" forcing conscious reflection on whether time is
+  being spent productively or wastefully.
+
+  ---
+  ARCHITECTURE OVERVIEW
+
+  System Design Philosophy
+
+  FocusCheck follows a modular, defensive architecture with:
+  - Graceful degradation: Every feature has fallbacks
+  - Cross-platform considerations: Primarily Windows but structured for potential portability
+  - Fail-safe defaults: Conservative settings to prevent overwhelming users
+  - Extensive error handling: Try-except blocks at every level to ensure robustness
+
+  Core Architectural Patterns
+
+  1. Mixin-based UI composition: Dialog classes composed of specialized mixins
+  2. Settings-driven behavior: Nearly all behavior configurable via JSON settings
+  3. Event-driven Windows integration: Hooks into OS-level events (lock, sleep, display changes)
+  4. Database persistence: SQLite for task tracking, CSV for logging
+  5. Single-instance enforcement: Prevents multiple copies running simultaneously
+
+  ---
+  APPLICATION ENTRY POINTS
+
+  main.py (Primary Entry Point)
+
+  Location: main.py (root directory)
+
+  Purpose: Command-line interface and application launcher
+
+  Key Functions:
+
+  1. setup_exception_handler() (lines 17-32)
+    - Installs a global exception handler to log uncaught exceptions
+    - Wraps sys.excepthook to ensure crashes are logged before termination
+    - Defensive: Multiple try-except blocks to survive even logger failures
+  2. main() (lines 35-142)
+    - Single instance check (lines 132-134): Uses file-based locking to prevent multiple instances
+    - Command-line argument handling:
+        - --selftest: Validates Windows callback integration
+      - --tray-selftest: Tests system tray functionality
+      - --install-startup / --uninstall-startup: Manages Windows startup registry
+      - --tray-test: 20-second tray icon display test
+    - Application launch (line 138): Creates and runs the main App instance
+
+  Start FocusCheck.cmd (Windows Launcher)
+
+  Location: Start FocusCheck.cmd
+
+  Purpose: Silent Windows launcher
+
+  Behavior:
+  @echo off
+  cd /d "%~dp0"
+  pythonw main.py
+
+  - cd /d "%~dp0": Changes to the script's directory regardless of where it's run from
+  - pythonw: Runs Python without console window (background execution)
+  - Intent: Allows users to double-click and launch FocusCheck silently
+
+  ---
+  CORE APPLICATION CLASS
+
+  focuscheck/app.py - App Class
+
+  Purpose: Main orchestrator coordinating all subsystems
+
+  Initialization Flow (lines 81-245):
+
+  1. Tkinter Root Window Setup (lines 82-94)
+    - Creates hidden root window (root.withdraw())
+    - Binds emergency quit shortcuts (Ctrl+Shift+Esc, Alt+Q)
+    - Loads settings from disk
+  2. Subsystem Initialization:
+    - TaskDB (lines 105-108): SQLite database for task tracking
+    - CSV logging (line 109): Ensures log files have proper headers
+    - PauseGuard (line 110): Monitors system state (idle, lid closed, locked, sleeping)
+    - Heartbeat (lines 122-125): File-based heartbeat for external monitoring
+  3. System Tray Integration (lines 136-220)
+    - Dual tray strategy: Attempts cross-platform pystray first, falls back to native Windows tray
+    - Lifecycle hooks: _on_alive() confirms pystray success, _on_failure() enables fallback
+    - Persistent GUID: Uses UUID5 to ensure Windows 11 recognizes tray icon across restarts
+  4. Windows Event Hooks (lines 222-244)
+    - WindowsWakeWatcher: Hooks window procedure to receive OS events
+    - Listens for: session lock/unlock, power suspend/resume, display/DPI changes
+    - Conditional native tray: Only enables if pystray failed
+
+  Critical Methods
+
+  _schedule_next(delay_ms)
+
+  Lines: 300-316
+
+  Purpose: Schedules the next prompt dialog
+
+  Behavior:
+  - Cancels any existing scheduled prompt
+  - Defaults to interval_seconds from settings if delay not specified
+  - Tracks _next_due_mono for tray countdown display
+  - Uses monotonic() clock to avoid wallclock issues (daylight savings, NTP adjustments)
+
+  _maybe_show_prompt()
+
+  Lines: 346-393
+
+  Purpose: Conditionally shows a prompt if not paused
+
+  Decision Tree:
+  1. Reload settings (line 347): Always fresh settings for each prompt
+  2. Check global pause (lines 349-355): If manually paused via tray, reschedule and skip
+  3. Prevent duplicates (lines 357-363): If a prompt already open, defer 1.5 seconds
+  4. Check PauseGuard (lines 365-368): Skip if system idle/locked/lid closed
+  5. Show PromptDialog (lines 370-393): Creates dialog and uses non-blocking check loop
+
+  Non-blocking Wait Pattern (lines 379-393):
+  - Instead of wait_window() (which blocks and can cause GIL issues with pystray threading), uses a polling check every 100ms
+  - Allows pystray thread to remain responsive during dialog display
+
+  _on_resume_event()
+
+  Lines: 422-436
+
+  Purpose: Handles system wake/unlock
+
+  Behavior:
+  - Clears pause flags (locked, sleeping) in PauseGuard
+  - Debouncing (line 430): Ignores rapid resume events within 2 seconds
+  - Schedules immediate prompt (delay 0ms) to catch user right after returning
+
+  Tray Menu Construction
+
+  Lines: 510-705
+
+  Purpose: Builds right-click tray menu
+
+  Platform Strategy:
+  1. Native Windows First (lines 528-643): Uses TrackPopupMenu for Windows 10/11 native look
+  2. Tkinter Fallback (lines 645-703): If native fails, uses tk.Menu
+
+  Menu Items:
+  - Start/Stop reminders: Toggles global pause
+  - Prompt now: Immediate check-in
+  - Snooze 5/15 minutes: Delays next prompt
+  - Settings: Opens settings dialog
+  - Set/Change Task: Task management
+  - Startup management: Toggle run-on-boot
+  - Data/Logs folders: Open in Explorer
+  - Exit: Quits application
+
+  ---
+  CONFIGURATION SYSTEM
+
+  settings/defaults.py - DEFAULT_SETTINGS
+
+  Purpose: Defines all 100+ configuration parameters with safe defaults
+
+  Key Setting Categories:
+
+  1. Timing Parameters (lines 9-11)
+    - interval_seconds: 60 (how often to prompt)
+    - intensify_after_seconds: 15 (when to start escalation)
+    - overdrive_after_seconds: 60 (when to activate extreme measures)
+  2. Pause Mechanisms (lines 24-36)
+    - force_always_on: True (overrides all pause logic)
+    - pause_on_idle: False (don't pause when user inactive - OFF by default per user request)
+    - pause_on_lid_closed: True
+    - pause_on_lock: True (Windows session lock)
+    - pause_on_sleep: True (system sleep/hibernate)
+  3. Overdrive Stages (lines 42-61)
+    - Stage 4: Ultra-fast red flashing (60ms flash cycle)
+    - Stage 5: Multi-monitor dim/blackout
+        - Engines: Overlay (native windows) or Gamma (color manipulation)
+      - Click-through: Allow clicking underlying apps while dimmed
+      - Slow dim: Optional gradual fade to black over N seconds
+  4. Anti-Habit Mechanisms (lines 18-21)
+    - randomize_buttons: True (randomize button order)
+    - studying_hold_ms: 800 (require 800ms button hold to prevent mindless clicking)
+  5. Spam Detection (lines 94-120)
+    - Gibberish detection: Vowel ratio, unique character ratio
+    - Repetition checks: Max consecutive chars, pattern repetition
+    - Dictionary validation: Real word ratio requirements
+    - Timing validation: Minimum time before submit to prevent instant spam
+  6. Challenge System (lines 122-144)
+    - Frequency: 30% for studying, 50% for wasting prompts
+    - Requirements: Minimum word count (3), character count (10)
+    - Individual challenges: 7 wasting-focused, 4 studying-focused reflection prompts
+
+  settings/manager.py - Settings Persistence
+
+  validate_settings(data)
+
+  Lines: 14-213
+
+  Purpose: Validates, coerces, and sanitizes all settings
+
+  Validation Strategy:
+  1. Merge with defaults (lines 16-20): Unknown keys preserved for forward compatibility
+  2. Integer coercion with overflow protection (lines 22-30): Prevents values > 2^31-1
+  3. Range clamping: Every numeric setting has min/max bounds
+  4. Enum validation: Time modes, timescales, jiggle styles validated against whitelists
+
+  Examples:
+  - interval_seconds: Minimum 10 seconds (line 32)
+  - max_intensity_level: Clamped 1-3 (line 35)
+  - spam_min_vowel_ratio: Clamped 0.0-1.0 (lines 180-182)
+
+  load_settings() / save_settings(s)
+
+  Lines: 216-267
+
+  Purpose: Thread-safe atomic file operations
+
+  Atomic Write Pattern (lines 246-257):
+  1. Write to .tmp file
+  2. Flush and fsync() to disk
+  3. Atomic rename to final path
+  4. Windows special handling (lines 253-256): Remove old file first (Windows doesn't support atomic overwrite)
+
+  ---
+  DATABASE LAYER
+
+  database/task_db.py - TaskDB Class
+
+  Purpose: SQLite-based task and event tracking
+
+  Schema (lines 33-82):
+
+  1. tasks table:
+    - Fields: id, created_utc, title, why, consequences, due_utc, status, completed_utc, change_reason, timed_out
+    - Status values: 'active', 'completed', 'failed', 'changed'
+    - Timed_out flag: Indicates automatic failure due to deadline
+  2. waste_events table:
+    - Captures details when user clicks "Wasting time"
+    - Links to active_task_id for correlation
+  3. focus_events table:
+    - Captures details when user confirms "Studying"
+    - Records what they're doing and expected benefits
+
+  SQLite Optimizations (lines 18-22):
+  - WAL mode: Write-Ahead Logging for better concurrency
+  - NORMAL synchronous: Balance safety vs. performance
+  - Timeout 30s: Allows concurrent access with minimal blocking
+
+  Key Methods:
+
+  - get_active() (lines 87-92): Retrieves currently active task
+  - start_task() (lines 94-103): Creates new task with status='active'
+  - mark_completed() / mark_failed() (lines 105-123): Finalize tasks
+  - overdue_active_to_failed() (lines 137-154): Automatic deadline enforcement
+  - analytics_counts() (lines 156-190): Compute success/failure statistics with time filtering
+
+  database/csv_logger.py - CSV Logging
+
+  Purpose: Append-only CSV logs for long-term analysis
+
+  Files:
+  1. focus_log.csv (line 15): All check-in responses
+  2. focus_waste_log.csv (line 16): Wasting time details
+  3. focus_study_log.csv (line 17): Studying confirmation details
+
+  Thread Safety (lines 11-35):
+  - Per-file locks: RLock per CSV file to allow reentrant locking
+  - Lock registry: Global _csv_locks dict with mutex protection
+
+  Rotation Strategy (_rotate_csv_if_needed, lines 38-69):
+  - Size limit: 5MB default (line 38)
+  - Backup scheme: path → path.1 → path.2, oldest deleted
+  - Rotation timing: Checked before each write
+
+  Log Fields (append_log, lines 101-126):
+  - Click timestamp (UTC and local)
+  - Slot start time (when prompt appeared)
+  - Response type (Studying, Wasting time, etc.)
+  - On-time status (YES if before overdrive deadline)
+  - Late-by milliseconds
+  - Response latency
+  - Settings snapshot (interval, intensify, overdrive thresholds)
+  - Intensity level reached
+
+  ---
+  UI SYSTEM
+
+  ui/dialogs/prompt_dialog.py - PromptDialog
+
+  Architecture: Multiple-inheritance mixin composition
+
+  Inheritance Chain:
+  PromptDialog(
+      ButtonHandlingMixin,        # Button configuration and events
+      WindowPlacementMixin,        # Multi-monitor positioning
+      TimeDisplayMixin,            # Time info display
+      AntiHabitMixin,             # Press-and-hold behavior
+      IntensificationMixin,        # Progressive escalation
+      TaskManagementMixin,         # Task panel rendering
+      WindowsIntegrationMixin,     # Windows-specific helpers
+      tk.Toplevel
+  )
+
+  Initialization (lines 61-262):
+  1. Settings Application (lines 73-106): Always-on-top, minimize prevention
+  2. UI Construction (lines 118-205):
+    - Title label: "Right now - be honest:"
+    - Action buttons: "Studying" and optionally "Wasting time"
+    - Time info label (conditional)
+    - Task encouragement panel (conditional)
+    - Arrow row (initially hidden, appears during intensification)
+    - Footer links (Settings, Task)
+  3. Anti-Habit Binding (lines 139-145):
+    - Studying button: Hold for 800ms (default) before registering
+    - Wasting button: Also requires hold to prevent accidental clicks
+  4. Timer Scheduling (lines 216-217):
+    - Intensification timer (after intensify_after_seconds)
+    - Overdrive timer (after overdrive_after_seconds)
+  5. Platform Integration (lines 108-117):
+    - Disable minimize button (Windows)
+    - Start taskbar flashing for attention
+
+  Intensification System (intensification.py mixin)
+
+  Progressive Escalation Levels:
+
+  Level 0: Normal (calm, neutral)
+  - Standard button colors
+  - No visual distraction
+
+  Level 1: Gentle nudge
+  - Pulse effect: Buttons scale ±5 pixels
+  - Arrow emojis appear: "←" and "→"
+  - Background pulse: Subtle breathing effect
+
+  Level 2: Moderate urgency
+  - Shake effect: Rapid horizontal position changes (±3px)
+  - Faster pulse
+  - More prominent arrows
+
+  Level 3: High urgency
+  - Rapid shake (±5px)
+  - Rapid pulse
+  - Button jiggle: Individual button position randomization
+  - Red background flashing
+
+  Overdrive (Level 10): Extreme measures
+  - Flash background: Rapid red/black cycling
+  - Continuous shake loop
+  - Button jiggling intensifies
+
+  Overdrive Stage 4 (after overdrive_stage4_after_seconds from stage 3 start):
+  - Ultra-fast flashing: 60ms flash cycle (default)
+  - Purpose: Impossible to ignore, creates urgency
+
+  Overdrive Stage 5 (after overdrive_stage5_after_seconds from stage 4 start):
+  - Multi-monitor dim/blackout
+  - Two engines:
+    a. Overlay engine (default): Native Windows click-through overlays on each monitor
+    b. Gamma engine: Hardware gamma ramp manipulation (more invasive)
+  - Pulsing dim: Alpha oscillates to maintain attention
+  - Optional slow dim: One-way fade to black over N seconds
+  - Optional hold: Final black screen after timer expires
+
+  Anti-Habit System (anti_habit.py mixin)
+
+  Purpose: Prevent mindless habitual responses
+
+  Mechanisms:
+
+  1. Button Randomization (_place_buttons_random, line 206):
+    - Randomly orders "Studying" and "Wasting time"
+    - Prevents muscle memory of clicking left/right
+  2. Press-and-Hold (_study_hold_start / _study_hold_end):
+    - studying_hold_ms: Default 800ms
+    - Visual feedback: "Hold..." text during press
+    - Progressive fill bar: Shows hold progress
+    - Only registers if held for full duration
+  3. Challenge System Integration:
+    - Random chance to require text reflection before accepting response
+    - Forces conscious thought about current activity
+
+  ui/dialogs/focus_prompt_dialog.py - FocusPromptDialog
+
+  Purpose: Secondary dialog after clicking "Studying"
+
+  Flow (lines 19-280):
+  1. User clicks "Studying" (after hold)
+  2. FocusPromptDialog appears
+  3. Conditional prompts (configured via settings):
+    - "What are you doing right now?" (focus_prompt_ask_doing)
+    - "What are the benefits of this?" (focus_prompt_ask_benefits)
+  4. Challenge integration (lines 39-166):
+    - If enabled, replaces default prompt with reflection challenge
+    - Example: "What specific skill or knowledge are you developing right now?"
+    - Requires minimum word count and character count
+  5. Spam detection (lines 119-153, 202-209):
+    - Validates each response against spam criteria
+    - Rejects gibberish, excessive repetition, keyboard patterns
+    - Requires minimum time before submit
+  6. Database logging:
+    - Stores to focus_events table with active_task_id
+    - Also appends to focus_study_log.csv
+
+  ui/dialogs/waste_prompt_dialog.py - WastePromptDialog
+
+  Purpose: Secondary dialog after clicking "Wasting time"
+
+  Identical structure to FocusPromptDialog but different prompts:
+  - "What are you wasting time on?"
+  - "What are the consequences of this?"
+
+  Challenge examples (wasting context):
+  - "If you continue this for an hour, what will you have lost?"
+  - "What are you afraid might happen if you do what you should instead?"
+  - "Are you lying to yourself? If so, about what?"
+
+  Logging: Stores to waste_events table and focus_waste_log.csv
+
+  ui/guards.py - PauseGuard
+
+  Purpose: Determines if prompts should be paused based on system state
+
+  Pause Mechanisms:
+
+  1. Idle Detection (_looks_inactive_by_idle, lines 50-82):
+    - Windows: Uses GetLastInputInfo + GetTickCount64
+    - Measures milliseconds since last keyboard/mouse input
+    - Wraparound handling (lines 68-73): Proper 32-bit tick count overflow handling
+    - Threshold: inactive_as_sleep_seconds (default 45s)
+  2. Lid Closed Detection:
+    - Linux (lines 85-97): Reads /proc/acpi/button/lid/*/state
+    - macOS (lines 100-113): Uses ioreg to check AppleClamshellState
+  3. Event-Driven Flags (Windows only):
+    - _locked (line 20): Set by WTS_SESSION_LOCK event
+    - _sleeping (line 21): Set by PBT_APMSUSPEND event
+
+  Decision Logic (should_pause, lines 30-47):
+  IF force_always_on: return False  (never pause override)
+  IF pause_when_inactive_or_lid_closed disabled: return False
+  IF pause_on_idle AND idle detected: return True
+  IF pause_on_lid_closed AND lid closed: return True
+  IF Windows:
+      IF pause_on_lock AND locked: return True
+      IF pause_on_sleep AND sleeping: return True
+  return False
+
+  ---
+  PLATFORM-SPECIFIC INTEGRATION
+
+  platform_specific/windows.py - Windows Integration
+
+  Purpose: Deep Windows OS integration
+
+  Key Components:
+
+  WindowsWakeWatcher (lines 351-757)
+
+  Purpose: Hooks Tkinter window procedure to receive OS messages
+
+  Architecture:
+  1. Window Procedure Subclassing (lines 433-494):
+    - Gets existing window proc via GetWindowLongPtrW
+    - Installs custom WNDPROC callback
+    - Forwards unhandled messages to original proc
+  2. Registered Events:
+    - WM_WTSSESSION_CHANGE: Session lock/unlock (lines 451-458)
+    - WM_POWERBROADCAST: Power suspend/resume (lines 459-466)
+    - WM_DISPLAYCHANGE / WM_DPICHANGED: Monitor changes (lines 467-469)
+    - Custom tray message: Right-click, left-click on tray icon (lines 470-474)
+    - TaskbarCreated: Explorer restart detection for tray re-add (lines 475-482)
+  3. WTS Session Notifications (lines 397-421, 497-506):
+    - Registers for session change events via WTSRegisterSessionNotification
+    - Graceful degradation: If API unavailable, continues without lock/unlock detection
+
+  Native Tray Icon (_tray_add, lines 515-663)
+
+  Purpose: Create Windows native tray icon (fallback if pystray fails)
+
+  Implementation:
+  1. Icon Loading Strategy (lines 521-569):
+    - Priority 1: Custom icon from _tray_icon_path (passed from app)
+    - Priority 2: GDI+ PNG-to-HICON conversion (for assets/focus.png)
+    - Priority 3: Built-in ICO file
+    - Fallback: System IDI_APPLICATION icon
+  2. NOTIFYICONDATA Structure (lines 571-588):
+    - Fully populated with tooltip, callback message, GUID
+    - Persistent GUID (lines 606-612): Uses UUID5(NAMESPACE_DNS, "FocusCheckTrayIcon")
+    - Windows 11 uses GUID to remember tray icon visibility preferences
+  3. Balloon Notification (lines 638-648):
+    - One-time info balloon on tray icon creation
+    - Guides user to find icon in overflow area
+
+  WinClickThroughOverlay (lines 155-289)
+
+  Purpose: Native click-through overlay windows for Stage 5 dimming
+
+  Features:
+  - Custom window class: Registered once globally
+  - Popup window: No taskbar, no frame
+  - Extended styles:
+    - WS_EX_LAYERED: Supports alpha transparency
+    - WS_EX_TRANSPARENT: Click events pass through to underlying apps
+    - WS_EX_NOACTIVATE: Doesn't steal focus
+    - WS_EX_TOPMOST: Always on top
+    - WS_EX_TOOLWINDOW: Doesn't appear in Alt+Tab
+  - Alpha control: set_alpha(0.0-1.0) via SetLayeredWindowAttributes
+
+  Usage in Stage 5:
+  - Creates one overlay per monitor
+  - Pulsing alpha oscillation to maintain user awareness
+  - Solid color (configurable, default black)
+
+  GDI+ Image Handling (lines 292-348)
+
+  Purpose: Convert PNG/JPEG to HICON for tray icons
+
+  Functions:
+  - ensure_gdiplus_started() (lines 301-316): One-time GDI+ initialization
+  - create_hicon_from_image(path) (lines 330-348): PNG → HICON conversion
+  - gdiplus_shutdown() (lines 319-327): Cleanup on app exit
+
+  Why needed: Windows tray icons require HICON, but pystray uses PIL Images (PNG/JPEG)
+
+  ---
+  UTILITIES
+
+  utils/audio.py - AudioAlarm
+
+  Purpose: Sophisticated audio alarm system
+
+  Supported Patterns:
+  1. PATTERN_SINGLE_BEEP: One 200ms beep at 1000Hz
+  2. PATTERN_RAPID_BEEPS: Three quick 150ms beeps at 1500Hz
+  3. PATTERN_ESCALATING: Five beeps ramping 800Hz → 2000Hz
+  4. PATTERN_PULSING: Three 200ms pulses with pauses
+  5. PATTERN_SIREN: Alternating 800Hz / 1200Hz (up-down)
+  6. PATTERN_ALTERNATING: Four beeps alternating 1000Hz / 1500Hz
+
+  Playback Modes:
+  1. MODE_ONCE: Play pattern one time
+  2. MODE_REPEATING: Loop pattern for duration
+  3. MODE_ESCALATING_VOLUME: Volume increases over duration
+  4. MODE_CONTINUOUS: Play forever until stopped
+
+  Safety Features:
+
+  1. Earphone Safe Mode (lines 112-129):
+    - Frequency clamping: 800-2000Hz (prevents painful high frequencies)
+    - Duration limiting: Max 500ms per beep
+    - Volume ramping: Starts lower, builds over 30 seconds
+  2. Error Handling (lines 187-238):
+    - Retry logic: 2 attempts per beep
+    - Rate-limited logging: Max one error log per 5 seconds
+    - Consecutive error tracking: Warns after 10 consecutive failures
+    - Graceful degradation: Continues despite individual beep failures
+  3. Thread Safety (lines 312-336):
+    - Background daemon thread for playback
+    - Stop mechanism: _stop_requested flag checked between beeps
+    - Thread join with timeout: 2-second cleanup timeout
+
+  Integration with Prompt System:
+  - Audio trigger points: intensification, overdrive, overdrive_stage4, overdrive_stage5
+  - Configured via settings: audio_alert_trigger, audio_alarm_pattern, audio_alarm_mode
+  - Automatically stopped when prompt closed
+
+  utils/paths.py (implied from imports)
+
+  Purpose: Centralized path management
+
+  Key Paths (from app.py imports):
+  - SETTINGS_PATH: %APPDATA%/FocusCheck/focus_settings.json
+  - HEARTBEAT_PATH: %APPDATA%/FocusCheck/heartbeat.json
+  - TASK_DB_PATH: %APPDATA%/FocusCheck/tasks.db
+  - APP_LOG_PATH: %APPDATA%/FocusCheck/logs/focus.log
+
+  Pattern: All user data stored in %APPDATA%/FocusCheck (Windows) for proper isolation
+
+  utils/logging_utils.py (implied from imports)
+
+  Purpose: Centralized logging
+
+  Functions:
+  - get_logger(): Returns configured logger instance
+  - log_exception(msg): Logs exception with traceback
+
+  Logging Strategy:
+  - Rotating file handler
+  - Timestamp, level, message format
+  - Exception details captured with exc_info=True
+
+  ---
+  EXECUTION FLOW
+
+  Typical Session Timeline
+
+  1. 00:00 - Launch
+    - User runs Start FocusCheck.cmd or main.py
+    - App class initializes, loads settings
+    - System tray icon appears
+    - Windows event hooks installed
+    - First prompt scheduled for 2 seconds (line 245: "quick first pop to prove it works")
+  2. 00:02 - First Prompt
+    - PromptDialog appears centered on active monitor
+    - User sees: "Studying" and "Wasting time" buttons (randomized order)
+    - Time info label shows elapsed time (if enabled)
+    - Task panel shows active task (if any)
+  3. 00:02-00:17 - User Delay (Intensification)
+    - 00:17 (interval + 15s): Intensification begins
+        - Level 1: Gentle pulse, arrows appear
+      - Level 2: Shake effect added
+      - Level 3: Rapid shake, button jiggle, red flashing
+  4. 00:02-01:02 - User Still Delaying (Overdrive)
+    - 01:02 (interval + 60s): Overdrive begins
+        - Continuous background flash
+      - Shake loop
+      - Intensified button jiggling
+      - Audio alarm starts (if enabled)
+  5. 01:02-01:14 - Overdrive Stage 4
+    - 01:14 (overdrive + 12s): Stage 4 begins
+        - Ultra-fast red flashing (60ms cycle)
+      - Maximum visual urgency
+  6. 01:14-02:14 - Overdrive Stage 5
+    - 02:14 (stage 4 + 60s): Stage 5 begins
+        - Multi-monitor overlays appear on all screens
+      - Gradual dim to 92% black (default)
+      - Pulsing alpha to maintain awareness
+      - Optional: Slow fade to solid black
+      - Optional: Hold at black after N seconds
+  7. User Responds - "Studying"
+    - Hold button for 800ms (default)
+    - FocusPromptDialog appears
+    - User types what they're studying
+    - Challenge possibility (30% chance): Reflection prompt instead
+    - Spam detection validates response
+    - Logged to focus_events table and CSV
+  8. Next Cycle
+    - Scheduled for 60 seconds (default interval_seconds)
+    - Repeat from step 2
+
+  Pause Scenarios
+
+  Scenario 1: User Locks Windows (Win+L)
+  - WindowsWakeWatcher receives WM_WTSSESSION_CHANGE with WTS_SESSION_LOCK
+  - Calls App._on_pause_event("lock")
+  - PauseGuard._locked set to True
+  - _maybe_show_prompt checks PauseGuard.should_pause(), returns True
+  - Next prompt rescheduled for pause_poll_interval_seconds (5s default)
+  - On unlock: WTS_SESSION_UNLOCK event → _on_resume_event() → immediate prompt scheduled
+
+  Scenario 2: System Sleep
+  - WM_POWERBROADCAST with PBT_APMSUSPEND received
+  - PauseGuard._sleeping set to True
+  - Prompts paused
+  - On wake: PBT_APMRESUMESUSPEND event → immediate prompt
+
+  Scenario 3: Laptop Lid Closed
+  - PauseGuard._looks_lid_closed_*() methods detect lid state
+  - Prompts paused while lid closed
+  - Resume: Next heartbeat check detects lid open, resumes
+
+  Scenario 4: Manual Tray Pause
+  - User right-clicks tray, selects "Stop reminders"
+  - App._tray_pause() sets settings["paused"] = True
+  - Saves settings to disk
+  - Prompts poll every 5 seconds but skip showing
+  - Resume: "Start reminders" sets paused = False
+
+  ---
+  DATA PERSISTENCE
+
+  Settings (JSON)
+
+  Location: %APPDATA%/FocusCheck/focus_settings.json
+
+  Format: Pretty-printed JSON (2-space indent)
+
+  Example:
+  {
+    "settings_schema_version": 1,
+    "interval_seconds": 60,
+    "intensify_after_seconds": 15,
+    "overdrive_after_seconds": 60,
+    "always_on_top": true,
+    "pause_on_idle": false,
+    "spam_detection_enabled": true,
+    ...
+  }
+
+  Atomicity: Written to .tmp file, fsynced, then atomically renamed
+
+  Task Database (SQLite)
+
+  Location: %APPDATA%/FocusCheck/tasks.db
+
+  Modes: WAL (Write-Ahead Logging) for concurrency
+
+  Schema:
+  CREATE TABLE tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_utc TEXT NOT NULL,
+      title TEXT NOT NULL,
+      why TEXT,
+      consequences TEXT,
+      due_utc TEXT,
+      status TEXT NOT NULL,  -- 'active' | 'completed' | 'failed' | 'changed'
+      completed_utc TEXT,
+      change_reason TEXT,
+      timed_out INTEGER DEFAULT 0
+  );
+
+  CREATE TABLE waste_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_utc TEXT NOT NULL,
+      what TEXT,
+      consequences TEXT,
+      active_task_id INTEGER
+  );
+
+  CREATE TABLE focus_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_utc TEXT NOT NULL,
+      doing TEXT,
+      benefits TEXT,
+      active_task_id INTEGER
+  );
+
+  Indexes: On status, due_utc, created_utc for fast queries
+
+  CSV Logs (Append-Only)
+
+  Location: %APPDATA%/FocusCheck/
+
+  Files:
+  1. focus_log.csv: All check-in responses
+  2. focus_waste_log.csv: Wasting time details
+  3. focus_study_log.csv: Studying confirmation details
+
+  Rotation: Automatically rotates when file exceeds 5MB, keeping 2 backups
+
+  Format: Standard CSV with headers, UTF-8 encoded
+
+  Heartbeat File (Monitoring)
+
+  Location: %APPDATA%/FocusCheck/heartbeat.json
+
+  Purpose: Allow external watchdogs to monitor app health
+
+  Updated: Every 60 seconds
+
+  Format:
+  {
+    "utc": "2025-01-15T12:34:56.789012+00:00",
+    "pid": 12345,
+    "paused": false,
+    "interval_seconds": 60
+  }
+
+  ---
+  SYSTEM REQUIREMENTS & DEPENDENCIES
+
+  Platform Requirements
+
+  Primary Platform: Windows 10/11 (64-bit recommended)
+
+  Why Windows-focused:
+  - Deep integration with Windows APIs (WTS sessions, power broadcast, GDI+)
+  - Native tray icon support
+  - Gamma manipulation for Stage 5 (Windows-specific)
+  - Audio system uses winsound (Windows-only)
+
+  Cross-platform elements:
+  - Core Tkinter GUI (works on Linux/macOS)
+  - SQLite database (cross-platform)
+  - Settings/logging (cross-platform)
+  - Lid detection has Linux/macOS implementations
+
+  Python Requirements
+
+  Minimum Version: Python 3.7+ (uses type hints like Optional, f-strings)
+
+  Standard Library Dependencies:
+  - tkinter: GUI framework
+  - sqlite3: Database
+  - json: Settings persistence
+  - csv: Logging
+  - threading: Background audio, tray
+  - ctypes: Windows API integration
+  - platform: OS detection
+  - subprocess: macOS lid detection
+  - glob: File pattern matching
+  - tempfile: Temp icon files
+  - uuid: Tray GUID generation
+  - time, datetime: Timing and timestamps
+  - os, sys: Filesystem and system
+
+  Optional Dependencies
+
+  pystray (cross-platform tray):
+  - Preferred system tray library
+  - Falls back to native Windows tray if unavailable
+
+  PIL/Pillow (image processing):
+  - Required for pystray icon loading
+  - Converts PNG to platform-specific icon formats
+
+  pycaw (Windows audio device control):
+  - Optional for device switching (headphones → speakers)
+  - Not required for basic audio functionality
+
+  ---
+  CONFIGURATION TUNING
+
+  Aggressive Settings (Maximum Pressure)
+
+  {
+    "interval_seconds": 30,              // Prompt every 30s
+    "intensify_after_seconds": 5,        // Start escalation after 5s
+    "overdrive_after_seconds": 15,       // Overdrive after 15s total
+    "overdrive_stage4_after_seconds": 5, // Stage 4 after 5s more
+    "overdrive_stage5_after_seconds": 10,// Stage 5 after 10s more
+    "studying_hold_ms": 1500,            // 1.5s hold requirement
+    "force_always_on": true,             // Never pause
+    "spam_min_time_to_submit": 5,        // Require 5s to type
+    "challenge_system_enabled": true,
+    "challenge_studying_frequency": 0.8, // 80% of studying prompts get challenge
+    "challenge_wasting_frequency": 1.0,  // 100% of wasting prompts get challenge
+    "audio_alerts_enabled": true,
+    "audio_alarm_trigger": "intensification", // Start audio early
+    "audio_alarm_mode": "continuous"      // Play until response
+  }
+
+  Gentle Settings (Minimal Interruption)
+
+  {
+    "interval_seconds": 300,              // Prompt every 5 minutes
+    "intensify_after_seconds": 60,        // Give 1 minute before escalation
+    "overdrive_after_seconds": 300,       // 5 minutes before overdrive
+    "overdrive_stage4_enabled": false,    // Skip ultra-fast flashing
+    "overdrive_stage5_enabled": false,    // Skip screen dimming
+    "studying_hold_ms": 0,                // No hold requirement
+    "pause_on_idle": true,                // Pause when away
+    "inactive_as_sleep_seconds": 60,      // 1 minute idle threshold
+    "spam_detection_enabled": false,      // Allow any response
+    "challenge_system_enabled": false,    // No reflection challenges
+    "audio_alerts_enabled": false         // No audio
+  }
+
+  Studying-Focused Settings
+
+  {
+    "encouragement_enabled": true,
+    "show_task_analytics": true,
+    "tasks_decision_prompt_enabled": true,
+    "tasks_decision_window_minutes": 5,   // Prompt 5 min before deadline
+    "require_active_task": true,          // Must have active task
+    "focus_prompt_ask_doing": true,
+    "focus_prompt_ask_benefits": true,
+    "wasting_prompt_ask_what": true,
+    "wasting_prompt_ask_consequences": true,
+    "challenge_wasting_frequency": 1.0    // Always challenge wasting
+  }
+
+  ---
+  ADVANCED FEATURES
+
+  Snooze Reminder System (New Feature)
+
+  Purpose: Gently reminds user to re-enable prompts when snoozed
+
+  Settings:
+  - snooze_reminder_enabled: True (default)
+  - snooze_reminder_interval_seconds: 300 (5 minutes)
+
+  Implementation (app.py lines 898-966):
+  1. Background check loop runs every 10 seconds
+  2. When paused == True, starts internal timer
+  3. After snooze_reminder_interval_seconds, shows SnoozeReminderDialog
+  4. Dialog asks: "Would you like to re-enable reminders?"
+    - Yes: Calls _tray_resume(), resumes prompts
+    - No: Resets timer for another interval
+
+  Design: Non-blocking, gentle nudge rather than forcing user
+
+  Task Decision Prompts
+
+  Purpose: Evaluate task success/failure near deadline
+
+  Modes (setting: tasks_evaluation_mode):
+  1. "before": Prompt X minutes before deadline
+  2. "after": Prompt X minutes after deadline
+
+  Window: tasks_decision_window_minutes (default 10)
+
+  Flow (if enabled):
+  1. App checks active task due_utc
+  2. When within decision window, shows TaskChangeDialog
+  3. User chooses:
+    - "Completed it": Marks task completed
+    - "Failed / gave up": Marks task failed
+    - "Still working": Extends deadline
+    - "Changed task": Marks as changed, prompts for new task
+  4. If user bypasses by clicking "Studying" / "Wasting time" during decision window:
+    - tasks_study_implies_fail_on_decision: If True, auto-marks task as failed
+    - Rationale: User should consciously decide task outcome
+
+  Time Info Display Modes
+
+  Purpose: Show time-based metrics below action buttons
+
+  Modes (setting: time_info_mode):
+
+  1. "hour": Elapsed time this hour
+    - Resets at :00 each hour
+    - Example: "12 min this hour"
+  2. "day": Elapsed time today
+    - Resets at midnight
+    - Example: "2h 15min today"
+  3. "anchor": Time since/until anchor
+    - Anchor set via time_info_anchor_hhmm (default "09:00")
+    - Example: "+3h 45min" (3h 45min since 9 AM)
+  4. "launch": Time since app launch
+    - Example: "Running 45min"
+
+  Additional Options:
+  - time_info_12h: Use 12-hour format (AM/PM)
+  - time_info_show_seconds: Include seconds precision
+  - time_info_show_task_remaining: Show time until active task deadline
+
+  Update Rate: time_info_refresh_ms (default 1000ms = 1 second)
+
+  Spam Detection System
+
+  Purpose: Prevent low-effort responses to reflection prompts
+
+  Detection Strategies:
+
+  1. Gibberish Detection:
+    - Vowel ratio check: Rejects text with too few/many vowels (0.15-0.75)
+    - Unique character ratio: Requires diversity (0.3 minimum)
+    - Example rejected: "asdfghjkl" (no vowels, keyboard pattern)
+  2. Repetition Check:
+    - Consecutive chars: Max 3 same characters (e.g., "aaaa" flagged)
+    - Pattern repetition: Max 4 repetitions (e.g., "asdfasdfasdfasdf" flagged)
+  3. Spacing Check:
+    - Minimum length for spaces: Text ≥20 chars must have spaces
+    - Prevents "studyingstudyingstudying"
+  4. Keyboard Pattern Detection:
+    - Detects sequences like "qwerty", "asdf", "zxcv"
+    - Minimum sequence: 5 chars (configurable)
+  5. Dictionary Validation:
+    - Real word ratio: Requires 50% real words
+    - Minimum word length: 2 characters
+    - Uses English word list (implied from implementation)
+  6. Timing Validation:
+    - Minimum time to submit: 2 seconds (prevents instant spam)
+    - Flag threshold: Warns if under 1 second
+  7. Banned Words: Rejects responses containing "idk", "dunno", "meh", "whatever"
+  8. Vague Words: Flags "stuff", "things", "something", "nothing"
+
+  User Experience:
+  - Error dialog shows specific issue: "Response appears to be gibberish"
+  - User can retry with improved response
+  - No bypass option (forces quality response)
+
+  Challenge System
+
+  Purpose: Force deeper reflection via targeted prompts
+
+  Architecture:
+  - challenge_system.py: Challenge selection and validation
+  - Context-aware: Different challenges for "studying" vs "wasting"
+  - Frequency-controlled: challenge_studying_frequency, challenge_wasting_frequency
+
+  Studying Challenges (4 types):
+  1. Learning Specificity: "What specific skill or knowledge are you developing right now?"
+  2. Goal Connection: "How does this connect to your larger goals?"
+  3. Will Commitment: "Why is it important that you do this now?"
+  4. Output Expectation: "What do you expect to produce or understand after this session?"
+
+  Wasting Challenges (7 types):
+  1. Wasting Acknowledgment: "What exactly are you wasting time on?"
+  2. Should Gap: "What should you be doing instead right now?"
+  3. Because Reasoning: "Why are you choosing to waste time right now?"
+  4. Hour Projection: "If you continue this for an hour, what will you have lost?"
+  5. Tomorrow Regret: "Will you regret this tomorrow?"
+  6. Fear Acknowledgment: "What are you afraid might happen if you do what you should instead?"
+  7. Lying Confrontation: "Are you lying to yourself? If so, about what?"
+
+  Validation Requirements:
+  - Minimum words: 3 (default)
+  - Minimum characters: 10 (default)
+  - No bypass: challenge_allow_skip controls whether user can cancel
+
+  Hints (optional):
+  - Setting: challenge_show_hints
+  - Example hint: "Be specific about what you're learning, not just 'studying math'"
+
+  ---
+  SECURITY & PRIVACY
+
+  Data Collection
+
+  Local-Only Storage:
+  - All data stored in %APPDATA%/FocusCheck
+  - No network transmission (except optional webhook)
+  - SQLite and CSV files readable by user
+
+  Sensitive Data:
+  - User responses to "What are you doing?" may contain personal information
+  - Task titles, reasons, consequences stored in plaintext
+  - No encryption (assumes user has encrypted disk or trusts local storage)
+
+  Optional Webhook
+
+  Setting: webhook_url
+
+  Purpose: Send JSON payload on each check-in to external URL
+
+  Payload (implied from setting name):
+  {
+    "timestamp": "2025-01-15T12:34:56Z",
+    "response": "Studying",
+    "latency_ms": 3500,
+    "intensity_level": 2,
+    "active_task": "Complete project proposal"
+  }
+
+  Privacy Note: If configured, sends data to third-party server. User responsible for endpoint security.
+
+  Single Instance Lock
+
+  Mechanism (utils, implied from acquire_single_instance()):
+  - File-based lock in temp directory or app data
+  - Prevents multiple instances stomping on databases
+  - Lock released on clean exit
+  - Stale lock handling: Likely checks PID or lock file timestamp
+
+  ---
+  ERROR HANDLING PHILOSOPHY
+
+  Defensive Coding Patterns
+
+  Pervasive Try-Except:
+  - Nearly every method wrapped in try-except
+  - Rationale: Ensure app never crashes, always continues attempting to prompt user
+
+  Example Pattern (from multiple files):
+  def some_feature():
+      try:
+          # Attempt feature
+          ...
+      except Exception:
+          # Fail silently or log, continue operation
+          try:
+              get_logger().exception("Feature failed")
+          except Exception:
+              pass  # Even logging can fail
+
+  Graceful Degradation:
+  - If pystray fails → use native Windows tray
+  - If native tray fails → continue without tray (taskbar flashing only)
+  - If audio fails → continue without audio
+  - If spam detection fails → allow response
+  - If database fails → continue without task tracking
+
+  Logging Strategy
+
+  Log Levels:
+  - DEBUG: Timer schedules, routine operations
+  - INFO: Settings changes, tray events, check-in responses
+  - WARNING: Failed API calls, missing features
+  - ERROR: Exception details, critical failures
+
+  Log Rotation:
+  - Rotating file handler (implied from logging setup)
+  - Prevents unbounded log growth
+
+  ---
+  PERFORMANCE CONSIDERATIONS
+
+  Memory Footprint
+
+  Estimated Usage:
+  - Idle: ~30-50 MB (Tkinter, SQLite, settings in memory)
+  - Dialog Open: +10-20 MB (dialog widgets, timers)
+  - Stage 5 Overlays: +5 MB per monitor (native windows)
+
+  Optimizations:
+  - Minimal retained state
+  - Overlays destroyed after each prompt
+  - CSV logs rotated to prevent excessive file sizes
+
+  CPU Usage
+
+  Idle:
+  - Minimal (waiting on Tkinter event loop)
+  - Heartbeat checks every 60 seconds
+  - Snooze reminder checks every 10 seconds
+
+  Dialog Active:
+  - Intensification: Pulse/shake timers run at ~60 FPS (every 16ms)
+  - Stage 4 Flashing: Background color changes every 60ms
+  - Stage 5 Pulsing: Alpha updates every 30ms (default)
+  - Time Display: Updates every 1 second (configurable)
+
+  Mitigations:
+  - Use after() timers instead of tight loops
+  - Timer cancellation on dialog close prevents leaks
+
+  Startup Time
+
+  Typical Cold Start:
+  1. Python interpreter init (~200-500ms)
+  2. Import modules (~300-800ms)
+  3. Load settings (~10-50ms)
+  4. Initialize database (~20-100ms)
+  5. Create tray icon (~100-300ms)
+  6. Total: ~1-2 seconds to fully operational
+
+  Factors:
+  - SSD vs HDD (database open time)
+  - pystray import time (if available)
+  - GDI+ initialization (for custom icons)
+
+  ---
+  TESTING & DIAGNOSTICS
+
+  Self-Test Mode
+
+  Command: python main.py --selftest
+
+  Purpose: Validates Windows event handling
+
+  Tests (lines 40-83):
+  1. Prints Python bitness (32-bit vs 64-bit)
+  2. Creates test Tkinter window
+  3. Instantiates WindowsWakeWatcher
+  4. Injects test events:
+    - WM_WTSSESSION_CHANGE with WTS_SESSION_LOCK / WTS_SESSION_UNLOCK
+    - WM_POWERBROADCAST with PBT_APMSUSPEND / PBT_APMRESUMESUSPEND
+    - Invalid message (0xFFFF) to test error handling
+  5. Verifies callbacks fired: ev["pause"] and ev["resume"] incremented
+  6. Prints "OK" or "FAILED"
+  7. Exits with code 0 (success) or 1 (failure)
+
+  Use Case: CI/CD pipeline, post-installation validation
+
+  Tray Self-Test
+
+  Command: python main.py --tray-selftest
+
+  Purpose: Tests cross-platform pystray integration
+
+  Implementation: Delegates to system_tray_selftest.py (implied from import)
+
+  Tray Test Mode
+
+  Command: python main.py --tray-test
+
+  Purpose: Manual 20-second tray icon test (lines 108-129)
+
+  Behavior:
+  - Creates hidden Tkinter window
+  - Instantiates WindowsWakeWatcher with tray_enabled=True
+  - Displays "Tray test running..." label
+  - Automatically quits after 20 seconds
+  - User can verify tray icon appearance and click handling
+
+  Startup Diagnostics
+
+  Function: _log_startup_diagnostics() (lines 968-1023)
+
+  Purpose: Comprehensive environment logging
+
+  Logged Information:
+  1. Python version: sys.version
+  2. Platform: platform.platform()
+  3. Architecture: 32-bit vs 64-bit
+  4. Tkinter version: tk.TkVersion
+  5. Executable path: sys.executable
+  6. Site packages: Paths where modules are installed
+  7. pystray availability: Import success/failure + version
+  8. Pillow availability: Import success/failure + version
+  9. system_tray module: Presence check
+
+  Use Case: Debugging user-reported issues, understanding deployment environment
+
+  ---
+  DEPLOYMENT CONSIDERATIONS
+
+  Installation
+
+  Manual Deployment:
+  1. Copy entire directory to user's machine
+  2. Ensure Python 3.7+ installed
+  3. Install dependencies: pip install pystray pillow (optional but recommended)
+  4. Run: pythonw main.py
+  5. Configure startup: python main.py --install-startup
+
+  PyInstaller Packaging (implied from getattr(sys, "_MEIPASS", None) references):
+  1. Package with PyInstaller: pyinstaller --windowed --onefile main.py
+  2. Include data files: --add-data "imageedit_5_9158249849.png;."
+  3. Resulting .exe can run standalone without Python installation
+
+  Startup Integration
+
+  Windows Registry Approach (platform_specific/startup.py, implied):
+  - Registry key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
+  - Value name: "FocusCheck"
+  - Value data: Path to pythonw.exe + main.py or .exe
+
+  Installation: python main.py --install-startup
+
+  Uninstallation: python main.py --uninstall-startup
+
+  Verification: is_startup_installed(APP_NAME) checks registry
+
+  Data Migration
+
+  Upgrading:
+  - Settings JSON includes settings_schema_version
+  - Future versions can detect old schema and migrate
+  - Database migrations handled via ALTER TABLE in _ensure_schema()
+
+  Backward Compatibility:
+  - validate_settings() preserves unknown keys
+  - Allows forward compatibility (new settings ignored by old versions)
+
+  Uninstallation
+
+  Manual:
+  1. Disable startup: python main.py --uninstall-startup
+  2. Delete application directory
+  3. Delete data directory: %APPDATA%/FocusCheck
+
+  No Registry Pollution:
+  - Only writes to HKCU\Software\Microsoft\Windows\CurrentVersion\Run
+  - No COM registration, no system files
+
+  ---
+  FUTURE EXTENSIBILITY
+
+  Plugin System (Not Implemented)
+
+  Potential Design:
+  - plugins/ directory
+  - Each plugin: Python module with on_prompt(), on_response() hooks
+  - Loaded dynamically at startup
+  - Could add custom challenges, export formats, integrations
+
+  External Integrations (Webhook Ready)
+
+  Current: webhook_url setting supports POST on each check-in
+
+  Potential Integrations:
+  - Zapier: Send to Google Sheets, Notion, etc.
+  - IFTTT: Trigger smart home actions (e.g., flash lights on overdrive)
+  - Discord: Post accountability messages to server
+  - Telegram: Send daily summaries via bot
+
+  Analytics Dashboard (Not Implemented)
+
+  Current State: CSV logs contain all data
+
+  Potential Features:
+  - Web dashboard: Flask/Django app reading SQLite + CSV
+  - Visualizations: Productivity trends, time-of-day patterns
+  - Goals: Set weekly targets, track streaks
+  - Heatmaps: Identify most productive times
+
+  ---
+  KNOWN LIMITATIONS
+
+  Platform Constraints
+
+  1. Windows-only audio: winsound module required for audio alarms
+  2. Windows-only Stage 5 gamma: Gamma manipulation via SetDeviceGammaRamp
+  3. Windows-only system tray (fallback): Native tray implementation
+
+  Cross-platform workarounds:
+  - Audio: Could integrate pyaudio or pygame for Linux/macOS
+  - Gamma: Could use xrandr (Linux) or CoreGraphics (macOS)
+  - Tray: pystray works cross-platform (but requires Pillow)
+
+  Scalability
+
+  Single-User Design:
+  - No multi-user support (each user needs separate installation)
+  - No network synchronization (each machine independent)
+
+  Potential: Cloud backend for multi-device sync
+
+  Accessibility
+
+  Screen Reader Support: Not explicitly implemented
+  - Tkinter has basic accessibility, but not tested
+
+  Keyboard Navigation: Partial
+  - Dialogs support Tab navigation
+  - No global hotkeys for tray menu
+
+  Color Blindness: Red flashing may not be optimal for all users
+  - Could add configurable color schemes
+
+  Security
+
+  Plaintext Storage: All data unencrypted
+  - Assumes encrypted disk or trusted environment
+
+  Process Termination: User can kill via Task Manager
+  - No protection against determined user (by design - not malware)
+
+  ---
+  TROUBLESHOOTING GUIDE
+
+  Issue: Tray Icon Not Appearing
+
+  Diagnosis:
+  1. Check startup logs for "tray start succeeded" or "tray start failed"
+  2. Look for pystray import errors: "pystray import FAILED"
+
+  Solutions:
+  - Install pystray: pip install pystray pillow
+  - Check Windows 11 overflow: Click ^ in taskbar to see hidden icons
+  - Enable native tray: If pystray fails, native tray auto-enables
+  - Verify icon file: Ensure imageedit_5_9158249849.png exists
+
+  Issue: Prompts Not Appearing
+
+  Diagnosis:
+  1. Check settings: paused may be True
+  2. Check pause guard: pause_on_idle, pause_on_lid_closed, pause_on_lock
+  3. Check force_always_on: Should be True to ignore pause mechanisms
+  4. Review logs: "paused; deferring prompt"
+
+  Solutions:
+  - Right-click tray → "Start reminders"
+  - Set force_always_on: true in settings
+  - Disable unwanted pause mechanisms
+
+  Issue: Audio Not Playing
+
+  Diagnosis:
+  1. Check platform: Only works on Windows
+  2. Check settings: audio_alerts_enabled must be True
+  3. Check logs: "Audio not available: winsound import failed"
+
+  Solutions:
+  - Ensure Windows platform
+  - Verify winsound available (standard on Windows Python)
+  - Check audio device: Is sound card working? Are speakers/headphones connected?
+
+  Issue: Database Locked Errors
+
+  Diagnosis:
+  1. Another instance running: Check Task Manager for multiple python.exe
+  2. File permissions: Can't write to %APPDATA%
+
+  Solutions:
+  - Kill duplicate instances: Task Manager → End Task
+  - Check file permissions: Ensure user can write to %APPDATA%/FocusCheck
+  - Check disk space: Ensure drive not full
+
+  Issue: Overdrive Stage 5 Not Working
+
+  Diagnosis:
+  1. Check settings: overdrive_stage5_enabled must be True
+  2. Check engine: overdrive_stage5_engine set to "overlay" or "gamma"
+  3. Check logs: "Stage 5 overlays failed"
+
+  Solutions:
+  - Enable in settings
+  - Try switching engine: "overlay" is more compatible
+  - Check multi-monitor setup: Some configurations may fail
+  - Verify Windows permissions: UAC may block overlay creation
+
+  ---
+  FINAL SUMMARY
+
+● FocusCheck is a psychologically-engineered productivity intervention system that operates on the principle of forced conscious awareness. Rather than
+  passive time tracking, it actively interrupts users at regular intervals, demanding honest self-assessment of their current activity.
+
+  Key Distinguishing Features:
+
+  1. Progressive Escalation: Unlike simple reminders, FocusCheck escalates through 5 distinct urgency levels, from gentle nudges to screen-dimming
+  overlays, making it nearly impossible to ignore.
+  2. Anti-Habit Design: Randomized button placement, press-and-hold requirements, and challenge prompts prevent users from developing mindless response
+  patterns.
+  3. Deep Windows Integration: Hooks into OS-level events (lock, sleep, power, display changes) for intelligent pause/resume behavior.
+  4. Comprehensive Data Tracking: SQLite database + CSV logs capture not just when prompts occurred, but response latency, intensity reached, user
+  reflections, and task correlation.
+  5. Defensive Architecture: Every subsystem has fallbacks (dual tray systems, multiple dimming engines, optional features) ensuring the app continues
+  functioning even when individual components fail.
+  6. Behavioral Psychology: Challenge system forces metacognitive reflection ("What are you afraid might happen if you do what you should?"), spam
+  detection prevents low-effort responses, and task deadlines create accountability pressure.
+
+  Technical Sophistication:
+
+  - Mixin-based UI composition for clean separation of concerns
+  - Atomic file operations with fsync for settings durability
+  - WAL-mode SQLite for concurrent access
+  - Thread-safe CSV logging with per-file locks
+  - Native Windows overlays with click-through transparency
+  - GDI+ integration for PNG-to-HICON conversion
+  - Event-driven Windows hooks via WndProc subclassing
+
+  This codebase represents a complete, production-ready productivity application with enterprise-grade error handling, extensive configurability, and
+  thoughtful UX design aimed at behavioral change rather than mere tracking.

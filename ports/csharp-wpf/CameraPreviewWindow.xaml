@@ -1,0 +1,8 @@
+<Window x:Class="FocusCheck.Wpf.CameraPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Camera Preview" Height="420" Width="560" WindowStartupLocation="CenterOwner">
+    <Grid Background="#000">
+        <TextBlock Text="Camera preview placeholder (hook OpenCV/MediaCapture here)" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="20"/>
+    </Grid>
+</Window>

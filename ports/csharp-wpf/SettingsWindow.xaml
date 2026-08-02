@@ -1,0 +1,80 @@
+<Window x:Class="FocusCheck.Wpf.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings" Height="600" Width="900" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Background="#1c1c1c" Padding="10" >
+            <TextBlock Text="Sections" Foreground="White" FontWeight="Bold" Margin="0 0 0 8" />
+            <Button Content="General" Margin="0 0 0 6" />
+            <Button Content="Prompts" Margin="0 0 0 6" />
+            <Button Content="Challenges" Margin="0 0 0 6" />
+            <Button Content="Camera" Margin="0 0 0 6" />
+            <Button Content="Save" Margin="0 10 0 0" Click="Save" />
+        </StackPanel>
+        <TabControl Grid.Column="1" Margin="8" >
+            <TabItem Header="General">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Timers" FontWeight="Bold" />
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Interval (sec):" Width="120" />
+                        <TextBox Width="80" Text="{Binding IntervalSeconds}" />
+                    </StackPanel>
+                    <CheckBox Content="Always on top" IsChecked="{Binding AlwaysOnTop}" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Prompts">
+                <StackPanel Margin="10">
+                    <CheckBox Content="Hide wasting button" IsChecked="{Binding HideWastingButton}" />
+                    <CheckBox Content="Ask 'What are you doing?'" IsChecked="{Binding FocusPromptAskDoing}" />
+                    <CheckBox Content="Ask 'Benefits'" IsChecked="{Binding FocusPromptAskBenefits}" />
+                    <CheckBox Content="Ask wasting 'What'" IsChecked="{Binding WastingPromptAskWhat}" />
+                    <CheckBox Content="Ask wasting 'Consequences'" IsChecked="{Binding WastingPromptAskConsequences}" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Challenges">
+                <StackPanel Margin="10">
+                    <CheckBox Content="Enable challenge system" IsChecked="{Binding ChallengeSystemEnabled}" />
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Study freq:" Width="120" />
+                        <TextBox Width="80" Text="{Binding ChallengeStudyingFrequency}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Waste freq:" Width="120" />
+                        <TextBox Width="80" Text="{Binding ChallengeWastingFrequency}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Min words:" Width="120" />
+                        <TextBox Width="80" Text="{Binding ChallengeMinWords}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Min chars:" Width="120" />
+                        <TextBox Width="80" Text="{Binding ChallengeMinTotalLength}" />
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Camera">
+                <StackPanel Margin="10">
+                    <CheckBox Content="Enable camera feed" IsChecked="{Binding CameraFeedEnabled}" />
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Sizing mode:" Width="120" />
+                        <TextBox Width="140" Text="{Binding CameraSizingMode}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Width:" Width="120" />
+                        <TextBox Width="80" Text="{Binding CameraFeedWidth}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0 4 0 0">
+                        <TextBlock Text="Height:" Width="120" />
+                        <TextBox Width="80" Text="{Binding CameraFeedHeight}" />
+                    </StackPanel>
+                    <CheckBox Content="Flip horizontal" IsChecked="{Binding CameraFlipHorizontal}" />
+                    <Button Content="Open Camera Preview" Margin="0 8 0 0" Click="OpenCameraPreview" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

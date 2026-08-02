@@ -1,0 +1,209 @@
+"""Monitoring engine stub for Version 2 prompts."""
+
+import time
+import re
+from urllib.parse import urlparse
+
+from .base import BaseEngine
+from ..platform_specific.activity_probe import get_active_window_info
+from ..ui.dialogs.v2_prompt_dialog import V2PromptDialog
+from ..ui.dialogs.v2_subpopup_dialog import V2SubPopupDialog
+from ..ui.dialogs.intervention_wizard import InterventionWizard
+from ..settings import save_settings
+
+try:
+    from ..utils.logging_utils import get_logger
+except Exception:  # pragma: no cover - fallback
+    def get_logger():
+        import logging
+        return logging.getLogger(__name__)
+
+
+class EngineV2(BaseEngine):
+    """Activity-aware monitoring engine (Version 2)."""
+
+    name = "v2"
+
+    def __init__(self, app, activity_provider=None):
+        super().__init__(app)
+        self._last_hwnd = None
+        self._last_switch_mono = time.monotonic()
+        self._subpopup_timer_id = None
+        self._subpopup_active = False
+        self._settings = None
+        self._activity_provider = activity_provider or get_active_window_info
+
+    def create_prompt(self, settings, slot_info):
+        activity_info = self._get_activity_info()
+        return V2PromptDialog(
+            self.app.root,
+            settings,
+            on_submit=self.app._on_prompt_done,
+            slot_start_dt=slot_info,
+            activity_info=activity_info,
+            app_ref=self.app,
+            taskdb=getattr(self.app, "taskdb", None),
+        )
+
+    def on_settings_updated(self, settings):
+        self._settings = settings
+        self._schedule_subpopup_check()
+
+    def shutdown(self):
+        root = getattr(self.app, "root", None)
+        if root is None:
+            return
+        if self._subpopup_timer_id is not None:
+            try:
+                root.after_cancel(self._subpopup_timer_id)
+            except Exception:
+                pass
+            self._subpopup_timer_id = None
+
+    def _get_activity_info(self):
+        info = self._activity_provider()
+        hwnd = info.get("hwnd")
+        now = time.monotonic()
+        if hwnd and hwnd == self._last_hwnd:
+            duration = now - self._last_switch_mono
+        else:
+            self._last_hwnd = hwnd
+            self._last_switch_mono = now
+            duration = 0.0
+        info["active_duration_s"] = duration
+        return info
+
+    def _schedule_subpopup_check(self):
+        root = getattr(self.app, "root", None)
+        if root is None:
+            return
+        if self._subpopup_timer_id is not None:
+            try:
+                root.after_cancel(self._subpopup_timer_id)
+            except Exception:
+                pass
+            self._subpopup_timer_id = None
+        self._subpopup_timer_id = root.after(3000, self._subpopup_tick)
+
+    def _subpopup_tick(self):
+        self._subpopup_timer_id = None
+        try:
+            if self._should_check_subpopup():
+                self._maybe_show_subpopup()
+        finally:
+            self._schedule_subpopup_check()
+
+    def _should_check_subpopup(self):
+        if self._subpopup_active:
+            return False
+        if getattr(self.app, "_current_prompt", None) is not None:
+            return False
+        if bool(getattr(self.app, "_intervention_active", False)):
+            return False
+        settings = self._settings or getattr(self.app, "settings", {})
+        try:
+            if bool(settings.get("paused", False)):
+                return False
+            if bool(settings.get("pause_when_inactive_or_lid_closed", True)):
+                guard = getattr(self.app, "guard", None)
+                if guard is not None and guard.should_pause():
+                    return False
+        except Exception:
+            pass
+        return True
+
+    def _maybe_show_subpopup(self):
+        settings = self._settings or getattr(self.app, "settings", {})
+        flags = settings.get("website_flags", []) or []
+        if not flags:
+            return
+        info = self._get_activity_info()
+        match = self._match_flag(info, flags)
+        if not match:
+            return
+        entry, domain = match
+        severity = entry.get("severity", 2)
+        self._subpopup_active = True
+
+        def _finish():
+            self._subpopup_active = False
+
+        def _update_cooldown():
+            try:
+                entry["last_dismissed"] = time.time()
+                if entry.get("allow_once"):
+                    entry["allow_once"] = False
+                save_settings(settings)
+            except Exception:
+                pass
+
+        def _on_yes():
+            try:
+                _update_cooldown()
+                wizard = InterventionWizard(self.app.root, settings)
+                wizard.run(preselect_hwnd=info.get("hwnd"), preselect_title=info.get("title"))
+            finally:
+                _finish()
+
+        def _on_no():
+            _update_cooldown()
+            _finish()
+
+        if severity >= 3:
+            _on_yes()
+            return
+
+        dialog = V2SubPopupDialog(
+            self.app.root,
+            domain=domain,
+            severity=severity,
+            on_yes=_on_yes,
+            on_no=_on_no,
+        )
+        try:
+            dialog.grab_set()
+        except Exception:
+            pass
+
+    def _match_flag(self, info, flags):
+        title = (info.get("title") or "").lower()
+        url = (info.get("url") or "").lower()
+        host = ""
+        if url:
+            try:
+                parsed = urlparse(url if "://" in url else f"https://{url}")
+                host = (parsed.hostname or "").lower()
+            except Exception:
+                host = ""
+        for entry in flags:
+            try:
+                if not entry.get("enabled", True):
+                    continue
+                domain = str(entry.get("domain", "")).strip().lower()
+                if not domain:
+                    continue
+                cooldown = int(entry.get("cooldown_minutes", 5))
+                last = entry.get("last_dismissed")
+                if isinstance(last, (int, float)) and cooldown > 0:
+                    if (time.time() - float(last)) < (cooldown * 60):
+                        continue
+                if host and self._domain_matches(domain, host):
+                    return entry, domain
+                tokens = [domain]
+                if "." in domain:
+                    tokens.append(domain.split(".")[0])
+                url_fallback = not host and any(tok and tok in url for tok in tokens)
+                title_fallback = any(tok and re.search(rf"(?<![a-z0-9]){re.escape(tok)}(?![a-z0-9])", title) for tok in tokens)
+                if url_fallback or title_fallback:
+                    return entry, domain
+            except Exception:
+                continue
+        return None
+
+    def _domain_matches(self, domain, host):
+        if not domain or not host:
+            return False
+        if host == domain:
+            return True
+        # Allow subdomain match (e.g., www.reddit.com endswith reddit.com)
+        return host.endswith("." + domain)

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat windows.py)",
+      "Bash(awk '\n/def _create_general_tab/ {start=NR; name=\"\"\"\"General\"\"\"\"}\n/def _create_validation_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Validation\"\"\"\"}\n/def _create_challenges_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Challenges\"\"\"\"}\n/def _create_spam_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Spam\"\"\"\"}\n/def _create_alerts_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Alerts\"\"\"\"}\n/def _create_behavior_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Behavior\"\"\"\"}\n/def _create_camera_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Camera\"\"\"\"}\n/def _create_overdrive_tab/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=NR; name=\"\"\"\"Overdrive\"\"\"\"}\n/def _create_button_bar/ {if(start) print name\"\"\"\" tab: lines \"\"\"\"start\"\"\"\"-\"\"\"\"NR\"\"\"\" (\"\"\"\"NR-start\"\"\"\" lines)\"\"\"\"; start=0}\n')",
+      "Bash(sed -n '1171,1962p' windows.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

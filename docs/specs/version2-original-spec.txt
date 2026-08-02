@@ -1,0 +1,201 @@
+TITLE
+FocusCheck: Version 2 (Activity-aware) Intervention System + Full Feature Parity with Version 1
+
+REPO / STARTING POINT
+- Work in: `3D Objects/3` (this is a copy of `3D Objects/2`).
+- Do NOT use registry edits.
+
+CONTEXT / PROBLEM
+The current “Version 1” popup flow (Studying vs Wasting Time buttons + text validation / acronym prompts) can be bypassed by typing vague motivational phrases to get through. I want Version 2 to leverage Windows + browser activity signals so the prompts force specificity and enable stronger interventions on high-reward distraction sites (Reddit, YouTube, Instagram, etc.).
+
+HARD REQUIREMENT (NEW)
+Version 2 must include ALL “bells and whistles” from Version 1:
+- History button + full history UI/flow
+- Task management features (all existing task UI + logic)
+- Settings button and full Settings UI
+- FE (front-end) extras from v1, including:
+  - Camera feature
+  - Bio data feature
+  - Any other non-contextual / auxiliary features present in Version 1
+In short: Version 2 replaces only the popup logic + detection/intervention logic, but retains/ports every other feature from Version 1.
+
+HIGH-LEVEL GOALS
+1) Add a mode system: Version 1 vs Version 2 (mutually exclusive).
+2) Version 2 popup uses Windows activity data (foreground window, duration, app name/icon, and browser URL/tab info if possible).
+3) Add an “intervention” workflow to help exit distraction loops (close selected windows/tabs) using a dramatic full-screen blackout + cursor spotlight.
+4) Add a “Sub-Popup” system that triggers immediately on specific websites (separate from the 1-minute cycle), with configurable severity.
+5) Preserve / port every existing UI surface and feature from Version 1 (history/tasks/settings/camera/bio/etc.) so Version 2 feels like the same app with upgraded intervention logic.
+
+PRODUCT STRUCTURE (IMPORTANT)
+- The application has one unified UI shell.
+- “Mode” affects ONLY the monitoring + popup/intervention pipeline.
+- Everything else (history, tasks, settings pages, camera, bio data, etc.) must be available in BOTH modes, with identical behavior.
+
+UI / NAVIGATION REQUIREMENTS
+A) Main UI (common to both modes)
+- Ensure these controls exist and work in Version 2 exactly as in Version 1:
+  - History button (opens history view)
+  - Task management button/section (opens tasks view)
+  - Settings button (opens settings view)
+  - Camera feature entry point (wherever it is in v1)
+  - Bio data feature entry point (wherever it is in v1)
+  - Any other “utility” / “bells & whistles” UI elements in v1 (port them all)
+
+B) Settings → General (add / update)
+- Add a mode toggle:
+  - “Version 1” = current button-based popup system
+  - “Version 2” = new activity-aware popup system
+- Mutually exclusive: enabling Version 2 disables Version 1 monitoring pipeline.
+
+C) Settings → Validation
+- Version 2 must support the same validation rules as Version 1.
+- Add one control:
+  - “Version 2 uses ALL validation rules” (override)
+  - If OFF: Version 2 uses only the currently selected rules in Validation tab.
+
+D) Settings → Website Flags (new section)
+- Configurable list of “flagged websites/domains” (reddit.com, youtube.com, instagram.com, facebook.com, etc.)
+- Per-site options:
+  - Enable/disable
+  - Severity: (1) Warning only (2) Warning + ask intervention (3) Immediate intervention
+  - Cooldown (avoid spam)
+  - Optional: allow once / snooze X minutes
+
+VERSION 2: POPUP FLOW (1-MINUTE CYCLE)
+Layout (top to bottom):
+1) Activity Info Box (top rectangle)
+   - Show current active window icon + app name + window title
+   - Show “active duration” (how long this window has been foreground)
+   - If nothing is active / can’t detect → treat as “Desktop”
+
+2) Question 1 + text input
+   - Text: “What are you doing on <APP_NAME>?”
+     - <APP_NAME> comes from active window/app (Chrome, Firefox, Desktop, etc.)
+   - Input is validated per Validation settings (same system as v1)
+
+3) Question 2 + text input (strict yes/no)
+   - Text: “Do you need an intervention? (yes/no)”
+   - If “no” → close popup, restart cycle in ~60s
+   - If “yes” → start Intervention workflow
+
+WINDOWS DATA COLLECTION (WHAT VERSION 2 SHOULD USE)
+Minimum required:
+- Foreground window handle + title
+- Process name (exe) + PID
+- App icon (from executable)
+- Foreground duration (time since it became active)
+
+Optional / best-effort:
+- Window class name
+- UI Automation snapshot for active window (for hints about “what’s being done”)
+- Browser URL/tab extraction (see below)
+
+BROWSER INTROSPECTION (KEY REQUIREMENT)
+Target browsers: Chrome, Edge, Brave, Opera (Chromium), Firefox.
+
+Deliverable requirement:
+- Implement a layered approach:
+  1) Baseline (must): use window title + process name for all browsers.
+  2) Chromium (optional upgrade): attempt to get active tab + URL via:
+     - UI Automation address bar scraping OR
+     - DevTools Protocol if the app can enable it without registry edits
+  3) Firefox (best effort): UIA/address bar scraping if reliable; otherwise title-only.
+- Make this modular so extraction can improve later without rewriting popup logic.
+
+INTERVENTION WORKFLOW (triggered when user types “yes”)
+Goal: help me exit distraction loops immediately.
+
+Stage 1: Selection Wizard
+- Screen goes fully black except the popup UI.
+- Popup lists:
+  A) All open top-level windows (visible and/or normal)
+  B) For browsers, if tab listing is available: tabs (title + domain)
+- User selects which windows/tabs are the problem.
+- Buttons: [Back] [Continue]
+
+Stage 2: Action Overlay (blackout + cursor spotlight)
+- Keep screen black.
+- Add a circular “spotlight” around the cursor so I can only see a small area.
+- Instruction: “Close the selected items now.”
+- Two implementation options (choose what’s feasible):
+  Option A (preferred): programmatically close selected windows/tabs.
+  Option B (fallback): user manually closes them while spotlight is active; app detects closure.
+
+Stage 3: Verification + exit
+- Confirm selected windows/tabs are closed.
+- End blackout overlay.
+- Return to normal Version 2 1-minute cycle.
+
+SUB-POPUP SYSTEM (SEPARATE FROM 1-MINUTE CYCLE)
+Purpose: instantly flag high-risk sites like Reddit/YouTube.
+
+Trigger:
+- When active browser URL/domain matches configured flagged list.
+
+Behavior:
+- A dramatic full-screen warning overlay appears immediately.
+- It states the site is high-risk and asks:
+  - “Do you need an intervention? (yes/no)”
+- If yes → jump into Intervention workflow (preselect current tab/window if possible)
+- If no → dismiss and apply cooldown for that site
+
+FEATURE PARITY CHECKLIST (MUST PORT FROM VERSION 1)
+Ensure Version 2 build includes and fully preserves:
+- History:
+  - History button is present
+  - History entries are still recorded
+  - History UI is accessible and functional
+- Tasks:
+  - All task management features from v1 remain (UI + logic + storage)
+- Settings:
+  - Settings button present
+  - All existing settings pages remain unchanged except additions described above
+- Camera feature:
+  - Same UI entry point, same capture/logic/storage behavior as v1
+- Bio data feature:
+  - Same UI entry point, same data capture/logic/storage behavior as v1
+- Any other utility modules / “extras” from v1:
+  - Port them all without removing functionality
+- Only the monitoring/popup/intervention pipeline changes by mode
+
+IMPLEMENTATION EXPECTATION
+- Refactor into:
+  - A shared UI shell (history/tasks/settings/camera/bio/etc.)
+  - Two interchangeable “monitoring engines”:
+    - EngineV1 (current)
+    - EngineV2 (new activity-aware + website sub-popup + intervention overlay)
+- Mode toggle selects which engine runs.
+- Both engines write to the same history/logging system so the History button remains meaningful.
+
+DELIVERABLES
+1) Implement Settings changes (General mode toggle, Version 2 validation override, Website Flags).
+2) Implement Version 2 monitoring engine (activity info box + Q1/Q2 popup).
+3) Implement Windows activity probe module.
+4) Implement browser data module with layered extraction.
+5) Implement Intervention workflow (wizard + blackout + spotlight + verification).
+6) Implement Sub-Popup website flagging system.
+7) Ensure FULL feature parity with Version 1 (history/tasks/settings/camera/bio/etc.).
+8) Add a short technical write-up in comments/README:
+   - What browser data is reliably available per browser
+   - Methods used (window title, UIA, CDP, etc.)
+   - Limitations and upgrade paths
+
+ACCEPTANCE CRITERIA (MUST PASS)
+- Switching to Version 2 disables Version 1 monitoring behavior.
+- All Version 1 UI features remain available in Version 2:
+  - History button works
+  - Tasks work
+  - Settings works
+  - Camera feature works
+  - Bio data feature works
+  - No regressions in “bells and whistles”
+- Version 2 popup shows correct active window/app info.
+- “Intervention? yes” triggers blackout overlay + workflow.
+- Sub-popup triggers on flagged websites and respects cooldown.
+- No registry edits.
+- Works on Windows 10.
+
+OUT OF SCOPE (unless easy)
+- Computer vision / screenshot classification
+- Deep webpage content analysis beyond URL/tab identification
+- Permanent firewall/DNS blocks

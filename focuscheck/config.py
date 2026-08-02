@@ -1,0 +1,52 @@
+"""
+Application constants and configuration.
+
+This module contains all application-wide constants including:
+- Application metadata (name, version)
+- Windows API constants
+- File paths
+"""
+
+# Application metadata
+APP_NAME = "FocusCheck"
+APP_VERSION = "1.0.0"
+
+# Windows session / power constants
+WM_WTSSESSION_CHANGE = 0x02B1
+WTS_SESSION_LOCK = 0x7
+WTS_SESSION_UNLOCK = 0x8
+
+WM_POWERBROADCAST = 0x0218
+PBT_APMSUSPEND = 0x0004
+PBT_APMRESUMESUSPEND = 0x0007
+PBT_APMRESUMESTANDBY = 0x0008
+PBT_APMRESUMEAUTOMATIC = 0x0012
+
+# Windows extended window styles
+GWL_WNDPROC = -4
+GWL_EXSTYLE = -20
+WS_EX_LAYERED = 0x00080000
+WS_EX_TRANSPARENT = 0x00000020
+WS_EX_NOACTIVATE = 0x08000000
+WS_EX_TOPMOST = 0x00000008
+WS_EX_TOOLWINDOW = 0x00000080
+WS_POPUP = 0x80000000
+SWP_NOSIZE = 0x0001
+SWP_NOMOVE = 0x0002
+SWP_NOZORDER = 0x0004
+SWP_NOACTIVATE = 0x0010
+SWP_SHOWWINDOW = 0x0040
+HWND_TOPMOST = -1
+SW_SHOWNOACTIVATE = 4
+LWA_COLORKEY = 0x00000001
+LWA_ALPHA = 0x00000002
+
+# Hit-test constants
+WM_NCHITTEST = 0x0084
+HTTRANSPARENT = -1
+
+# Mouse event constants
+WM_LBUTTONUP = 0x0202
+WM_RBUTTONUP = 0x0205
+WM_CONTEXTMENU = 0x007B
+

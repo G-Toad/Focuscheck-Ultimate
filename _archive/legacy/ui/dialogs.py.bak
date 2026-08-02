@@ -1,0 +1,2783 @@
+"""
+Dialog windows for user interaction.
+
+Contains dialog classes for task entry, waste tracking, task changes, and the main
+check-in prompt dialog (PromptDialog).
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+from datetime import datetime, timedelta, timezone
+import time
+import random
+import platform
+import ctypes
+from ctypes import wintypes
+import sys
+
+ENTRY_WIDGET_TYPES = (tk.Entry, ttk.Entry, tk.Text)
+
+# Import helper functions from parent modules
+try:
+    from ..utils import get_logger, log_exception
+except ImportError:
+    # Fallback imports for when running standalone
+    def get_logger():
+        import logging
+        return logging.getLogger(__name__)
+    def log_exception(msg):
+        try:
+            get_logger().exception(msg)
+        except Exception:
+            pass
+
+try:
+    from ..database import append_log, append_waste_log, append_focus_log
+except ImportError:
+    # Fallback imports for when running standalone
+    def append_log(**kwargs):
+        pass
+    def append_waste_log(**kwargs):
+        pass
+    def append_focus_log(**kwargs):
+        pass
+
+try:
+    from .windows import SettingsWindow, TaskHistoryWindow
+except ImportError:
+    SettingsWindow = None
+    TaskHistoryWindow = None
+
+# Windows constants for extended functionality
+try:
+    GWL_WNDPROC = -4
+    GWL_EXSTYLE = -20
+    WS_EX_LAYERED = 0x00080000
+    WS_EX_TRANSPARENT = 0x00000020
+    WS_EX_NOACTIVATE = 0x08000000
+    LRESULT = getattr(wintypes, 'LRESULT', ctypes.c_ssize_t)
+    WPARAM_T = getattr(wintypes, 'WPARAM', ctypes.c_size_t)
+    LPARAM_T = getattr(wintypes, 'LPARAM', ctypes.c_ssize_t)
+    LONG_PTR = ctypes.c_ssize_t
+    WM_NCHITTEST = 0x0084
+    HTTRANSPARENT = -1
+except Exception:
+    pass
+
+# Helper functions for Windows click-through overlays
+def _enable_click_through_windows(hwnd):
+    """Enable click-through on a Windows window."""
+    try:
+        user32 = ctypes.windll.user32
+        try:
+            GetWindowLongPtrW = user32.GetWindowLongPtrW
+            SetWindowLongPtrW = user32.SetWindowLongPtrW
+            GetWindowLongPtrW.restype = LONG_PTR
+            GetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int]
+            SetWindowLongPtrW.restype = LONG_PTR
+            SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
+            exstyle = int(GetWindowLongPtrW(hwnd, GWL_EXSTYLE))
+            exstyle |= (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)
+            _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, LONG_PTR(exstyle))
+        except AttributeError:
+            GetWindowLongW = user32.GetWindowLongW
+            SetWindowLongW = user32.SetWindowLongW
+            GetWindowLongW.restype = ctypes.c_long
+            GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+            SetWindowLongW.restype = ctypes.c_long
+            SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_long]
+            exstyle = int(GetWindowLongW(hwnd, GWL_EXSTYLE))
+            exstyle |= (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)
+            _ = SetWindowLongW(hwnd, GWL_EXSTYLE, ctypes.c_long(exstyle))
+        SWP_NOSIZE = 0x0001
+        SWP_NOMOVE = 0x0002
+        SWP_NOZORDER = 0x0004
+        SWP_NOACTIVATE = 0x0010
+        SWP_FRAMECHANGED = 0x0020
+        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0,
+                            SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED)
+        return True
+    except Exception:
+        return False
+
+def _install_httransparent_wndproc(hwnd, owner_widget=None):
+    """Subclass WNDPROC to make the window return HTTRANSPARENT on WM_NCHITTEST."""
+    try:
+        user32 = ctypes.windll.user32
+        CallWindowProcW = user32.CallWindowProcW
+        try:
+            CallWindowProcW.argtypes = [ctypes.c_void_p, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
+            CallWindowProcW.restype = LRESULT
+        except Exception:
+            pass
+        GetWindowLongPtrW = getattr(user32, "GetWindowLongPtrW", None) or user32.GetWindowLongW
+        SetWindowLongPtrW = getattr(user32, "SetWindowLongPtrW", None) or user32.SetWindowLongW
+        try:
+            GetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int]
+            GetWindowLongPtrW.restype = ctypes.c_void_p
+            SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_void_p]
+            SetWindowLongPtrW.restype = ctypes.c_void_p
+        except Exception:
+            pass
+        old = GetWindowLongPtrW(hwnd, GWL_WNDPROC)
+        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        @WNDPROC
+        def proc(h, msg, wParam, lParam):
+            try:
+                if msg == WM_NCHITTEST:
+                    return LRESULT(HTTRANSPARENT)
+            except Exception:
+                pass
+            try:
+                return CallWindowProcW(ctypes.c_void_p(old), h, msg, wParam, lParam)
+            except Exception:
+                return ctypes.windll.user32.DefWindowProcW(h, msg, wParam, lParam)
+        SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
+        if owner_widget is not None:
+            try:
+                setattr(owner_widget, "_ct_click_oldproc", old)
+                setattr(owner_widget, "_ct_click_proc", proc)
+                setattr(owner_widget, "_ct_click_setter", SetWindowLongPtrW)
+            except Exception:
+                pass
+        return True
+    except Exception:
+        return False
+
+# Native Windows click-through overlay class
+_win_overlay_class_atom = None
+
+class _WinClickThroughOverlay:
+    """Robust native Windows overlay with click-through support."""
+    def __init__(self, x, y, w, h, color_hex="#000000"):
+        self.hwnd = None
+        self._brush = None
+        self._register_class()
+        self._create_window(x, y, w, h, color_hex)
+
+    def _register_class(self):
+        global _win_overlay_class_atom
+        if _win_overlay_class_atom is not None:
+            self._atom = _win_overlay_class_atom
+            return
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        class WNDCLASSEXW(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", ctypes.c_uint),
+                ("style", ctypes.c_uint),
+                ("lpfnWndProc", ctypes.c_void_p),
+                ("cbClsExtra", ctypes.c_int),
+                ("cbWndExtra", ctypes.c_int),
+                ("hInstance", wintypes.HINSTANCE),
+                ("hIcon", wintypes.HICON),
+                ("hCursor", wintypes.HCURSOR),
+                ("hbrBackground", wintypes.HBRUSH),
+                ("lpszMenuName", wintypes.LPCWSTR),
+                ("lpszClassName", wintypes.LPCWSTR),
+                ("hIconSm", wintypes.HICON),
+            ]
+        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        @WNDPROC
+        def wnd_proc(hwnd, msg, wParam, lParam):
+            if msg == WM_NCHITTEST:
+                return LRESULT(HTTRANSPARENT)
+            return user32.DefWindowProcW(hwnd, msg, wParam, lParam)
+        self._wnd_proc = wnd_proc
+        hInstance = ctypes.windll.kernel32.GetModuleHandleW(None)
+        wc = WNDCLASSEXW()
+        wc.cbSize = ctypes.sizeof(WNDCLASSEXW)
+        wc.lpfnWndProc = ctypes.cast(wnd_proc, ctypes.c_void_p)
+        wc.hInstance = hInstance
+        wc.lpszClassName = "FocusCheckOverlayClass"
+        atom = user32.RegisterClassExW(ctypes.byref(wc))
+        if not atom:
+            raise RuntimeError("RegisterClassExW failed")
+        _win_overlay_class_atom = atom
+        self._atom = atom
+
+    def _create_window(self, x, y, w, h, color_hex):
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        WS_POPUP = 0x80000000
+        WS_EX_LAYERED = 0x00080000
+        WS_EX_TRANSPARENT = 0x00000020
+        WS_EX_NOACTIVATE = 0x08000000
+        WS_EX_TOPMOST = 0x00000008
+        SW_SHOWNOACTIVATE = 4
+        HWND_TOPMOST = -1
+        LWA_ALPHA = 0x00000002
+        SWP_NOACTIVATE = 0x0010
+        SWP_SHOWWINDOW = 0x0040
+        r, g, b = self._parse_rgb_hex(color_hex)
+        hInstance = ctypes.windll.kernel32.GetModuleHandleW(None)
+        self.hwnd = user32.CreateWindowExW(
+            WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
+            "FocusCheckOverlayClass",
+            "FocusCheckOverlay",
+            WS_POPUP,
+            x, y, w, h,
+            None, None, hInstance, None
+        )
+        if not self.hwnd:
+            raise RuntimeError("CreateWindowExW failed")
+        self._brush = gdi32.CreateSolidBrush((b << 16) | (g << 8) | r)
+        user32.SetLayeredWindowAttributes(self.hwnd, 0, 0, LWA_ALPHA)
+        user32.SetWindowPos(self.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_SHOWWINDOW | 0x0001 | 0x0002)
+        user32.ShowWindow(self.hwnd, SW_SHOWNOACTIVATE)
+
+    def _parse_rgb_hex(self, s, default=(0,0,0)):
+        try:
+            t = str(s or "#000000").strip()
+            if t.startswith('#') and len(t) == 7:
+                hex_part = t[1:]
+                if all(c in '0123456789abcdefABCDEF' for c in hex_part):
+                    r = int(t[1:3], 16); g = int(t[3:5], 16); b = int(t[5:7], 16)
+                    return (r,g,b)
+        except (ValueError, TypeError):
+            pass
+        return default
+
+    def set_alpha(self, alpha):
+        if not self.hwnd:
+            return
+        try:
+            a = int(max(0, min(255, alpha * 255)))
+            LWA_ALPHA = 0x00000002
+            ctypes.windll.user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA)
+        except Exception:
+            pass
+
+    def destroy(self):
+        if self.hwnd:
+            try:
+                ctypes.windll.user32.DestroyWindow(self.hwnd)
+            except Exception:
+                pass
+            self.hwnd = None
+        if self._brush:
+            try:
+                ctypes.windll.gdi32.DeleteObject(self._brush)
+            except Exception:
+                pass
+            self._brush = None
+
+
+class PromptDialog(tk.Toplevel):
+    def __init__(self, master, settings, on_submit, slot_start_dt, taskdb=None, app_ref=None):
+        super().__init__(master)
+        self.settings = settings
+        self.on_submit = on_submit
+        self.slot_start_dt = slot_start_dt
+        self.taskdb = taskdb
+        self.app_ref = app_ref
+        self.start_monotonic = time.monotonic()
+        self.intensity_level = 0
+        self._pulse_dir = 1
+        self._pulse_val = 0
+        self._shaking = False
+        self._arrows_visible = False
+        self._overdrive = False
+        self._overdrive_stage4 = False
+        self._closed = False
+        self._hold_start = None
+        # Timer registry for cleanup
+        self._active_timers = set()
+        self._time_lbl = None
+        self._info_lbl = None
+        self._task_panel = None
+        self._task_change_form = None
+        self._analytics_lbl = None
+        self._task_timer_id = None
+        self._action_buttons = []
+        self._task_decision_required = False
+        self._task_decision_task_id = None
+        self._focus_prompt_open = False
+
+        self.title("Check-in")
+        self.configure(bg="#111")
+        self.resizable(False, False)
+        if self.settings["always_on_top"]:
+            self.attributes("-topmost", True)
+
+        # Windows-specific: remove minimize button and start taskbar flashing
+        try:
+            self._disable_minimize_button()
+            self._flash_taskbar_begin()
+        except Exception:
+            pass
+
+        # Prevent minimize attempts by restoring immediately
+        self.bind('<Unmap>', self._prevent_minimize)
+
+        container = tk.Frame(self, bg="#111")
+        container.pack(padx=14, pady=14)
+
+        title = tk.Label(container, text="Right now... be honest:", fg="#eaeaea", bg="#111", font=("Segoe UI", 14, "bold"))
+        title.pack(anchor="w", pady=(0,8))
+        # Ensure clean text in case of encoding hiccups
+        try:
+            title.configure(text="Right now - be honest:")
+        except Exception:
+            pass
+
+        self.button_row = tk.Frame(container, bg="#111")
+        self.button_row.pack(fill="x")
+
+        self.btn_study = tk.Button(self.button_row, text="Studying", font=("Segoe UI", 16, "bold"),
+                                   relief="solid", bd=2, width=14)
+        self.btn_waste = None
+        if not bool(self.settings.get("hide_wasting_button", False)):
+            self.btn_waste = tk.Button(self.button_row, text="Wasting time", font=("Segoe UI", 16, "bold"),
+                                       relief="solid", bd=2, width=14)
+
+        self.btn_study.bind("<ButtonPress-1>", self._study_hold_start)
+        self.btn_study.bind("<ButtonRelease-1>", self._study_hold_end)
+
+        # Apply anti-habit to wasting button too
+        if self.btn_waste is not None:
+            self.btn_waste.bind("<ButtonPress-1>", self._waste_hold_start)
+            self.btn_waste.bind("<ButtonRelease-1>", self._waste_hold_end)
+        self._action_buttons = [self.btn_study] + ([self.btn_waste] if self.btn_waste is not None else [])
+
+        self._bound_action_buttons = []
+        self._configure_action_buttons()
+        self.bind("<Return>", self._handle_action_key, add=True)
+        self.bind("<KP_Enter>", self._handle_action_key, add=True)
+
+        # Optional time info label below buttons
+        try:
+            self._time_lbl = tk.Label(container, text="", fg="#9fd", bg="#111", font=("Segoe UI", 10))
+            if self.settings.get("show_time_info", False):
+                self._time_lbl.pack(pady=(6,0))
+                self._start_time_info()
+        except Exception:
+            self._time_lbl = None
+
+        self._info_lbl = tk.Label(container, text="", fg="#ff9", bg="#111", font=("Segoe UI", 10))
+        self._info_lbl.pack(pady=(6,0))
+
+        # Task encouragement panel
+        if bool(self.settings.get("encouragement_enabled", True)):
+            self._task_panel = tk.Frame(container, bg="#111", highlightthickness=1, highlightbackground="#333")
+            self._task_panel.pack(fill="x", pady=(6, 0))
+            self._render_task_panel()
+
+        self.arrow_row = tk.Frame(container, bg="#111")
+        self.arrow_left = tk.Label(self.arrow_row, text="?", font=("Segoe UI Emoji", 24), bg="#111", fg="#111")
+        self.arrow_right = tk.Label(self.arrow_row, text="?", font=("Segoe UI Emoji", 24), bg="#111", fg="#111")
+        self.arrow_left.grid(row=0, column=0, padx=60)
+        self.arrow_right.grid(row=0, column=1, padx=60)
+        self.arrow_row.pack(pady=(2,0))
+
+        footer = tk.Frame(container, bg="#111")
+        footer.pack(fill="x", pady=(8,0))
+        settings_link = tk.Label(footer, text="? Settings", fg="#7fb7ff", bg="#111",
+                                 cursor="hand2", font=("Segoe UI", 10, "underline"))
+        settings_link.pack(side="left")
+        try:
+            settings_link.configure(text="Settings")
+        except Exception:
+            pass
+        settings_link.bind("<Button-1>", self._open_settings)
+
+        # Task link
+        if bool(self.settings.get("encouragement_enabled", True)):
+            task_link = tk.Label(footer, text="? Task", fg="#7fffb7", bg="#111",
+                                 cursor="hand2", font=("Segoe UI", 10, "underline"))
+            task_link.pack(side="left", padx=(10,0))
+            try:
+                task_link.configure(text="Task")
+            except Exception:
+                pass
+            task_link.bind("<Button-1>", self._toggle_task_entry)
+
+        # Analytics at bottom
+        if bool(self.settings.get("encouragement_enabled", True)) and bool(self.settings.get("show_task_analytics", True)):
+            self._analytics_lbl = tk.Label(container, text="", fg="#aaa", bg="#111", font=("Segoe UI", 10))
+            self._analytics_lbl.pack(pady=(6, 0))
+            self._refresh_analytics()
+
+        self._place_buttons_random()
+
+        self.after_idle(self._sync_initial_button_focus)
+
+        self.update_idletasks()
+        if self.settings["center_on_show"]:
+            # Center on the user's active monitor (cursor monitor on Windows)
+            self._center_on_active_monitor()
+
+        # Use timer registry for cleanup
+        self._schedule_timer(self.settings["intensify_after_seconds"] * 1000, self._begin_intensify)
+        self._schedule_timer(self.settings["overdrive_after_seconds"] * 1000, self._begin_overdrive)
+
+        self.protocol("WM_DELETE_WINDOW", self._ignore_close)
+
+        # Optionally track cursor monitor and recenter while open
+        try:
+            if bool(self.settings.get("follow_cursor_monitor", True)):
+                self.after(400, self._follow_cursor_center_loop)
+        except Exception:
+            pass
+
+        # If a task is required and none is set, guide user to create one
+        try:
+            if bool(self.settings.get("require_active_task", False)) and self.taskdb:
+                active = None
+                try:
+                    active = self.taskdb.get_active()
+                except Exception:
+                    active = None
+                if not active:
+                    try:
+                        self._info_lbl.config(text="Set a task to proceed.")
+                    except Exception:
+                        pass
+                    try:
+                        self._ensure_task_entry_visible()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Overdrive stage 5 state (screen dim/blackout overlays)
+        self._overdrive_stage5 = False
+        self._stage5_overlays = []
+        self._stage5_dim_alpha = 0.0
+        self._stage5_dim_dir = 1
+        self._stage5_dim_timer = None
+        self._stage5_start_mono = 0.0
+        self._stage5_hold_engaged = False
+        self._stage5_engine = 'overlay'  # Default engine, will be set from settings
+        # Gamma engine state (Windows only)
+        self._gamma_active = False
+        self._gamma_hdc = None
+        self._gamma_orig = None
+        # Magnification engine state (Windows only)
+        self._mag_active = False
+
+    def _place_buttons_random(self):
+        for w in self.button_row.winfo_children():
+            w.grid_forget()
+        left_first = True
+        if self.settings["anti_habit_enabled"] and self.settings["randomize_buttons"] and self.btn_waste is not None:
+            left_first = bool(random.getrandbits(1))
+        pad_l = random.randint(0, 12) if self.settings["randomize_buttons"] else 6
+        pad_r = random.randint(0, 12) if self.settings["randomize_buttons"] else 6
+        pad_y = random.randint(0, 6) if self.settings["randomize_buttons"] else 4
+
+        if self.btn_waste is None:
+            pad = max(pad_l, pad_r)
+            self.btn_study.grid(row=0, column=0, padx=(pad, pad), pady=pad_y)
+        else:
+            if left_first:
+                self.btn_study.grid(row=0, column=0, padx=(pad_l, 6), pady=pad_y)
+                self.btn_waste.grid(row=0, column=1, padx=(6, pad_r), pady=pad_y)
+            else:
+                self.btn_waste.grid(row=0, column=0, padx=(pad_l, 6), pady=pad_y)
+                self.btn_study.grid(row=0, column=1, padx=(6, pad_r), pady=pad_y)
+        self._update_action_button_default()
+
+
+    def _configure_action_buttons(self):
+        # Ensure tracking list ignores widgets that were destroyed
+        alive = []
+        for btn in getattr(self, '_bound_action_buttons', []):
+            try:
+                if btn is not None and btn.winfo_exists():
+                    alive.append(btn)
+            except Exception:
+                pass
+        self._bound_action_buttons = alive
+        for btn in self._action_buttons:
+            self._configure_single_action_button(btn)
+
+    def _configure_single_action_button(self, btn):
+        if btn is None or btn in self._bound_action_buttons:
+            return
+        try:
+            btn.configure(takefocus=True)
+        except Exception:
+            pass
+        btn.bind('<FocusIn>', lambda _evt, b=btn: self._on_action_button_focus(b), add=True)
+        btn.bind('<Return>', lambda _evt, b=btn: self._handle_action_button_key(b), add=True)
+        btn.bind('<KP_Enter>', lambda _evt, b=btn: self._handle_action_button_key(b), add=True)
+        btn.bind('<space>', lambda _evt, b=btn: self._handle_action_button_key(b), add=True)
+        self._bound_action_buttons.append(btn)
+
+    def _on_action_button_focus(self, btn):
+        self._update_action_button_default(btn)
+
+    def _handle_action_button_key(self, btn):
+        self._invoke_action_button(btn)
+        return 'break'
+
+    def _invoke_action_button(self, btn):
+        if btn is None:
+            return
+        try:
+            if btn is self.btn_study:
+                self._trigger_studying_choice()
+                return
+            if btn is self.btn_waste:
+                self._on_wasting_clicked()
+                return
+        except Exception:
+            pass
+        try:
+            btn.invoke()
+        except Exception:
+            pass
+
+    def _handle_action_key(self, event):
+        widget = self.focus_get()
+        if widget in self._action_buttons:
+            return self._handle_action_button_key(widget)
+        # Don't steal Enter from text/entry widgets
+        if widget is not None and isinstance(widget, ENTRY_WIDGET_TYPES):
+            return None
+        if widget is None or widget == self:
+            target = self._get_primary_action_button()
+            if target is not None:
+                self._focus_button(target)
+                return self._handle_action_button_key(target)
+        return None
+
+    def _focus_button(self, btn):
+        if btn is None:
+            return
+        try:
+            self.lift()
+        except Exception:
+            pass
+        try:
+            self.focus_force()
+        except Exception:
+            pass
+        try:
+            btn.focus_set()
+        except Exception:
+            pass
+        self._update_action_button_default(btn)
+
+    def _update_action_button_default(self, active_button=None):
+        for candidate in self._action_buttons:
+            if candidate is None:
+                continue
+            try:
+                candidate.configure(default='normal')
+            except tk.TclError:
+                pass
+        if active_button is None:
+            active_button = self._get_primary_action_button()
+        if active_button is not None:
+            try:
+                active_button.configure(default='active')
+            except tk.TclError:
+                pass
+
+    def _get_primary_action_button(self):
+        buttons = [btn for btn in self._action_buttons if btn is not None]
+        if not buttons:
+            return None
+        available = []
+        for btn in buttons:
+            try:
+                if btn.winfo_exists() and btn.winfo_ismapped():
+                    available.append(btn)
+            except Exception:
+                continue
+        if not available:
+            return None
+        try:
+            return min(available, key=lambda b: (
+                int(b.grid_info().get('row', 0)),
+                int(b.grid_info().get('column', 0))
+            ))
+        except Exception:
+            return available[0]
+
+    def _focus_first_action_button(self):
+        self._focus_button(self._get_primary_action_button())
+
+    def _sync_initial_button_focus(self):
+        if self._modal_auto_focus_enabled():
+            self._focus_first_action_button()
+        else:
+            self._update_action_button_default()
+
+    # --- Window placement helpers ---
+    def _get_active_monitor_workarea(self):
+        """Return (l, t, r, b) work area for the monitor currently active.
+        On Windows, picks the monitor under the cursor. Falls back to the
+        primary screen bounds elsewhere.
+        """
+        try:
+            if platform.system().lower() == "windows":
+                user32 = ctypes.windll.user32
+                # Structures
+                class POINT(ctypes.Structure):
+                    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+                class RECT(ctypes.Structure):
+                    _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+                class MONITORINFO(ctypes.Structure):
+                    _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT), ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
+
+                pt = POINT()
+                if not user32.GetCursorPos(ctypes.byref(pt)):
+                    raise RuntimeError("GetCursorPos failed")
+                MONITOR_DEFAULTTONEAREST = 2
+                hmon = user32.MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST)
+                if not hmon:
+                    raise RuntimeError("MonitorFromPoint failed")
+                mi = MONITORINFO()
+                mi.cbSize = ctypes.sizeof(MONITORINFO)
+                if not user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                    raise RuntimeError("GetMonitorInfoW failed")
+                return (mi.rcWork.left, mi.rcWork.top, mi.rcWork.right, mi.rcWork.bottom)
+        except Exception:
+            pass
+        # Fallback: primary screen
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        return (0, 0, int(sw), int(sh))
+
+    def _get_own_monitor_workarea(self):
+        """Return (l, t, r, b) work area for the monitor containing this window.
+        On Windows uses the window center to pick a monitor; fall back to
+        the primary screen elsewhere.
+        """
+        try:
+            if platform.system().lower() == "windows":
+                user32 = ctypes.windll.user32
+                # Structures
+                class POINT(ctypes.Structure):
+                    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+                class RECT(ctypes.Structure):
+                    _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+                class MONITORINFO(ctypes.Structure):
+                    _fields_ = [("cbSize", ctypes.c_uint), ("rcMonitor", RECT), ("rcWork", RECT), ("dwFlags", ctypes.c_uint)]
+                # Get current window rect
+                rc = RECT()
+                hwnd = wintypes.HWND(self.winfo_id())
+                if not user32.GetWindowRect(hwnd, ctypes.byref(rc)):
+                    raise RuntimeError("GetWindowRect failed")
+                cx = int((rc.left + rc.right) / 2)
+                cy = int((rc.top + rc.bottom) / 2)
+                MONITOR_DEFAULTTONEAREST = 2
+                hmon = user32.MonitorFromPoint(POINT(cx, cy), MONITOR_DEFAULTTONEAREST)
+                if not hmon:
+                    raise RuntimeError("MonitorFromPoint failed")
+                mi = MONITORINFO()
+                mi.cbSize = ctypes.sizeof(MONITORINFO)
+                if not user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                    raise RuntimeError("GetMonitorInfoW failed")
+                return (mi.rcWork.left, mi.rcWork.top, mi.rcWork.right, mi.rcWork.bottom)
+        except Exception:
+            pass
+        # Fallback: primary screen
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        return (0, 0, int(sw), int(sh))
+
+    def _clamp_to_rect(self, x, y, w, h, rect):
+        l, t, r, b = rect
+        min_x, max_x = l, max(l, r - w)
+        min_y, max_y = t, max(t, b - h)
+        cx = min(max(int(x), min_x), max_x)
+        cy = min(max(int(y), min_y), max_y)
+        return cx, cy
+
+    def _center_on_active_monitor(self):
+        self.update_idletasks()
+        w, h = self.winfo_width(), self.winfo_height()
+        l, t, r, b = self._get_active_monitor_workarea()
+        avail_w, avail_h = (r - l), (b - t)
+        x = l + int((avail_w - w) / 2)
+        y = t + int((avail_h - h) / 3)
+        x, y = self._clamp_to_rect(x, y, w, h, (l, t, r, b))
+        self.geometry(f"+{x}+{y}")
+
+    def _follow_cursor_center_loop(self):
+        if self._closed:
+            return
+        try:
+            # Compare monitor rectangles; if cursor monitor != window monitor, recenter
+            l1, t1, r1, b1 = self._get_active_monitor_workarea()
+            l2, t2, r2, b2 = self._get_own_monitor_workarea()
+            if (l1, t1, r1, b1) != (l2, t2, r2, b2):
+                self._center_on_active_monitor()
+        except Exception:
+            pass
+        finally:
+            try:
+                self.after(400, self._follow_cursor_center_loop)
+            except Exception:
+                pass
+
+    def ensure_on_screen(self):
+        try:
+            self.update_idletasks()
+            w, h = self.winfo_width(), self.winfo_height()
+            x, y = self.winfo_x(), self.winfo_y()
+            rect = self._get_own_monitor_workarea()
+            cx, cy = self._clamp_to_rect(x, y, w, h, rect)
+            if (cx, cy) != (x, y):
+                self.geometry(f"+{cx}+{cy}")
+        except Exception:
+            pass
+
+    # --- Time info helpers ---
+    def _format_now(self):
+        now = datetime.now()
+        show_secs = bool(self.settings.get("time_info_show_seconds", False))
+        use_12h = bool(self.settings.get("time_info_12h", False))
+        if use_12h:
+            fmt = "%I:%M:%S %p" if show_secs else "%I:%M %p"
+            s = now.strftime(fmt).lstrip("0")
+        else:
+            fmt = "%H:%M:%S" if show_secs else "%H:%M"
+            s = now.strftime(fmt)
+        return now, s
+
+    def _minutes_passed(self, now):
+        mode = str(self.settings.get("time_info_mode", "hour")).lower().strip()
+        if mode == "day":
+            return now.hour * 60 + now.minute
+        if mode == "anchor":
+            anc = str(self.settings.get("time_info_anchor_hhmm", "09:00"))
+            try:
+                hh, mm = anc.split(":"); hh = int(hh); mm = int(mm)
+                anchor = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+                if now < anchor:
+                    # use yesterday's anchor as most recent
+                    anchor = anchor - timedelta(days=1)
+                delta = now - anchor
+                return max(0, int(delta.total_seconds() // 60))
+            except Exception:
+                return now.hour * 60 + now.minute
+        if mode == "launch":
+            try:
+                if self.app_ref is not None and hasattr(self.app_ref, "_start_wall"):
+                    delta = now - getattr(self.app_ref, "_start_wall")
+                    return max(0, int(delta.total_seconds() // 60))
+            except Exception:
+                pass
+            return now.minute
+        # default hour mode
+        return now.minute
+
+    def _tick_time_info(self):
+        if self._closed or self._time_lbl is None:
+            return
+        try:
+            if not self.settings.get("show_time_info", False):
+                if self._time_lbl.winfo_manager():
+                    try:
+                        self._time_lbl.pack_forget()
+                    except Exception:
+                        pass
+            else:
+                if not self._time_lbl.winfo_manager():
+                    try:
+                        self._time_lbl.pack(pady=(6,0))
+                    except Exception:
+                        pass
+                now, cur = self._format_now()
+                mins = self._minutes_passed(now)
+                mode = str(self.settings.get("time_info_mode", "hour")).lower().strip()
+                extra = ""
+                if mode == "anchor":
+                    extra = f" since {self.settings.get('time_info_anchor_hhmm','09:00')}"
+                elif mode == "launch":
+                    extra = " since launch"
+                # Optional task remaining
+                task_left_txt = ""
+                try:
+                    if bool(self.settings.get("time_info_show_task_remaining", False)) and self.taskdb:
+                        active = self.taskdb.get_active()
+                        due_iso = active.get("due_utc") if active else None
+                        if due_iso:
+                            due_dt = datetime.fromisoformat(due_iso)
+                            now_utc = datetime.now(timezone.utc)
+                            rem = int((due_dt - now_utc).total_seconds())
+                            if rem > 0:
+                                mm, ss = divmod(rem, 60)
+                                hh, mm = divmod(mm, 60)
+                                if hh:
+                                    task_left_txt = f" | task left {hh}h{mm:02d}m"
+                                else:
+                                    task_left_txt = f" | task left {mm}m{ss:02d}s"
+                except Exception:
+                    pass
+                self._time_lbl.config(text=f"{mins} minutes passed{extra} | {cur}{task_left_txt}")
+        except Exception:
+            pass
+        finally:
+            try:
+                refresh = int(self.settings.get("time_info_refresh_ms", 1000))
+            except Exception:
+                refresh = 1000
+            self.after(refresh, self._tick_time_info)
+
+    def _start_time_info(self):
+        # begin periodic updates
+        self._tick_time_info()
+
+    # Anti-habit: press-and-hold for Studying
+    def _study_hold_start(self, _evt):
+        if not self.settings["anti_habit_enabled"]:
+            return
+        self._hold_start = time.monotonic()
+        try:
+            self._info_lbl.config(text="Hold to confirm you're actively studying.")
+        except Exception:
+            pass
+        self._info_lbl.config(text="Hold to confirm you're actively studying.")
+
+    def _study_hold_end(self, _evt):
+        if not self.settings["anti_habit_enabled"]:
+            self._trigger_studying_choice()
+            return
+        if self._hold_start is None:
+            return
+        held_ms = int((time.monotonic() - self._hold_start) * 1000)
+        self._hold_start = None
+        need = int(self.settings["studying_hold_ms"])
+        if held_ms >= need:
+            self._trigger_studying_choice()
+        else:
+            try:
+                self._info_lbl.config(text="Too quick ({}ms). Hold for at least {}ms.".format(held_ms, need))
+            except Exception:
+                pass
+            return
+
+    def _trigger_studying_choice(self):
+        try:
+            if not bool(self.settings.get("focus_prompt_enabled", False)):
+                self._finish("Studying")
+                return
+        except Exception:
+            self._finish("Studying")
+            return
+        ask_doing = bool(self.settings.get("focus_prompt_ask_doing", True))
+        ask_benefits = bool(self.settings.get("focus_prompt_ask_benefits", True))
+
+        def _on_submit(payload):
+            self._focus_prompt_open = False
+            try:
+                doing = (payload or {}).get("doing", "").strip()
+                benefits = (payload or {}).get("benefits", "").strip()
+                active = None
+                if self.taskdb:
+                    try:
+                        active = self.taskdb.get_active()
+                    except Exception:
+                        active = None
+                try:
+                    if self.taskdb:
+                        self.taskdb.record_focus_event(
+                            doing=doing,
+                            benefits=benefits,
+                            active_task_id=(active.get("id") if active else None)
+                        )
+                except Exception:
+                    log_exception("focus prompt: DB record failed")
+                try:
+                    latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+                    append_focus_log(
+                        slot_start_dt=self.slot_start_dt,
+                        latency_ms=latency_ms,
+                        doing=doing,
+                        benefits=benefits,
+                        active_task=active
+                    )
+                except Exception:
+                    log_exception("focus prompt: CSV append failed")
+            finally:
+                self._finish("Studying")
+
+        def _on_cancel():
+            self._focus_prompt_open = False
+
+        self._focus_prompt_open = True
+        FocusPromptDialog(
+            self,
+            ask_doing=ask_doing,
+            ask_benefits=ask_benefits,
+            on_submit=_on_submit,
+            on_cancel=_on_cancel,
+            auto_focus=self._modal_auto_focus_enabled(),
+            require_all_fields=bool(self.settings.get("prompt_require_all_fields", False)),
+        )
+
+    def _waste_hold_start(self, _evt):
+        if not self.settings["anti_habit_enabled"]:
+            self._on_wasting_clicked(); return
+        self._hold_start = time.monotonic()
+        try:
+            self._info_lbl.config(text="Hold to confirm you're wasting time...")
+        except Exception:
+            pass
+
+    def _waste_hold_end(self, _evt):
+        if not self.settings["anti_habit_enabled"]:
+            self._on_wasting_clicked(); return
+        if self._hold_start is None:
+            return
+        held_ms = int((time.monotonic() - self._hold_start) * 1000)
+        self._hold_start = None
+        need = int(self.settings["studying_hold_ms"])
+        if held_ms >= need:
+            self._on_wasting_clicked()
+        else:
+            # Inform user to hold longer
+            try:
+                self._info_lbl.config(text=f"Too quick ({held_ms}ms). Hold for at least {need}ms.")
+            except Exception:
+                pass
+
+    def _on_wasting_clicked(self):
+        try:
+            if not bool(self.settings.get("wasting_prompt_enabled", False)):
+                self._finish("Wasting time")
+                return
+        except Exception:
+            self._finish("Wasting time")
+            return
+        # Show prompt dialog to capture reflection
+        try:
+            ask_cons = bool(self.settings.get("wasting_prompt_ask_consequences", True))
+        except Exception:
+            ask_cons = True
+        try:
+            ask_what = bool(self.settings.get("wasting_prompt_ask_what", True))
+        except Exception:
+            ask_what = True
+        def _cb(payload):
+            try:
+                what = (payload or {}).get("what", "").strip()
+                cons = (payload or {}).get("consequences", "").strip()
+                active = None
+                if self.taskdb:
+                    try:
+                        active = self.taskdb.get_active()
+                    except Exception:
+                        active = None
+                # Persist to DB if available
+                try:
+                    if self.taskdb:
+                        self.taskdb.record_waste_event(what=what, consequences=cons, active_task_id=(active.get("id") if active else None))
+                except Exception:
+                    log_exception("waste prompt: DB record failed")
+                # Also record to CSV for quick export
+                try:
+                    latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+                    append_waste_log(slot_start_dt=self.slot_start_dt, latency_ms=latency_ms, what=what, consequences=cons, active_task=active)
+                except Exception:
+                    log_exception("waste prompt: CSV append failed")
+            finally:
+                self._finish("Wasting time")
+        def _on_cancel():
+            # Cancel just closes the waste prompt, returns to main dialog
+            # Don't call _finish() - let user choose again
+            pass
+        WastePromptDialog(
+            self,
+            ask_what=ask_what,
+            ask_consequences=ask_cons,
+            on_submit=_cb,
+            on_cancel=_on_cancel,
+            auto_focus=self._modal_auto_focus_enabled(),
+            require_all_fields=bool(self.settings.get("prompt_require_all_fields", False)),
+        )
+
+    # Escalation
+    def _begin_intensify(self):
+        if self._closed: return
+        try: self.lift(); self.focus_force()
+        except Exception: pass
+        # Nudge the taskbar to flash for attention (Windows)
+        try: self._flash_taskbar_begin()
+        except Exception: pass
+        self._step_intensity()
+
+    def _step_intensity(self):
+        if self._closed: return
+        if self.intensity_level < self.settings["max_intensity_level"]:
+            self.intensity_level += 1
+        if self.intensity_level >= 1 and self.settings.get("enable_intensity_pulse", True):
+            self._pulse_buttons()
+        if (self.intensity_level >= 2 and not self._shaking and
+            self.settings.get("enable_intensity_shake", True) and not self.settings.get("disable_jiggling", False)):
+            self._shaking = True
+            self._shake_window(times=12, pixels=10, delay=18)
+        if (self.intensity_level >= 3 and not self._arrows_visible and
+            self.settings.get("enable_intensity_arrows", True)):
+            self._arrows_visible = True
+            self._flash_arrows()
+        elif self.intensity_level < 3:
+            # Reset arrow visibility when intensity drops
+            self._arrows_visible = False
+        if self.intensity_level < self.settings["max_intensity_level"]:
+            self.after(1800, self._step_intensity)
+
+    def _begin_overdrive(self):
+        if self._closed: return
+        self._overdrive = True
+        try: self._flash_taskbar_begin()
+        except Exception: pass
+        if self.settings.get("enable_overdrive_flash_background", True):
+            self._flash_background()
+        if self.settings.get("enable_overdrive_shake_loop", True) and not self.settings.get("disable_jiggling", False):
+            self._shake_loop(amplitude=18, delay=14)
+        if self.settings.get("enable_overdrive_jiggle_buttons", True) and not self.settings.get("disable_jiggling", False):
+            self._jiggle_buttons()
+        self._info_lbl.config(text="You missed the minute-decide now. (Logged as late once you choose.)")
+        # Ensure readable text (avoid mojibake)
+        try:
+            self._info_lbl.config(text="You missed the minute - decide now. (Will log as late once you choose.)")
+        except Exception:
+            pass
+        # Escalate to stage 4 if enabled
+        if self.settings.get("overdrive_stage4_enabled", True):
+            delay4 = int(self.settings.get("overdrive_stage4_after_seconds", 12)) * 1000
+            self.after(delay4, self._begin_overdrive_stage4)
+        # Schedule overdrive Stage 5 (multi-monitor blackout/dim) after Stage 4 + configured delay
+        if self.settings.get("overdrive_stage5_enabled", True):
+            try:
+                s4 = int(self.settings.get("overdrive_stage4_after_seconds", 12)) if self.settings.get("overdrive_stage4_enabled", True) else 0
+            except Exception:
+                s4 = 0
+            try:
+                s5 = int(self.settings.get("overdrive_stage5_after_seconds", 60))
+            except Exception:
+                s5 = 60
+            self.after(max(0, (s4 + s5) * 1000), self._begin_overdrive_stage5)
+
+    # Visual helpers
+    def _pulse_buttons(self):
+        if self._closed: return
+        self._pulse_val += self._pulse_dir * 22
+        if self._pulse_val > 200: self._pulse_dir = -1
+        if self._pulse_val < 30:  self._pulse_dir = 1
+        v = self._pulse_val
+        g = max(0, min(255, 50 + v))
+        col = f"#{255:02x}{g:02x}{g:02x}"
+        for b in self._action_buttons:
+            try:
+                b.configure(highlightthickness=0, bg=col, activebackground=col)
+            except Exception:
+                pass
+        self.after(70, self._pulse_buttons)
+
+    def _shake_window(self, times=10, pixels=10, delay=20):
+        if self._closed: return
+        try:
+            x0, y0 = self.winfo_x(), self.winfo_y()
+            w, h = self.winfo_width(), self.winfo_height()
+            rect = self._get_own_monitor_workarea()
+        except Exception:
+            self._shaking = False; return
+        def do(n):
+            if self._closed: return
+            if n <= 0:
+                # Reset exactly to original position (also clamped)
+                cx, cy = self._clamp_to_rect(x0, y0, w, h, rect)
+                self.geometry(f"+{cx}+{cy}")
+                self._shaking = False; return
+            if self.settings.get("shake_lock_position", True):
+                # Do not move the window; simulate time passing only
+                self.after(delay, lambda: do(n-1))
+                return
+            dx = pixels if (n % 2 == 0) else -pixels
+            nx, ny = x0 + dx, y0
+            nx, ny = self._clamp_to_rect(nx, ny, w, h, rect)
+            self.geometry(f"+{nx}+{ny}")
+            self.after(delay, lambda: do(n-1))
+        do(times)
+
+    def _flash_arrows(self):
+        if self._closed: return
+        current = self.arrow_left.cget("fg")
+        new_fg = "#ff4d4d" if current == "#111" else "#111"
+        self.arrow_left.config(fg=new_fg)
+        self.arrow_right.config(fg=new_fg)
+        DEFAULT_ARROW_FONT_SIZE = 24
+        fsize = self.arrow_left.cget("font").split()[-1]
+        try: fsize = int(fsize)
+        except (ValueError, TypeError): fsize = DEFAULT_ARROW_FONT_SIZE
+        fsize = 28 if new_fg == "#ff4d4d" else 22
+        self.arrow_left.config(font=("Segoe UI Emoji", fsize))
+        self.arrow_right.config(font=("Segoe UI Emoji", fsize))
+        self.after(280, self._flash_arrows)
+
+    def _flash_background(self):
+        if self._closed or not self._overdrive or self._overdrive_stage4: return
+        curr = self.cget("bg")
+        nextc = "#300" if curr == "#111" else "#111"
+        self.configure(bg=nextc)
+        for f in (self.button_row, self.arrow_row):
+            f.config(bg=nextc)
+        self.after(120, self._flash_background)
+
+    def _begin_overdrive_stage4(self):
+        if self._closed or not self._overdrive: return
+        self._overdrive_stage4 = True
+        # Start ultra-fast red flashing
+        self._flash_stage4()
+
+    # ---- Stage 5: overlay blackout/dim across all monitors ----
+    def _begin_overdrive_stage5(self):
+        if self._closed or not self._overdrive or self._overdrive_stage5:
+            return
+        self._overdrive_stage5 = True
+        try:
+            get_logger().info("overdrive stage5: begin")
+        except Exception:
+            pass
+        # If configured max alpha is zero or negative, skip creating overlays entirely
+        try:
+            _max_a_probe = float(self.settings.get("overdrive_stage5_dim_max_alpha", 0.92))
+        except Exception:
+            _max_a_probe = 0.92
+        if _max_a_probe <= 0.0:
+            try:
+                get_logger().warning("overdrive stage5: skipped (max alpha <= 0)")
+            except Exception:
+                pass
+            self._overdrive_stage5 = False
+            return
+        # Decide engine: overlay (default) or gamma/magnifier (Windows only)
+        engine = str(self.settings.get("overdrive_stage5_engine", "overlay")).strip().lower()
+        if engine not in ("overlay","gamma"):
+            engine = "overlay"
+        # Prefer magnification (color effect) on Windows for reliable click-through
+        try:
+            if platform.system().lower() == 'windows' and bool(self.settings.get('overdrive_stage5_click_through', True)):
+                engine = 'mag'
+        except Exception:
+            pass
+        self._stage5_engine = engine
+
+        if engine == "mag" and platform.system().lower() == "windows":
+            try:
+                self._mag_prepare()
+            except Exception:
+                log_exception("stage5: magnifier prepare failed; falling back to gamma")
+                self._stage5_engine = "gamma"
+        if self._stage5_engine == "gamma" and platform.system().lower() == "windows":
+            # Prepare gamma engine; no overlays created
+            try:
+                self._gamma_prepare()
+            except Exception:
+                log_exception("stage5: gamma prepare failed; falling back to overlay")
+                self._stage5_engine = "overlay"
+
+        if self._stage5_engine == "overlay":
+            try:
+                self._create_stage5_overlays()
+            except Exception:
+                log_exception("stage5 overlay creation failed")
+        # Start dimming loop
+        self._stage5_dim_alpha = 0.0
+        self._stage5_dim_dir = 1
+        try:
+            self._stage5_start_mono = time.monotonic()
+        except Exception:
+            self._stage5_start_mono = 0.0
+        self._stage5_hold_engaged = False
+        self._stage5_dim_tick()
+
+    # ---- Gamma engine (Windows) ----
+    def _gamma_prepare(self):
+        if platform.system().lower() != 'windows':
+            return
+        gdi32 = ctypes.windll.gdi32
+        user32 = ctypes.windll.user32
+        class GAMMARAMP(ctypes.Structure):
+            _fields_ = [("Red", ctypes.c_ushort * 256),
+                        ("Green", ctypes.c_ushort * 256),
+                        ("Blue", ctypes.c_ushort * 256)]
+        self._GAMMARAMP = GAMMARAMP
+        # Use screen DC (primary). This dims the built-in panel (typical laptop).
+        hdc = user32.GetDC(None)
+        if not hdc:
+            raise RuntimeError("GetDC(None) failed")
+        try:
+            orig = GAMMARAMP()
+            ok = gdi32.GetDeviceGammaRamp(hdc, ctypes.byref(orig))
+            if not ok:
+                # Some drivers don't support Get; still proceed with a generated linear ramp
+                for i in range(256):
+                    v = int(min(65535, max(0, i * 257)))
+                    orig.Red[i] = v; orig.Green[i] = v; orig.Blue[i] = v
+            self._gamma_hdc = hdc
+            self._gamma_orig = orig
+            self._gamma_active = True
+        except Exception:
+            # Clean up HDC if anything fails after GetDC
+            try:
+                user32.ReleaseDC(None, hdc)
+            except Exception:
+                pass
+            raise
+
+    def _gamma_apply_level(self, brightness: float):
+        # brightness: 1.0 = normal, 0.0 = black
+        if not self._gamma_active or platform.system().lower() != 'windows':
+            return
+        try:
+            b = max(0.0, min(1.0, float(brightness)))
+        except Exception:
+            b = 1.0
+        gdi32 = ctypes.windll.gdi32
+        class GAMMARAMP(ctypes.Structure):
+            _fields_ = [("Red", ctypes.c_ushort * 256),
+                        ("Green", ctypes.c_ushort * 256),
+                        ("Blue", ctypes.c_ushort * 256)]
+        ramp = GAMMARAMP()
+        # Build a simple linear ramp scaled by brightness
+        for i in range(256):
+            v = int(min(65535, max(0, round(i * 257 * b))))
+            ramp.Red[i] = v
+            ramp.Green[i] = v
+            ramp.Blue[i] = v
+        gdi32.SetDeviceGammaRamp(self._gamma_hdc, ctypes.byref(ramp))
+
+    def _gamma_restore(self):
+        if not self._gamma_active or platform.system().lower() != 'windows':
+            return
+        try:
+            gdi32 = ctypes.windll.gdi32
+            user32 = ctypes.windll.user32
+            if self._gamma_hdc and self._gamma_orig:
+                gdi32.SetDeviceGammaRamp(self._gamma_hdc, ctypes.byref(self._gamma_orig))
+            if self._gamma_hdc:
+                user32.ReleaseDC(None, self._gamma_hdc)
+        except Exception:
+            pass
+        finally:
+            self._gamma_active = False
+            self._gamma_hdc = None
+            self._gamma_orig = None
+
+    # ---- Magnification color-effect engine (Windows) ----
+    def _mag_prepare(self):
+        if platform.system().lower() != 'windows':
+            return
+        # Load Magnification API
+        try:
+            self._magnification = ctypes.windll.magnification
+        except Exception as e:
+            raise RuntimeError("Magnification API not available") from e
+        if not self._magnification.MagInitialize():
+            raise RuntimeError("MagInitialize failed")
+        try:
+            # Ensure identity first
+            class MAGCOLOREFFECT(ctypes.Structure):
+                _fields_ = [("transform", ctypes.c_float * 25)]
+            self._MAGCOLOREFFECT = MAGCOLOREFFECT
+            ident = MAGCOLOREFFECT()
+            mat = ident.transform
+            for i in range(25):
+                mat[i] = 0.0
+            mat[0] = mat[6] = mat[12] = 1.0
+            mat[18] = 1.0  # alpha
+            mat[24] = 1.0
+            # Best effort; ignore failure
+            try:
+                self._magnification.MagSetFullscreenColorEffect(ctypes.byref(ident))
+            except Exception:
+                pass
+            self._mag_active = True
+        except Exception:
+            # Clean up if anything fails after MagInitialize
+            try:
+                self._magnification.MagUninitialize()
+            except Exception:
+                pass
+            raise
+
+    def _mag_apply_level(self, brightness: float):
+        if not self._mag_active or platform.system().lower() != 'windows':
+            return
+        try:
+            b = max(0.0, min(1.0, float(brightness)))
+        except Exception:
+            b = 1.0
+        MAGCOLOREFFECT = self._MAGCOLOREFFECT
+        eff = MAGCOLOREFFECT()
+        mat = eff.transform
+        for i in range(25):
+            mat[i] = 0.0
+        # Scale RGB by b; keep alpha 1
+        mat[0] = b
+        mat[6] = b
+        mat[12] = b
+        mat[18] = 1.0
+        mat[24] = 1.0
+        self._magnification.MagSetFullscreenColorEffect(ctypes.byref(eff))
+
+    def _mag_restore(self):
+        if not self._mag_active or platform.system().lower() != 'windows':
+            return
+        try:
+            MAGCOLOREFFECT = self._MAGCOLOREFFECT
+            eff = MAGCOLOREFFECT()
+            mat = eff.transform
+            for i in range(25):
+                mat[i] = 0.0
+            mat[0] = mat[6] = mat[12] = 1.0
+            mat[18] = 1.0
+            mat[24] = 1.0
+            self._magnification.MagSetFullscreenColorEffect(ctypes.byref(eff))
+        except Exception:
+            pass
+        try:
+            self._magnification.MagUninitialize()
+        except Exception:
+            pass
+        self._mag_active = False
+
+    def _get_virtual_screen_rect(self):
+        # Return (x, y, w, h) covering all monitors (Windows) or primary screen fallback
+        try:
+            if platform.system().lower() == "windows":
+                user32 = ctypes.windll.user32
+                SM_XVIRTUALSCREEN = 76
+                SM_YVIRTUALSCREEN = 77
+                SM_CXVIRTUALSCREEN = 78
+                SM_CYVIRTUALSCREEN = 79
+                x = int(user32.GetSystemMetrics(SM_XVIRTUALSCREEN))
+                y = int(user32.GetSystemMetrics(SM_YVIRTUALSCREEN))
+                w = int(user32.GetSystemMetrics(SM_CXVIRTUALSCREEN))
+                h = int(user32.GetSystemMetrics(SM_CYVIRTUALSCREEN))
+                if w > 0 and h > 0:
+                    return (x, y, w, h)
+        except Exception:
+            pass
+        # Fallback to single screen
+        try:
+            w = int(self.winfo_screenwidth())
+            h = int(self.winfo_screenheight())
+            return (0, 0, w, h)
+        except Exception:
+            return (0, 0, 1920, 1080)
+
+    def _create_stage5_overlays(self):
+        # Use a single virtual-screen overlay to cover all monitors
+        x, y, w, h = self._get_virtual_screen_rect()
+        try:
+            get_logger().info("overdrive stage5: overlay rect x=%s y=%s w=%s h=%s", x, y, w, h)
+        except Exception:
+            pass
+        color = str(self.settings.get("overdrive_stage5_dim_color", "#000000") or "#000000")
+        click_through = bool(self.settings.get('overdrive_stage5_click_through', True))
+        if platform.system().lower() == 'windows' and click_through:
+            # Robust native click-through overlay for Windows 10/11
+            try:
+                ov_native = _WinClickThroughOverlay(x, y, w, h, color_hex=color)
+                self._stage5_overlays = [ov_native]
+                try:
+                    self.lift(); self.focus_force()
+                except Exception:
+                    pass
+                return
+            except Exception:
+                log_exception("stage5: native overlay failed; falling back to Tk overlay")
+        # Fallback: Tk overlay
+        ov = tk.Toplevel(self)
+        ov.withdraw()
+        try: ov.overrideredirect(True)
+        except Exception: pass
+        try: ov.attributes('-topmost', True)
+        except Exception: pass
+        try: ov.configure(bg=color)
+        except Exception: pass
+        try: ov.geometry(f"{w}x{h}+{x}+{y}")
+        except Exception: pass
+        try: ov.attributes('-alpha', 0.0)
+        except Exception: pass
+        try: ov.deiconify()
+        except Exception: pass
+        try:
+            if platform.system().lower() == 'windows' and click_through:
+                ov.update_idletasks()
+                hwnd = wintypes.HWND(ov.winfo_id())
+                _enable_click_through_windows(hwnd)
+                _install_httransparent_wndproc(hwnd, owner_widget=ov)
+        except Exception:
+            pass
+        self._stage5_overlays = [ov]
+        try:
+            self.lift(); self.focus_force()
+        except Exception:
+            pass
+
+    def _stage5_dim_tick(self):
+        if self._closed or not self._overdrive_stage5:
+            return
+        try:
+            max_a = float(self.settings.get("overdrive_stage5_dim_max_alpha", 0.92))
+        except Exception:
+            max_a = 0.92
+        slow_enabled = bool(self.settings.get("overdrive_stage5_slow_dim_enabled", False))
+        try:
+            slow_secs = int(self.settings.get("overdrive_stage5_slow_dim_seconds", 30))
+        except Exception:
+            slow_secs = 30
+        pulse = bool(self.settings.get("overdrive_stage5_dim_pulse", True))
+        try:
+            hold_after = int(self.settings.get("overdrive_stage5_hold_after_seconds", 0))
+        except Exception:
+            hold_after = 0
+
+        # Determine target alpha
+        a = self._stage5_dim_alpha
+        now_mono = time.monotonic()
+        if slow_enabled:
+            # One-way slow dim to black
+            if slow_secs <= 0:
+                a = max_a
+            else:
+                elapsed = max(0.0, now_mono - (self._stage5_start_mono or now_mono))
+                # Prevent division by zero
+                if slow_secs > 0.001:
+                    prog = max(0.0, min(1.0, elapsed / float(slow_secs)))
+                else:
+                    prog = 1.0
+                a = max_a * prog
+        else:
+            # Pulse fade in/out
+            step = 0.05
+            a = self._stage5_dim_alpha + (step * self._stage5_dim_dir)
+            if a >= max_a:
+                a = max_a
+                if pulse:
+                    self._stage5_dim_dir = -1
+            if a <= 0.0:
+                a = 0.0
+                if pulse:
+                    self._stage5_dim_dir = 1
+
+        # Engage final hold if configured
+        if (not self._stage5_hold_engaged) and hold_after > 0:
+            try:
+                if (now_mono - (self._stage5_start_mono or now_mono)) >= hold_after:
+                    self._stage5_hold_engaged = True
+                    a = max_a
+            except Exception:
+                pass
+
+        self._stage5_dim_alpha = a
+
+        # Apply engine output
+        eng = getattr(self, '_stage5_engine', 'overlay')
+        if eng == 'mag' and platform.system().lower() == 'windows':
+            # Map overlay alpha to brightness via magnification color matrix
+            self._mag_apply_level(1.0 - a)
+        elif eng == 'gamma' and platform.system().lower() == 'windows':
+            # Map overlay alpha to brightness (1.0 = normal, 0.0 = black)
+            self._gamma_apply_level(1.0 - a)
+        else:
+            click_through = bool(self.settings.get('overdrive_stage5_click_through', True))
+            for ov in list(self._stage5_overlays or []):
+                try:
+                    if hasattr(ov, 'set_alpha') and callable(getattr(ov, 'set_alpha')):
+                        ov.set_alpha(a)
+                    else:
+                        ov.attributes('-alpha', a)
+                        # Re-assert click-through on Tk overlay in case Tk reset styles
+                        if click_through and platform.system().lower() == 'windows':
+                            try: ov.update_idletasks()
+                            except Exception: pass
+                            hwnd = wintypes.HWND(ov.winfo_id())
+                            _enable_click_through_windows(hwnd)
+                except Exception:
+                    pass
+        # Keep prompt above overlays
+        if getattr(self, '_stage5_engine', 'overlay') == 'overlay':
+            try:
+                self.lift()
+            except Exception:
+                pass
+        # Schedule next tick unless we're holding final black
+        if self._stage5_hold_engaged and slow_enabled:
+            # In slow-dim mode, once held at max we can stop ticking
+            self._stage5_dim_timer = None
+            return
+        if self._stage5_hold_engaged and not slow_enabled and not pulse:
+            # If we weren't pulsing anyway, stop
+            self._stage5_dim_timer = None
+            return
+        try:
+            # Use 500ms for better performance while maintaining smooth animation
+            self._stage5_dim_timer = self.after(500, self._stage5_dim_tick)
+        except Exception:
+            self._stage5_dim_timer = None
+
+    def _destroy_stage5_overlays(self):
+        try:
+            if self._stage5_dim_timer is not None:
+                try:
+                    self.after_cancel(self._stage5_dim_timer)
+                    # Only clear timer ID if cancellation succeeded
+                    self._stage5_dim_timer = None
+                except Exception:
+                    # If cancellation failed, log but still clear to prevent double-cancel
+                    try:
+                        get_logger().warning("Failed to cancel stage5 dim timer")
+                    except Exception:
+                        pass
+                    self._stage5_dim_timer = None
+        except Exception:
+            pass
+        # Restore gamma engine if used
+        try:
+            if getattr(self, '_stage5_engine', 'overlay') == 'gamma':
+                self._gamma_restore()
+        except Exception:
+            pass
+        # Restore magnification engine if used
+        try:
+            if getattr(self, '_stage5_engine', 'overlay') == 'mag':
+                self._mag_restore()
+        except Exception:
+            pass
+        try:
+            for ov in list(self._stage5_overlays or []):
+                # Restore original wndproc if we subclassed for click-through
+                try:
+                    old = getattr(ov, "_ct_click_oldproc", None)
+                    setter = getattr(ov, "_ct_click_setter", None)
+                    if old and setter:
+                        try:
+                            setter(wintypes.HWND(ov.winfo_id()), GWL_WNDPROC, ctypes.c_void_p(old))
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    ov.destroy()
+                except Exception:
+                    pass
+        finally:
+            self._stage5_overlays = []
+        try:
+            get_logger().info("overdrive stage5: destroyed overlays")
+        except Exception:
+            pass
+
+    def _flash_stage4(self):
+        if self._closed or not self._overdrive_stage4: return
+        curr = self.cget("bg")
+        nextc = "#b00" if curr != "#b00" else "#111"
+        self.configure(bg=nextc)
+        for f in (self.button_row, self.arrow_row):
+            f.config(bg=nextc)
+        # Accent buttons as well for consistent alerting
+        try:
+            for b in self._action_buttons:
+                b.configure(bg=("#ff4d4d" if nextc == "#b00" else "#333"), activebackground=("#ff4d4d" if nextc == "#b00" else "#333"))
+        except Exception:
+            pass
+        rate = max(20, int(self.settings.get("overdrive_stage4_flash_ms", 60)))
+        self.after(rate, self._flash_stage4)
+
+    def _shake_loop(self, amplitude=16, delay=14):
+        if self._closed or not self._overdrive: return
+        self._shake_window(times=8, pixels=amplitude, delay=delay)
+        self.after(220, lambda: self._shake_loop(amplitude, delay))
+
+    def _jiggle_buttons(self):
+        if self._closed or not self._overdrive: return
+        style = str(self.settings.get("jiggle_style", "nudge"))
+        if style == "off":
+            return
+        if style == "nudge":
+            self._place_buttons_nudge()
+        elif style == "pulse":
+            fs = random.choice([15,16,17,18])
+            try:
+                self.btn_study.config(font=("Segoe UI", fs, "bold"))
+                if self.btn_waste is not None:
+                    self.btn_waste.config(font=("Segoe UI", fs, "bold"))
+            except Exception:
+                pass
+        self.after(1200, self._jiggle_buttons)
+
+    def _place_buttons_nudge(self):
+        # Minimal, click-friendly movement
+        for w in self.button_row.winfo_children():
+            w.grid_forget()
+        pad_l = random.randint(0, 2)
+        pad_r = random.randint(0, 2)
+        pad_y = random.randint(0, 2)
+        if self.btn_waste is None:
+            pad = max(pad_l, pad_r)
+            self.btn_study.grid(row=0, column=0, padx=(pad, pad), pady=pad_y)
+        else:
+            # Keep order stable to avoid chasing
+            self.btn_study.grid(row=0, column=0, padx=(pad_l, 6), pady=pad_y)
+            self.btn_waste.grid(row=0, column=1, padx=(6, pad_r), pady=pad_y)
+
+    def _open_settings(self, _evt=None):
+        def apply_and_refresh(new_settings):
+            self.settings.update(new_settings)
+            if self.settings["always_on_top"]:
+                self.attributes("-topmost", True)
+            else:
+                self.attributes("-topmost", False)
+            # Apply visibility of 'Wasting time' button immediately
+            try:
+                want_hide = bool(self.settings.get("hide_wasting_button", False))
+                have_btn = (self.btn_waste is not None)
+                if want_hide and have_btn:
+                    try:
+                        self.btn_waste.destroy()
+                    except Exception:
+                        pass
+                    self.btn_waste = None
+                    self._action_buttons = [self.btn_study]
+                    self._configure_action_buttons()
+                    self._place_buttons_random()
+                elif (not want_hide) and (not have_btn):
+                    # Create button and place it
+                    self.btn_waste = tk.Button(self.button_row, text="Wasting time", font=("Segoe UI", 16, "bold"),
+                                               relief="solid", bd=2, width=14)
+                    # Apply anti-habit to wasting button too
+                    self.btn_waste.bind("<ButtonPress-1>", self._waste_hold_start)
+                    self.btn_waste.bind("<ButtonRelease-1>", self._waste_hold_end)
+                    self._action_buttons = [self.btn_study, self.btn_waste]
+                    self._configure_action_buttons()
+                    self._place_buttons_random()
+            except Exception:
+                pass
+            # Ensure follow-cursor loop is running if enabled
+            try:
+                if bool(self.settings.get("follow_cursor_monitor", True)):
+                    self.after(400, self._follow_cursor_center_loop)
+            except Exception:
+                pass
+        SettingsWindow(self, self.settings, on_save=apply_and_refresh)
+
+    def _ignore_close(self):
+        try:
+            if bool(self.settings.get("require_active_task", False)) and self.taskdb:
+                active = None
+                try:
+                    active = self.taskdb.get_active()
+                except Exception:
+                    active = None
+                if not active:
+                    messagebox.showinfo("Set Task", "You must set a task to continue.")
+                    try:
+                        self._ensure_task_entry_visible()
+                    except Exception:
+                        pass
+                    return
+        except Exception:
+            pass
+        if self.btn_waste is None:
+            messagebox.showinfo("Decide", "Confirm you're Studying (hold if enabled).")
+        else:
+            messagebox.showinfo("Decide", "Pick one: Studying or Wasting time.")
+
+    def _finish(self, choice):
+        if self._closed: return
+        # Enforce active task requirement (optional)
+        try:
+            if bool(self.settings.get("require_active_task", False)) and self.taskdb:
+                active = None
+                try:
+                    active = self.taskdb.get_active()
+                except Exception:
+                    active = None
+                if not active:
+                    messagebox.showinfo("Set Task", "You must set a task before continuing.")
+                    try:
+                        self._ensure_task_entry_visible()
+                    except Exception:
+                        pass
+                    return
+        except Exception:
+            pass
+        # If a task decision is required and user bypasses with Studying/Wasting, count as failure
+        try:
+            if self._task_decision_required and self.taskdb and self._task_decision_task_id is not None:
+                if choice in ("Studying", "Wasting time") and bool(self.settings.get("tasks_study_implies_fail_on_decision", True)):
+                    try:
+                        self.taskdb.mark_failed(self._task_decision_task_id)
+                    except Exception:
+                        pass
+                    self._task_decision_required = False
+                    self._task_decision_task_id = None
+                    # Refresh panel/analytics quickly
+                    try:
+                        self._render_task_panel(); self._refresh_analytics()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+        try:
+            try:
+                get_logger().info(
+                    "choice=%s latency_ms=%s intensity=%s overdrive=%s",
+                    choice, latency_ms, self.intensity_level, self._overdrive
+                )
+            except Exception:
+                pass
+            append_log(
+                response=choice,
+                latency_ms=latency_ms,
+                settings=self.settings,
+                intensity_level_reached=self.intensity_level + (10 if self._overdrive else 0),
+                slot_start_dt=self.slot_start_dt,
+                overdrive_deadline_s=int(self.settings["overdrive_after_seconds"])
+            )
+        except Exception as e:
+            try:
+                get_logger().error("append_log failed: %s", e)
+            except Exception:
+                print(f"append_log failed: {e}", file=sys.stderr)
+        try:
+            self._flash_taskbar_stop()
+        except Exception:
+            pass
+        # Tear down Stage 5 overlays if present
+        try:
+            self._destroy_stage5_overlays()
+        except Exception:
+            pass
+        # Reset overdrive flags on completion
+        self._overdrive_stage4 = False
+        self._closed = True
+        # Clean up all timers before destroying
+        self._cleanup_all_timers()
+        self.destroy()
+
+    def _schedule_timer(self, delay_ms, callback):
+        """Schedule a timer and track it for cleanup."""
+        if self._closed:
+            return None
+        timer_id = self.after(delay_ms, callback)
+        self._active_timers.add(timer_id)
+        return timer_id
+
+    def _cancel_timer(self, timer_id):
+        """Cancel a specific timer and remove from tracking."""
+        if timer_id and timer_id in self._active_timers:
+            try:
+                self.after_cancel(timer_id)
+            except Exception:
+                pass
+            self._active_timers.discard(timer_id)
+
+    def _cleanup_all_timers(self):
+        """Cancel all active timers."""
+        for timer_id in list(self._active_timers):
+            try:
+                self.after_cancel(timer_id)
+            except Exception:
+                pass
+        self._active_timers.clear()
+
+    # ---- Task encouragement UI ----
+    def _toggle_task_entry(self, _evt=None):
+        if not self.taskdb:
+            return
+        # Toggle inline task entry frame below panel or time label
+        if getattr(self, "_task_entry_frame", None) is not None:
+            try:
+                self._task_entry_frame.destroy()
+            except Exception:
+                pass
+            self._task_entry_frame = None
+            return
+        self._task_entry_frame = tk.Frame(self, bg="#111", highlightthickness=1, highlightbackground="#333")
+        self._task_entry_frame.pack(padx=14, pady=(6,0), fill="x")
+        tk.Label(self._task_entry_frame, text="New Task Title", fg="#ddd", bg="#111").grid(row=0, column=0, sticky="w", padx=8, pady=(6,0))
+        title_var = tk.StringVar()
+        ttk.Entry(self._task_entry_frame, textvariable=title_var, width=48).grid(row=0, column=1, sticky="we", padx=8, pady=(6,0))
+        tk.Label(self._task_entry_frame, text="Why", fg="#bbb", bg="#111").grid(row=1, column=0, sticky="w", padx=8)
+        why_var = tk.StringVar(); ttk.Entry(self._task_entry_frame, textvariable=why_var, width=48).grid(row=1, column=1, sticky="we", padx=8)
+        tk.Label(self._task_entry_frame, text="Consequences", fg="#bbb", bg="#111").grid(row=2, column=0, sticky="w", padx=8)
+        cons_var = tk.StringVar(); ttk.Entry(self._task_entry_frame, textvariable=cons_var, width=48).grid(row=2, column=1, sticky="we", padx=8)
+        tk.Label(self._task_entry_frame, text="Expected completion (mins or HH:MM)", fg="#bbb", bg="#111").grid(row=3, column=0, sticky="w", padx=8)
+        due_var = tk.StringVar(); ttk.Entry(self._task_entry_frame, textvariable=due_var, width=20).grid(row=3, column=1, sticky="w", padx=8)
+        btns = ttk.Frame(self._task_entry_frame); btns.grid(row=4, column=0, columnspan=2, sticky="e", padx=8, pady=(6,8))
+        def save_inline():
+            data = {
+                "title": title_var.get(),
+                "why": why_var.get(),
+                "consequences": cons_var.get(),
+                "due_utc": TaskEntryDialog._parse_due(self=None, txt=due_var.get()) if 'TaskEntryDialog' in globals() else None
+            }
+            self._on_new_task(data)
+            try:
+                self._task_entry_frame.destroy()
+            except Exception:
+                pass
+            self._task_entry_frame = None
+        def cancel_task_entry():
+            try:
+                if self._task_entry_frame:
+                    self._task_entry_frame.destroy()
+            except Exception:
+                pass
+            finally:
+                self._task_entry_frame = None
+        ttk.Button(btns, text="Cancel", command=cancel_task_entry).pack(side="right", padx=6)
+        ttk.Button(btns, text="Save", command=save_inline).pack(side="right")
+
+    def _ensure_task_entry_visible(self):
+        if not self.taskdb:
+            return
+        try:
+            fr = getattr(self, "_task_entry_frame", None)
+            exists = bool(fr is not None and int(fr.winfo_exists()) == 1)
+        except Exception:
+            exists = False
+        if not exists:
+            try:
+                self._toggle_task_entry(None)
+            except Exception:
+                pass
+
+    def _on_new_task(self, task_data):
+        try:
+            title = task_data.get("title", "").strip()
+            why = task_data.get("why", "").strip()
+            cons = task_data.get("consequences", "").strip()
+            due_iso = task_data.get("due_utc")
+            if not title:
+                return
+            self.taskdb.start_task(title=title, due_utc=due_iso, why=why, consequences=cons)
+            self._render_task_panel()
+            self._refresh_analytics()
+        except Exception:
+            pass
+
+    def _render_task_panel(self):
+        if not self._task_panel or not self.taskdb:
+            return
+        # Preserve open change form while updating the rest
+        keep_form = getattr(self, "_task_change_form", None)
+        try:
+            if keep_form is not None and int(keep_form.winfo_exists()) == 1:
+                try:
+                    keep_form.pack_forget()
+                except Exception:
+                    pass
+            else:
+                keep_form = None
+        except Exception:
+            keep_form = None
+        for w in list(self._task_panel.winfo_children()):
+            if keep_form is not None and w == keep_form:
+                continue
+            try:
+                w.destroy()
+            except Exception:
+                pass
+        active = None
+        try:
+            active = self.taskdb.get_active()
+        except Exception:
+            active = None
+        if not active:
+            # Header row with History button even when no active task
+            header_row = tk.Frame(self._task_panel, bg="#111")
+            header_row.pack(fill="x", padx=8, pady=(6,0))
+            hist = tk.Label(header_row, text="History", fg="#7fffb7", bg="#111", cursor="hand2", font=("Segoe UI", 9, "underline"))
+            hist.pack(side="right")
+            hist.bind("<Button-1>", self._open_task_history)
+            # No task message
+            lbl = tk.Label(self._task_panel, text="No task set. Click ? Task to define one.", fg="#bbb", bg="#111", font=("Segoe UI", 10))
+            lbl.pack(anchor="w", padx=8, pady=6)
+            return
+
+        # Build active task UI
+        title = active.get("title", "")
+        why = active.get("why", "")
+        cons = active.get("consequences", "")
+        due_iso = active.get("due_utc")
+        due_txt = "No due time"
+        overdue = False
+        time_left = ""
+        try:
+            if due_iso:
+                due_dt = datetime.fromisoformat(due_iso)
+                local_due = due_dt.astimezone().strftime("%Y-%m-%d %H:%M")
+                now = datetime.now(timezone.utc)
+                if now > due_dt:
+                    overdue = True
+                    due_txt = f"Due: {local_due} (LIMIT REACHED)"
+                else:
+                    rem = due_dt - now
+                    mm = int(rem.total_seconds() // 60)
+                    ss = int(rem.total_seconds() % 60)
+                    due_txt = f"Due: {local_due}"
+                    time_left = f"Time left: {mm}m {ss}s"
+        except Exception:
+            pass
+
+        fg = "#ffb0b0" if overdue else "#cfe9cf"
+        # Header row with History button on the right
+        header_row = tk.Frame(self._task_panel, bg="#111")
+        header_row.pack(fill="x", padx=8, pady=(6,0))
+        head = tk.Label(header_row, text=f"Current task: {title}", fg="#eaeaea", bg="#111", font=("Segoe UI", 11, "bold"))
+        head.pack(side="left")
+        hist = tk.Label(header_row, text="History", fg="#7fffb7", bg="#111", cursor="hand2", font=("Segoe UI", 9, "underline"))
+        hist.pack(side="right")
+        hist.bind("<Button-1>", self._open_task_history)
+        sub = tk.Label(self._task_panel, text=f"Why: {why}", fg="#ddd", bg="#111", font=("Segoe UI", 10))
+        sub.pack(anchor="w", padx=8)
+        sub2 = tk.Label(self._task_panel, text=f"If not done: {cons}", fg="#ddd", bg="#111", font=("Segoe UI", 10))
+        sub2.pack(anchor="w", padx=8)
+        due_l = tk.Label(self._task_panel, text=due_txt + (f"  |  {time_left}" if time_left else ""), fg=fg, bg="#111", font=("Segoe UI", 10, "bold" if overdue else ""))
+        due_l.pack(anchor="w", padx=8, pady=(0,6))
+
+        # Decision prompt depending on evaluation mode
+        self._task_decision_required = False
+        self._task_decision_task_id = None
+        self._focus_prompt_open = False
+        try:
+            window_m = int(self.settings.get("tasks_decision_window_minutes", 10))
+        except Exception:
+            window_m = 10
+        decision_enabled = bool(self.settings.get("tasks_decision_prompt_enabled", True))
+        decision_due = False
+        eval_mode = str(self.settings.get("tasks_evaluation_mode", "before")).strip().lower()
+        try:
+            if due_iso:
+                due_dt = datetime.fromisoformat(due_iso)
+                now = datetime.now(timezone.utc)
+                if eval_mode == "before":
+                    window_start = due_dt - timedelta(minutes=window_m)
+                    if now >= due_dt:
+                        # Auto-fail: evaluation window ended at due time
+                        try:
+                            if active.get("status") == "active":
+                                self.taskdb.mark_failed(active.get("id"), timed_out=True)
+                                active = self.taskdb.get_active()
+                                overdue = True
+                        except Exception:
+                            pass
+                        decision_due = False
+                    elif now >= window_start:
+                        decision_due = True
+                else:  # after
+                    window_end = due_dt + timedelta(minutes=window_m)
+                    if now < due_dt:
+                        decision_due = False
+                    elif now >= due_dt and now < window_end:
+                        decision_due = True
+                    else:
+                        # Auto-fail after window end
+                        try:
+                            if active.get("status") == "active":
+                                self.taskdb.mark_failed(active.get("id"), timed_out=True)
+                                active = self.taskdb.get_active()
+                                overdue = True
+                        except Exception:
+                            pass
+                        decision_due = False
+        except Exception:
+            decision_due = False
+
+        if decision_enabled and decision_due:
+            self._task_decision_required = True
+            self._task_decision_task_id = active.get("id")
+            if eval_mode == "before":
+                msg = "Approaching deadline. Decide: PASSED or FAILED."
+            else:
+                msg = "Evaluation period started. Mark task as PASSED or FAILED."
+            warn = tk.Label(self._task_panel, text=msg, fg="#ff6b6b", bg="#111", font=("Segoe UI", 10, "bold"))
+            warn.pack(anchor="w", padx=8, pady=(0,6))
+        else:
+            # Informational guidance based on mode
+            if decision_enabled and due_iso:
+                try:
+                    due_dt = datetime.fromisoformat(due_iso)
+                    now = datetime.now(timezone.utc)
+                    if eval_mode == "after":
+                        window_end = due_dt + timedelta(minutes=window_m)
+                        if now < due_dt:
+                            info = tk.Label(self._task_panel, text="Work until the limit; evaluation will be after the deadline.", fg="#aaa", bg="#111", font=("Segoe UI", 9))
+                            info.pack(anchor="w", padx=8, pady=(0,6))
+                        elif now >= due_dt and now < window_end:
+                            remain = window_end - now
+                            mm = int(remain.total_seconds() // 60)
+                            ss = int(remain.total_seconds() % 60)
+                            info = tk.Label(self._task_panel, text=f"Limit reached; evaluation in {mm}m {ss}s.", fg="#ffbd6b", bg="#111", font=("Segoe UI", 9))
+                            info.pack(anchor="w", padx=8, pady=(0,6))
+                        elif now >= window_end:
+                            info = tk.Label(self._task_panel, text="Evaluation window timed out - recorded as FAILED.", fg="#ff6b6b", bg="#111", font=("Segoe UI", 9, "bold"))
+                            info.pack(anchor="w", padx=8, pady=(0,6))
+                    else:  # before mode
+                        window_start = due_dt - timedelta(minutes=window_m)
+                        if now < window_start:
+                            info = tk.Label(self._task_panel, text=f"Decision window opens {window_m}m before deadline.", fg="#aaa", bg="#111", font=("Segoe UI", 9))
+                            info.pack(anchor="w", padx=8, pady=(0,6))
+                except Exception:
+                    pass
+
+        # Action buttons
+        row = tk.Frame(self._task_panel, bg="#111")
+        row.pack(anchor="w", padx=6, pady=(0,6))
+        done_btn = tk.Button(row, text="?", fg="#0f0", bg="#222", font=("Segoe UI", 12, "bold"), width=3,
+                             command=lambda tid=active["id"], d=due_iso: self._task_mark_done(tid, d))
+        change_btn = tk.Button(row, text="?", fg="#f33", bg="#222", font=("Segoe UI", 12, "bold"), width=3,
+                               command=lambda tid=active["id"]: self._show_change_form(tid))
+        done_btn.pack(side="left", padx=(2,6))
+        change_btn.pack(side="left")
+
+        # Re-attach preserved change form (if any)
+        if keep_form is not None:
+            try:
+                keep_form.pack(fill="x", padx=8, pady=(0,6))
+            except Exception:
+                pass
+
+        # Live countdown refresh
+        if self._task_timer_id:
+            try: self.after_cancel(self._task_timer_id)
+            except Exception: pass
+        self._task_timer_id = self.after(1000, self._render_task_panel)
+
+    def _task_mark_done(self, task_id, due_iso):
+        try:
+            # If overdue relative to due_iso, mark as failed even if done
+            is_overdue = False
+            try:
+                if due_iso:
+                    due_dt = datetime.fromisoformat(due_iso)
+                    is_overdue = datetime.now(timezone.utc) > due_dt
+            except Exception:
+                is_overdue = False
+            if is_overdue:
+                self.taskdb.mark_failed(task_id)
+            else:
+                self.taskdb.mark_completed(task_id)
+        except Exception:
+            pass
+        self._task_decision_required = False
+        self._task_decision_task_id = None
+        self._focus_prompt_open = False
+        self._render_task_panel()
+        self._refresh_analytics()
+
+    def _show_change_form(self, task_id):
+        # Inline change form under task panel (preserved across refresh)
+        try:
+            if getattr(self, "_task_change_form", None) is not None and int(self._task_change_form.winfo_exists()) == 1:
+                try: self._task_change_form.lift()
+                except Exception: pass
+                return
+        except Exception:
+            pass
+        form = tk.Frame(self._task_panel, bg="#111")
+        form.pack(fill="x", padx=8, pady=(0,6))
+        self._task_change_form = form
+        tk.Label(form, text="Why change?", fg="#ddd", bg="#111").grid(row=0, column=0, sticky="w")
+        reason_var = tk.StringVar()
+        ttk.Entry(form, textvariable=reason_var, width=50).grid(row=0, column=1, sticky="we")
+        tk.Label(form, text="New task (optional)", fg="#bbb", bg="#111").grid(row=1, column=0, sticky="w", pady=(4,0))
+        new_title = tk.StringVar(); ttk.Entry(form, textvariable=new_title, width=40).grid(row=1, column=1, sticky="we", pady=(4,0))
+        tk.Label(form, text="Due (mins or HH:MM)", fg="#bbb", bg="#111").grid(row=2, column=0, sticky="w")
+        new_due = tk.StringVar(); ttk.Entry(form, textvariable=new_due, width=16).grid(row=2, column=1, sticky="w")
+        tk.Label(form, text="Why", fg="#bbb", bg="#111").grid(row=3, column=0, sticky="w")
+        new_why = tk.StringVar(); ttk.Entry(form, textvariable=new_why, width=40).grid(row=3, column=1, sticky="we")
+        tk.Label(form, text="Consequences", fg="#bbb", bg="#111").grid(row=4, column=0, sticky="w")
+        new_cons = tk.StringVar(); ttk.Entry(form, textvariable=new_cons, width=40).grid(row=4, column=1, sticky="we")
+        btns = ttk.Frame(form); btns.grid(row=5, column=0, columnspan=2, sticky="e", pady=(6,0))
+        def save_change():
+            reason = reason_var.get().strip()
+            if not reason:
+                messagebox.showerror("Required", "Please provide a reason for changing the task.")
+                return
+            try:
+                self.taskdb.mark_changed(task_id, reason)
+            except Exception:
+                pass
+            # Optional new task
+            nt = new_title.get().strip()
+            if nt:
+                due_iso = TaskEntryDialog._parse_due(self=None, txt=new_due.get()) if 'TaskEntryDialog' in globals() else None
+                # Fallback quick parse
+                if due_iso is None:
+                    try:
+                        try:
+                            mins = int((new_due.get() or '60').strip())
+                        except ValueError:
+                            mins = 60
+                        mins = max(1, mins)
+                        due_iso = (datetime.now(timezone.utc) + timedelta(minutes=mins)).isoformat()
+                    except Exception:
+                        due_iso = None
+                try:
+                    self.taskdb.start_task(title=nt, due_utc=due_iso, why=new_why.get().strip(), consequences=new_cons.get().strip())
+                except Exception:
+                    pass
+            try:
+                form.destroy()
+            except Exception:
+                pass
+            try:
+                self._task_change_form = None
+            except Exception:
+                pass
+            self._render_task_panel()
+            self._refresh_analytics()
+        def cancel_change():
+            try: form.destroy()
+            finally:
+                try: self._task_change_form = None
+                except Exception: pass
+        ttk.Button(btns, text="Cancel", command=cancel_change).pack(side="right", padx=6)
+        ttk.Button(btns, text="Save", command=save_change).pack(side="right")
+
+    def _refresh_analytics(self):
+        if not self._analytics_lbl or not self.taskdb:
+            return
+        try:
+            tscale = str(self.settings.get("tasks_analytics_timescale", "lifetime"))
+            changed_as_fail = bool(self.settings.get("tasks_change_counts_as_fail", True))
+            stats = self.taskdb.analytics_counts(timescale=tscale, treat_changed_as_fail=changed_as_fail)
+            self._analytics_lbl.config(text=f"? Completed: {stats['completed']}   ? Failed: {stats['failed']}   ~ Changed: {stats['changed']}   ? Timed-out: {stats.get('timed_out',0)}")
+        except Exception:
+            try:
+                self._analytics_lbl.config(text="")
+            except Exception:
+                pass
+
+    def _open_task_history(self, _evt=None):
+        if not self.taskdb:
+            messagebox.showerror("Unavailable", "Task database not available.")
+            return
+        try:
+            TaskHistoryWindow(self, self.taskdb)
+        except Exception:
+            log_exception("failed to open TaskHistoryWindow")
+
+
+    # ---- Windows integrations ----
+    def _disable_minimize_button(self):
+        if platform.system().lower() != "windows":
+            return
+        hwnd = self.winfo_id()
+        GWL_STYLE = -16
+        WS_MINIMIZEBOX = 0x00020000
+        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+        if style:
+            style &= ~WS_MINIMIZEBOX
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+            SWP_NOSIZE = 0x0001
+            SWP_NOMOVE = 0x0002
+            SWP_NOZORDER = 0x0004
+            SWP_FRAMECHANGED = 0x0020
+            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+                                              SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED)
+
+    def _flash_taskbar_begin(self):
+        if platform.system().lower() != "windows":
+            return
+        hwnd = wintypes.HWND(self.winfo_id())
+        class FLASHWINFO(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", ctypes.c_uint),
+                ("hwnd", wintypes.HWND),
+                ("dwFlags", ctypes.c_uint),
+                ("uCount", ctypes.c_uint),
+                ("dwTimeout", ctypes.c_uint),
+            ]
+        FLASHW_ALL = 0x0003
+        FLASHW_TIMERNOFG = 0x000C
+        info = FLASHWINFO(ctypes.sizeof(FLASHWINFO), hwnd, FLASHW_ALL | FLASHW_TIMERNOFG, 0, 0)
+        ctypes.windll.user32.FlashWindowEx(ctypes.byref(info))
+
+    def _flash_taskbar_stop(self):
+        if platform.system().lower() != "windows":
+            return
+        hwnd = wintypes.HWND(self.winfo_id())
+        class FLASHWINFO(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", ctypes.c_uint),
+                ("hwnd", wintypes.HWND),
+                ("dwFlags", ctypes.c_uint),
+                ("uCount", ctypes.c_uint),
+                ("dwTimeout", ctypes.c_uint),
+            ]
+        FLASHW_STOP = 0x0000
+        info = FLASHWINFO(ctypes.sizeof(FLASHWINFO), hwnd, FLASHW_STOP, 0, 0)
+        ctypes.windll.user32.FlashWindowEx(ctypes.byref(info))
+
+    def _modal_auto_focus_enabled(self):
+        try:
+            return bool(self.settings.get("modal_dialog_auto_focus", True))
+        except Exception:
+            return True
+
+    # ---- Cross-platform guard against minimization ----
+    def _prevent_minimize(self, _evt=None):
+        if self._closed:
+            return
+        try:
+            if self.state() == 'iconic':
+                self.after(0, self.deiconify)
+                try: self.lift()
+                except Exception: pass
+        except Exception:
+            pass
+
+
+class TaskEntryDialog(tk.Toplevel):
+    """Dialog to enter a new current task with due and motivation info."""
+
+    def __init__(self, master, on_submit):
+        super().__init__(master)
+        self.title("Set Current Task")
+        self.configure(bg="#111")
+        self.resizable(False, False)
+        self.on_submit = on_submit
+
+        pad = {"padx": 8, "pady": 4}
+        def row(r, text):
+            ttk.Label(self, text=text).grid(row=r, column=0, sticky="w", **pad)
+
+        row(0, "Task title")
+        self.title_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.title_var, width=48).grid(row=0, column=1, sticky="we", **pad)
+
+        row(1, "Why are you doing this?")
+        self.why_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.why_var, width=48).grid(row=1, column=1, sticky="we", **pad)
+
+        row(2, "Consequences if not done")
+        self.cons_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.cons_var, width=48).grid(row=2, column=1, sticky="we", **pad)
+
+        row(3, "Expected completion")
+        self.due_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.due_var, width=32).grid(row=3, column=1, sticky="w", **pad)
+        ttk.Label(self, text="Enter minutes (e.g., 90) or time HH:MM").grid(row=4, column=1, sticky="w", padx=8)
+
+        btns = ttk.Frame(self)
+        btns.grid(row=5, column=0, columnspan=2, sticky="e", padx=8, pady=(8,8))
+        ttk.Button(btns, text="Cancel", command=self._cancel).pack(side="right", padx=6)
+        ttk.Button(btns, text="Save", command=self._save).pack(side="right")
+
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+    def _cancel(self):
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+
+    def _parse_due(self, txt):
+        txt = (txt or "").strip()
+        if not txt:
+            return None
+        # Minutes
+        try:
+            mins = int(txt)
+            mins = max(1, mins)
+            return (datetime.now(timezone.utc) + timedelta(minutes=mins)).isoformat()
+        except Exception:
+            pass
+        # HH:MM => today or tomorrow if already passed
+        try:
+            parts = txt.split(":")
+            if len(parts) == 2:
+                hh = int(parts[0]); mm = int(parts[1])
+                now_local = datetime.now().astimezone()
+                due_local = now_local.replace(hour=hh, minute=mm, second=0, microsecond=0)
+                if due_local < now_local:
+                    due_local = due_local + timedelta(days=1)
+                return due_local.astimezone(timezone.utc).isoformat()
+        except Exception:
+            pass
+        return None
+
+    def _save(self):
+        title = self.title_var.get().strip()
+        if not title:
+            messagebox.showerror("Required", "Task title is required.")
+            return
+        due_iso = self._parse_due(self.due_var.get())
+        payload = {
+            "title": title,
+            "why": self.why_var.get().strip(),
+            "consequences": self.cons_var.get().strip(),
+            "due_utc": due_iso,
+        }
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            self.on_submit(payload)
+        except Exception:
+            pass
+
+
+class FocusPromptDialog(tk.Toplevel):
+    """Dialog shown when the user confirms 'Studying' if enabled.
+    Captures what they're working on and optionally the benefits.
+    Requires at least one field by default, with an option to require every prompt.
+    """
+
+    def __init__(self, master, ask_doing=True, ask_benefits=True, on_submit=None, on_cancel=None, auto_focus=True, require_all_fields=False):
+        super().__init__(master)
+        self.title("Before you continue")
+        self.configure(bg="#111")
+        self.resizable(False, False)
+        self.on_submit = on_submit
+        self.on_cancel = on_cancel
+        self.ask_doing = bool(ask_doing)
+        self.ask_benefits = bool(ask_benefits)
+        self._auto_focus = bool(auto_focus)
+        self.require_all_fields = bool(require_all_fields)
+        self._focus_order = []
+        self._field_controls = []
+
+        try:
+            self.transient(master)
+        except Exception:
+            pass
+
+        pad = {"padx": 8, "pady": 4}
+        self.doing_var = tk.StringVar()
+        row = 0
+        if self.ask_doing:
+            doing_prompt = "What are you doing right now?"
+            ttk.Label(self, text=doing_prompt).grid(row=row, column=0, sticky="w", **pad)
+            doing_entry = ttk.Entry(self, textvariable=self.doing_var, width=56)
+            doing_entry.grid(row=row, column=1, sticky="we", **pad)
+            self._focus_order.append(doing_entry)
+            self._field_controls.append({
+                "key": "doing",
+                "label": doing_prompt,
+                "var": self.doing_var,
+                "entry": doing_entry,
+            })
+            row += 1
+
+        self.benefits_var = tk.StringVar()
+        if self.ask_benefits:
+            benefits_prompt = "What are the benefits of this?"
+            ttk.Label(self, text=benefits_prompt).grid(row=row, column=0, sticky="w", **pad)
+            benefits_entry = ttk.Entry(self, textvariable=self.benefits_var, width=56)
+            benefits_entry.grid(row=row, column=1, sticky="we", **pad)
+            self._focus_order.append(benefits_entry)
+            self._field_controls.append({
+                "key": "benefits",
+                "label": benefits_prompt,
+                "var": self.benefits_var,
+                "entry": benefits_entry,
+            })
+            row += 1
+        btn_row = row
+
+        btns = ttk.Frame(self)
+        btns.grid(row=btn_row, column=0, columnspan=2, sticky="e", padx=8, pady=(8, 8))
+        self.continue_btn = ttk.Button(btns, text="Continue", command=self._save)
+        self.continue_btn.pack(side="right")
+        self.cancel_btn = ttk.Button(btns, text="Cancel", command=self._cancel)
+        self.cancel_btn.pack(side="right", padx=6)
+
+        self._focus_order.extend([self.continue_btn, self.cancel_btn])
+
+        for widget in self._focus_order:
+            try:
+                widget.configure(takefocus=True)
+            except tk.TclError:
+                pass
+
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+        self.bind("<Return>", self._on_return, add=True)
+        self.bind("<KP_Enter>", self._on_return, add=True)
+        self.bind("<Escape>", self._on_escape, add=True)
+
+        if self._auto_focus:
+            self.after_idle(self._set_initial_focus)
+
+    def _cancel(self):
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            if self.on_cancel:
+                self.on_cancel()
+        except Exception:
+            pass
+
+    def _save(self):
+        doing = (self.doing_var.get() or "").strip() if self.ask_doing else ""
+        benefits = (self.benefits_var.get() or "").strip() if self.ask_benefits else ""
+        # Always require all visible fields to be filled
+        if self._field_controls:
+            for ctrl in self._field_controls:
+                value = (ctrl["var"].get() or "").strip()
+                if not value:
+                    messagebox.showerror("Required", f"Please answer \"{ctrl['label']}\" before continuing.")
+                    self._focus_widget(ctrl.get("entry"))
+                    return
+        payload = {"doing": doing, "benefits": benefits}
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            if self.on_submit:
+                self.on_submit(payload)
+        except Exception:
+            pass
+
+    def _set_initial_focus(self):
+        try:
+            self.lift()
+        except Exception:
+            pass
+        try:
+            self.focus_force()
+        except Exception:
+            pass
+        for widget in self._focus_order:
+            try:
+                if widget and widget.winfo_exists():
+                    widget.focus_set()
+                    if hasattr(widget, "selection_range"):
+                        try:
+                            widget.selection_range(0, tk.END)
+                        except Exception:
+                            pass
+                    break
+            except Exception:
+                continue
+
+    def _focus_widget(self, widget):
+        try:
+            self.lift()
+        except Exception:
+            pass
+        try:
+            self.focus_force()
+        except Exception:
+            pass
+        try:
+            if widget and widget.winfo_exists():
+                widget.focus_set()
+                if hasattr(widget, "selection_range"):
+                    try:
+                        widget.selection_range(0, tk.END)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    def _on_return(self, event):
+        # Only trigger save if focus is on the last entry field or the continue button
+        focused = self.focus_get()
+        if focused == self.continue_btn:
+            self._save()
+            return "break"
+        # Check if focus is on the last entry field
+        if self._field_controls and focused == self._field_controls[-1].get("entry"):
+            self._save()
+            return "break"
+        # Otherwise, let Tab navigation handle it (don't trigger save)
+        return None
+
+    def _on_escape(self, _event):
+        self._cancel()
+        return "break"
+
+class WastePromptDialog(tk.Toplevel):
+    """Dialog shown when the user clicks 'Wasting time' if enabled.
+    Captures what they're doing and optionally the consequences. Requires
+    at least one field by default, with an option to require every prompt.
+    """
+
+    def __init__(self, master, ask_what=True, ask_consequences=True, on_submit=None, on_cancel=None, auto_focus=True, require_all_fields=False):
+        super().__init__(master)
+        self.title("Before you continue")
+        self.configure(bg="#111")
+        self.resizable(False, False)
+        self.on_submit = on_submit
+        self.on_cancel = on_cancel
+        self.ask_what = bool(ask_what)
+        self.ask_consequences = bool(ask_consequences)
+        self._auto_focus = bool(auto_focus)
+        self.require_all_fields = bool(require_all_fields)
+        self._focus_order = []
+        self._field_controls = []
+
+        try:
+            self.transient(master)
+        except Exception:
+            pass
+
+        pad = {"padx": 8, "pady": 4}
+        self.what_var = tk.StringVar()
+        row = 0
+        if self.ask_what:
+            what_prompt = "What are you wasting time on?"
+            ttk.Label(self, text=what_prompt).grid(row=row, column=0, sticky="w", **pad)
+            what_entry = ttk.Entry(self, textvariable=self.what_var, width=56)
+            what_entry.grid(row=row, column=1, sticky="we", **pad)
+            self._focus_order.append(what_entry)
+            self._field_controls.append({
+                "key": "what",
+                "label": what_prompt,
+                "var": self.what_var,
+                "entry": what_entry,
+            })
+            row += 1
+
+        self.cons_var = tk.StringVar()
+        if self.ask_consequences:
+            cons_prompt = "What are the consequences of this?"
+            ttk.Label(self, text=cons_prompt).grid(row=row, column=0, sticky="w", **pad)
+            cons_entry = ttk.Entry(self, textvariable=self.cons_var, width=56)
+            cons_entry.grid(row=row, column=1, sticky="we", **pad)
+            self._focus_order.append(cons_entry)
+            self._field_controls.append({
+                "key": "consequences",
+                "label": cons_prompt,
+                "var": self.cons_var,
+                "entry": cons_entry,
+            })
+            row += 1
+        btn_row = row
+
+        btns = ttk.Frame(self)
+        btns.grid(row=btn_row, column=0, columnspan=2, sticky="e", padx=8, pady=(8,8))
+        self.continue_btn = ttk.Button(btns, text="Continue", command=self._save)
+        self.continue_btn.pack(side="right")
+        self.cancel_btn = ttk.Button(btns, text="Cancel", command=self._cancel)
+        self.cancel_btn.pack(side="right", padx=6)
+
+        self._focus_order.extend([self.continue_btn, self.cancel_btn])
+
+        for widget in self._focus_order:
+            try:
+                widget.configure(takefocus=True)
+            except tk.TclError:
+                pass
+
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+        self.bind("<Return>", self._on_return, add=True)
+        self.bind("<KP_Enter>", self._on_return, add=True)
+        self.bind("<Escape>", self._on_escape, add=True)
+
+        if self._auto_focus:
+            self.after_idle(self._set_initial_focus)
+
+    def _cancel(self):
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            if self.on_cancel:
+                self.on_cancel()
+        except Exception:
+            pass
+
+    def _save(self):
+        what = (self.what_var.get() or "").strip() if self.ask_what else ""
+        cons = (self.cons_var.get() or "").strip() if self.ask_consequences else ""
+        # Always require all visible fields to be filled
+        if self._field_controls:
+            for ctrl in self._field_controls:
+                value = (ctrl["var"].get() or "").strip()
+                if not value:
+                    messagebox.showerror("Required", f"Please answer \"{ctrl['label']}\" before continuing.")
+                    self._focus_widget(ctrl.get("entry"))
+                    return
+        payload = {"what": what, "consequences": cons}
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            if self.on_submit:
+                self.on_submit(payload)
+        except Exception:
+            pass
+
+    def _set_initial_focus(self):
+        try:
+            self.lift()
+        except Exception:
+            pass
+        try:
+            self.focus_force()
+        except Exception:
+            pass
+        for widget in self._focus_order:
+            try:
+                if widget and widget.winfo_exists():
+                    widget.focus_set()
+                    if hasattr(widget, "selection_range"):
+                        try:
+                            widget.selection_range(0, tk.END)
+                        except Exception:
+                            pass
+                    break
+            except Exception:
+                continue
+
+    def _focus_widget(self, widget):
+        try:
+            self.lift()
+        except Exception:
+            pass
+        try:
+            self.focus_force()
+        except Exception:
+            pass
+        try:
+            if widget and widget.winfo_exists():
+                widget.focus_set()
+                if hasattr(widget, "selection_range"):
+                    try:
+                        widget.selection_range(0, tk.END)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    def _on_return(self, event):
+        # Only trigger save if focus is on the last entry field or the continue button
+        focused = self.focus_get()
+        if focused == self.continue_btn:
+            self._save()
+            return "break"
+        # Check if focus is on the last entry field
+        if self._field_controls and focused == self._field_controls[-1].get("entry"):
+            self._save()
+            return "break"
+        # Otherwise, let Tab navigation handle it (don't trigger save)
+        return None
+
+    def _on_escape(self, _event):
+        self._cancel()
+        return "break"
+
+class TaskChangeDialog(tk.Toplevel):
+    """Dialog to capture reason for changing, and optionally define a new task."""
+
+    def __init__(self, master, on_submit):
+        super().__init__(master)
+        self.title("Change Current Task")
+        self.configure(bg="#111")
+        self.resizable(False, False)
+        self.on_submit = on_submit
+
+        pad = {"padx": 8, "pady": 4}
+        ttk.Label(self, text="Why are you changing this task? (required)").grid(row=0, column=0, columnspan=2, sticky="w", **pad)
+        self.reason_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.reason_var, width=56).grid(row=1, column=0, columnspan=2, sticky="we", **pad)
+
+        ttk.Separator(self).grid(row=2, column=0, columnspan=2, sticky="ew", padx=8, pady=(6,6))
+        ttk.Label(self, text="Optionally define the new task now:").grid(row=3, column=0, columnspan=2, sticky="w", **pad)
+
+        ttk.Label(self, text="Task title").grid(row=4, column=0, sticky="w", **pad)
+        self.title_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.title_var, width=48).grid(row=4, column=1, sticky="we", **pad)
+
+        ttk.Label(self, text="Why").grid(row=5, column=0, sticky="w", **pad)
+        self.why_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.why_var, width=48).grid(row=5, column=1, sticky="we", **pad)
+
+        ttk.Label(self, text="Consequences").grid(row=6, column=0, sticky="w", **pad)
+        self.cons_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.cons_var, width=48).grid(row=6, column=1, sticky="we", **pad)
+
+        ttk.Label(self, text="Expected completion (minutes or HH:MM)").grid(row=7, column=0, sticky="w", **pad)
+        self.due_var = tk.StringVar()
+        ttk.Entry(self, textvariable=self.due_var, width=32).grid(row=7, column=1, sticky="w", **pad)
+
+        btns = ttk.Frame(self)
+        btns.grid(row=8, column=0, columnspan=2, sticky="e", padx=8, pady=(8,8))
+        ttk.Button(btns, text="Cancel", command=self._cancel).pack(side="right", padx=6)
+        ttk.Button(btns, text="Save", command=self._save).pack(side="right")
+
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+
+    def _cancel(self):
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+
+    def _parse_due(self, txt):
+        txt = (txt or "").strip()
+        if not txt:
+            return None
+        try:
+            mins = int(txt)
+            mins = max(1, mins)
+            return (datetime.now(timezone.utc) + timedelta(minutes=mins)).isoformat()
+        except Exception:
+            pass
+        try:
+            parts = txt.split(":")
+            if len(parts) == 2:
+                hh = int(parts[0]); mm = int(parts[1])
+                now_local = datetime.now().astimezone()
+                due_local = now_local.replace(hour=hh, minute=mm, second=0, microsecond=0)
+                if due_local < now_local:
+                    due_local = due_local + timedelta(days=1)
+                return due_local.astimezone(timezone.utc).isoformat()
+        except Exception:
+            pass
+        return None
+
+    def _save(self):
+        reason = self.reason_var.get().strip()
+        if not reason:
+            messagebox.showerror("Required", "Please provide a reason for changing the task.")
+            return
+        due_iso = self._parse_due(self.due_var.get())
+        new_task = {
+            "title": self.title_var.get().strip(),
+            "why": self.why_var.get().strip(),
+            "consequences": self.cons_var.get().strip(),
+            "due_utc": due_iso,
+        }
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            self.on_submit({"reason": reason, "new_task": new_task})
+        except Exception:
+            pass
+
+
+__all__ = [
+    'PromptDialog',
+    'TaskEntryDialog',
+    'WastePromptDialog',
+    'FocusPromptDialog',
+    'TaskChangeDialog',
+]

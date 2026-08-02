@@ -1,0 +1,16 @@
+<Window x:Class="FocusCheck.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FocusCheck" Height="500" Width="800" WindowStartupLocation="CenterScreen">
+    <Grid Margin="16">
+        <StackPanel>
+            <TextBlock Text="FocusCheck (WPF prototype)" FontSize="20" FontWeight="Bold" Margin="0 0 0 12" />
+            <WrapPanel Margin="0 0 0 12" Orientation="Horizontal" >
+                <Button Content="Check-in (Prompt)" Width="160" Margin="0 0 8 0" Click="OpenPrompt" />
+                <Button Content="Settings" Width="120" Margin="0 0 8 0" Click="OpenSettings" />
+                <Button Content="Camera Preview" Width="150" Click="OpenCameraPreview" />
+            </WrapPanel>
+            <TextBlock Text="Use this shell to iterate: wire prompts, challenges, camera overlays." Foreground="Gray" />
+        </StackPanel>
+    </Grid>
+</Window>

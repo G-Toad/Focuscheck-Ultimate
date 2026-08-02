@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Runtime output
+*.log
+test_output.log
+hb.txt
+*.tmp
+
+# Build/package output
+build/
+dist/
+*.spec
+*.zip
+
+# Editor/OS
+.vscode/
+.idea/
+*.user
+*.suo
+Thumbs.db
+.DS_Store
+
+# Local/agent-generated material
+_archive/generated/
+_archive/scratch/
+codex_analysis_results/
+_qa_runtime/
