@@ -204,6 +204,35 @@ class EngineV2MatchingTests(unittest.TestCase):
             engine._maybe_show_subpopup()
         save.assert_not_called()
 
+    def test_allow_once_dismissal_is_persisted_without_starting_cooldown(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        app = mock.Mock()
+        app.root = mock.Mock()
+        app.settings = {
+            "paused": False,
+            "pause_when_inactive_or_lid_closed": False,
+            "website_flags": [{
+                "domain": "reddit.com",
+                "enabled": True,
+                "severity": 2,
+                "cooldown_minutes": 5,
+                "allow_once": True,
+                "last_dismissed": None,
+            }],
+        }
+        engine = EngineV2(app, activity_provider=lambda: {"url": "https://reddit.com", "title": "Reddit"})
+
+        with mock.patch("focuscheck.monitoring.engine_v2.V2SubPopupDialog") as dialog_cls, mock.patch("focuscheck.monitoring.engine_v2.save_settings", return_value=True) as save:
+            engine._maybe_show_subpopup()
+            on_no = dialog_cls.call_args.kwargs["on_no"]
+            on_no()
+
+        entry = app.settings["website_flags"][0]
+        self.assertFalse(entry["allow_once"])
+        self.assertIsNone(entry["last_dismissed"])
+        save.assert_called_once_with(app.settings)
+
     def test_match_flag_rejects_suffix_attack_when_host_parsed(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 

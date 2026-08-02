@@ -131,11 +131,24 @@ class EngineV2(BaseEngine):
         def _update_cooldown():
             try:
                 entry["last_dismissed"] = time.time()
-                if entry.get("allow_once"):
-                    entry["allow_once"] = False
+                entry["allow_once"] = False
                 save_settings(settings)
             except Exception:
                 pass
+
+        def _dismiss_once_or_start_cooldown():
+            """Consume one configured dismissal before starting cooldown."""
+            if not entry.get("allow_once"):
+                _update_cooldown()
+                return
+            entry["allow_once"] = False
+            try:
+                # A one-time dismissal is durable but deliberately does not
+                # set last_dismissed; the next match is the post-bypass event.
+                if not save_settings(settings):
+                    entry["allow_once"] = True
+            except Exception:
+                entry["allow_once"] = True
 
         def _on_yes():
             try:
@@ -157,7 +170,7 @@ class EngineV2(BaseEngine):
                 _finish()
 
         def _on_no():
-            _update_cooldown()
+            _dismiss_once_or_start_cooldown()
             _finish()
 
         if severity >= 3:
