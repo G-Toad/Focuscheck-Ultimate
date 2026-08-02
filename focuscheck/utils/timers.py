@@ -77,6 +77,10 @@ class TimerRegistry:
         self._closed = True
         self.cancel_all()
 
+    def callback_id(self, name: str) -> Any:
+        timer = self._timers.get(name)
+        return timer.callback_id if timer is not None else None
+
     @property
     def closed(self) -> bool:
         return self._closed
