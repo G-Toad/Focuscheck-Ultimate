@@ -22,6 +22,7 @@ class PackagingContractTests(unittest.TestCase):
             "tools/promote_package.ps1",
             "tools/rollback_package.ps1",
             "tools/package_lifecycle.ps1",
+            "tools/validate_package.ps1",
             "tools/packaged_supervisor_selftest.py",
             "docs/INSTALL.md",
             "docs/ROLLBACK.md",
@@ -35,6 +36,8 @@ class PackagingContractTests(unittest.TestCase):
         rollback = (root / "tools/rollback_package.ps1").read_text(encoding="utf-8")
         self.assertIn("package-manifest.json", promote)
         self.assertIn("SHA256", promote)
+        self.assertIn("SHA256", promote)
+        self.assertIn("files = $files", promote)
         self.assertIn("Previous package retained", promote)
         self.assertIn("Failed package retained", rollback)
         self.assertNotIn("focus_settings.json", promote)
@@ -54,6 +57,16 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Data root retained", lifecycle)
         self.assertIn("Move-Item -LiteralPath $install", lifecycle)
         self.assertNotIn("Remove-Item -LiteralPath $data", lifecycle)
+
+    def test_package_validation_checks_artifacts_manifest_and_optional_signing(self):
+        root = Path(__file__).resolve().parents[1]
+        validator = (root / "tools/validate_package.ps1").read_text(encoding="utf-8")
+        for required in ("FocusCheck.exe", "FocusCheckSupervisor.exe", "package-manifest.json"):
+            self.assertIn(required, validator)
+        self.assertIn("SHA256", validator)
+        self.assertIn("Get-AuthenticodeSignature", validator)
+        self.assertIn("RequireSigned", validator)
+        self.assertIn(".py", validator)
 
     def test_packaged_supervisor_selftest_is_bounded_and_pid_bound(self):
         root = Path(__file__).resolve().parents[1]

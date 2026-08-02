@@ -10,7 +10,16 @@
 
 1. Install pinned development dependencies with `py -3 -m pip install -r requirements-dev.txt`.
 2. Run `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1`.
-3. Treat the output directory containing both `FocusCheck.exe` and `FocusCheckSupervisor.exe` as a package candidate only after the manual Windows evidence matrix passes.
+3. Validate the candidate before promotion:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/validate_package.ps1 -PackageDir .\dist\FocusCheck
+```
+
+Use `-RequireSigned` for a signed release. The validator checks both frozen
+executables, the SHA-256 manifest, and rejects source/debug/runtime-data files.
+Treat the output directory as a release candidate only after validation and the
+manual Windows evidence matrix pass.
 
 ## Install or upgrade a package
 

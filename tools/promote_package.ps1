@@ -5,6 +5,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$sha256 = [Security.Cryptography.SHA256]::Create()
+function Get-Sha256Hex([string]$Path) {
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    return ([BitConverter]::ToString($sha256.ComputeHash($bytes))).Replace("-", "").ToLowerInvariant()
+}
 $source = (Resolve-Path -LiteralPath $PackageDir).Path
 $install = [IO.Path]::GetFullPath($InstallDir)
 $parent = Split-Path -Parent $install
@@ -36,15 +41,23 @@ try {
         }
         throw
     }
-    $sha256 = [Security.Cryptography.SHA256]::Create()
-    try {
-        $bytes = [IO.File]::ReadAllBytes((Join-Path $install "FocusCheck.exe"))
-        $hash = ([BitConverter]::ToString($sha256.ComputeHash($bytes))).Replace("-", "")
-    } finally {
-        $sha256.Dispose()
-    }
-    [ordered]@{ version = $Version; install_dir = $install; backup_dir = if (Test-Path $backup) { $backup } else { $null }; sha256 = $hash } |
-        ConvertTo-Json | Set-Content -LiteralPath (Join-Path $install "package-manifest.json") -Encoding UTF8
+    $files = @(
+        Get-ChildItem -LiteralPath $install -Recurse -File |
+            Where-Object { $_.Name -ne "package-manifest.json" } |
+            ForEach-Object {
+                $relative = ($_.FullName.Substring($install.Length).TrimStart('\', '/')).Replace('\', '/')
+                [ordered]@{
+                    path = $relative
+                    sha256 = Get-Sha256Hex $_.FullName
+                }
+            }
+    )
+    [ordered]@{
+        version = $Version
+        install_dir = $install
+        backup_dir = if (Test-Path $backup) { $backup } else { $null }
+        files = $files
+    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $install "package-manifest.json") -Encoding UTF8
     Write-Output "Promoted package to $install"
     if (Test-Path $backup) { Write-Output "Previous package retained at $backup" }
 } catch {

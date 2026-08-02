@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 232 unittest cases.
+- Automated test baseline: 233 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -14,7 +14,7 @@
 - Native Windows, browser, overlay, lock/sleep/resume, startup registry, real installer shell, and signing evidence remain pending; scripted package and disposable install lifecycle contracts are covered by automated tests.
 - The full runtime state and timer architecture is being migrated incrementally; legacy App callbacks still exist.
 - Code signing is not configured.
-- A disposable PyInstaller build, packaged self-test, bounded generation-bound supervisor stop/acknowledgement/reaping test, and disposable install/upgrade/uninstall lifecycle have passed; real installer shell, signing, and production-duration supervision remain pending.
+- A disposable PyInstaller build, packaged self-test, bounded generation-bound supervisor stop/acknowledgement/reaping test, package manifest/tamper validation, and disposable install/upgrade/uninstall lifecycle have passed; real installer shell, signing, and production-duration supervision remain pending.
 - The supervisor now publishes READY immediately after App construction, handles valid stop requests before child-exit races, and cleans up validated frozen inner PIDs.
 - Supervisor restart waits are cancellation-aware, and accepted generation-bound stop requests receive an atomic durable acknowledgement.
 - Native pause-guard API failures now expose bounded health metadata in diagnostics and heartbeats while retaining safe fail-open behavior.
