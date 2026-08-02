@@ -89,9 +89,11 @@ def resource_path(relative: str):
 
 def choose_path(filename):
     """
-    Prefer an explicit data directory; otherwise preserve legacy files.
+    Return a path in the canonical mutable data directory.
 
-    This allows for backward compatibility with existing installations.
+    Legacy package-directory files are migration inputs only. Runtime callers
+    must not change their storage root because a stale file happens to exist
+    beside the source or frozen executable.
 
     Args:
         filename: Name of the file
@@ -109,10 +111,12 @@ def choose_path(filename):
             pass
         return os.path.join(env, filename)
 
-    legacy = os.path.join(get_base_dir(), filename)
-    if os.path.exists(legacy):
-        return legacy
     return os.path.join(get_data_dir(), filename)
+
+
+def legacy_path(filename):
+    """Return the historical package-directory location for migration only."""
+    return os.path.join(get_base_dir(), filename)
 
 
 @dataclass(frozen=True)

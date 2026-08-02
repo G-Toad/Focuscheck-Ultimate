@@ -10,6 +10,46 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_valid_legacy_settings_are_imported_atomically(self):
+        import json
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            legacy = root / "legacy" / "focus_settings.json"
+            canonical = root / "data" / "focus_settings.json"
+            legacy.parent.mkdir()
+            legacy.write_text(json.dumps({"settings_schema_version": 1, "interval_seconds": 42}), encoding="utf-8")
+            with mock.patch.dict(manager.os.environ, {"FOCUS_DATA_DIR": ""}, clear=False), \
+                    mock.patch.object(manager, "legacy_path", return_value=str(legacy)):
+                manager._migrate_legacy_settings(str(canonical))
+
+            self.assertEqual(42, json.loads(canonical.read_text(encoding="utf-8"))["interval_seconds"])
+            self.assertTrue(legacy.exists())
+            event = json.loads((root / "data" / "focus_settings.json.migration.jsonl").read_text(encoding="utf-8").splitlines()[-1])
+            self.assertEqual("imported", event["outcome"])
+            self.assertNotIn("interval_seconds", event["detail"])
+
+    def test_canonical_settings_win_and_legacy_conflict_is_preserved_by_hash(self):
+        import json
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            legacy = root / "legacy" / "focus_settings.json"
+            canonical = root / "data" / "focus_settings.json"
+            legacy.parent.mkdir()
+            canonical.parent.mkdir()
+            legacy.write_text(json.dumps({"interval_seconds": 42}), encoding="utf-8")
+            canonical.write_text(json.dumps({"interval_seconds": 99}), encoding="utf-8")
+            with mock.patch.dict(manager.os.environ, {"FOCUS_DATA_DIR": ""}, clear=False), \
+                    mock.patch.object(manager, "legacy_path", return_value=str(legacy)):
+                manager._migrate_legacy_settings(str(canonical))
+
+            self.assertEqual(99, json.loads(canonical.read_text(encoding="utf-8"))["interval_seconds"])
+            conflicts = list(canonical.parent.glob("focus_settings.json.legacy-conflict-*.json"))
+            self.assertEqual(1, len(conflicts))
+            self.assertEqual(42, json.loads(conflicts[0].read_text(encoding="utf-8"))["interval_seconds"])
     def test_settings_input_budget_rejects_large_collections_and_strings(self):
         from focuscheck.settings.manager import validate_settings
 

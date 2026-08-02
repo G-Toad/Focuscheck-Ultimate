@@ -1,6 +1,7 @@
 """Settings management - loading, saving, and validation."""
 
 import json
+import hashlib
 import os
 import platform
 import shutil
@@ -9,7 +10,7 @@ import uuid
 from datetime import date, datetime, timezone
 from .defaults import DEFAULT_SETTINGS
 from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
-from ..utils.paths import choose_path
+from ..utils.paths import choose_path, legacy_path
 from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode
 from .registry import SETTINGS_REGISTRY
 from .file_lock import settings_file_lock
@@ -82,6 +83,71 @@ def _append_migration_event(path, *, source_version, target_version, outcome, de
             os.fsync(handle.fileno())
     except OSError:
         get_logger().warning("settings migration journal unavailable", exc_info=True)
+
+
+def _sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _migrate_legacy_settings(canonical_path):
+    """Import a valid legacy settings file without silently merging roots."""
+    if os.environ.get("FOCUS_DATA_DIR"):
+        return
+    legacy = legacy_path("focus_settings.json")
+    if os.path.abspath(legacy) == os.path.abspath(canonical_path) or not os.path.exists(legacy):
+        return
+    journal = _settings_sidecar_paths(canonical_path)["journal"]
+    try:
+        raw_size = os.path.getsize(legacy)
+        if raw_size > MAX_SETTINGS_FILE_BYTES:
+            _append_migration_event(journal, source_version="legacy", target_version=CURRENT_SETTINGS_SCHEMA_VERSION, outcome="skipped", detail="legacy file exceeds size limit")
+            return
+        with open(legacy, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        if not isinstance(raw, dict):
+            raise ValueError("legacy settings root is not an object")
+        validate_settings(migrate_settings(raw))
+        legacy_hash = _sha256_file(legacy)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        _append_migration_event(journal, source_version="legacy", target_version=CURRENT_SETTINGS_SCHEMA_VERSION, outcome="skipped", detail=f"invalid legacy settings: {type(exc).__name__}")
+        return
+
+    if os.path.exists(canonical_path):
+        canonical_hash = _sha256_file(canonical_path)
+        if canonical_hash != legacy_hash:
+            conflict = f"{canonical_path}.legacy-conflict-{legacy_hash[:12]}.json"
+            if not os.path.exists(conflict):
+                shutil.copy2(legacy, conflict)
+            outcome = "conflict_preserved"
+        else:
+            outcome = "duplicate_preserved"
+        _append_migration_event(journal, source_version="legacy", target_version=CURRENT_SETTINGS_SCHEMA_VERSION, outcome=outcome, detail=f"legacy_sha256={legacy_hash[:12]};canonical_sha256={canonical_hash[:12]}")
+        return
+
+    temp_path = f"{canonical_path}.{os.getpid()}.{uuid.uuid4().hex}.legacy.tmp"
+    try:
+        os.makedirs(os.path.dirname(canonical_path) or ".", exist_ok=True)
+        with open(legacy, "rb") as source, open(temp_path, "wb") as target:
+            while True:
+                chunk = source.read(1024 * 1024)
+                if not chunk:
+                    break
+                target.write(chunk)
+            target.flush()
+            os.fsync(target.fileno())
+        os.replace(temp_path, canonical_path)
+        _append_migration_event(journal, source_version="legacy", target_version=CURRENT_SETTINGS_SCHEMA_VERSION, outcome="imported", detail=f"legacy_sha256={legacy_hash[:12]}")
+    except OSError as exc:
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except OSError:
+            pass
+        _append_migration_event(journal, source_version="legacy", target_version=CURRENT_SETTINGS_SCHEMA_VERSION, outcome="failed", detail=type(exc).__name__)
 
 
 def _read_valid_settings_backup(path):
@@ -624,6 +690,7 @@ def load_settings():
     """Load settings from JSON file."""
     logger = get_logger()
     SETTINGS_PATH = choose_path("focus_settings.json")
+    _migrate_legacy_settings(SETTINGS_PATH)
     sidecars = _settings_sidecar_paths(SETTINGS_PATH)
 
     logger.info("=" * 80)

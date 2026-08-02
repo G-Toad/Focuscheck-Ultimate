@@ -24,6 +24,19 @@ class PathHelperTests(unittest.TestCase):
                 self.assertEqual(str(Path(data_dir) / "legacy.txt"), paths.choose_path("legacy.txt"))
                 self.assertEqual(str(Path(data_dir) / "new.txt"), paths.choose_path("new.txt"))
 
+    def test_package_legacy_file_does_not_change_runtime_path(self):
+        from focuscheck.utils import paths
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            data_dir = Path(temp_dir) / "data"
+            base_dir = Path(temp_dir) / "package"
+            base_dir.mkdir()
+            (base_dir / "focus_settings.json").write_text("{}", encoding="utf-8")
+            with mock.patch.dict(paths.os.environ, {"FOCUS_DATA_DIR": ""}, clear=False), \
+                    mock.patch.object(paths, "get_base_dir", return_value=str(base_dir)), \
+                    mock.patch.object(paths, "get_data_dir", return_value=str(data_dir)):
+                self.assertEqual(str(data_dir / "focus_settings.json"), paths.choose_path("focus_settings.json"))
+
     def test_resource_path_uses_meipass_then_base_dir(self):
         from focuscheck.utils import paths
 
