@@ -45,6 +45,23 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertEqual([None], events)
         self.assertIsNone(dialog._ensure_visible_timer_id)
 
+    def test_snooze_reminder_close_cancels_focus_timer(self):
+        from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+
+        dialog = object.__new__(SnoozeReminderDialog)
+        dialog._closed = False
+        dialog._focus_timer_id = "focus"
+        dialog.after_cancel = mock.Mock()
+        dialog.destroy = mock.Mock()
+        dialog.on_yes = None
+        dialog.on_no = None
+
+        dialog._on_yes()
+
+        dialog.after_cancel.assert_called_once_with("focus")
+        self.assertIsNone(dialog._focus_timer_id)
+        dialog.destroy.assert_called_once_with()
+
     def test_selection_dialog_cancels_recurring_callbacks(self):
         from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
 

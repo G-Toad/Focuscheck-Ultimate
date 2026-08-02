@@ -43,6 +43,7 @@ class SnoozeReminderDialog(tk.Toplevel):
         self.on_yes = on_yes
         self.on_no = on_no
         self._closed = False
+        self._focus_timer_id = None
 
         self.title("Reminder")
         self.configure(bg="#222")
@@ -129,7 +130,25 @@ class SnoozeReminderDialog(tk.Toplevel):
         self._center_on_screen()
 
         # Focus the Yes button by default
-        self.after(50, lambda: self.btn_yes.focus_set())
+        self._focus_timer_id = self._schedule_focus_timer()
+
+    def _schedule_focus_timer(self):
+        """Schedule initial focus while retaining ownership for close cleanup."""
+        def focus_yes():
+            self._focus_timer_id = None
+            if not self._closed:
+                self.btn_yes.focus_set()
+
+        return self.after(50, focus_yes)
+
+    def _cancel_focus_timer(self):
+        timer_id = self._focus_timer_id
+        self._focus_timer_id = None
+        if timer_id is not None:
+            try:
+                self.after_cancel(timer_id)
+            except Exception:
+                pass
 
     def _center_on_screen(self):
         """Center the dialog on the primary screen."""
@@ -155,6 +174,7 @@ class SnoozeReminderDialog(tk.Toplevel):
         if self._closed:
             return
         self._closed = True
+        self._cancel_focus_timer()
 
         try:
             get_logger().info("Snooze reminder: user chose to re-enable reminders")
@@ -177,6 +197,7 @@ class SnoozeReminderDialog(tk.Toplevel):
         if self._closed:
             return
         self._closed = True
+        self._cancel_focus_timer()
 
         try:
             get_logger().info("Snooze reminder: user chose to keep reminders paused")
