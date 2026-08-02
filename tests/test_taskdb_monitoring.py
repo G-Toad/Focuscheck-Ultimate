@@ -127,6 +127,22 @@ class TaskDbLifecycleTests(unittest.TestCase):
 
 
 class EngineV2MatchingTests(unittest.TestCase):
+    def test_subpopup_uses_runtime_coordinator_effective_pause(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        app = mock.Mock()
+        app._current_prompt = None
+        app._intervention_active = False
+        app.settings = {"paused": False, "pause_when_inactive_or_lid_closed": False}
+        app._runtime_state.is_effectively_paused.return_value = True
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = app
+        engine._settings = app.settings
+        engine._subpopup_active = False
+
+        self.assertFalse(engine._should_check_subpopup())
+        app._runtime_state.is_effectively_paused.assert_called_once_with()
+
     def test_domain_matching_exact_subdomain_and_disabled_flags(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 

@@ -91,6 +91,16 @@ class EngineV2(BaseEngine):
         if bool(getattr(self.app, "_intervention_active", False)):
             return False
         settings = self._settings or getattr(self.app, "settings", {})
+        runtime_state = getattr(self.app, "_runtime_state", None)
+        if runtime_state is not None:
+            try:
+                # RuntimeStateCoordinator is authoritative for manual,
+                # snooze, and guard pause composition.
+                return not runtime_state.is_effectively_paused()
+            except Exception:
+                # Preserve standalone/test adapter compatibility, but do not
+                # allow a broken coordinator to enable a website intervention.
+                return False
         try:
             if bool(settings.get("paused", False)):
                 return False
