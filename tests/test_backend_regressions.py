@@ -271,6 +271,43 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
         self.assertNotEqual(Path.cwd() / "camera_photos", mixin._get_camera_photos_directory())
 
+    def test_camera_feed_generation_invalidates_dequeued_callbacks(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        class Capture:
+            def __init__(self):
+                self.reads = 0
+                self.releases = 0
+
+            def read(self):
+                self.reads += 1
+                return True, object()
+
+            def release(self):
+                self.releases += 1
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin.settings = {"camera_fps": 30}
+        capture = Capture()
+        mixin._camera_capture = capture
+        mixin._camera_update_timer = None
+        mixin._camera_generation = 7
+        mixin._closed = False
+        scheduled = []
+        mixin.after = lambda delay, callback, *args: scheduled.append((delay, callback, args)) or "camera-timer"
+        mixin.after_cancel = mock.Mock()
+        mixin._display_camera_frame = mock.Mock()
+
+        mixin._start_camera_feed_updates(7)
+        self.assertEqual(1, capture.reads)
+        self.assertEqual((7,), scheduled[0][2])
+
+        mixin._cleanup_camera_feed()
+        scheduled[0][1](*scheduled[0][2])
+
+        self.assertEqual(1, capture.reads)
+        self.assertEqual(1, capture.releases)
+
     def test_native_overlay_destroy_releases_handles_once(self):
         from focuscheck.platform_specific import windows
 

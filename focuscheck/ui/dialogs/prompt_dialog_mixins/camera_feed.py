@@ -71,6 +71,7 @@ class CameraFeedMixin:
         self._camera_label = None
         self._camera_capture = None
         self._camera_update_timer = None
+        self._camera_generation = 0
         self._camera_static_image = None
         self._camera_mode = self.settings.get("camera_feed_mode", "live")
         self._camera_sizing_mode = self.settings.get("camera_sizing_mode", "aspect_ratio")
@@ -263,13 +264,16 @@ class CameraFeedMixin:
             except Exception:
                 pass
 
-    def _start_camera_feed_updates(self):
+    def _start_camera_feed_updates(self, generation=None):
         """
         Start the live camera feed update loop.
 
         Updates camera frames at the configured FPS rate.
         """
-        if self._camera_capture is None or self._closed:
+        current_generation = getattr(self, "_camera_generation", 0)
+        if generation is None:
+            generation = current_generation
+        if generation != current_generation or self._camera_capture is None or getattr(self, "_closed", False):
             return
 
         try:
@@ -290,7 +294,8 @@ class CameraFeedMixin:
 
             self._camera_update_timer = self.after(
                 update_interval_ms,
-                self._start_camera_feed_updates
+                self._start_camera_feed_updates,
+                generation,
             )
 
         except Exception as e:
@@ -1264,6 +1269,10 @@ class CameraFeedMixin:
 
         Should be called when dialog is closing.
         """
+        # Invalidate callbacks before cancelling the Tk handle. A callback
+        # already dequeued by Tk must still become a no-op after cleanup.
+        self._camera_generation = getattr(self, "_camera_generation", 0) + 1
+
         # Cancel camera update timer
         if self._camera_update_timer:
             try:
