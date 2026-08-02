@@ -122,7 +122,7 @@ class TimeDisplayMixin:
                 refresh = int(self.settings.get("time_info_refresh_ms", 1000))
             except Exception:
                 refresh = 1000
-            self.after(refresh, self._tick_time_info)
+            self._schedule_timer(refresh, self._tick_time_info)
 
     def _start_time_info(self):
         """

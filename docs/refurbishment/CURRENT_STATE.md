@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `212` unittest cases passing.
+- Current automated baseline after hardening: `213` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -34,6 +34,7 @@
 - Tray fallback activation is idempotent and stops pystray before native tray activation on the Tk owner thread.
 - Prompt ticks use the validated in-memory settings snapshot; settings reload is explicit rather than hot-path.
 - Intervention selection now owns recurring Tk callback IDs and cancels them on close; the parent-owned visibility fail-safe is cancelled after selection exits.
+- V1/V2 prompt timer registries remove fired IDs and own initial focus, follow-monitor, and time-display callbacks for bounded cleanup.
 - Heartbeat publication uses the frozen App path snapshot, keeping the supervisor marker in the composed data root.
 - Logger initialization binds to the frozen App log path before creating its first handler.
 - Direct test discovery defaults to a per-process external temporary data root, avoiding repository-local and cross-process profile contention.

@@ -264,7 +264,7 @@ class V2PromptDialog(
 
         if not self._focus_requires_enter:
             try:
-                self.after(50, self._focus_primary_entry)
+                self._schedule_timer(50, self._focus_primary_entry)
             except Exception:
                 pass
 
@@ -622,7 +622,18 @@ class V2PromptDialog(
     def _schedule_timer(self, delay_ms, callback):
         if self._closed:
             return None
-        timer_id = self.after(delay_ms, callback)
+        timer_id_holder = {}
+
+        def _run_once():
+            timer_id = timer_id_holder.get("id")
+            if timer_id is not None:
+                self._active_timers.discard(timer_id)
+            if self._closed:
+                return
+            callback()
+
+        timer_id = self.after(delay_ms, _run_once)
+        timer_id_holder["id"] = timer_id
         self._active_timers.add(timer_id)
         return timer_id
 

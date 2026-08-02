@@ -78,3 +78,28 @@ class RuntimeFoundationTests(unittest.TestCase):
             registry.cancel("stress")
         self.assertFalse(scheduler.callbacks)
         registry.close()
+
+    def test_prompt_dialog_timer_registry_releases_fired_ids(self):
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        for dialog_type in (PromptDialog, V2PromptDialog):
+            dialog = object.__new__(dialog_type)
+            dialog._active_timers = set()
+            dialog._closed = False
+            scheduled = {}
+            calls = []
+
+            def after(_delay, callback):
+                scheduled["callback"] = callback
+                return "timer-1"
+
+            dialog.after = after
+            timer_id = dialog._schedule_timer(10, lambda: calls.append("fired"))
+
+            self.assertEqual("timer-1", timer_id)
+            self.assertIn(timer_id, dialog._active_timers)
+            scheduled["callback"]()
+
+            self.assertEqual(["fired"], calls)
+            self.assertNotIn(timer_id, dialog._active_timers)

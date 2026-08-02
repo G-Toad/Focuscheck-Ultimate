@@ -155,9 +155,9 @@ class PromptDialog(
         self._force_window_to_front()
 
         # Set initial button focus multiple times to ensure it works
-        self.after(100, self._sync_initial_button_focus)
-        self.after(200, self._sync_initial_button_focus)
-        self.after(300, self._sync_initial_button_focus)
+        self._schedule_timer(100, self._sync_initial_button_focus)
+        self._schedule_timer(200, self._sync_initial_button_focus)
+        self._schedule_timer(300, self._sync_initial_button_focus)
 
         # Use timer registry for cleanup
         self._schedule_timer(self.settings["intensify_after_seconds"] * 1000, self._begin_intensify)
@@ -168,7 +168,7 @@ class PromptDialog(
         # Optionally track cursor monitor and recenter while open
         try:
             if bool(self.settings.get("follow_cursor_monitor", True)):
-                self.after(400, self._follow_cursor_center_loop)
+                self._schedule_timer(400, self._follow_cursor_center_loop)
         except Exception:
             pass
 
@@ -721,7 +721,18 @@ class PromptDialog(
         """
         if self._closed:
             return None
-        timer_id = self.after(delay_ms, callback)
+        timer_id_holder = {}
+
+        def _run_once():
+            timer_id = timer_id_holder.get("id")
+            if timer_id is not None:
+                self._active_timers.discard(timer_id)
+            if self._closed:
+                return
+            callback()
+
+        timer_id = self.after(delay_ms, _run_once)
+        timer_id_holder["id"] = timer_id
         self._active_timers.add(timer_id)
         return timer_id
 
