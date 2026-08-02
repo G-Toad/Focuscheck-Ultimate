@@ -6,7 +6,7 @@ import platform
 import shutil
 import threading
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from .defaults import DEFAULT_SETTINGS
 from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
 from ..utils.paths import choose_path
@@ -15,6 +15,45 @@ from .registry import SETTINGS_REGISTRY
 
 
 _settings_lock = threading.Lock()
+
+
+def _settings_sidecar_paths(settings_path):
+    """Return deterministic recovery/journal paths beside one settings file."""
+    return {
+        "backup": f"{settings_path}.bak",
+        "backup_1": f"{settings_path}.bak.1",
+        "backup_2": f"{settings_path}.bak.2",
+        "journal": f"{settings_path}.migration.jsonl",
+    }
+
+
+def _append_migration_event(path, *, source_version, target_version, outcome, detail=""):
+    """Record migration metadata without copying settings values."""
+    event = {
+        "utc": datetime.now(timezone.utc).isoformat(),
+        "source_schema": source_version,
+        "target_schema": target_version,
+        "outcome": outcome,
+        "detail": str(detail)[:240],
+    }
+    try:
+        with open(path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(event, separators=(",", ":")) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except OSError:
+        get_logger().warning("settings migration journal unavailable", exc_info=True)
+
+
+def _read_valid_settings_backup(path):
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            raw = json.load(handle)
+        if not isinstance(raw, dict):
+            return None
+        return validate_settings(migrate_settings(raw))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
 
 
 def validate_settings(data):
@@ -538,6 +577,7 @@ def load_settings():
     """Load settings from JSON file."""
     logger = get_logger()
     SETTINGS_PATH = choose_path("focus_settings.json")
+    sidecars = _settings_sidecar_paths(SETTINGS_PATH)
 
     logger.info("=" * 80)
     logger.info("load_settings() CALLED - Loading settings from disk")
@@ -560,7 +600,18 @@ def load_settings():
                     data = json.load(f)
                     if not isinstance(data, dict):
                         raise ValueError("settings root must be a JSON object")
+                    try:
+                        source_version = int(data.get("settings_schema_version", 1))
+                    except (TypeError, ValueError):
+                        source_version = 1
                     data = migrate_settings(data)
+                    if source_version != CURRENT_SETTINGS_SCHEMA_VERSION:
+                        _append_migration_event(
+                            sidecars["journal"],
+                            source_version=source_version,
+                            target_version=CURRENT_SETTINGS_SCHEMA_VERSION,
+                            outcome="loaded",
+                        )
                     logger.info("    JSON parsed successfully")
                     logger.info("      Raw data type: %s", type(data))
                     logger.info("      Number of keys: %s", len(data) if isinstance(data, dict) else "N/A")
@@ -584,15 +635,18 @@ def load_settings():
                     logger.warning("settings quarantined at %s", quarantine_path)
                 except OSError:
                     logger.exception("failed to quarantine corrupt settings")
-                backup_path = f"{SETTINGS_PATH}.bak"
-                if os.path.exists(backup_path):
-                    try:
-                        with open(backup_path, "r", encoding="utf-8") as f:
-                            backup_data = json.load(f)
-                        if isinstance(backup_data, dict):
-                            return validate_settings(migrate_settings(backup_data))
-                    except Exception:
-                        logger.exception("last-known-good settings backup is unusable")
+                for backup_key in ("backup", "backup_1", "backup_2"):
+                    recovered = _read_valid_settings_backup(sidecars[backup_key])
+                    if recovered is not None:
+                        _append_migration_event(
+                            sidecars["journal"],
+                            source_version=recovered.get("settings_schema_version", 1),
+                            target_version=CURRENT_SETTINGS_SCHEMA_VERSION,
+                            outcome="recovered",
+                            detail=backup_key,
+                        )
+                        return recovered
+                logger.warning("no valid settings backup was available")
                 logger.info("  Falling through to default settings...")
         else:
             logger.info("  Settings file does not exist, will use defaults")
@@ -619,6 +673,7 @@ def save_settings(s, expected_revision=None):
     """Save settings to JSON file atomically."""
     logger = get_logger()
     SETTINGS_PATH = choose_path("focus_settings.json")
+    sidecars = _settings_sidecar_paths(SETTINGS_PATH)
 
     logger.info("=" * 80)
     logger.info("save_settings() CALLED - Saving settings to disk")
@@ -683,12 +738,31 @@ def save_settings(s, expected_revision=None):
             logger.info("  Temporary file written successfully")
             logger.info("    File size: %s bytes", os.path.getsize(temp_path))
 
-            backup_path = f"{SETTINGS_PATH}.bak"
+            # Rotate only the current validated file; a failed write never
+            # destroys the last-known-good recovery chain.
             if os.path.exists(SETTINGS_PATH):
-                shutil.copy2(SETTINGS_PATH, backup_path)
+                for source_key, target_key in (("backup_1", "backup_2"), ("backup", "backup_1")):
+                    if os.path.exists(sidecars[source_key]):
+                        shutil.copy2(sidecars[source_key], sidecars[target_key])
+                shutil.copy2(SETTINGS_PATH, sidecars["backup"])
             logger.info("  Replacing settings file atomically...")
             os.replace(temp_path, SETTINGS_PATH)
             logger.info("    Replace completed successfully")
+
+            # Readback catches filesystem/encoding corruption before claiming
+            # that the new revision is durable.
+            readback = _read_valid_settings_backup(SETTINGS_PATH)
+            if readback is None or readback.get("settings_revision") != validated.get("settings_revision"):
+                raise IOError("settings readback validation failed")
+            try:
+                directory_fd = os.open(os.path.dirname(SETTINGS_PATH) or ".", os.O_RDONLY)
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+            except OSError:
+                # Directory fsync is unavailable on some Windows filesystems.
+                logger.debug("settings directory fsync unavailable", exc_info=True)
 
             logger.info("  Atomic write completed successfully")
             logger.info("  Final file size: %s bytes", os.path.getsize(SETTINGS_PATH))
