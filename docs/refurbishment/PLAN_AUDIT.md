@@ -53,7 +53,7 @@ The plan's final-release deliverables were also checked individually:
 | Required deliverable | Status |
 | --- | --- |
 | Updated architecture and behaviour specs | Partial; refurbishment maps exist, but the required coordinator architecture is not implemented. |
-| Current operation matrix | Missing as a clearly identified current matrix. |
+| Current operation matrix | Present in `docs/refurbishment/CURRENT_OPERATION_MATRIX.md`; manual rows remain explicitly pending. |
 | Settings schema/truth table generated or verified | Partial; typed schema descriptors and revision tests exist, but the UI is not generated from the schema and the full truth table is incomplete. |
 | Lifecycle/state-machine documentation | Present; implementation and full evidence remain partial. |
 | Defect/contradiction registers with no untriaged severity 0/1 | Not met; the defect register is incomplete and several severity-1 items remain unverified. |
