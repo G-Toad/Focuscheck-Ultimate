@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "artifacts": [
+    {"target": "focus_tasks.sqlite3", "fixture": "focus_tasks.sqlite3.fixture", "format": "opaque-bytes"},
+    {"target": "focus_log.csv", "fixture": "focus_log.csv.fixture", "format": "csv"},
+    {"target": "focus_waste_log.csv", "fixture": "focus_waste_log.csv.fixture", "format": "csv"},
+    {"target": "focus_study_log.csv", "fixture": "focus_study_log.csv.fixture", "format": "csv"},
+    {"target": "focus_intervention_reflections.jsonl", "fixture": "focus_intervention_reflections.jsonl.fixture", "format": "jsonl"}
+  ]
+}

@@ -92,13 +92,16 @@ class SettingsSaveTests(unittest.TestCase):
     def test_legacy_data_manifest_covers_every_durable_task_and_log_artifact(self):
         from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
 
+        fixture_root = Path(__file__).parent / "fixtures"
+        manifest = json.loads((fixture_root / "migration_fixture_manifest.json").read_text(encoding="utf-8"))
         durable_artifacts = {
-            "focus_tasks.sqlite3": b"legacy-db",
-            "focus_log.csv": b"legacy-focus-log",
-            "focus_waste_log.csv": b"legacy-waste-log",
-            "focus_study_log.csv": b"legacy-study-log",
-            "focus_intervention_reflections.jsonl": b"legacy-intervention-log",
+            item["target"]: (fixture_root / item["fixture"]).read_bytes()
+            for item in manifest["artifacts"]
         }
+        self.assertEqual(
+            {"focus_tasks.sqlite3", "focus_log.csv", "focus_waste_log.csv", "focus_study_log.csv", "focus_intervention_reflections.jsonl"},
+            set(durable_artifacts),
+        )
 
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
