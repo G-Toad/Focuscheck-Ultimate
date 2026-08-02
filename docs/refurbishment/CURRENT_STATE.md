@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `263` unittest cases passing.
+- Current automated baseline after hardening: `264` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -41,6 +41,7 @@
 - Gentle Reminder drift and camera-feed callbacks use a generation-aware timer registry and invalidate queued work on dismissal.
 - Snooze Reminder initial-focus callbacks use a generation-aware timer registry and invalidate queued work on close.
 - V1/V2 prompt timer APIs retain their existing timer-ID contract while delegating ownership, cancellation, and stale-callback invalidation to `TimerRegistry`.
+- Biodata pulse callbacks use the host prompt timer owner when available and fall back safely for standalone camera-mixin consumers.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.
 - Monitoring engine switches synchronously close the active prompt before replacing the old engine.

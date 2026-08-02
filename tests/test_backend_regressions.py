@@ -468,6 +468,7 @@ class ImportHardeningTests(unittest.TestCase):
         mixin._camera_capture = None
         mixin._camera_capability = {}
         mixin._biodata_pulse_timer_ids = set()
+        mixin._active_timers = set()
         scheduled = []
         cancelled = []
 
@@ -487,6 +488,51 @@ class ImportHardeningTests(unittest.TestCase):
         # A callback already dequeued by Tk must not reschedule after cleanup.
         scheduled[0][1]()
         self.assertEqual(1, len(scheduled))
+
+    def test_biodata_pulse_uses_prompt_timer_owner_when_available(self):
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Scheduler:
+            def __init__(self):
+                self.callbacks = {}
+                self.next_id = 0
+
+            def after(self, _delay, callback):
+                self.next_id += 1
+                self.callbacks[self.next_id] = callback
+                return self.next_id
+
+            def after_cancel(self, timer_id):
+                self.callbacks.pop(timer_id, None)
+
+        scheduler = Scheduler()
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin._closed = False
+        mixin._camera_generation = 2
+        mixin._camera_update_timer = None
+        mixin._camera_capture = None
+        mixin._camera_capability = {}
+        mixin._biodata_pulse_timer_ids = set()
+        mixin._timer_names = {}
+        mixin._active_timers = set()
+        mixin._timer_sequence = 0
+        mixin._timers = TimerRegistry(scheduler)
+        mixin._schedule_timer = PromptDialog._schedule_timer.__get__(mixin, CameraFeedMixin)
+        mixin._cancel_timer = PromptDialog._cancel_timer.__get__(mixin, CameraFeedMixin)
+
+        class Label:
+            def configure(self, **_kwargs):
+                return None
+
+        mixin._animate_biodata_pulse(object(), Label())
+        self.assertEqual({1}, mixin._biodata_pulse_timer_ids)
+        self.assertIn(1, scheduler.callbacks)
+
+        mixin._cleanup_camera_feed()
+        self.assertEqual(set(), mixin._biodata_pulse_timer_ids)
+        self.assertEqual({}, scheduler.callbacks)
 
     def test_camera_preview_windows_ignore_stale_callbacks_after_close(self):
         from focuscheck.ui.camera_adjustment_window import CameraAdjustmentWindow

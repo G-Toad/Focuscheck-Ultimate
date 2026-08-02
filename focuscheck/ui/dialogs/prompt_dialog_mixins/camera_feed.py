@@ -1189,9 +1189,14 @@ class CameraFeedMixin:
                     return  # Widget destroyed
 
                 # Schedule next pulse
-                timer_id = self.after(50, pulse)
+                schedule_timer = getattr(self, "_schedule_timer", None)
+                if callable(schedule_timer):
+                    timer_id = schedule_timer(50, pulse)
+                else:
+                    timer_id = self.after(50, pulse)
                 pulse_state["timer_id"] = timer_id
-                self._biodata_pulse_timer_ids.add(timer_id)
+                if timer_id is not None:
+                    self._biodata_pulse_timer_ids.add(timer_id)
 
             except Exception:
                 pass  # Silently stop animation if there's an error
@@ -1357,11 +1362,15 @@ class CameraFeedMixin:
             self._camera_update_timer = None
 
         # Cancel biodata animation callbacks as well as camera frame updates.
+        cancel_timer = getattr(self, "_cancel_timer", None)
         for timer_id in list(getattr(self, "_biodata_pulse_timer_ids", ())):
-            try:
-                self.after_cancel(timer_id)
-            except Exception:
-                pass
+            if callable(cancel_timer):
+                cancel_timer(timer_id)
+            else:
+                try:
+                    self.after_cancel(timer_id)
+                except Exception:
+                    pass
         if hasattr(self, "_biodata_pulse_timer_ids"):
             self._biodata_pulse_timer_ids.clear()
 
