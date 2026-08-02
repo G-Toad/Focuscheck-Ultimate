@@ -75,6 +75,17 @@ class VerificationRunnerTests(unittest.TestCase):
         mutation_tool = Path(__file__).resolve().parents[1] / "tools" / "mutation_smoke.py"
         self.assertTrue(mutation_tool.is_file())
 
+    def test_manual_evidence_template_has_required_record_fields(self):
+        payload = json.loads(
+            (Path(__file__).resolve().parents[1] / "docs" / "refurbishment" / "manual-evidence.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual("not_run", payload["status"])
+        required = {
+            "date_utc", "commit", "machine", "exact_steps", "expected",
+            "observed", "screenshot_log_references", "pass_fail", "tester",
+        }
+        self.assertTrue(all(required <= set(case) for case in payload["cases"]))
+
 
 if __name__ == "__main__":
     unittest.main()
