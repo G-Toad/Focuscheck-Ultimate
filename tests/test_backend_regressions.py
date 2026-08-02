@@ -110,6 +110,15 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertTrue(hasattr(helpers, "apply_manual_adjustments"))
         self.assertTrue(hasattr(window, "CameraAdjustmentWindow"))
 
+    def test_camera_photo_capture_is_opt_in_and_path_is_not_cwd(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin.settings = {"camera_capture_on_click": False}
+        mixin._camera_capture = None
+        self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
+        self.assertNotEqual(Path.cwd() / "camera_photos", mixin._get_camera_photos_directory())
+
 
 if __name__ == "__main__":
     unittest.main()

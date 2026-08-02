@@ -10,6 +10,7 @@ from tkinter import messagebox
 from datetime import datetime
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 from ...camera.manual_crop_utils import process_manual_crop_frame
@@ -913,7 +914,16 @@ class CameraFeedMixin:
             photo_path = photos_dir / filename
 
             # Save the photo
-            cv2.imwrite(str(photo_path), frame)
+            if not cv2.imwrite(str(photo_path), frame):
+                try:
+                    photo_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                try:
+                    get_logger().warning("Camera photo encoder did not write a file")
+                except Exception:
+                    pass
+                return None
 
             try:
                 get_logger().info(f"Captured photo saved to: {photo_path}")
@@ -937,12 +947,12 @@ class CameraFeedMixin:
             Path: Directory path for camera photos
         """
         try:
-            from ....utils.paths import get_data_dir
-            app_data_dir = get_data_dir()
+            from ....utils.paths import get_app_paths
+            app_data_dir = get_app_paths().root
             return Path(app_data_dir) / "camera_photos"
         except Exception:
-            # Fallback to current directory if paths module fails
-            return Path.cwd() / "camera_photos"
+            # Never fall back to the source/install directory for personal data.
+            return Path(tempfile.gettempdir()) / "FocusCheck" / "camera_photos"
 
     def _create_biodata_label(self, parent_container):
         """
