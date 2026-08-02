@@ -765,11 +765,7 @@ class App:
                             pass
                         if not _window_visible(self._current_prompt):
                             get_logger().warning("prompt: hidden prompt still not visible; destroying and clearing")
-                            try:
-                                self._current_prompt.destroy()
-                            except Exception:
-                                pass
-                            self._current_prompt = None
+                            self._close_current_prompt(source="visibility_recovery")
                     if self._current_prompt is not None:
                         # An active prompt is already open; check again shortly
                         get_logger().info("prompt already open; deferring new prompt")

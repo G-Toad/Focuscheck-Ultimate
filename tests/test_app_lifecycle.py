@@ -284,6 +284,37 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
         self.assertIsNone(app._current_prompt)
 
+    def test_prompt_visibility_recovery_close_uses_full_cleanup_contract(self):
+        from focuscheck.app import App
+
+        events = []
+
+        class Prompt:
+            _closed = False
+
+            def winfo_exists(self):
+                return True
+
+            def _cleanup_camera_feed(self):
+                events.append("camera")
+
+            def _cleanup_all_timers(self):
+                events.append("timers")
+
+            def _destroy_stage5_overlays(self):
+                events.append("overlays")
+
+            def destroy(self):
+                events.append("destroy")
+
+        app = App.__new__(App)
+        app._current_prompt = Prompt()
+
+        App._close_current_prompt(app, source="visibility_recovery")
+
+        self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
+        self.assertIsNone(app._current_prompt)
+
     def test_refresh_guard_samples_guard_once_and_publishes_state(self):
         from focuscheck.app import App
 
