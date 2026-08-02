@@ -26,12 +26,18 @@ class SettingsWindowSaveTests(unittest.TestCase):
         window.withdraw()
         return window, saved_payloads
 
-    def test_save_payload_clamps_active_settings_and_excludes_dormant_keys(self):
+    def test_save_payload_clamps_active_settings_and_preserves_unedited_keys(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
         root = _make_root()
         try:
-            window, saved_payloads = self._save_window_payload(root, DEFAULT_SETTINGS)
+            draft = dict(DEFAULT_SETTINGS)
+            draft.update({
+                "paused": True,
+                "snooze_until_utc": "2030-01-01T00:00:00+00:00",
+                "plugin_future_key": {"enabled": True},
+            })
+            window, saved_payloads = self._save_window_payload(root, draft)
 
             window.interval_var.set("1")
             window.ui_scale_percent_var.set("999")
@@ -53,12 +59,10 @@ class SettingsWindowSaveTests(unittest.TestCase):
             self.assertFalse(payload["tray_start_stop_enabled"])
             self.assertFalse(payload["tray_settings_button_enabled"])
             self.assertFalse(payload["tray_exit_button_enabled"])
-            self.assertNotIn("webhook_url", payload)
-            self.assertNotIn("gentle_reminder_enabled", payload)
-            self.assertNotIn("gentle_reminder_interval", payload)
-            self.assertNotIn("gentle_reminder_drift_enabled", payload)
-            self.assertNotIn("gentle_reminder_drift_delay", payload)
-            self.assertNotIn("gentle_reminder_drift_speed", payload)
+            self.assertEqual("", payload["webhook_url"])
+            self.assertTrue(payload["paused"])
+            self.assertEqual("2030-01-01T00:00:00+00:00", payload["snooze_until_utc"])
+            self.assertEqual({"enabled": True}, payload["plugin_future_key"])
         finally:
             with contextlib.suppress(tk.TclError):
                 root.destroy()

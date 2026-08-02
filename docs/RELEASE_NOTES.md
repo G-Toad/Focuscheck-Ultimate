@@ -19,6 +19,7 @@
 - Native pause-guard API failures now expose bounded health metadata in diagnostics and heartbeats while retaining safe fail-open behavior.
 - Startup inspection now detects legacy Startup-folder launchers and duplicate registry/folder startup, with an explicit canonical-route repair operation.
 - Intervention selection now tracks and cancels recurring front/Tab-scan callbacks, and its visibility fail-safe is cancelled after the selection window closes.
+- Settings saves now patch the loaded revision draft, preserving untouched state-only, plugin, and future keys instead of rebuilding a partial document.
 - Single-instance mutex API signatures are explicit and the owned Windows handle is released through the main lifecycle finally block.
 - App lifecycle phases are now explicit and published in the heartbeat: `starting`, `ready`, `stopping`, `stopped`, and `failed`.
 - Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.

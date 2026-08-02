@@ -635,7 +635,10 @@ class AdvancedSettingsWindow(
         from focuscheck.settings.manager import save_settings
 
         try:
-            s = {
+            # Patch the loaded revision draft instead of rebuilding a partial
+            # document. This preserves state-only, plugin, and future keys.
+            s = dict(self.settings)
+            s.update({
                 "settings_revision": int(self.settings.get("settings_revision", 0)),
                 # Core
                 "interval_seconds": max(10, self._safe_int(self.interval_var, 60)),
@@ -861,7 +864,7 @@ class AdvancedSettingsWindow(
                 "biodata_style": str(self.biodata_style_var.get()).strip(),
                 "biodata_pulse_animation": bool(self.biodata_pulse_animation_var.get()),
                 "biodata_font_size": int(self.biodata_font_size_var.get()),
-            }
+            })
 
             # Individual challenges
             for challenge_id, _, _ in self.STUDYING_CHALLENGES:
