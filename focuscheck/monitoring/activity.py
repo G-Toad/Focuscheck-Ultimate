@@ -45,7 +45,7 @@ class ActivitySnapshot:
             except ValueError:
                 url = None
                 errors.append("invalid url")
-        confidence = "high" if hwnd is not None and (url or raw.get("title")) else "medium" if hwnd is not None else "low"
+        confidence = "high" if hwnd is not None and url else "medium" if hwnd is not None and raw.get("title") else "low"
         return cls(
             hwnd=hwnd,
             title=str(raw.get("title") or ""),

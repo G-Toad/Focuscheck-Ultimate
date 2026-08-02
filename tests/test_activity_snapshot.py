@@ -22,6 +22,10 @@ class ActivitySnapshotTests(unittest.TestCase):
         self.assertTrue(snapshot.errors)
         self.assertEqual("low", snapshot.confidence)
 
+    def test_title_only_activity_is_medium_confidence(self):
+        snapshot = ActivitySnapshot.from_mapping({"hwnd": 12, "title": "Browser"})
+        self.assertEqual("medium", snapshot.confidence)
+
     def test_stale_snapshot_is_not_fresh(self):
         snapshot = ActivitySnapshot(captured_utc=(datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat())
         self.assertFalse(snapshot.is_fresh(max_age_seconds=5))

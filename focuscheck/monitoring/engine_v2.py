@@ -174,6 +174,11 @@ class EngineV2(BaseEngine):
             _finish()
 
         if severity >= 3:
+            # Title-only activity is useful for a warning but is not strong
+            # enough evidence for an immediate intervention.
+            if info.get("confidence") != "high":
+                _finish()
+                return
             _on_yes()
             return
 

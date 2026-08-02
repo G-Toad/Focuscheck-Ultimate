@@ -283,6 +283,23 @@ class EngineV2MatchingTests(unittest.TestCase):
         wizard_cls.return_value.run.assert_called_once_with(preselect_hwnd=123, preselect_title="Reddit")
         save_settings.assert_called_once()
 
+    def test_severity_three_title_only_activity_does_not_intervene(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        app = mock.Mock()
+        app.root = mock.Mock()
+        app.settings = {
+            "paused": False,
+            "pause_when_inactive_or_lid_closed": False,
+            "website_flags": [{"domain": "reddit.com", "enabled": True, "cooldown_minutes": 0, "severity": 3}],
+        }
+        engine = EngineV2(app, activity_provider=lambda: {"hwnd": 123, "title": "Reddit", "url": None})
+
+        with mock.patch("focuscheck.monitoring.engine_v2.InterventionWizard") as wizard_cls:
+            engine._maybe_show_subpopup()
+
+        wizard_cls.assert_not_called()
+
     def test_active_window_flag_triggers_severity_two_subpopup_with_fake_activity(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 
