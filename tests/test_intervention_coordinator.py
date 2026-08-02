@@ -85,6 +85,27 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertIsNone(dialog._focus_timer_id)
         dialog.destroy.assert_called_once_with()
 
+    def test_snooze_reminder_registry_invalidates_dequeued_focus_callback(self):
+        from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+        from focuscheck.utils.timers import TimerRegistry
+
+        dialog = object.__new__(SnoozeReminderDialog)
+        dialog._closed = False
+        dialog._focus_timer_id = None
+        dialog.btn_yes = mock.Mock()
+        scheduled = []
+        dialog.after = lambda delay, callback: (scheduled.append(callback) or f"timer-{len(scheduled)}")
+        dialog.after_cancel = lambda _timer_id: None
+        dialog._timers = TimerRegistry(dialog)
+
+        dialog._focus_timer_id = dialog._schedule_focus_timer()
+        dialog._cancel_focus_timer()
+        scheduled[0]()
+
+        dialog.btn_yes.focus_set.assert_not_called()
+        self.assertIsNone(dialog._focus_timer_id)
+        self.assertTrue(dialog._timers.closed)
+
     def test_selection_dialog_cancels_recurring_callbacks(self):
         from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
 

@@ -16,6 +16,8 @@ except ImportError:
         import logging
         return logging.getLogger(__name__)
 
+from ...utils.timers import TimerRegistry
+
 
 class SnoozeReminderDialog(tk.Toplevel):
     """
@@ -44,6 +46,7 @@ class SnoozeReminderDialog(tk.Toplevel):
         self.on_no = on_no
         self._closed = False
         self._focus_timer_id = None
+        self._timers = TimerRegistry(self)
 
         self.title("Reminder")
         self.configure(bg="#222")
@@ -139,9 +142,19 @@ class SnoozeReminderDialog(tk.Toplevel):
             if not self._closed:
                 self.btn_yes.focus_set()
 
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.schedule("initial-focus", 50, focus_yes)
+            return timers.callback_id("initial-focus")
         return self.after(50, focus_yes)
 
     def _cancel_focus_timer(self):
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+            self._focus_timer_id = None
+            return
+
         timer_id = self._focus_timer_id
         self._focus_timer_id = None
         if timer_id is not None:
