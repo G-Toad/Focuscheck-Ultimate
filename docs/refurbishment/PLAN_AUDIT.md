@@ -13,7 +13,7 @@ Status meanings:
 
 | Plan phase | Status | Evidence and gap |
 | --- | --- | --- |
-| 0 Repository truth and baseline | Partial | Baseline tests, compile, self-tests, and inventory were captured. Behavior snapshots, profile/registry non-mutation proof, and manual release baseline are absent. |
+| 0 Repository truth and baseline | Partial | Baseline tests, compile, self-tests, inventory, and a real isolated Windows direct-launch evidence run were captured. Behavior snapshots, profile/registry non-mutation proof, and the manual release baseline are absent. |
 | 1 Safety and test isolation | Partial | WerFault broad kill was removed, verification uses a disposable data root, hashes the live profile before/after stages, and now guards the repository against unexpected writes plus surviving FocusCheck-owned processes. Settings writes now use an OS-level sidecar lock. Direct `unittest -s tests` still produced live-profile logger contention, and no general filesystem sandbox exists outside the bounded runner. |
 | 2 Product contract and contradictions | Partial | Registers and several regression tests exist. The full contradiction/contract closure and complete transition truth tables do not. |
 | 3 Verification refurbishment | Partial | Bounded stages, JSON reporting, timeouts, live-profile isolation assertion, repository/process guards, disposable export simulation, and an injectable service clock exist. Comprehensive fault-injection harnesses, thread/window leak checks, and all required test categories do not. |
