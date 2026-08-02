@@ -64,3 +64,36 @@ class InterventionCoordinatorTests(unittest.TestCase):
         cancelled.is_set.return_value = True
         parent.callbacks[0]()
         wizard._run_internal.assert_not_called()
+
+    def test_reflection_timeout_invalidates_queued_tk_callback(self):
+        from focuscheck.ui.dialogs import intervention_reflection_dialog
+
+        class Parent:
+            _focuscheck_tk_thread_id = -1
+
+            def __init__(self):
+                self.callbacks = []
+
+            def after(self, _delay, callback):
+                self.callbacks.append(callback)
+                return "dispatch"
+
+        parent = Parent()
+        done = mock.Mock()
+        done.wait.return_value = False
+        cancelled = mock.Mock()
+        cancelled.is_set.return_value = False
+
+        with mock.patch.object(
+            intervention_reflection_dialog.threading,
+            "Event",
+            side_effect=[done, cancelled],
+        ):
+            result = intervention_reflection_dialog.InterventionReflectionDialog.prompt(
+                parent, "intervention-id"
+            )
+
+        self.assertIsNone(result)
+        cancelled.set.assert_called_once_with()
+        cancelled.is_set.return_value = True
+        parent.callbacks[0]()

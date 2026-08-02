@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `222` unittest cases passing.
+- Current automated baseline after hardening: `223` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -45,6 +45,7 @@
 - Activity provider calls have a bounded timeout boundary and preserve low-confidence error snapshots on provider failure or timeout.
 - Off-thread intervention dispatch has a cancellation token so timed-out queued callbacks cannot start a late workflow.
 - Intervention action-dialog recurring callbacks are owned by `TimerRegistry` and closed before overlay/dialog destruction.
+- Reflection-dialog off-thread dispatch uses the same cancellation-on-timeout contract as the main intervention workflow.
 - Heartbeat publication uses the frozen App path snapshot, keeping the supervisor marker in the composed data root.
 - Logger initialization binds to the frozen App log path before creating its first handler.
 - Direct test discovery defaults to a per-process external temporary data root, avoiding repository-local and cross-process profile contention.

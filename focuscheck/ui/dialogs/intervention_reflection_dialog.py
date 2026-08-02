@@ -286,8 +286,12 @@ class InterventionReflectionDialog(tk.Toplevel):
         tid = _get_tk_thread_id(parent)
         if tid is not None and threading.get_ident() != tid:
             done = threading.Event()
+            cancelled = threading.Event()
 
             def _run_on_ui():
+                if cancelled.is_set():
+                    done.set()
+                    return
                 try:
                     _open()
                 finally:
@@ -295,7 +299,8 @@ class InterventionReflectionDialog(tk.Toplevel):
 
             try:
                 parent.after(0, _run_on_ui)
-                done.wait(timeout=30.0)
+                if not done.wait(timeout=30.0):
+                    cancelled.set()
             except Exception:
                 logger.exception("reflection dialog marshal failed", exc_info=True)
         else:
