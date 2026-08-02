@@ -20,6 +20,7 @@ from .paths import (
     resource_path,
 )
 from .timers import TimerRegistry
+from .clock import FakeClock, SystemClock
 from .ui_utils import log_window_state
 
 # Backwards-compatible name used by older callers.
@@ -39,6 +40,8 @@ __all__ = [
     "choose_path",
     "get_app_paths",
     "TimerRegistry",
+    "FakeClock",
+    "SystemClock",
     "get_audio_alarm",
     "get_base_dir",
     "get_data_dir",

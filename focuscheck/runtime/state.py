@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable, MutableMapping, Any
+from ..utils.clock import SystemClock
 
 
 @dataclass
@@ -41,9 +42,11 @@ class RuntimeStateCoordinator:
         self,
         settings: MutableMapping[str, Any],
         persist: Callable[[MutableMapping[str, Any]], bool] | None = None,
+        clock: Any | None = None,
     ) -> None:
         self.settings = settings
         self._persist = persist
+        self.clock = clock or SystemClock()
         self.snapshot = RuntimeSnapshot(
             manual_paused=bool(settings.get("paused", False)),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
@@ -131,4 +134,9 @@ class RuntimeStateCoordinator:
         return True
 
     def can_start_prompt(self) -> bool:
-        return not self.snapshot.shutdown_requested and not self.snapshot.effectively_paused and not self.snapshot.prompt_active and not self.snapshot.intervention_active
+        return not self.snapshot.shutdown_requested and not self.is_effectively_paused() and not self.snapshot.prompt_active and not self.snapshot.intervention_active
+
+    def is_effectively_paused(self, now=None) -> bool:
+        """Evaluate effective pause against the injected or supplied clock."""
+        current = self.clock.now_utc() if now is None else now
+        return self.snapshot.manual_paused or self.snapshot.snooze_active(current) or bool(self.snapshot.guard_reasons)

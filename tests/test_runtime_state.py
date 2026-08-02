@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timezone, timedelta
 
 from focuscheck.runtime.state import RuntimeStateCoordinator
+from focuscheck.utils.clock import FakeClock
 
 
 class RuntimeStateTests(unittest.TestCase):
@@ -56,3 +57,12 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertTrue(state.begin_intervention())
         self.assertTrue(state.request_shutdown())
         self.assertFalse(state.begin_prompt())
+
+    def test_injected_clock_controls_snooze_expiry(self):
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        state = RuntimeStateCoordinator({"paused": False, "snooze_until_utc": ""}, clock=clock)
+        state.set_snooze_until(datetime(2030, 1, 1, 0, 0, 10, tzinfo=timezone.utc))
+        self.assertTrue(state.is_effectively_paused())
+        clock.advance(10)
+        self.assertFalse(state.is_effectively_paused())
+        self.assertTrue(state.can_start_prompt())
