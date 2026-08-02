@@ -3,9 +3,9 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `104` unittest cases passing.
+- Current automated baseline after hardening: `105` unittest cases passing.
 - Compile/self-tests: passing.
-- Safe QA runner: passing with `qa_failures=0`.
+- Safe QA runner: passing with `qa_failures=0`; verification asserts the live profile is unchanged.
 - Release decision: `NOT_READY`.
 - Manual blocker: live Tk/tray, Windows supervisor/startup, browser/window APIs, native lock/sleep/resume, overlays, and packaging require target Windows evidence.
 

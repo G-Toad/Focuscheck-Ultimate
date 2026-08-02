@@ -1,7 +1,8 @@
 {
-  "generated_utc": "2026-08-02T15:28:14.962423+00:00",
+  "generated_utc": "2026-08-02T15:29:43.463450+00:00",
   "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
   "isolated_data_dir": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data",
+  "live_profile_unchanged": true,
   "results": [
     {
       "name": "compileall",
@@ -34,7 +35,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6077,
+      "elapsed_ms": 6093,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
     },
     {
@@ -47,7 +48,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 937,
+      "elapsed_ms": 906,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\qa_scenario_runner.log"
     },
     {
@@ -59,7 +60,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 796,
+      "elapsed_ms": 797,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\main_selftest.log"
     },
     {
@@ -71,7 +72,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 594,
+      "elapsed_ms": 608,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\tray_selftest.log"
     },
     {
@@ -82,7 +83,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5577,
+      "elapsed_ms": 5625,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
     },
     {
@@ -95,6 +96,18 @@
       "exit_code": 0,
       "elapsed_ms": 156,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\diagnostic_bundle.log"
+    },
+    {
+      "name": "profile_isolation",
+      "command": [
+        "snapshot",
+        "C:\\Users\\singh\\AppData\\Roaming\\FocusCheck"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 0,
+      "files_before": 102,
+      "files_after": 102
     }
   ],
   "manual_gates": [

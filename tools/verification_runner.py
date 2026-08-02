@@ -8,6 +8,7 @@ console output.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -22,6 +23,25 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "_verify_runtime"
 REPORT = RUNTIME / "verification.json"
 TRACKED_REPORT = ROOT / "docs" / "refurbishment" / "verification-report.json"
+
+
+def snapshot_tree(root: Path) -> dict[str, str]:
+    """Capture file hashes for a profile without modifying it."""
+    if not root.exists():
+        return {}
+    snapshot = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        digest = hashlib.sha256()
+        try:
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            snapshot[str(path.relative_to(root))] = digest.hexdigest()
+        except OSError:
+            snapshot[str(path.relative_to(root))] = "unreadable"
+    return snapshot
 
 
 def run_stage(name: str, args: list[str], env: dict[str, str], timeout: int) -> dict:
@@ -79,6 +99,8 @@ def main() -> int:
         "FOCUSCHECK_SUPERVISOR_LOCK_FILE": str(RUNTIME / "supervisor.lock"),
         "FOCUSCHECK_SUPERVISOR_STOP_FILE": str(RUNTIME / "supervisor.stop"),
     })
+    live_profile = Path(os.environ.get("APPDATA", "")) / "FocusCheck"
+    live_before = snapshot_tree(live_profile)
     py = sys.executable
     stages = [
         ("compileall", [py, "-m", "compileall", "main.py", "focuscheck", "focuscheck_supervisor.py", "tests", "tools"]),
@@ -90,10 +112,22 @@ def main() -> int:
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
     ]
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
+    live_after = snapshot_tree(live_profile)
+    isolation_ok = live_before == live_after
+    results.append({
+        "name": "profile_isolation",
+        "command": ["snapshot", str(live_profile)],
+        "status": "passed" if isolation_ok else "failed",
+        "exit_code": 0 if isolation_ok else 1,
+        "elapsed_ms": 0,
+        "files_before": len(live_before),
+        "files_after": len(live_after),
+    })
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "repository": str(ROOT),
         "isolated_data_dir": str(data_dir),
+        "live_profile_unchanged": isolation_ok,
         "results": results,
         "manual_gates": [
             "live tray and Tk interaction",

@@ -14,9 +14,9 @@ Status meanings:
 | Plan phase | Status | Evidence and gap |
 | --- | --- | --- |
 | 0 Repository truth and baseline | Partial | Baseline tests, compile, self-tests, and inventory were captured. Behavior snapshots, profile/registry non-mutation proof, and manual release baseline are absent. |
-| 1 Safety and test isolation | Partial | WerFault broad kill was removed and verification uses a disposable data root. No filesystem write guard or process-leak guard was found; direct `unittest -s tests` still produced live-profile logger contention. |
+| 1 Safety and test isolation | Partial | WerFault broad kill was removed, verification uses a disposable data root, and the runner now hashes the live profile before/after stages. No filesystem write guard or process-leak guard was found; direct `unittest -s tests` still produced live-profile logger contention. |
 | 2 Product contract and contradictions | Partial | Registers and several regression tests exist. The full contradiction/contract closure and complete transition truth tables do not. |
-| 3 Verification refurbishment | Partial | Bounded stages and JSON reporting exist. Deterministic clock, comprehensive fault-injection harnesses, isolation assertions, and all required test categories do not. |
+| 3 Verification refurbishment | Partial | Bounded stages, JSON reporting, timeouts, and live-profile isolation assertion exist. Deterministic clock, comprehensive fault-injection harnesses, process/thread/window leak checks, and all required test categories do not. |
 | 4 Unified paths and data location | Partial | Frozen `AppPaths` now covers the canonical data/runtime paths and `FOCUS_DATA_DIR` precedence was fixed. Legacy hash/revision conflict resolution, migration journal, and complete atomic migration workflow remain absent. |
 | 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, backup recovery, atomic save, typed schema descriptors, revision/conflict handling, and fixture classes now exist. `.bak.1/.bak.2`, migration journal, complete UI schema generation, and bounded-input coverage remain incomplete. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` owns transactional pause/snooze mutation, expiry-aware state, refreshed settings adoption, and exclusive prompt/intervention/shutdown leases. Full App integration, guard synchronization, and transition journal remain absent. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 104 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 105 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 104 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 105 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
