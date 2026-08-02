@@ -1211,6 +1211,12 @@ class App:
                 menu.add_command(label="Enable Run on Startup", command=self._tray_install_startup)
             menu.add_command(label="Open Data Folder", command=self._tray_open_data_folder)
             menu.add_command(label="Open Logs Folder", command=self._tray_open_logs_folder)
+            menu.add_command(label="Export Data", command=self._tray_export_data)
+            menu.add_command(label="Data Inventory", command=self._tray_show_data_inventory)
+            menu.add_command(label="Clear Logs", command=self._tray_clear_logs)
+            menu.add_command(label="Clear Personal Data", command=self._tray_clear_data)
+            menu.add_command(label="Clean Old Logs", command=self._tray_retain_logs)
+            menu.add_command(label="Create Diagnostic Bundle", command=self._tray_diagnostic_bundle)
             menu.add_separator()
             menu.add_command(
                 label="Exit",
