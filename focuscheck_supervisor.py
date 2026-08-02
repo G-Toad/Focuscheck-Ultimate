@@ -268,6 +268,7 @@ class FocusCheckSupervisor:
         self._heartbeat_grace_deadline = 0.0
         self.supervisor_id = uuid.uuid4().hex
         self.child_generation: str | None = None
+        self._last_heartbeat_pid: int | None = None
         self._restart_history: list[float] = []
         self._degraded_until = 0.0
         suppress_windows_error_dialogs()
@@ -311,6 +312,7 @@ class FocusCheckSupervisor:
         env = os.environ.copy()
         env.setdefault("FOCUSCHECK_SUPERVISED", "1")
         self.child_generation = uuid.uuid4().hex
+        self._last_heartbeat_pid = None
         env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
         env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
@@ -418,8 +420,15 @@ class FocusCheckSupervisor:
                 return True
             heartbeat_utc = payload.get("utc")
             heartbeat_pid = int(payload.get("pid", 0))
+            self._last_heartbeat_pid = heartbeat_pid or None
             if heartbeat_pid and self.child is not None and heartbeat_pid != self.child.pid:
-                return True
+                # One-file PyInstaller builds report the inner bootloader PID
+                # in the heartbeat while Popen owns the outer PID. Accept the
+                # mismatch only for the frozen sibling child and only while
+                # the reported process is alive.
+                frozen_child = self.target_script.suffix.lower() == ".exe"
+                if not frozen_child or not _pid_is_alive(heartbeat_pid):
+                    return True
             from datetime import datetime, timezone
             timestamp = datetime.fromisoformat(str(heartbeat_utc).replace("Z", "+00:00"))
             age = time.time() - timestamp.astimezone(timezone.utc).timestamp()
@@ -448,7 +457,8 @@ class FocusCheckSupervisor:
             requested_pid = int(payload.get("pid", 0))
             if expected_pid is None and self.child is not None:
                 expected_pid = self.child.pid
-            return requested_pid > 0 and (expected_pid is None or requested_pid == expected_pid)
+            accepted = {pid for pid in (expected_pid, self._last_heartbeat_pid) if pid}
+            return requested_pid > 0 and (not accepted or requested_pid in accepted)
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
             return False
 

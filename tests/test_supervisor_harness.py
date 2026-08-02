@@ -42,6 +42,18 @@ class SupervisorEntrypointTests(unittest.TestCase):
             self.assertIn("FocusCheckSupervisor.exe", content)
             self.assertNotIn("focuscheck_supervisor.py", content)
 
+    def test_frozen_inner_heartbeat_pid_is_accepted_for_stop_handshake(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stop_file = Path(temp_dir) / "supervisor.stop"
+            stop_file.write_text(json.dumps({"protocol_version": 1, "pid": 222, "reason": "user_exit"}), encoding="ascii")
+            supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+            supervisor.stop_file = stop_file
+            supervisor.child = type("Child", (), {"pid": 111})()
+            supervisor._last_heartbeat_pid = 222
+            self.assertTrue(supervisor._intentional_stop_requested())
+
 
 class FakeEvent:
     def __init__(self):

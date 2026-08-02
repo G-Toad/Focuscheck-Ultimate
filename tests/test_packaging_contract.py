@@ -22,6 +22,7 @@ class PackagingContractTests(unittest.TestCase):
             "tools/promote_package.ps1",
             "tools/rollback_package.ps1",
             "tools/package_lifecycle.ps1",
+            "tools/packaged_supervisor_selftest.py",
             "docs/INSTALL.md",
             "docs/ROLLBACK.md",
             "docs/RELEASE_NOTES.md",
@@ -53,6 +54,14 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Data root retained", lifecycle)
         self.assertIn("Move-Item -LiteralPath $install", lifecycle)
         self.assertNotIn("Remove-Item -LiteralPath $data", lifecycle)
+
+    def test_packaged_supervisor_selftest_is_bounded_and_pid_bound(self):
+        root = Path(__file__).resolve().parents[1]
+        tool = (root / "tools/packaged_supervisor_selftest.py").read_text(encoding="utf-8")
+        self.assertIn("readiness", tool)
+        self.assertIn("protocol_version", tool)
+        self.assertIn("child_pid", tool)
+        self.assertIn("process.wait(timeout=15)", tool)
 
     def test_package_promotion_and_rollback_transaction(self):
         powershell = shutil.which("powershell") or shutil.which("pwsh")
