@@ -6,10 +6,20 @@ Provides centralized logging configuration with rotation support.
 
 import os
 import logging
+import hashlib
 from logging.handlers import RotatingFileHandler
 
 
 _logger = None
+
+
+def privacy_summary(value):
+    """Describe user-provided text without copying it into diagnostics."""
+    if value is None:
+        return {"type": "none", "length": 0, "sha256": None}
+    text = str(value)
+    digest = hashlib.sha256(text.encode("utf-8", errors="replace")).hexdigest()[:12]
+    return {"type": type(value).__name__, "length": len(text), "sha256": digest}
 
 
 def get_logger():

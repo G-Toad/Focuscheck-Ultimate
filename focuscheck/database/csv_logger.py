@@ -6,7 +6,7 @@ import time
 import threading
 import json
 from datetime import datetime, timezone
-from ..utils.logging_utils import log_exception, get_logger
+from ..utils.logging_utils import log_exception, get_logger, privacy_summary
 from ..utils.paths import choose_path
 
 # CSV file locking
@@ -144,7 +144,7 @@ def append_log(*, response, latency_ms, settings, intensity_level_reached,
     logger.info("=" * 80)
     logger.info("DATABASE: append_log() CALLED - Logging response to CSV")
     logger.info("  Parameters:")
-    logger.info("    - response: '%s'", response)
+    logger.info("    - response_summary: %s", privacy_summary(response))
     logger.info("    - latency_ms: %s", latency_ms)
     logger.info("    - intensity_level_reached: %s", intensity_level_reached)
     logger.info("    - slot_start_dt: %s", slot_start_dt)
@@ -192,7 +192,7 @@ def append_log(*, response, latency_ms, settings, intensity_level_reached,
             ]
 
             logger.info("      Writing row to CSV...")
-            logger.info("        Row data: %s", row_data)
+            logger.info("        Writing CSV row with %d fields", len(row_data))
             w.writerow(row_data)
             logger.info("      Row written successfully")
 

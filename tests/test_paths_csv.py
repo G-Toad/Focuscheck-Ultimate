@@ -47,6 +47,27 @@ class PathHelperTests(unittest.TestCase):
 
 
 class CsvLoggerTests(unittest.TestCase):
+    def test_diagnostic_logging_redacts_user_response(self):
+        import focuscheck.database.csv_logger as logger
+
+        slot = {"utc_start": datetime.now(timezone.utc), "local_minute": "10:00", "mono_start": 0}
+        sink = mock.Mock()
+        with mock.patch.object(logger, "get_logger", return_value=sink), \
+                mock.patch.object(logger, "LOG_PATH", str(Path(tempfile.gettempdir()) / "focus-privacy-test.csv")), \
+                mock.patch.object(logger, "_safe_csv_write", return_value=True):
+            logger.append_log(
+                response="private response that must not be logged",
+                latency_ms=10,
+                settings={"interval_seconds": 60, "intensify_after_seconds": 15, "overdrive_after_seconds": 60},
+                intensity_level_reached=1,
+                slot_start_dt=slot,
+                overdrive_deadline_s=60,
+            )
+
+        logged = " ".join(str(call) for call in sink.info.call_args_list)
+        self.assertNotIn("private response that must not be logged", logged)
+        self.assertIn("response_summary", logged)
+
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):
         from focuscheck.database.csv_logger import _excel_safe
 
