@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-02T14:51:58.576894+00:00",
+  "generated_utc": "2026-08-02T14:56:49.059075+00:00",
   "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
   "isolated_data_dir": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data",
   "results": [
@@ -17,7 +17,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 187,
+      "elapsed_ms": 203,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\compileall.log"
     },
     {
@@ -34,7 +34,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6312,
+      "elapsed_ms": 6764,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
     },
     {
@@ -47,7 +47,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 891,
+      "elapsed_ms": 1046,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\qa_scenario_runner.log"
     },
     {
@@ -59,7 +59,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 827,
+      "elapsed_ms": 938,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\main_selftest.log"
     },
     {
@@ -82,8 +82,19 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5172,
+      "elapsed_ms": 5406,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
+    },
+    {
+      "name": "diagnostic_bundle",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "tools/create_diagnostic_bundle.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 202,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\diagnostic_bundle.log"
     }
   ],
   "manual_gates": [

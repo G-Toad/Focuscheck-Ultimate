@@ -86,7 +86,7 @@ def resource_path(relative: str):
 
 def choose_path(filename):
     """
-    Prefer legacy file path in script dir if it exists; otherwise use data dir.
+    Prefer an explicit data directory; otherwise preserve legacy files.
 
     This allows for backward compatibility with existing installations.
 
@@ -96,6 +96,16 @@ def choose_path(filename):
     Returns:
         Full path to the file
     """
+    # An explicit root is used by verification, portable deployments, and
+    # recovery tooling. It must not be bypassed by a stale file beside code.
+    env = os.environ.get("FOCUS_DATA_DIR")
+    if env:
+        try:
+            os.makedirs(env, exist_ok=True)
+        except Exception:
+            pass
+        return os.path.join(env, filename)
+
     legacy = os.path.join(get_base_dir(), filename)
     if os.path.exists(legacy):
         return legacy

@@ -11,7 +11,7 @@ from unittest import mock
 
 
 class PathHelperTests(unittest.TestCase):
-    def test_focus_data_dir_wins_and_choose_path_prefers_legacy(self):
+    def test_focus_data_dir_wins_over_legacy_files(self):
         from focuscheck.utils import paths
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -21,7 +21,7 @@ class PathHelperTests(unittest.TestCase):
 
             with mock.patch.dict(paths.os.environ, {"FOCUS_DATA_DIR": data_dir}), mock.patch.object(paths, "get_base_dir", return_value=temp_dir):
                 self.assertEqual(data_dir, paths.get_data_dir())
-                self.assertEqual(str(legacy), paths.choose_path("legacy.txt"))
+                self.assertEqual(str(Path(data_dir) / "legacy.txt"), paths.choose_path("legacy.txt"))
                 self.assertEqual(str(Path(data_dir) / "new.txt"), paths.choose_path("new.txt"))
 
     def test_resource_path_uses_meipass_then_base_dir(self):

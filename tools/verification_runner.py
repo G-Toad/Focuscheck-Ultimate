@@ -87,6 +87,7 @@ def main() -> int:
         ("main_selftest", [py, "main.py", "--selftest"]),
         ("tray_selftest", [py, "main.py", "--tray-selftest"]),
         ("settings_inventory", [py, "tools/settings_inventory.py"]),
+        ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
     ]
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
     payload = {
