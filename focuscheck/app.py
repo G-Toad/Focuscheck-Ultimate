@@ -567,12 +567,17 @@ class App:
         cls = self._get_engine_class(self.settings)
         if self._engine is None or not isinstance(self._engine, cls):
             old_engine = self._engine
-            self._engine = cls(self)
-            try:
-                if old_engine is not None:
+            if old_engine is not None:
+                # A prompt owns resources that are independent of the
+                # monitoring engine. Close it before replacing the engine so
+                # a mode switch cannot strand camera, timer, or overlay state.
+                if getattr(self, "_current_prompt", None) is not None:
+                    self._close_current_prompt(source="engine_switch")
+                try:
                     old_engine.shutdown()
-            except Exception:
-                pass
+                except Exception:
+                    pass
+            self._engine = cls(self)
             try:
                 get_logger().info("monitoring engine set to %s", getattr(self._engine, "name", cls.__name__))
             except Exception:

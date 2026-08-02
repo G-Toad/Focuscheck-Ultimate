@@ -214,6 +214,51 @@ class AppLifecycleTests(unittest.TestCase):
         engine.shutdown.assert_called_once_with()
         self.assertIsNone(app._engine)
 
+    def test_engine_switch_closes_prompt_before_old_engine_shutdown(self):
+        from focuscheck.app import App
+
+        events = []
+
+        class NewEngine:
+            name = "new"
+
+            def __init__(self, _app):
+                events.append("new_engine")
+
+            def on_settings_updated(self, _settings):
+                events.append("settings")
+
+        class OldEngine:
+            def shutdown(self):
+                events.append("old_shutdown")
+
+        class Prompt:
+            _closed = False
+
+            def winfo_exists(self):
+                return True
+
+            def _cleanup_camera_feed(self):
+                events.append("camera")
+
+            def _cleanup_all_timers(self):
+                events.append("timers")
+
+            def destroy(self):
+                events.append("destroy")
+
+        app = App.__new__(App)
+        app.settings = {"monitoring_mode": "v2"}
+        app._engine = OldEngine()
+        app._current_prompt = Prompt()
+
+        with mock.patch.object(App, "_get_engine_class", return_value=NewEngine):
+            App._ensure_engine(app)
+
+        self.assertEqual(["camera", "timers", "destroy", "old_shutdown", "new_engine", "settings"], events)
+        self.assertIsInstance(app._engine, NewEngine)
+        self.assertIsNone(app._current_prompt)
+
     def test_prompt_cleanup_runs_before_shutdown_destroy(self):
         from focuscheck.app import App
 
