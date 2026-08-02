@@ -19,7 +19,19 @@ class RuntimeSnapshot:
 
     @property
     def effectively_paused(self) -> bool:
-        return self.manual_paused or bool(self.snooze_until_utc) or bool(self.guard_reasons)
+        return self.manual_paused or self.snooze_active() or bool(self.guard_reasons)
+
+    def snooze_active(self, now: datetime | None = None) -> bool:
+        if not self.snooze_until_utc:
+            return False
+        try:
+            until = datetime.fromisoformat(self.snooze_until_utc.replace("Z", "+00:00"))
+            if until.tzinfo is None:
+                until = until.replace(tzinfo=timezone.utc)
+            current = now or datetime.now(timezone.utc)
+            return until.astimezone(timezone.utc) > current.astimezone(timezone.utc)
+        except (TypeError, ValueError, OverflowError):
+            return False
 
 
 class RuntimeStateCoordinator:
@@ -36,6 +48,12 @@ class RuntimeStateCoordinator:
             manual_paused=bool(settings.get("paused", False)),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
         )
+
+    def refresh_from_settings(self, settings: MutableMapping[str, Any]) -> None:
+        """Adopt a reloaded settings document without losing runtime leases."""
+        self.settings = settings
+        self.snapshot.manual_paused = bool(settings.get("paused", False))
+        self.snapshot.snooze_until_utc = str(settings.get("snooze_until_utc", "") or "")
 
     def _commit(self, mutate: Callable[[], None]) -> bool:
         before_settings = deepcopy(dict(self.settings))

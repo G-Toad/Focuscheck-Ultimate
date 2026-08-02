@@ -610,6 +610,14 @@ class App:
 
     def _maybe_show_prompt(self):
         self.settings = load_settings()  # refresh
+        if getattr(self, "_runtime_state", None) is not None:
+            self._runtime_state.refresh_from_settings(self.settings)
+            guard_paused = bool(self.guard.should_pause())
+            self._runtime_state.set_guard_reason("system_guard", guard_paused)
+            if self._runtime_state.snapshot.effectively_paused:
+                poll_ms = int(self.settings.get("pause_poll_interval_seconds", 5)) * 1000
+                self._schedule_next(poll_ms)
+                return
         try:
             get_logger().info(
                 "prompt: maybe_show | thread=%s tk_thread=%s",

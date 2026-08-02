@@ -25,6 +25,21 @@ class RuntimeStateTests(unittest.TestCase):
         state.clear_snooze()
         self.assertFalse(state.snapshot.effectively_paused)
 
+    def test_expired_snooze_is_not_effectively_paused(self):
+        settings = {"paused": False, "snooze_until_utc": "2000-01-01T00:00:00+00:00"}
+        state = RuntimeStateCoordinator(settings)
+        self.assertFalse(state.snapshot.snooze_active())
+        self.assertFalse(state.snapshot.effectively_paused)
+
+    def test_refresh_adopts_reloaded_settings_without_resetting_leases(self):
+        state = RuntimeStateCoordinator({"paused": False, "snooze_until_utc": ""})
+        self.assertTrue(state.begin_intervention())
+        new_settings = {"paused": True, "snooze_until_utc": ""}
+        state.refresh_from_settings(new_settings)
+        self.assertIs(new_settings, state.settings)
+        self.assertTrue(state.snapshot.manual_paused)
+        self.assertTrue(state.snapshot.intervention_active)
+
     def test_guard_reason_preserves_manual_intent(self):
         settings = {"paused": True, "snooze_until_utc": ""}
         state = RuntimeStateCoordinator(settings)
