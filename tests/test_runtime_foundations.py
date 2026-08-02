@@ -103,3 +103,19 @@ class RuntimeFoundationTests(unittest.TestCase):
 
             self.assertEqual(["fired"], calls)
             self.assertNotIn(timer_id, dialog._active_timers)
+
+    def test_phrase_challenge_closes_owned_timers(self):
+        from focuscheck.ui.dialogs.phrase_acronym_dialog import PhraseAcronymDialog
+
+        scheduler = FakeScheduler()
+        dialog = object.__new__(PhraseAcronymDialog)
+        dialog._closed = False
+        dialog._timers = TimerRegistry(scheduler)
+
+        self.assertTrue(dialog._schedule_timer("feedback", 10, lambda: None))
+        self.assertTrue(scheduler.callbacks)
+        dialog._close_timers()
+
+        self.assertTrue(dialog._closed)
+        self.assertTrue(dialog._timers.closed)
+        self.assertFalse(scheduler.callbacks)

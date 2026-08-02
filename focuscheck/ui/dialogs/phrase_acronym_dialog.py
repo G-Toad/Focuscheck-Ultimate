@@ -14,6 +14,8 @@ import re
 import platform
 import ctypes
 
+from ...utils.timers import TimerRegistry
+
 
 class PhraseAcronymDialog(tk.Toplevel):
     """Dialog for phrase acronym challenge with button clicks and typing."""
@@ -33,6 +35,8 @@ class PhraseAcronymDialog(tk.Toplevel):
         self.phrase = phrase
         self.on_complete = on_complete
         self.settings = settings
+        self._closed = False
+        self._timers = TimerRegistry(self)
 
         # Extract acronym (first letter of each word, letters only)
         # Enhanced regex handles:
@@ -105,9 +109,18 @@ class PhraseAcronymDialog(tk.Toplevel):
         self._force_window_to_front()
 
         # Focus first box multiple times to ensure it works
-        self.after(100, self._focus_first_box)
-        self.after(200, self._focus_first_box)
-        self.after(300, self._focus_first_box)
+        self._schedule_timer("initial-focus-100", 100, self._focus_first_box)
+        self._schedule_timer("initial-focus-200", 200, self._focus_first_box)
+        self._schedule_timer("initial-focus-300", 300, self._focus_first_box)
+
+    def _schedule_timer(self, name, delay_ms, callback):
+        if self._closed:
+            return False
+        return self._timers.schedule(name, delay_ms, callback)
+
+    def _close_timers(self):
+        self._closed = True
+        self._timers.close()
 
     def _force_window_to_front(self):
         """Aggressively force window to front and grab focus (Windows-specific)."""
@@ -364,13 +377,17 @@ class PhraseAcronymDialog(tk.Toplevel):
                 self.boxes[box_index + 1].focus_set()
 
             # Check if all complete
-            self.after(100, self._check_completion)
+            self._schedule_timer("completion-check", 100, self._check_completion)
         else:
             # Wrong letter - clear the box and highlight red
             box.delete(0, tk.END)
             box.configure(highlightbackground="#ff0000")
             # Reset after a moment
-            self.after(300, lambda: box.configure(highlightbackground="#444444"))
+            self._schedule_timer(
+                f"feedback-{id(box)}",
+                300,
+                lambda: box.configure(highlightbackground="#444444"),
+            )
 
     def _on_box_click(self, event, box):
         """Handle click on box to focus it."""
@@ -429,7 +446,7 @@ class PhraseAcronymDialog(tk.Toplevel):
                 self.boxes[target_index + 1].focus_set()
 
             # Check completion
-            self.after(100, self._check_completion)
+            self._schedule_timer("completion-check", 100, self._check_completion)
         else:
             # Wrong letter - flash red feedback on the correct box for this letter
             correct_box_index = letter_index
@@ -437,7 +454,11 @@ class PhraseAcronymDialog(tk.Toplevel):
                 correct_box = self.boxes[correct_box_index]
                 original_bg = correct_box.cget("highlightbackground")
                 correct_box.configure(highlightbackground="#ff0000")
-                self.after(300, lambda: correct_box.configure(highlightbackground=original_bg) if not correct_box.get() else None)
+                self._schedule_timer(
+                    f"feedback-{id(correct_box)}",
+                    300,
+                    lambda: correct_box.configure(highlightbackground=original_bg) if not correct_box.get() else None,
+                )
 
     def _check_completion(self):
         """Check if all boxes are correctly filled."""
@@ -460,10 +481,11 @@ class PhraseAcronymDialog(tk.Toplevel):
             box.configure(highlightbackground="#00ff00")
 
         # Close after short delay
-        self.after(300, self._finish_and_close)
+        self._schedule_timer("finish", 300, self._finish_and_close)
 
     def _finish_and_close(self):
         """Finish challenge and close dialog."""
+        self._close_timers()
         try:
             self.grab_release()
         except Exception:
@@ -475,11 +497,16 @@ class PhraseAcronymDialog(tk.Toplevel):
     def _on_close(self):
         """Handle window close button (treat as cancel)."""
         # Don't call on_complete - user cancelled
+        self._close_timers()
         try:
             self.grab_release()
         except Exception:
             pass
         self.destroy()
+
+    def destroy(self):
+        self._close_timers()
+        return super().destroy()
 
     def _center_window(self):
         """Center the dialog on screen."""
