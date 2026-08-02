@@ -67,6 +67,10 @@ class VerificationRunnerTests(unittest.TestCase):
         result = filtered_repository_snapshot(Path("."), fake_snapshot)
         self.assertEqual({"focuscheck/app.py": "a"}, result)
 
+    def test_property_invariant_suite_is_discoverable(self):
+        property_tests = Path(__file__).resolve().parents[1] / "tests" / "test_property_invariants.py"
+        self.assertTrue(property_tests.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
