@@ -115,6 +115,7 @@ def main() -> int:
         ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"]),
         ("main_selftest", [py, "main.py", "--selftest"]),
         ("tray_selftest", [py, "main.py", "--tray-selftest"]),
+        ("native_overlay_selftest", [py, "tools/spotlight_overlay_selftest.py"]),
         ("settings_inventory", [py, "tools/settings_inventory.py"]),
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
         ("performance_soak", [py, "tools/performance_soak.py"]),

@@ -13,6 +13,23 @@ from logging.handlers import RotatingFileHandler
 _logger = None
 
 
+class SafeRotatingFileHandler(RotatingFileHandler):
+    """Keep logging usable when another FocusCheck process owns rotation."""
+
+    def doRollover(self):
+        try:
+            super().doRollover()
+        except OSError:
+            # Windows cannot rename a file held by another process. Keep the
+            # current stream and continue appending rather than raising a
+            # logging-internal error from application code.
+            if self.stream is None:
+                try:
+                    self.stream = self._open()
+                except OSError:
+                    self.stream = None
+
+
 def privacy_summary(value):
     """Describe user-provided text without copying it into diagnostics."""
     if value is None:
@@ -50,7 +67,7 @@ def get_logger():
     if not logger.handlers:
         logger.setLevel(logging.INFO)
         try:
-            handler = RotatingFileHandler(
+            handler = SafeRotatingFileHandler(
                 APP_LOG_PATH,
                 maxBytes=1_000_000,
                 backupCount=3,

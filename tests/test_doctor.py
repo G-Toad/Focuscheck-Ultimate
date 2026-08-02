@@ -4,6 +4,16 @@ import unittest
 from unittest import mock
 
 
+class LoggingSafetyTests(unittest.TestCase):
+    def test_busy_log_rotation_does_not_raise(self):
+        from focuscheck.utils.logging_utils import SafeRotatingFileHandler
+
+        handler = SafeRotatingFileHandler.__new__(SafeRotatingFileHandler)
+        handler.stream = object()
+        with mock.patch("logging.handlers.RotatingFileHandler.doRollover", side_effect=OSError("file busy")):
+            handler.doRollover()
+        self.assertIsNotNone(handler.stream)
+
 class DoctorTests(unittest.TestCase):
     def test_anomalies_are_bounded_and_snapshot_is_detached(self):
         import focuscheck.doctor as doctor
