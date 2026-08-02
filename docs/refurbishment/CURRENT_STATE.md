@@ -44,6 +44,7 @@
 - Camera capability metadata reports dependency, device, access, stream, and bounded state fields; the status window projects only the state.
 - Activity provider calls have a bounded timeout boundary and preserve low-confidence error snapshots on provider failure or timeout.
 - Off-thread intervention dispatch has a cancellation token so timed-out queued callbacks cannot start a late workflow.
+- Intervention action-dialog recurring callbacks are owned by `TimerRegistry` and closed before overlay/dialog destruction.
 - Heartbeat publication uses the frozen App path snapshot, keeping the supervisor marker in the composed data root.
 - Logger initialization binds to the frozen App log path before creating its first handler.
 - Direct test discovery defaults to a per-process external temporary data root, avoiding repository-local and cross-process profile contention.

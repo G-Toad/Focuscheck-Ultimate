@@ -16,6 +16,7 @@ from ...platform_specific.window_enumeration import (
 )
 from ...platform_specific.browser_info import is_supported_browser
 from ...platform_specific.browser_tabs import try_list_browser_tabs
+from ...utils.timers import TimerRegistry
 
 try:
     from ...utils import get_logger
@@ -1029,6 +1030,11 @@ class InterventionWizard:
                 pass
 
         result = {"done": False, "cancel": False}
+        action_timers = {"owner": None}
+
+        def _action_timers_closed():
+            owner = action_timers.get("owner")
+            return owner is None or owner.closed
 
         def _verify(silent=False):
             try:
@@ -1100,6 +1106,10 @@ class InterventionWizard:
             _cleanup()
 
         def _cleanup():
+            owner = action_timers.get("owner")
+            if owner is None or owner.closed:
+                return
+            owner.close()
             try:
                 if overlay is not None:
                     overlay.close()
@@ -1113,17 +1123,18 @@ class InterventionWizard:
                     logger.exception("intervention: failed to destroy action dialog", exc_info=True)
 
         def _auto_check():
-            if result["done"] or result["cancel"]:
+            if _action_timers_closed() or result["done"] or result["cancel"]:
                 return
             if _verify(silent=True):
                 return
             try:
-                action.after(800, _auto_check)
+                action_timers["owner"].schedule("auto", 800, _auto_check)
             except Exception:
                 if logger:
                     logger.exception("intervention: auto-check schedule failed", exc_info=True)
 
         action = InterventionActionDialog(self.parent, on_verify=_verify, on_cancel=_cancel)
+        action_timers["owner"] = TimerRegistry(action)
         try:
             if logger:
                 logger.info("intervention: action dialog shown | %s", _window_state_snapshot(action))
@@ -1132,7 +1143,7 @@ class InterventionWizard:
 
         def _keep_action_visible():
             try:
-                if result["done"] or result["cancel"]:
+                if _action_timers_closed() or result["done"] or result["cancel"]:
                     return
                 if overlay is not None:
                     if getattr(overlay, "_use_native", False) and getattr(overlay, "_native_overlay", None) is not None:
@@ -1145,7 +1156,7 @@ class InterventionWizard:
                 if logger:
                     logger.exception("intervention: keep action visible failed", exc_info=True)
             try:
-                action.after(500, _keep_action_visible)
+                action_timers["owner"].schedule("visible", 500, _keep_action_visible)
             except Exception:
                 if logger:
                     logger.exception("intervention: keep action schedule failed", exc_info=True)
@@ -1153,7 +1164,7 @@ class InterventionWizard:
         try:
             _keep_action_visible()
             action.focus_force()
-            action.after(800, _auto_check)
+            action_timers["owner"].schedule("auto", 800, _auto_check)
         except Exception:
             if logger:
                 logger.exception("intervention: action dialog setup failed", exc_info=True)

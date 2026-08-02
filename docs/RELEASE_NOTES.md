@@ -30,6 +30,7 @@
 - Camera capability state now distinguishes disabled, missing dependencies, unavailable device, ready, active, degraded, failed, and stopped without exposing private camera data.
 - Activity providers now run behind a bounded daemon boundary and return an explicit timeout snapshot instead of blocking the Tk prompt path.
 - Off-thread intervention dispatch now invalidates a queued Tk callback when its bounded wait expires.
+- Intervention action auto-check and z-order callbacks are owned by `TimerRegistry` and cancelled before action-dialog cleanup.
 - Single-instance mutex API signatures are explicit and the owned Windows handle is released through the main lifecycle finally block.
 - App lifecycle phases are now explicit and published in the heartbeat: `starting`, `ready`, `stopping`, `stopped`, and `failed`.
 - Lifecycle and runtime transitions now append privacy-safe bounded metadata to `structured_events.jsonl`; diagnostic bundles include it without user content.
