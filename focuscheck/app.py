@@ -2265,9 +2265,22 @@ class App:
             if not self.settings.get("snooze_reminder_enabled", True):
                 return
 
-            # Check if reminders are currently paused/snoozed
-            if not self.settings.get("paused", False):
-                # Not snoozed, reset timer for next time
+            # A manual pause is distinct from a snooze. Only an active,
+            # persisted snooze may trigger a re-enable reminder.
+            snooze_until_raw = str(self.settings.get("snooze_until_utc", "") or "").strip()
+            if not snooze_until_raw:
+                self._snooze_reminder_next_mono = 0.0
+                return
+            try:
+                snooze_until = datetime.fromisoformat(snooze_until_raw)
+                if snooze_until.tzinfo is None:
+                    snooze_until = snooze_until.replace(tzinfo=timezone.utc)
+                else:
+                    snooze_until = snooze_until.astimezone(timezone.utc)
+                if snooze_until <= datetime.now(timezone.utc):
+                    self._snooze_reminder_next_mono = 0.0
+                    return
+            except (TypeError, ValueError, OverflowError):
                 self._snooze_reminder_next_mono = 0.0
                 return
 

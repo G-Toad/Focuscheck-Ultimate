@@ -91,6 +91,24 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["dismiss"], events)
         self.assertIsNone(app._gentle_reminder_dialog)
 
+    def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {
+            "snooze_reminder_enabled": True,
+            "paused": True,
+            "snooze_until_utc": "",
+        }
+        app._snooze_reminder_next_mono = 0.0
+        app._snooze_reminder_dialog = None
+
+        with mock.patch("focuscheck.app.SnoozeReminderDialog") as dialog_cls:
+            App._maybe_show_snooze_reminder(app)
+
+        self.assertEqual(0.0, app._snooze_reminder_next_mono)
+        dialog_cls.assert_not_called()
+
     def test_tray_exit_dispatches_quit_on_ui_thread_when_enabled(self):
         from focuscheck.app import App
 
