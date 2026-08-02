@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `220` unittest cases passing.
+- Current automated baseline after hardening: `221` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -42,6 +42,7 @@
 - Camera test, adjustment, and crop preview windows invalidate both frame-loop and delayed initialization callbacks on close.
 - Prompt visibility recovery uses the same full cleanup path for hidden-prompt destruction.
 - Camera capability metadata reports dependency, device, access, stream, and bounded state fields; the status window projects only the state.
+- Activity provider calls have a bounded timeout boundary and preserve low-confidence error snapshots on provider failure or timeout.
 - Heartbeat publication uses the frozen App path snapshot, keeping the supervisor marker in the composed data root.
 - Logger initialization binds to the frozen App log path before creating its first handler.
 - Direct test discovery defaults to a per-process external temporary data root, avoiding repository-local and cross-process profile contention.

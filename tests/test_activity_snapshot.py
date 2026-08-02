@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import threading
+import time
 from datetime import datetime, timezone, timedelta
 from unittest import mock
 
@@ -21,6 +23,22 @@ class ActivitySnapshotTests(unittest.TestCase):
     def test_provider_errors_are_explicit(self):
         snapshot = safe_activity_snapshot(lambda: (_ for _ in ()).throw(RuntimeError("boom")))
         self.assertTrue(snapshot.errors)
+        self.assertEqual("low", snapshot.confidence)
+
+    def test_provider_timeout_does_not_block_caller(self):
+        release = threading.Event()
+
+        def provider():
+            release.wait(1.0)
+            return {"hwnd": 1, "title": "late"}
+
+        started = time.monotonic()
+        snapshot = safe_activity_snapshot(provider, timeout_seconds=0.01)
+        elapsed = time.monotonic() - started
+        release.set()
+
+        self.assertLess(elapsed, 0.2)
+        self.assertEqual(("provider timeout",), snapshot.errors)
         self.assertEqual("low", snapshot.confidence)
 
     def test_title_only_activity_is_medium_confidence(self):

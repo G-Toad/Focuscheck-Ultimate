@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+import threading
 from typing import Any, Callable
 from urllib.parse import urlsplit, urlunsplit
 
@@ -76,11 +77,26 @@ class ActivitySnapshot:
         return data
 
 
-def safe_activity_snapshot(provider: Callable[[], Any]) -> ActivitySnapshot:
+def safe_activity_snapshot(provider: Callable[[], Any], *, timeout_seconds: float = 0.25) -> ActivitySnapshot:
+    """Run an external activity provider without blocking the Tk owner thread."""
+    result: dict[str, Any] = {}
+
+    def invoke() -> None:
+        try:
+            result["value"] = provider()
+        except Exception as exc:
+            result["error"] = exc
+
+    worker = threading.Thread(target=invoke, name="focuscheck-activity-provider", daemon=True)
+    worker.start()
+    worker.join(max(0.0, float(timeout_seconds)))
+    now = datetime.now(timezone.utc).isoformat()
+    if worker.is_alive():
+        return ActivitySnapshot(captured_utc=now, errors=("provider timeout",))
+    if "error" in result:
+        exc = result["error"]
+        return ActivitySnapshot(captured_utc=now, errors=(f"provider error: {type(exc).__name__}",))
     try:
-        return ActivitySnapshot.from_mapping(provider())
+        return ActivitySnapshot.from_mapping(result.get("value"))
     except Exception as exc:
-        return ActivitySnapshot(
-            captured_utc=datetime.now(timezone.utc).isoformat(),
-            errors=(f"provider error: {type(exc).__name__}",),
-        )
+        return ActivitySnapshot(captured_utc=now, errors=(f"provider error: {type(exc).__name__}",))
