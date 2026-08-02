@@ -132,6 +132,19 @@ class AppLifecycleTests(unittest.TestCase):
             self.assertEqual(["tray.stop", "watcher.close", "root.destroy"], events)
             exit_mock.assert_called_once_with(0)
 
+    def test_run_preserves_mainloop_exception_after_cleanup(self):
+        from focuscheck.app import App
+
+        class Root:
+            def mainloop(self):
+                raise RuntimeError("mainloop failed")
+
+        app = App.__new__(App)
+        app.root = Root()
+        app._winwatch = None
+        with self.assertRaisesRegex(RuntimeError, "mainloop failed"):
+            App.run(app)
+
 
 class V2PromptLifecycleTests(unittest.TestCase):
     def test_v2_prompt_exposes_app_cleanup_hooks(self):

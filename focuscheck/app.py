@@ -1911,7 +1911,7 @@ class App:
         try:
             self.root.mainloop()
         except KeyboardInterrupt:
-            pass
+            return
         finally:
             try:
                 if getattr(self, "_winwatch", None):
@@ -1925,4 +1925,3 @@ class App:
                     gdiplus_shutdown()
                 except Exception:
                     pass
-            sys.exit(0)
