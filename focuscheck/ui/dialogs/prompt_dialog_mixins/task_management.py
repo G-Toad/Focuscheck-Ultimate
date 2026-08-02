@@ -302,10 +302,7 @@ class TaskManagementMixin:
 
         # Live countdown refresh
         if self._task_timer_id:
-            try:
-                self.after_cancel(self._task_timer_id)
-            except Exception:
-                pass
+            self._cancel_timer(self._task_timer_id)
             self._task_timer_id = None
         try:
             self._task_timer_id = self._schedule_timer(1000, self._render_task_panel)

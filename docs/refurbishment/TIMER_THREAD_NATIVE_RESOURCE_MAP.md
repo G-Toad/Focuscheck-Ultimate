@@ -10,6 +10,7 @@
 | Camera test preview loop | `CameraTestWindow` | local `TimerRegistry` closes generation-bound frame callbacks before capture release. | backend regressions; camera manual pending |
 | Camera adjustment loop/feedback | `CameraAdjustmentWindow` | local `TimerRegistry` closes frame and save-feedback callbacks before capture release. | backend regressions; camera manual pending |
 | Crop preview init/loop | `CropAdjustmentWindow` | local `TimerRegistry` closes delayed init and generation-bound frame callbacks before capture release. | backend regressions; camera manual pending |
+| V1/V2 shared prompt timers | prompt `_schedule_timer` registry | generation-aware close cleanup for stage-5 dimming, camera frames, and task countdowns. | runtime-foundation and backend regressions |
 | V2 subpopup timer | `EngineV2._schedule_subpopup_check` | `EngineV2.shutdown`. | unit tests/QA |
 | Tk dialog timers | dialog cleanup methods | dialog close/destructor paths. | keyboard tests; manual UI pending |
 | Supervisor child process | `subprocess.Popen` | process-tree termination. | fake supervisor harness |

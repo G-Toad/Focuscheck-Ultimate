@@ -332,18 +332,26 @@ class CameraFeedMixin:
             fps = int(self.settings.get("camera_fps", 30))
             update_interval_ms = max(16, int(1000 / fps))  # Minimum 16ms (60 FPS max)
 
-            # Cancel any existing timer before scheduling new one
+            # Replace the named timer so dialog cleanup owns the next frame.
             if self._camera_update_timer is not None:
-                try:
-                    self.after_cancel(self._camera_update_timer)
-                except Exception:
-                    pass
-
-            self._camera_update_timer = self.after(
-                update_interval_ms,
-                self._start_camera_feed_updates,
-                generation,
-            )
+                if hasattr(self, "_cancel_timer"):
+                    self._cancel_timer(self._camera_update_timer)
+                else:
+                    try:
+                        self.after_cancel(self._camera_update_timer)
+                    except Exception:
+                        pass
+            if hasattr(self, "_schedule_timer"):
+                self._camera_update_timer = self._schedule_timer(
+                    update_interval_ms,
+                    lambda: self._start_camera_feed_updates(generation),
+                )
+            else:
+                self._camera_update_timer = self.after(
+                    update_interval_ms,
+                    self._start_camera_feed_updates,
+                    generation,
+                )
 
         except Exception as e:
             try:
@@ -1339,10 +1347,13 @@ class CameraFeedMixin:
 
         # Cancel camera update timer
         if self._camera_update_timer:
-            try:
-                self.after_cancel(self._camera_update_timer)
-            except Exception:
-                pass
+            if hasattr(self, "_cancel_timer"):
+                self._cancel_timer(self._camera_update_timer)
+            else:
+                try:
+                    self.after_cancel(self._camera_update_timer)
+                except Exception:
+                    pass
             self._camera_update_timer = None
 
         # Cancel biodata animation callbacks as well as camera frame updates.

@@ -703,7 +703,7 @@ class IntensificationMixin:
             return
         try:
             # Use 500ms for better performance while maintaining smooth animation
-            self._stage5_dim_timer = self.after(500, self._stage5_dim_tick)
+            self._stage5_dim_timer = self._schedule_timer(500, self._stage5_dim_tick)
         except Exception:
             self._stage5_dim_timer = None
 
@@ -716,7 +716,7 @@ class IntensificationMixin:
         try:
             if self._stage5_dim_timer is not None:
                 try:
-                    self.after_cancel(self._stage5_dim_timer)
+                    self._cancel_timer(self._stage5_dim_timer)
                     # Only clear timer ID if cancellation succeeded
                     self._stage5_dim_timer = None
                 except Exception:
