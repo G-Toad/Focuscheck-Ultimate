@@ -50,7 +50,7 @@ specialized editors where applicable:
 
 ## Active Optional Features
 
-- `webhook_url` is persisted and editable, but delivery remains intentionally outside the current product contract.
+- `webhook_url` is preserved and validated for compatibility, but is hidden from the active Settings UI and is not written by the current save payload because delivery is not implemented.
 - `gentle_reminder_*` is active through the App scheduler and `GentleReminderDialog`; the configured interval is measured in minutes and the dialog is closed during shutdown.
 
 ## Deferred Legacy Configuration
