@@ -434,45 +434,11 @@ class SystemTray:
 
         logger.info("    - saved flag: %s", saved)
 
-        if not saved and self._config_path:
-            logger.info("    - Settings not saved yet, trying JSON config file...")
-            logger.info("      _config_path: %s", self._config_path)
-            try:
-                data = {}
-                logger.info("      Checking if config file exists...")
-                if os.path.exists(self._config_path):
-                    logger.info("      Config file exists, reading current contents...")
-                    with open(self._config_path, "r", encoding="utf-8") as f:
-                        data = json.load(f) or {}
-                    logger.info("      Current data loaded: %s keys", len(data) if isinstance(data, dict) else "not a dict")
-                else:
-                    logger.info("      Config file doesn't exist, will create new one")
-
-                if not isinstance(data, dict):
-                    logger.info("      Data is not a dict (type: %s), creating new dict", type(data))
-                    data = {}
-
-                logger.info("      Setting key '%s' = %s in data", key, value)
-                data[key] = value
-                logger.info("      Key set in data dictionary")
-
-                logger.info("      Ensuring directory exists...")
-                dir_path = os.path.dirname(self._config_path) or "."
-                logger.info("        Directory path: %s", dir_path)
-                os.makedirs(dir_path, exist_ok=True)
-                logger.info("        Directory ready")
-
-                logger.info("      Writing config file: %s", self._config_path)
-                with open(self._config_path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2)
-                logger.info("      Config file written successfully")
-                logger.info("      File size: %s bytes", os.path.getsize(self._config_path))
-                logger.info("<<< _set_setting() COMPLETED (via config file)")
-            except Exception as e:
-                logger.exception("SystemTray: failed persisting to config: %s", e)
-                logger.info("<<< _set_setting() FAILED")
-        else:
-            logger.info("<<< _set_setting() COMPLETED")
+        if not saved:
+            logger.error("SystemTray: setting '%s' was not persisted; no repository accessor is available", key)
+            logger.info("<<< _set_setting() FAILED")
+            return
+        logger.info("<<< _set_setting() COMPLETED")
 
     # UI hooks
     def _open_settings(self) -> None:

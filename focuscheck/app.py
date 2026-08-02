@@ -900,7 +900,12 @@ class App:
         root = getattr(self, "root", None)
         if root is None:
             return False
-        if threading.current_thread() is threading.main_thread():
+        owner_thread_id = getattr(self, "_tk_thread_id", None)
+        if owner_thread_id is None:
+            owner_thread_id = getattr(root, "_focuscheck_tk_thread_id", None)
+        if owner_thread_id is None:
+            owner_thread_id = threading.main_thread().ident
+        if threading.get_ident() == owner_thread_id:
             try:
                 callback(*args, **kwargs)
                 return True
