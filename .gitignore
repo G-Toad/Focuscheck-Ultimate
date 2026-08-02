@@ -34,3 +34,6 @@ _archive/scratch/
 codex_analysis_results/
 _qa_runtime/
 _verify_runtime/
+_package_test/
+_package_runtime/
+dist/

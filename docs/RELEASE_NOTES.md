@@ -12,3 +12,4 @@
 - Native Windows, browser, overlay, lock/sleep/resume, startup registry, packaging, upgrade, and rollback evidence remain pending.
 - The full runtime state and timer architecture is being migrated incrementally; legacy App callbacks still exist.
 - Code signing is not configured.
+- A disposable PyInstaller build and packaged self-test have passed; installer lifecycle and rollback execution remain pending.

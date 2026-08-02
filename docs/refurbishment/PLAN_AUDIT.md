@@ -38,7 +38,7 @@ Status meanings:
 | 22 Browser/activity providers | Partial | Typed activity snapshots now normalize provider errors, freshness/confidence, and strip URL query/fragment data. Provider timeouts, fake-provider matrix breadth, and live supported-browser evidence remain incomplete. |
 | 23 Observability/supportability | Partial | A sanitized bundle generator and bounded Doctor anomaly storage now exist. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
-| 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
+| 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and install/rollback contracts exist. Installer lifecycle, signing, and rollback execution remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
 | 27 Automated test expansion | Partial | 110 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
@@ -74,7 +74,7 @@ The bounded runner at `tools/verification_runner.py` currently reports passing s
 
 | Gate | Status | Reason |
 | --- | --- | --- |
-| A Repository/build | Partial | The tree is clean and source checks pass, but dependencies are unpinned and no reproducible packaged build exists. |
+| A Repository/build | Partial | The source tree and pinned dependency contract are verified, and a disposable PyInstaller build/self-test is evidenced; installer, signing, and deployment verification remain open. |
 | B Automated verification | Partial | The seven bounded stages pass; integration breadth, leak checks, and full test-category coverage are absent. |
 | C Settings/data | Partial | Migration, recovery, backup, atomic save, and revision conflict are tested; complete one-root architecture, migration journal, and all bounded-input fixtures are absent. |
 | D Runtime state | Unverified | No complete truth-table/manual evidence proves pause, snooze, guards, effective pause, and duplicate-prompt invariants. |
