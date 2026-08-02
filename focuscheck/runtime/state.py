@@ -130,11 +130,13 @@ class RuntimeStateCoordinator:
         reason = str(reason).strip()
         if not reason:
             return
+        was_active = reason in self.snapshot.guard_reasons
         if active:
             self.snapshot.guard_reasons.add(reason)
         else:
             self.snapshot.guard_reasons.discard(reason)
-        self._record("guard", "committed")
+        if was_active != bool(active):
+            self._record("guard", "committed")
 
     def begin_prompt(self) -> bool:
         if (

@@ -66,6 +66,18 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertTrue(state.snapshot.manual_paused)
         self.assertTrue(state.snapshot.effectively_paused)
 
+    def test_repeated_guard_refresh_does_not_emit_duplicate_transitions(self):
+        events = []
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            transition_sink=events.append,
+        )
+        state.set_guard_reason("system_guard", True)
+        state.set_guard_reason("system_guard", True)
+        state.set_guard_reason("system_guard", False)
+        state.set_guard_reason("system_guard", False)
+        self.assertEqual(["committed", "committed"], [event["outcome"] for event in events])
+
     def test_prompt_and_intervention_are_exclusive_and_shutdown_rejects_work(self):
         state = RuntimeStateCoordinator({"paused": False, "snooze_until_utc": ""})
         self.assertTrue(state.begin_prompt())

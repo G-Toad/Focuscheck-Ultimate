@@ -627,7 +627,7 @@ class App:
         self._last_paused_state = None
         def tick():
             try:
-                paused_now = self.guard.should_pause()
+                paused_now = self._refresh_guard_state()
                 if self._last_paused_state is True and paused_now is False:
                     # Transition from paused to unpaused: schedule a prompt now
                     self._schedule_next(0)
@@ -641,12 +641,22 @@ class App:
         if hasattr(self, "_timers"):
             self._timers.schedule("pause-edge", 1000, tick, interval_ms=1000)
 
+    def _refresh_guard_state(self) -> bool:
+        """Sample guard state once and publish it to the runtime coordinator."""
+        try:
+            guard_paused = self._refresh_guard_state()
+        except Exception:
+            guard_paused = False
+        runtime_state = getattr(self, "_runtime_state", None)
+        if runtime_state is not None:
+            runtime_state.set_guard_reason("system_guard", guard_paused)
+        return guard_paused
+
     def _maybe_show_prompt(self):
         self.settings = load_settings()  # refresh
         if getattr(self, "_runtime_state", None) is not None:
             self._runtime_state.refresh_from_settings(self.settings)
-            guard_paused = bool(self.guard.should_pause())
-            self._runtime_state.set_guard_reason("system_guard", guard_paused)
+            guard_paused = self._refresh_guard_state()
             if self._runtime_state.snapshot.effectively_paused:
                 poll_ms = int(self.settings.get("pause_poll_interval_seconds", 5)) * 1000
                 self._schedule_next(poll_ms)
@@ -740,7 +750,7 @@ class App:
                 return
         except Exception:
             pass
-        if self.guard.should_pause():
+        if self._refresh_guard_state():
             poll_ms = int(self.settings.get("pause_poll_interval_seconds", 5)) * 1000
             try:
                 get_logger().info("prompt: suppressed due to guard pause; poll_ms=%s", poll_ms)
