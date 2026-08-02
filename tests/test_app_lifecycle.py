@@ -211,6 +211,18 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
         self.assertIsNone(app._current_prompt)
 
+    def test_refresh_guard_samples_guard_once_and_publishes_state(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.guard = mock.Mock()
+        app.guard.should_pause.return_value = True
+        app._runtime_state = mock.Mock()
+
+        self.assertTrue(App._refresh_guard_state(app))
+        app.guard.should_pause.assert_called_once_with()
+        app._runtime_state.set_guard_reason.assert_called_once_with("system_guard", True)
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

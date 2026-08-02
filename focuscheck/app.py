@@ -682,7 +682,8 @@ class App:
     def _refresh_guard_state(self) -> bool:
         """Sample guard state once and publish it to the runtime coordinator."""
         try:
-            guard_paused = self._refresh_guard_state()
+            guard = getattr(self, "guard", None)
+            guard_paused = bool(guard.should_pause()) if guard is not None else False
         except Exception:
             guard_paused = False
         runtime_state = getattr(self, "_runtime_state", None)
