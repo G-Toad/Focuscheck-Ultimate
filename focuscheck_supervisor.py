@@ -18,6 +18,7 @@ import threading
 import time
 import uuid
 from pathlib import Path
+from ctypes import wintypes
 
 DEFAULT_CHECK_INTERVAL = 10.0
 DEFAULT_RESUME_GAP = 90.0
@@ -112,32 +113,116 @@ def _windows_pid_is_alive(pid: int) -> bool:
         return False
 
 
+def _process_start_token(pid: int) -> str | None:
+    """Return a PID-reuse-resistant process creation token when available."""
+    if pid <= 0:
+        return None
+    if os.name == "nt":
+        try:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.OpenProcess.argtypes = (ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong)
+            kernel32.OpenProcess.restype = ctypes.c_void_p
+            kernel32.GetProcessTimes.argtypes = (
+                ctypes.c_void_p,
+                ctypes.POINTER(wintypes.FILETIME),
+                ctypes.POINTER(wintypes.FILETIME),
+                ctypes.POINTER(wintypes.FILETIME),
+                ctypes.POINTER(wintypes.FILETIME),
+            )
+            kernel32.GetProcessTimes.restype = ctypes.c_int
+            kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+            kernel32.CloseHandle.restype = ctypes.c_int
+            handle = kernel32.OpenProcess(0x1000, 0, pid)
+            if not handle:
+                return None
+            try:
+                creation = wintypes.FILETIME()
+                exit_time = wintypes.FILETIME()
+                kernel_time = wintypes.FILETIME()
+                user_time = wintypes.FILETIME()
+                if not kernel32.GetProcessTimes(
+                    handle,
+                    ctypes.byref(creation),
+                    ctypes.byref(exit_time),
+                    ctypes.byref(kernel_time),
+                    ctypes.byref(user_time),
+                ):
+                    return None
+                value = (creation.dwHighDateTime << 32) | creation.dwLowDateTime
+                return f"win-filetime:{value}"
+            finally:
+                kernel32.CloseHandle(handle)
+        except Exception:
+            return None
+    try:
+        raw = Path(f"/proc/{pid}/stat").read_text(encoding="ascii")
+        fields = raw.rsplit(")", 1)[1].split()
+        return f"proc-start:{fields[19]}"
+    except (OSError, IndexError, ValueError):
+        return None
+
+
 class SupervisorLock:
     """Atomic file lock to prevent multiple supervisor loops."""
 
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or default_supervisor_lock_path()
         self._fd: int | None = None
+        self._instance_nonce = uuid.uuid4().hex
+        self._process_start_token = _process_start_token(os.getpid())
 
     def acquire(self) -> bool:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         for attempt in range(2):
             try:
-                self._fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                os.write(self._fd, str(os.getpid()).encode("ascii", errors="ignore"))
+                fd = os.open(str(self.path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                record = {
+                    "protocol_version": 1,
+                    "pid": os.getpid(),
+                    "process_start_token": self._process_start_token,
+                    "instance_nonce": self._instance_nonce,
+                }
+                os.write(fd, json.dumps(record, separators=(",", ":")).encode("ascii"))
+                os.fsync(fd)
+                self._fd = fd
                 return True
             except FileExistsError:
                 if attempt or not self._remove_stale_lock():
                     return False
+            except OSError:
+                try:
+                    os.close(fd)
+                except (UnboundLocalError, OSError):
+                    pass
+                try:
+                    self.path.unlink()
+                except OSError:
+                    pass
+                return False
         return False
 
     def _remove_stale_lock(self) -> bool:
         try:
             raw = self.path.read_text(encoding="ascii").strip()
-            pid = int(raw) if raw else 0
-        except Exception:
-            pid = 0
-        if _pid_is_alive(pid):
+            record = json.loads(raw)
+            if not isinstance(record, dict):
+                raise ValueError("lock record is not an object")
+            pid = int(record.get("pid", 0))
+            stored_token = record.get("process_start_token")
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            record = None
+            try:
+                pid = int(raw) if raw else 0
+            except (UnboundLocalError, ValueError, TypeError):
+                pid = 0
+            stored_token = None
+        if pid > 0 and stored_token:
+            current_token = _process_start_token(pid)
+            if current_token and current_token == stored_token:
+                return False
+            if current_token is None and _pid_is_alive(pid):
+                return False
+        elif _pid_is_alive(pid):
             return False
         try:
             self.path.unlink()
@@ -146,12 +231,21 @@ class SupervisorLock:
             return False
 
     def release(self) -> None:
+        owned = self._fd is not None
         if self._fd is not None:
             try:
                 os.close(self._fd)
             except OSError:
                 pass
             self._fd = None
+        if not owned:
+            return
+        try:
+            record = json.loads(self.path.read_text(encoding="ascii"))
+            if record.get("instance_nonce") != self._instance_nonce:
+                return
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            return
         try:
             self.path.unlink()
         except FileNotFoundError:

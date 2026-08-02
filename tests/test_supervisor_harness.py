@@ -227,6 +227,25 @@ class SupervisorHarnessTests(unittest.TestCase):
 
             self.assertFalse(lock_path.exists())
 
+    def test_stale_supervisor_lock_recovers_after_pid_reuse(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import SupervisorLock
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            lock_path = Path(temp_dir) / "supervisor.lock"
+            lock_path.write_text(json.dumps({
+                "protocol_version": 1,
+                "pid": 321,
+                "process_start_token": "old-process",
+                "instance_nonce": "old-instance",
+            }), encoding="ascii")
+            with mock.patch.object(supervisor_module, "_process_start_token", return_value="new-process"), \
+                    mock.patch.object(supervisor_module, "_pid_is_alive", return_value=True):
+                lock = SupervisorLock(lock_path)
+                self.assertTrue(lock.acquire())
+                lock.release()
+            self.assertFalse(lock_path.exists())
+
     def test_child_crash_restarts_without_real_processes(self):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
             harness = HarnessSupervisor(temp_dir, ["crash", "running"])
