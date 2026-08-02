@@ -15,3 +15,7 @@
 `tools/retention.py` plans deletion only for known log/rotation patterns. It is dry-run by default; deletion requires an explicit `--apply` and a selected root. Settings and task databases are never selected by this tool. Symlink candidates are rejected, and applied deletions append only filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
 
 Automated verification never runs with `--apply` and uses `_verify_runtime/data` as its data root.
+
+## Export
+
+Use `tools/export_data.py` with an explicit source and destination. The default export includes only logs and operational metadata; settings, tasks, and camera files require explicit `--include` selection. Archives contain an `EXPORT_MANIFEST.json` with relative paths, sizes, sensitivity labels, and SHA-256 hashes. Symlink sources and existing destinations without `--overwrite` are rejected.

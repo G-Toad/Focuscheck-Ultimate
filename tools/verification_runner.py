@@ -118,6 +118,7 @@ def main() -> int:
         ("native_overlay_selftest", [py, "tools/spotlight_overlay_selftest.py"]),
         ("settings_inventory", [py, "tools/settings_inventory.py"]),
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
+        ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip")]),
         ("performance_soak", [py, "tools/performance_soak.py"]),
     ]
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]

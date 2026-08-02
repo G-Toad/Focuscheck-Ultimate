@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 188 unittest cases.
+- Automated test baseline: 191 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -31,3 +31,4 @@
 - TaskDB schema migration version 3 normalizes recoverable legacy timestamps and clears invalid legacy due dates with an auditable repair reason; a checked-in legacy SQL fixture covers the path.
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
+- `tools/export_data.py` now provides an atomic, allowlisted ZIP export with explicit sensitive-category opt-in, symlink rejection, and a SHA-256 manifest; the bounded runner exercises it in a disposable root.
