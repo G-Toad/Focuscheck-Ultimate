@@ -5,6 +5,28 @@ from unittest import mock
 
 
 class InterventionCoordinatorTests(unittest.TestCase):
+    def test_snooze_prompt_cancel_releases_deferred_callbacks_and_grab(self):
+        from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+
+        cancelled = []
+        dialog = object.__new__(SnoozePromptDialog)
+        dialog._logger = None
+        dialog._ensure_visible_timer_id = "visible"
+        dialog._initial_focus_timer_id = "focus"
+        dialog.after_cancel = mock.Mock()
+        dialog.grab_release = mock.Mock()
+        dialog.destroy = mock.Mock()
+        dialog.on_cancel = lambda: cancelled.append(True)
+
+        dialog._cancel()
+
+        self.assertEqual([mock.call("visible"), mock.call("focus")], dialog.after_cancel.call_args_list)
+        self.assertIsNone(dialog._ensure_visible_timer_id)
+        self.assertIsNone(dialog._initial_focus_timer_id)
+        dialog.grab_release.assert_called_once_with()
+        dialog.destroy.assert_called_once_with()
+        self.assertEqual([True], cancelled)
+
     def test_selection_dialog_cancels_recurring_callbacks(self):
         from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
 

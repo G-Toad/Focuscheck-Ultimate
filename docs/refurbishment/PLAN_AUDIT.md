@@ -102,6 +102,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `246` unittest cases and all 14 bounded stages pass, including prompt observer and camera save-feedback timer cleanup regressions.
+Latest verification checkpoint: `247` unittest cases and all 14 bounded stages pass, including prompt observer, camera save-feedback, and snooze-dialog timer cleanup regressions.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
