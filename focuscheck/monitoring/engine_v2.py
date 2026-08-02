@@ -27,13 +27,20 @@ class EngineV2(BaseEngine):
 
     name = "v2"
 
-    def __init__(self, app, activity_provider=None):
+    def __init__(self, app, activity_provider=None, clock=None):
         super().__init__(app)
         self._last_hwnd = None
         self._last_switch_mono = time.monotonic()
         self._subpopup_active = False
         self._settings = None
         self._activity_provider = activity_provider or get_active_window_info
+        runtime_clock = getattr(getattr(app, "_runtime_state", None), "clock", None)
+        if clock is not None:
+            self._now = clock
+        elif runtime_clock is not None and hasattr(runtime_clock, "now_utc"):
+            self._now = lambda: runtime_clock.now_utc().timestamp()
+        else:
+            self._now = time.time
         self._timers = TimerRegistry(getattr(app, "root", None)) if getattr(app, "root", None) is not None else None
 
     def create_prompt(self, settings, slot_info):
@@ -130,7 +137,7 @@ class EngineV2(BaseEngine):
 
         def _update_cooldown():
             try:
-                entry["last_dismissed"] = time.time()
+                entry["last_dismissed"] = self._now()
                 entry["allow_once"] = False
                 save_settings(settings)
             except Exception:
@@ -214,7 +221,7 @@ class EngineV2(BaseEngine):
                 cooldown = int(entry.get("cooldown_minutes", 5))
                 last = entry.get("last_dismissed")
                 if isinstance(last, (int, float)) and cooldown > 0:
-                    if (time.time() - float(last)) < (cooldown * 60):
+                    if (self._now() - float(last)) < (cooldown * 60):
                         continue
                 if host and self._domain_matches(domain, host):
                     return entry, domain

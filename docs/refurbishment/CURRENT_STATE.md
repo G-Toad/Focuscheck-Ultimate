@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `139` unittest cases passing.
+- Current automated baseline after hardening: `140` unittest cases passing.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
 - Safe QA runner: passing with `qa_failures=0`; verification asserts the live profile is unchanged.

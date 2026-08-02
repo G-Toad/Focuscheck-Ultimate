@@ -169,6 +169,17 @@ class EngineV2MatchingTests(unittest.TestCase):
 
         self.assertIsNone(engine._match_flag({"url": "https://reddit.com", "title": ""}, flags))
 
+    def test_match_flag_cooldown_uses_injected_clock_at_expiry_boundary(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine._now = lambda: 1_600_000_600.0
+        flags = [{"domain": "reddit.com", "enabled": True, "cooldown_minutes": 10, "last_dismissed": 1_600_000_000.0}]
+
+        self.assertIsNotNone(engine._match_flag({"url": "https://reddit.com", "title": ""}, flags))
+        engine._now = lambda: 1_600_000_599.999
+        self.assertIsNone(engine._match_flag({"url": "https://reddit.com", "title": ""}, flags))
+
     def test_cancelled_intervention_does_not_start_cooldown(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 
