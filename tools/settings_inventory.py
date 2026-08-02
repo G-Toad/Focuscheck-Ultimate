@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import ast
+import sys
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SKIP_PARTS = {"_archive", "_qa_runtime", "ports", "__pycache__"}
 SKIP_FILES = {
     "focuscheck/settings/defaults.py",
@@ -37,7 +40,7 @@ def _source_files():
 
 
 def _ui_save_keys():
-    """Extract literal keys persisted by the hand-built settings window."""
+    """Return keys persisted by both hand-built and generated UI controls."""
     path = ROOT / "focuscheck" / "ui" / "windows.py"
     tree = ast.parse(path.read_text(encoding="utf-8"))
     keys = set()
@@ -50,7 +53,11 @@ def _ui_save_keys():
             for key in child.keys:
                 if isinstance(key, ast.Constant) and isinstance(key.value, str):
                     keys.add(key.value)
-    return keys
+    # The advanced tab is generated from the canonical schema and therefore
+    # cannot be discovered by walking literal dictionaries in ``_save``.
+    from focuscheck.ui.schema_controls import SCHEMA_CONTROL_KEYS
+
+    return keys | set(SCHEMA_CONTROL_KEYS)
 
 
 def _runtime_source_files():

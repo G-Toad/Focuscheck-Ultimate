@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 
 from focuscheck.settings.schema import get_settings_schema, schema_manifest
+from focuscheck.ui.schema_controls import SCHEMA_CONTROL_KEYS
 
 
 class SettingsSchemaContractTests(unittest.TestCase):
@@ -33,6 +34,17 @@ class SettingsSchemaContractTests(unittest.TestCase):
         manifest = schema_manifest()
         self.assertEqual(sorted(item["key"] for item in manifest), [item["key"] for item in manifest])
         self.assertTrue(all({"key", "canonical_type", "default", "ui_section"}.issubset(item) for item in manifest))
+
+    def test_generated_controls_are_schema_keys_and_exclude_runtime_state(self):
+        schema = get_settings_schema()
+        self.assertTrue(set(SCHEMA_CONTROL_KEYS) <= set(schema))
+        self.assertNotIn("paused", SCHEMA_CONTROL_KEYS)
+        self.assertNotIn("snooze_until_utc", SCHEMA_CONTROL_KEYS)
+        self.assertNotIn("settings_revision", SCHEMA_CONTROL_KEYS)
+
+        from tools import settings_inventory
+
+        self.assertTrue(set(SCHEMA_CONTROL_KEYS) <= settings_inventory._ui_save_keys())
 
     def test_visible_settings_have_runtime_consumers_outside_editor(self):
         from tools import settings_inventory

@@ -59,10 +59,33 @@ class SettingsWindowSaveTests(unittest.TestCase):
             self.assertFalse(payload["tray_start_stop_enabled"])
             self.assertFalse(payload["tray_settings_button_enabled"])
             self.assertFalse(payload["tray_exit_button_enabled"])
-            self.assertEqual("", payload["webhook_url"])
+            self.assertEqual("https://example.invalid/hook", payload["webhook_url"])
             self.assertTrue(payload["paused"])
             self.assertEqual("2030-01-01T00:00:00+00:00", payload["snooze_until_utc"])
             self.assertEqual({"enabled": True}, payload["plugin_future_key"])
+        finally:
+            with contextlib.suppress(tk.TclError):
+                root.destroy()
+
+    def test_schema_generated_controls_round_trip_and_preserve_invalid_json(self):
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+
+        root = _make_root()
+        try:
+            window, saved_payloads = self._save_window_payload(root, DEFAULT_SETTINGS)
+            window._schema_settings.variables["overlays_enabled"].set(False)
+            window._schema_settings.variables["gentle_reminder_interval"].set(25)
+            window._schema_settings.variables["camera_manual_brightness"].set(0.8)
+            window._schema_settings.variables["spam_banned_words"].set("not-json")
+
+            with mock.patch("focuscheck.settings.manager.save_settings"):
+                window._save()
+
+            payload = saved_payloads[0]
+            self.assertFalse(payload["overlays_enabled"])
+            self.assertEqual(25, payload["gentle_reminder_interval"])
+            self.assertEqual(0.8, payload["camera_manual_brightness"])
+            self.assertEqual(DEFAULT_SETTINGS["spam_banned_words"], payload["spam_banned_words"])
         finally:
             with contextlib.suppress(tk.TclError):
                 root.destroy()

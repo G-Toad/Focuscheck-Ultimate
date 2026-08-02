@@ -19,6 +19,7 @@ from .modern_widgets import (
     SectionHeader, InfoPanel
 )
 from .camera_test_window import CameraTestWindow
+from .schema_controls import SchemaSettingsBinding
 from .settings_tabs import (
     GeneralTabMixin,
     ValidationTabMixin,
@@ -384,6 +385,11 @@ class AdvancedSettingsWindow(
         self.biodata_pulse_animation_var = tk.BooleanVar(value=s.get("biodata_pulse_animation", True))
         self.biodata_font_size_var = tk.IntVar(value=s.get("biodata_font_size", 14))
 
+        # The remaining editable schema keys are rendered by the generated
+        # Advanced tab rather than silently disappearing from the UI.
+        self._schema_settings = SchemaSettingsBinding(self.settings)
+        self.webhook_var = self._schema_settings.variables["webhook_url"]
+
     def _build_ui(self):
         """Build the main UI."""
         main_container = ttk.Frame(self)
@@ -403,9 +409,15 @@ class AdvancedSettingsWindow(
         self._create_spam_tab()
         self._create_alerts_tab()
         self._create_behavior_tab()
+        self._create_schema_settings_tab()
 
         # Button bar
         self._create_button_bar(main_container)
+
+    def _create_schema_settings_tab(self):
+        """Create controls generated from the canonical settings schema."""
+        tab = self._create_scrollable_tab(self.notebook, "Advanced")
+        self._schema_settings.build(tab)
 
     def _create_scrollable_tab(self, parent, tab_name):
         """Create scrollable tab."""
@@ -876,6 +888,10 @@ class AdvancedSettingsWindow(
                 s[f"challenge_wasting_{challenge_id}_enabled"] = bool(
                     self.wasting_challenge_vars[challenge_id].get()
                 )
+
+            # Merge schema-generated controls last so every generated field is
+            # included in the same revision-aware save transaction.
+            s.update(self._schema_settings.values())
 
             result = save_settings(s)
             if not result:

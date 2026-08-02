@@ -38,6 +38,7 @@ from .database import TaskDB, ensure_log_header
 # UI components
 from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+from .ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
@@ -294,6 +295,8 @@ class App:
         # Snooze reminder tracking
         self._snooze_reminder_next_mono = 0.0
         self._snooze_reminder_dialog = None
+        self._gentle_reminder_next_mono = 0.0
+        self._gentle_reminder_dialog = None
         self._tray_icon_image = None
         self._tray_icon_path = None
         self._prepare_tray_icon()
@@ -303,6 +306,8 @@ class App:
         self._start_file_heartbeat()
         # Snooze reminder check loop
         self._start_snooze_reminder_check()
+        # Optional non-blocking gentle reminder loop
+        self._start_gentle_reminder_check()
 
         # Startup diagnostics (log versions and tray import attempts)
         try:
@@ -2062,6 +2067,7 @@ class App:
             if getattr(self, "_runtime_state", None) is not None:
                 self._runtime_state.request_shutdown()
             self._close_current_prompt_for_shutdown()
+            self._close_gentle_reminder()
             self._shutdown_engine()
             if getattr(self, "_timers", None) is not None:
                 self._timers.close()
@@ -2282,6 +2288,69 @@ class App:
 
         except Exception:
             pass
+
+    def _start_gentle_reminder_check(self):
+        """Start the optional non-blocking gentle reminder scheduler."""
+        def check():
+            try:
+                self._maybe_show_gentle_reminder()
+            finally:
+                if not hasattr(self, "_timers"):
+                    self.root.after(10_000, check)
+
+        check()
+        if hasattr(self, "_timers"):
+            self._timers.schedule("gentle-reminder", 10_000, check, interval_ms=10_000)
+
+    def _close_gentle_reminder(self):
+        dialog = getattr(self, "_gentle_reminder_dialog", None)
+        self._gentle_reminder_dialog = None
+        if dialog is None:
+            return
+        try:
+            dialog._on_dismiss()
+        except Exception:
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
+
+    def _maybe_show_gentle_reminder(self):
+        """Show a draggable reminder at the configured interval when enabled."""
+        try:
+            if not self.settings.get("gentle_reminder_enabled", False):
+                self._gentle_reminder_next_mono = 0.0
+                self._close_gentle_reminder()
+                return
+            if self.settings.get("paused", False) or self._current_prompt is not None:
+                return
+            dialog = self._gentle_reminder_dialog
+            if dialog is not None:
+                try:
+                    if dialog.winfo_exists():
+                        return
+                except Exception:
+                    self._gentle_reminder_dialog = None
+
+            now_mono = time.monotonic()
+            if self._gentle_reminder_next_mono == 0.0:
+                interval_minutes = max(1, int(self.settings.get("gentle_reminder_interval", 15)))
+                self._gentle_reminder_next_mono = now_mono + interval_minutes * 60
+                return
+            if now_mono < self._gentle_reminder_next_mono:
+                return
+
+            def on_dismiss():
+                self._gentle_reminder_dialog = None
+                interval_minutes = max(1, int(self.settings.get("gentle_reminder_interval", 15)))
+                self._gentle_reminder_next_mono = time.monotonic() + interval_minutes * 60
+
+            self._gentle_reminder_dialog = GentleReminderDialog(
+                self.root, self.settings, on_dismiss=on_dismiss
+            )
+        except Exception:
+            log_exception("Failed to show gentle reminder")
+            self._gentle_reminder_dialog = None
 
     def _log_startup_diagnostics(self):
         # Centralized diagnostics to help debug tray issues

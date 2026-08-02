@@ -55,6 +55,42 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertIsNone(app._current_prompt)
         self.assertEqual(1, len(calls))
 
+    def test_gentle_reminder_uses_configured_interval_and_closes(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"gentle_reminder_enabled": True, "gentle_reminder_interval": 3}
+        app._gentle_reminder_next_mono = 0.0
+        app._gentle_reminder_dialog = None
+        app._current_prompt = None
+
+        with mock.patch("focuscheck.app.time.monotonic", return_value=100.0):
+            App._maybe_show_gentle_reminder(app)
+        self.assertEqual(280.0, app._gentle_reminder_next_mono)
+        self.assertIsNone(app._gentle_reminder_dialog)
+
+        events = []
+
+        class Dialog:
+            def __init__(self, _root, _settings, on_dismiss):
+                self.on_dismiss = on_dismiss
+
+            def _on_dismiss(self):
+                events.append("dismiss")
+
+            def destroy(self):
+                events.append("destroy")
+
+        app.root = object()
+        app._gentle_reminder_next_mono = 99.0
+        with mock.patch("focuscheck.app.time.monotonic", return_value=100.0), \
+                mock.patch("focuscheck.app.GentleReminderDialog", Dialog):
+            App._maybe_show_gentle_reminder(app)
+        self.assertIsInstance(app._gentle_reminder_dialog, Dialog)
+        App._close_gentle_reminder(app)
+        self.assertEqual(["dismiss"], events)
+        self.assertIsNone(app._gentle_reminder_dialog)
+
     def test_tray_exit_dispatches_quit_on_ui_thread_when_enabled(self):
         from focuscheck.app import App
 
