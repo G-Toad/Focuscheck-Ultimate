@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import json
 from pathlib import Path
+from unittest import mock
 
 
 class MemoryLogger:
@@ -14,6 +15,32 @@ class MemoryLogger:
 
     def log(self, message: str) -> None:
         self.lines.append(message)
+
+
+class SupervisorEntrypointTests(unittest.TestCase):
+    def test_source_and_frozen_entrypoint_resolution(self):
+        import focuscheck_supervisor as supervisor
+
+        base = Path("C:/FocusCheck/app")
+        with mock.patch.object(supervisor.sys, "frozen", False, create=True):
+            self.assertEqual(base / "main.py", supervisor.resolve_supervised_target(base))
+            self.assertEqual(Path(supervisor.__file__).resolve(), supervisor.resolve_supervisor_entrypoint())
+
+        with mock.patch.object(supervisor.sys, "frozen", True, create=True), \
+                mock.patch.object(supervisor.sys, "executable", "C:/FocusCheck/app/FocusCheckSupervisor.exe"):
+            self.assertEqual(base / "FocusCheck.exe", supervisor.resolve_supervised_target(base))
+            self.assertEqual(Path("C:/FocusCheck/app/FocusCheckSupervisor.exe"), supervisor.resolve_supervisor_entrypoint())
+
+    def test_frozen_startup_launcher_points_at_supervisor_executable(self):
+        import focuscheck_supervisor as supervisor
+
+        with tempfile.TemporaryDirectory() as temp_dir, mock.patch.object(supervisor.sys, "frozen", True, create=True), \
+                mock.patch.object(supervisor.sys, "executable", str(Path(temp_dir) / "FocusCheckSupervisor.exe")), \
+                mock.patch.object(supervisor, "get_startup_dir", return_value=Path(temp_dir)):
+            launcher = supervisor.install_startup_launcher(Path(temp_dir), "ignored-python.exe", 10, 90, 5)
+            content = launcher.read_text(encoding="ascii")
+            self.assertIn("FocusCheckSupervisor.exe", content)
+            self.assertNotIn("focuscheck_supervisor.py", content)
 
 
 class FakeEvent:

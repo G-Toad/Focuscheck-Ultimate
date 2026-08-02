@@ -10,7 +10,7 @@
 
 1. Install pinned development dependencies with `py -3 -m pip install -r requirements-dev.txt`.
 2. Run `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1`.
-3. Treat `dist/FocusCheck` as a package candidate only after the manual Windows evidence matrix passes.
+3. Treat the output directory containing both `FocusCheck.exe` and `FocusCheckSupervisor.exe` as a package candidate only after the manual Windows evidence matrix passes.
 
 ## Install or upgrade a package
 
@@ -29,6 +29,6 @@ powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Ins
 powershell -ExecutionPolicy Bypass -File tools\package_lifecycle.ps1 -Action Uninstall -InstallDir "$env:LOCALAPPDATA\FocusCheck\app" -DataDir "$env:APPDATA\FocusCheck"
 ```
 
-The previous package is retained beside the install directory and the promoted executable receives a SHA-256 manifest.
+The previous package is retained beside the install directory and the promoted executable receives a SHA-256 manifest. A release package must contain both `FocusCheck.exe` and `FocusCheckSupervisor.exe`; the frozen supervisor launches the sibling child executable.
 
 The supervisor owns the application process. Do not create an independent startup entry for the child executable.

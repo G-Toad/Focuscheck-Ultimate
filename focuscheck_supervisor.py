@@ -513,6 +513,25 @@ def resolve_pythonw(explicit: str | None = None) -> str:
     return sys.executable
 
 
+def default_base_dir() -> Path:
+    """Resolve the directory containing source or frozen entry points."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
+
+
+def resolve_supervised_target(base_dir: Path) -> Path:
+    """Return the child launched by this supervisor in source/frozen mode."""
+    return base_dir / ("FocusCheck.exe" if getattr(sys, "frozen", False) else "main.py")
+
+
+def resolve_supervisor_entrypoint() -> Path:
+    """Return the executable/script used by startup registration."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve()
+    return Path(__file__).resolve()
+
+
 def default_log_path() -> Path:
     base = Path(os.environ.get("LOCALAPPDATA", Path.home()))
     log_dir = base / LOG_DIR_NAME
@@ -535,10 +554,13 @@ def install_startup_launcher(
 ) -> Path:
     startup_dir = get_startup_dir()
     startup_dir.mkdir(parents=True, exist_ok=True)
-    supervisor_script = Path(__file__).resolve()
+    supervisor_script = resolve_supervisor_entrypoint()
     launcher_path = startup_dir / STARTUP_SCRIPT_NAME
-    cmd = (
-        f"\"{python_executable}\" \"{supervisor_script}\" --run "
+    if getattr(sys, "frozen", False):
+        cmd = f"\"{supervisor_script}\" --run "
+    else:
+        cmd = f"\"{python_executable}\" \"{supervisor_script}\" --run "
+    cmd += (
         f"--base-dir \"{base_dir}\" --check-interval {check_interval} "
         f"--resume-gap {resume_gap} --restart-delay {restart_delay}"
     )
@@ -577,7 +599,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--base-dir",
         type=Path,
-        default=Path(__file__).resolve().parent,
+        default=default_base_dir(),
         help="Directory containing main.py",
     )
     parser.add_argument(
@@ -603,9 +625,11 @@ def main() -> None:
     did_anything = False
     python_executable = resolve_pythonw(args.python_executable)
     base_dir = args.base_dir.resolve()
-    target_script = base_dir / "main.py"
+    target_script = resolve_supervised_target(base_dir)
+    if getattr(sys, "frozen", False):
+        python_executable = str(target_script)
     if not target_script.exists():
-        raise FileNotFoundError(f"Could not find main.py at {target_script}")
+        raise FileNotFoundError(f"Could not find supervised child at {target_script}")
 
     if args.install_startup:
         path = install_startup_launcher(

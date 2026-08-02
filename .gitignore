@@ -36,4 +36,6 @@ _qa_runtime/
 _verify_runtime/
 _package_test/
 _package_runtime/
+_package_frozen_probe/
+_package_frozen_probe_runtime/
 dist/

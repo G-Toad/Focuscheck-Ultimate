@@ -39,6 +39,14 @@ class PackagingContractTests(unittest.TestCase):
         self.assertNotIn("focus_settings.json", promote)
         self.assertNotIn("focus_tasks.sqlite3", promote)
 
+    def test_frozen_supervisor_is_part_of_the_package_contract(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = (root / "packaging/focuscheck.spec").read_text(encoding="utf-8")
+        supervisor = (root / "focuscheck_supervisor.py").read_text(encoding="utf-8")
+        self.assertIn('name="FocusCheckSupervisor"', spec)
+        self.assertIn('"FocusCheck.exe"', supervisor)
+        self.assertIn("resolve_supervised_target", supervisor)
+
     def test_lifecycle_script_preserves_data_during_upgrade_and_uninstall(self):
         lifecycle = (Path(__file__).resolve().parents[1] / "tools/package_lifecycle.ps1").read_text(encoding="utf-8")
         self.assertIn('ValidateSet("Install", "Upgrade", "Uninstall")', lifecycle)
