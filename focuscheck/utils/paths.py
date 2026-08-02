@@ -139,6 +139,7 @@ class AppPaths:
     stop_request: Path
     lock: Path
     diagnostic_bundle: Path
+    runtime_state: Path
     exports: Path
     cache: Path
     temp: Path
@@ -164,6 +165,7 @@ def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
         stop_request=root / "supervisor.stop",
         lock=root / "supervisor.lock",
         diagnostic_bundle=root / "diagnostic_bundle.zip",
+        runtime_state=root / "runtime_state.jsonl",
         exports=root / "exports",
         cache=root / "cache",
         temp=root / "tmp",

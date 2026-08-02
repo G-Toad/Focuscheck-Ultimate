@@ -8,6 +8,19 @@ from focuscheck.utils.clock import FakeClock
 
 
 class RuntimeStateTests(unittest.TestCase):
+    def test_transition_sink_records_metadata_and_not_settings_values(self):
+        events = []
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            transition_sink=events.append,
+        )
+        self.assertTrue(state.set_manual_paused(True))
+        self.assertTrue(state.begin_prompt())
+        state.end_prompt()
+        self.assertTrue(events)
+        self.assertEqual("manual_pause", events[0]["event"])
+        self.assertNotIn("snooze_until_utc", events[0])
+
     def test_pause_save_failure_rolls_back_settings_and_state(self):
         settings = {"paused": False, "snooze_until_utc": ""}
         state = RuntimeStateCoordinator(settings, persist=lambda _settings: False)

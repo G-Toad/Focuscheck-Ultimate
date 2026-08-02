@@ -38,6 +38,7 @@ from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
+from .runtime.journal import RuntimeTransitionJournal
 from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -73,6 +74,7 @@ from .utils.paths import (
     HEARTBEAT_PATH,
     TASK_DB_PATH,
     APP_LOG_PATH,
+    get_app_paths,
 )
 
 
@@ -219,7 +221,12 @@ class App:
         except Exception:
             pass
         self.settings = load_settings()
-        self._runtime_state = RuntimeStateCoordinator(self.settings, persist=save_settings)
+        self._runtime_journal = RuntimeTransitionJournal(get_app_paths().runtime_state)
+        self._runtime_state = RuntimeStateCoordinator(
+            self.settings,
+            persist=save_settings,
+            transition_sink=self._runtime_journal.append,
+        )
         self._snooze_unpause_timer_id = None
         self._snooze_confirm_dialog = None
         try:

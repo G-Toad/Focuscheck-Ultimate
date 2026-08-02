@@ -43,10 +43,12 @@ class RuntimeStateCoordinator:
         settings: MutableMapping[str, Any],
         persist: Callable[[MutableMapping[str, Any]], bool] | None = None,
         clock: Any | None = None,
+        transition_sink: Callable[[dict], None] | None = None,
     ) -> None:
         self.settings = settings
         self._persist = persist
         self.clock = clock or SystemClock()
+        self._transition_sink = transition_sink
         self.snapshot = RuntimeSnapshot(
             manual_paused=bool(settings.get("paused", False)),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
@@ -58,7 +60,28 @@ class RuntimeStateCoordinator:
         self.snapshot.manual_paused = bool(settings.get("paused", False))
         self.snapshot.snooze_until_utc = str(settings.get("snooze_until_utc", "") or "")
 
-    def _commit(self, mutate: Callable[[], None]) -> bool:
+    def _safe_snapshot(self, snapshot: RuntimeSnapshot | None = None) -> dict:
+        current = snapshot or self.snapshot
+        return {
+            "manual_paused": current.manual_paused,
+            "snooze_active": current.snooze_active(self.clock.now_utc()),
+            "guard_count": len(current.guard_reasons),
+            "prompt_active": current.prompt_active,
+            "intervention_active": current.intervention_active,
+            "shutdown_requested": current.shutdown_requested,
+        }
+
+    def _record(self, event: str, outcome: str, snapshot: RuntimeSnapshot | None = None) -> None:
+        if self._transition_sink is None:
+            return
+        payload = self._safe_snapshot(snapshot)
+        payload.update({"event": event, "outcome": outcome})
+        try:
+            self._transition_sink(payload)
+        except Exception:
+            pass
+
+    def _commit(self, mutate: Callable[[], None], event: str) -> bool:
         before_settings = deepcopy(dict(self.settings))
         before_snapshot = deepcopy(self.snapshot)
         mutate()
@@ -70,19 +93,22 @@ class RuntimeStateCoordinator:
                     self.settings.clear()
                     self.settings.update(before_settings)
                     self.snapshot = before_snapshot
+                    self._record(event, "rolled_back", before_snapshot)
                     return False
             except Exception:
                 self.settings.clear()
                 self.settings.update(before_settings)
                 self.snapshot = before_snapshot
+                self._record(event, "rolled_back", before_snapshot)
                 return False
+        self._record(event, "committed")
         return True
 
     def set_manual_paused(self, value: bool) -> bool:
         value = bool(value)
         if self.snapshot.manual_paused == value:
             return False
-        return self._commit(lambda: setattr(self.snapshot, "manual_paused", value))
+        return self._commit(lambda: setattr(self.snapshot, "manual_paused", value), "manual_pause")
 
     def set_snooze_until(self, until: datetime | str | None) -> bool:
         if until is None:
@@ -95,7 +121,7 @@ class RuntimeStateCoordinator:
             value = str(until)
         if self.snapshot.snooze_until_utc == value:
             return False
-        return self._commit(lambda: setattr(self.snapshot, "snooze_until_utc", value))
+        return self._commit(lambda: setattr(self.snapshot, "snooze_until_utc", value), "snooze")
 
     def clear_snooze(self) -> bool:
         return self.set_snooze_until(None)
@@ -108,29 +134,35 @@ class RuntimeStateCoordinator:
             self.snapshot.guard_reasons.add(reason)
         else:
             self.snapshot.guard_reasons.discard(reason)
+        self._record("guard", "committed")
 
     def begin_prompt(self) -> bool:
         if self.snapshot.shutdown_requested or self.snapshot.prompt_active or self.snapshot.intervention_active:
             return False
         self.snapshot.prompt_active = True
+        self._record("prompt", "begun")
         return True
 
     def end_prompt(self) -> None:
         self.snapshot.prompt_active = False
+        self._record("prompt", "ended")
 
     def begin_intervention(self) -> bool:
         if self.snapshot.shutdown_requested or self.snapshot.intervention_active or self.snapshot.prompt_active:
             return False
         self.snapshot.intervention_active = True
+        self._record("intervention", "begun")
         return True
 
     def end_intervention(self) -> None:
         self.snapshot.intervention_active = False
+        self._record("intervention", "ended")
 
     def request_shutdown(self) -> bool:
         if self.snapshot.shutdown_requested:
             return False
         self.snapshot.shutdown_requested = True
+        self._record("shutdown", "requested")
         return True
 
     def can_start_prompt(self) -> bool:

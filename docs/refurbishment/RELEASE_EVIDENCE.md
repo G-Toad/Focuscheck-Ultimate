@@ -1,6 +1,7 @@
 # Release Evidence
 
-- Automated: `123` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Automated: `124` unittest cases pass in the isolated verification runner, including live-profile isolation assertion.
+- Runtime transition journal is App-wired and covered by metadata-only transition tests.
 - Compileall, application self-test, tray self-test, QA scenario runner, and settings inventory pass.
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.
