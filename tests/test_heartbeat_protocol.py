@@ -71,3 +71,24 @@ class HeartbeatProtocolTests(unittest.TestCase):
             with mock.patch("focuscheck_supervisor.time.monotonic", side_effect=[0.0, 0.0, 13.0, 13.0]):
                 self.assertFalse(supervisor._heartbeat_stale())
                 self.assertTrue(supervisor._heartbeat_stale())
+
+    def test_app_heartbeat_write_failure_is_counted_and_throttled(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"paused": False, "interval_seconds": 60}
+        app.guard = mock.Mock()
+        app.guard.should_pause.return_value = False
+        app._heartbeat_sequence = 0
+        app._heartbeat_write_failures = 0
+        app._last_heartbeat_failure_log_mono = 0.0
+        with tempfile.TemporaryDirectory() as temp_dir, mock.patch(
+            "focuscheck.app.HEARTBEAT_PATH", str(Path(temp_dir) / "hb.txt")
+        ), mock.patch("focuscheck.app.os.replace", side_effect=OSError("disk full")), mock.patch(
+            "focuscheck.app.get_logger"
+        ) as logger_factory:
+            app._write_heartbeat()
+            app._write_heartbeat()
+            logger = logger_factory.return_value
+        self.assertEqual(2, app._heartbeat_write_failures)
+        self.assertEqual(2, logger.warning.call_count)

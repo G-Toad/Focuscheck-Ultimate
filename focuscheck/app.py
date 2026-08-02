@@ -1682,6 +1682,7 @@ class App:
 
     # Heartbeat file for watchdogs
     def _write_heartbeat(self):
+        temp_path = None
         try:
             self._heartbeat_sequence = getattr(self, "_heartbeat_sequence", 0) + 1
             process_start_utc = getattr(self, "_process_start_utc", datetime.now(timezone.utc).isoformat())
@@ -1710,10 +1711,38 @@ class App:
                 "pause_reason": pause_reason,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
             }
-            with open(HEARTBEAT_PATH, "w", encoding="utf-8") as f:
+            heartbeat_path = Path(HEARTBEAT_PATH)
+            heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = heartbeat_path.with_name(
+                f"{heartbeat_path.name}.{os.getpid()}.{self._heartbeat_sequence}.tmp"
+            )
+            with temp_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f)
-        except Exception:
-            pass
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp_path, heartbeat_path)
+            self._heartbeat_write_failures = 0
+        except Exception as exc:
+            self._heartbeat_write_failures = getattr(self, "_heartbeat_write_failures", 0) + 1
+            now = time.monotonic()
+            last_log = getattr(self, "_last_heartbeat_failure_log_mono", 0.0)
+            count = self._heartbeat_write_failures
+            if count <= 3 or count % 10 == 0 or now - last_log >= 60.0:
+                try:
+                    get_logger().warning(
+                        "heartbeat write failed | consecutive=%d | error_type=%s",
+                        count,
+                        type(exc).__name__,
+                    )
+                except Exception:
+                    pass
+                self._last_heartbeat_failure_log_mono = now
+        finally:
+            if temp_path is not None:
+                try:
+                    Path(temp_path).unlink()
+                except OSError:
+                    pass
 
     def _start_file_heartbeat(self):
         def hb():
