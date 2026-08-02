@@ -38,6 +38,9 @@ SUPERVISOR_STOP_FILENAME = "supervisor.stop"
 HEARTBEAT_MAX_AGE = 12.0
 HEARTBEAT_GRACE_PERIOD = 15.0
 FORCED_RESTART_PAUSE = 0.2
+RESTART_WINDOW_SECONDS = 300.0
+MAX_RESTARTS_IN_WINDOW = 5
+DEGRADED_COOLDOWN_SECONDS = 300.0
 
 
 def _resolve_focuscheck_dir() -> Path:
@@ -265,6 +268,8 @@ class FocusCheckSupervisor:
         self._heartbeat_grace_deadline = 0.0
         self.supervisor_id = uuid.uuid4().hex
         self.child_generation: str | None = None
+        self._restart_history: list[float] = []
+        self._degraded_until = 0.0
         suppress_windows_error_dialogs()
         self._clear_stop_request()
 
@@ -346,10 +351,32 @@ class FocusCheckSupervisor:
 
     def _force_restart(self, reason: str) -> None:
         self.logger.log(f"{reason}; forcing restart")
+        self._record_restart_failure(reason)
         self._kill_child_tree()
         self.current_delay = self.restart_delay
         self.last_tick = time.monotonic()
         time.sleep(FORCED_RESTART_PAUSE)
+
+    def _record_restart_failure(self, reason: str) -> None:
+        now = time.monotonic()
+        self._restart_history = [stamp for stamp in self._restart_history if now - stamp <= RESTART_WINDOW_SECONDS]
+        self._restart_history.append(now)
+        if len(self._restart_history) >= MAX_RESTARTS_IN_WINDOW:
+            self._degraded_until = now + DEGRADED_COOLDOWN_SECONDS
+            self.logger.log(
+                f"Circuit breaker open after {len(self._restart_history)} restart failures; "
+                f"degraded cooldown={DEGRADED_COOLDOWN_SECONDS:.0f}s reason={reason}"
+            )
+
+    def _circuit_breaker_open(self) -> bool:
+        if self._degraded_until <= 0:
+            return False
+        if time.monotonic() >= self._degraded_until:
+            self._degraded_until = 0.0
+            self._restart_history.clear()
+            self.logger.log("Circuit breaker cooldown elapsed; resuming supervised launch")
+            return False
+        return True
 
 
     def _terminate_child(self) -> None:
@@ -432,6 +459,11 @@ class FocusCheckSupervisor:
                         self._clear_stop_request()
                         self.stop_event.set()
                         break
+                    self._record_restart_failure(f"child exit {exit_code}")
+                    if self._circuit_breaker_open():
+                        self.logger.log("Circuit breaker holding automatic restart")
+                        self.stop_event.wait(min(self.check_interval, max(0.1, self._degraded_until - time.monotonic())))
+                        continue
                     sleep_for = min(self.current_delay, MAX_RESTART_DELAY)
                     self.logger.log(f"Restarting in {sleep_for:.1f}s")
                     self.stop_event.wait(sleep_for)
@@ -453,6 +485,7 @@ class FocusCheckSupervisor:
             self.last_tick = now
             if now - self._heartbeat_grace_deadline > 300:
                 self.current_delay = self.restart_delay
+                self._restart_history.clear()
             self.stop_event.wait(self.check_interval)
         self.logger.log("Supervisor loop stopping")
         self._terminate_child()

@@ -21,7 +21,7 @@ Status meanings:
 | 5 Settings repository and schema | Partial | V1/V2 migration, quarantine, backup recovery, atomic save, and several regressions exist. Typed schema descriptors, revision/conflict handling, `.bak.1/.bak.2`, migration journal, and all listed fixtures are missing. |
 | 6 Runtime state coordinator | Partial | `RuntimeStateCoordinator` now owns transactional pause/snooze mutation and exclusive prompt/intervention/shutdown leases. Full App integration, guard synchronization, and transition journal remain absent. |
 | 7 Scheduler and timer ownership | Partial | Generation-aware `TimerRegistry` exists and is integrated into `EngineV2`. App and dialog timers remain distributed, there is no injected clock, and the required stress matrix is absent. |
-| 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, force-start correction, stale checks, and lifecycle tests now exist. Circuit breaker, stop handshake, sleep-gap handling, and the complete failure matrix are not proven. |
+| 8 Supervisor and heartbeat | Partial | Versioned generation/readiness/sequence heartbeat validation, stale checks, force-start correction, circuit breaker, and lifecycle tests now exist. Stop handshake, sleep-gap handling, and the complete failure matrix are not proven. |
 | 9 Startup and single-instance | Partial | Launcher and startup tests exist. Correctness inspection across absent/stale/legacy/duplicate/repairable states, moved-install tests, and manual registry evidence are absent. |
 | 10 Application lifecycle/composition | Partial | Quit/lifecycle regression tests exist. No composition-root refactor or failure-injection coverage at every startup/shutdown stage was found. |
 | 11 Tray adapters | Partial | Command tests and self-test exist. Tk dispatch ownership, complete backend state machine, fallback semantics, and required native manual matrix are not proven. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 91 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 92 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 91 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 92 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
