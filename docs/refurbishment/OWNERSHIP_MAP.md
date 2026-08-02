@@ -11,4 +11,5 @@
 | Supervisor child | `FocusCheckSupervisor` | terminate/kill tree on shutdown. |
 | Supervisor lock/stop files | `SupervisorLock` / supervisor | stale-lock recovery and intentional-stop cleanup. |
 | Canonical runtime paths | immutable `AppPaths` | selected once per data root; legacy selection remains migration-only. |
+| Pause/snooze/runtime leases | `RuntimeStateCoordinator` | transactional persistence; prompt/intervention/shutdown lease methods. |
 | Heartbeat | `App._start_file_heartbeat` | supervisor treats stale/malformed heartbeat as unhealthy. |

@@ -37,6 +37,7 @@ from .database import TaskDB, ensure_log_header
 from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.guards import PauseGuard
+from .runtime.state import RuntimeStateCoordinator
 from .ui.windows import SettingsWindow
 
 # Monitoring engines
@@ -215,6 +216,7 @@ class App:
         except Exception:
             pass
         self.settings = load_settings()
+        self._runtime_state = RuntimeStateCoordinator(self.settings, persist=save_settings)
         self._snooze_unpause_timer_id = None
         self._snooze_confirm_dialog = None
         try:
@@ -1123,14 +1125,9 @@ class App:
 
     def _set_paused(self, value: bool, *, source: str = "tray") -> bool:
         value = bool(value)
-        current = bool(self.settings.get("paused", False))
-        if current == value:
+        changed = self._runtime_state.set_manual_paused(value)
+        if not changed:
             return False
-        self.settings["paused"] = value
-        try:
-            save_settings(self.settings)
-        except Exception:
-            pass
         try:
             get_logger().info("paused=%s via %s", value, source)
             if value:
