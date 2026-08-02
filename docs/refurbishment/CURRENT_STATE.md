@@ -26,7 +26,7 @@
 - Foreground and top-level window enumeration now declare user32, process, and PSAPI signatures before crossing the ctypes boundary.
 - Task analytics now store UTC while accepting an explicit timezone and injected clock for local-day/DST boundaries; existing callers retain an explicit UTC default.
 - TaskDB schema migration version 3 normalizes recoverable legacy timestamps and clears invalid legacy due dates with an auditable repair reason; a checked-in legacy SQL fixture covers the path.
-- Settings inventory now distinguishes editor references from runtime consumers and proves all 196 visible save keys have a non-editor consumer.
+- Settings inventory now distinguishes editor references from runtime consumers and proves all 207 visible save keys have a non-editor consumer, including dynamic challenge controls.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
 - `tools/export_data.py` and tray/App data controls provide atomic allowlisted export, metadata-only inventory, confirmed clear-log/personal-data actions, and explicit-age log retention with sensitive-category safeguards and metadata-only audit records; the bounded runner exercises the export path in a disposable root.
 - The export inventory allowlist covers application/supervisor logs, settings recovery artifacts, audit journals, heartbeat/stop markers, diagnostic bundles, and camera files without exposing contents in inventory metadata.

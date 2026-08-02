@@ -55,9 +55,9 @@ def _ui_save_keys():
                     keys.add(key.value)
     # The advanced tab is generated from the canonical schema and therefore
     # cannot be discovered by walking literal dictionaries in ``_save``.
-    from focuscheck.ui.schema_controls import SCHEMA_CONTROL_KEYS
+    from focuscheck.ui.schema_controls import EXISTING_DYNAMIC_KEYS, SCHEMA_CONTROL_KEYS
 
-    return keys | set(SCHEMA_CONTROL_KEYS)
+    return keys | set(EXISTING_DYNAMIC_KEYS) | set(SCHEMA_CONTROL_KEYS)
 
 
 def _runtime_source_files():

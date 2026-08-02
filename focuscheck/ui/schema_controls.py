@@ -41,6 +41,21 @@ SCHEMA_CONTROL_KEYS = (
     "gentle_reminder_drift_speed",
 )
 
+# These controls are schema-backed but rendered by the hand-written challenge
+# cards through dictionaries and therefore do not appear as literal keys in
+# the settings window's save AST.
+EXISTING_DYNAMIC_KEYS = tuple(
+    [f"challenge_studying_{name}_enabled" for name in (
+        "learning_specificity", "goal_connection", "will_commitment",
+        "output_expectation",
+    )]
+    + [f"challenge_wasting_{name}_enabled" for name in (
+        "wasting_acknowledgment", "should_gap", "because_reasoning",
+        "hour_projection", "tomorrow_regret", "fear_acknowledgment",
+        "lying_confrontation",
+    )]
+)
+
 
 def _label_for_key(key: str) -> str:
     return key.replace("_", " ").capitalize()
@@ -138,4 +153,4 @@ class SchemaSettingsBinding:
         return result
 
 
-__all__ = ["SCHEMA_CONTROL_KEYS", "SchemaSettingsBinding"]
+__all__ = ["EXISTING_DYNAMIC_KEYS", "SCHEMA_CONTROL_KEYS", "SchemaSettingsBinding"]
