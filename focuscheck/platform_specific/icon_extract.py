@@ -5,6 +5,20 @@ import ctypes
 from ctypes import wintypes
 
 
+def _configure_icon_api(shell32, user32):
+    """Declare shell/user32 signatures before icon handle operations."""
+    shell32.ExtractIconExW.argtypes = [
+        wintypes.LPCWSTR,
+        ctypes.c_int,
+        ctypes.POINTER(wintypes.HICON),
+        ctypes.POINTER(wintypes.HICON),
+        wintypes.UINT,
+    ]
+    shell32.ExtractIconExW.restype = wintypes.UINT
+    user32.DestroyIcon.argtypes = [wintypes.HICON]
+    user32.DestroyIcon.restype = wintypes.BOOL
+
+
 def get_app_icon_image(exe_path, size=24):
     """Return a PIL Image of the app icon for an exe path, or None."""
     if platform.system().lower() != "windows":
@@ -18,6 +32,7 @@ def get_app_icon_image(exe_path, size=24):
     try:
         shell32 = ctypes.windll.shell32
         user32 = ctypes.windll.user32
+        _configure_icon_api(shell32, user32)
         large = wintypes.HICON()
         small = wintypes.HICON()
         count = shell32.ExtractIconExW(exe_path, 0, ctypes.byref(large), ctypes.byref(small), 1)
@@ -92,6 +107,27 @@ def _hicon_to_image(hicon):
             ("bmiHeader", BITMAPINFOHEADER),
             ("bmiColors", wintypes.DWORD * 3),
         ]
+
+    user32.GetIconInfo.argtypes = [wintypes.HICON, ctypes.POINTER(ICONINFO)]
+    user32.GetIconInfo.restype = wintypes.BOOL
+    user32.GetDC.argtypes = [wintypes.HWND]
+    user32.GetDC.restype = wintypes.HDC
+    user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+    user32.ReleaseDC.restype = ctypes.c_int
+    gdi32.GetObjectW.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p]
+    gdi32.GetObjectW.restype = ctypes.c_int
+    gdi32.GetDIBits.argtypes = [
+        wintypes.HDC,
+        wintypes.HBITMAP,
+        wintypes.UINT,
+        wintypes.UINT,
+        ctypes.c_void_p,
+        ctypes.POINTER(BITMAPINFO),
+        wintypes.UINT,
+    ]
+    gdi32.GetDIBits.restype = ctypes.c_int
+    gdi32.DeleteObject.argtypes = [wintypes.HANDLE]
+    gdi32.DeleteObject.restype = wintypes.BOOL
 
     iconinfo = ICONINFO()
     if not user32.GetIconInfo(hicon, ctypes.byref(iconinfo)):

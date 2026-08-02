@@ -91,6 +91,32 @@ class ActivitySnapshotTests(unittest.TestCase):
 
 
 class WindowsActivityProbeTests(unittest.TestCase):
+    def test_icon_extraction_declares_shell_user_and_gdi_signatures(self):
+        from focuscheck.platform_specific import icon_extract
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        shell32 = type("Shell32", (), {"ExtractIconExW": Api()})()
+        user32 = type("User32", (), {"DestroyIcon": Api()})()
+        icon_extract._configure_icon_api(shell32, user32)
+
+        self.assertEqual(
+            [
+                icon_extract.wintypes.LPCWSTR,
+                icon_extract.ctypes.c_int,
+                icon_extract.ctypes.POINTER(icon_extract.wintypes.HICON),
+                icon_extract.ctypes.POINTER(icon_extract.wintypes.HICON),
+                icon_extract.wintypes.UINT,
+            ],
+            shell32.ExtractIconExW.argtypes,
+        )
+        self.assertIs(icon_extract.wintypes.UINT, shell32.ExtractIconExW.restype)
+        self.assertEqual([icon_extract.wintypes.HICON], user32.DestroyIcon.argtypes)
+        self.assertIs(icon_extract.wintypes.BOOL, user32.DestroyIcon.restype)
+
     def test_process_probe_declares_pointer_and_buffer_signatures(self):
         from focuscheck.platform_specific import activity_probe
 
