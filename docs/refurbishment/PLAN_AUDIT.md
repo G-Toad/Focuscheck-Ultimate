@@ -39,14 +39,14 @@ Status meanings:
 | 23 Observability/supportability | Partial | A sanitized bundle generator and bounded Doctor anomaly storage now exist. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and install/rollback contracts exist. Installer lifecycle, signing, and rollback execution remain unverified. |
-| 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 114 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
+| 27 Automated test expansion | Partial | 114 unittest cases, self-tests, and a bounded performance soak exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
 ## Mandatory Artifacts
 
-All 15 named documentation/report files exist, and migration fixtures plus a diagnostic bundle generator exist. File presence is not completion evidence: `manual-evidence.json` is explicitly `not_run`, and the defect register covers only a subset of the plan's defect register with incomplete required fields such as reproduction, commit/PR, and per-defect manual verification.
+All named documentation/report files exist, and migration fixtures plus a diagnostic bundle generator exist. File presence is not completion evidence: `manual-evidence.json` is explicitly `not_run`, and the defect register covers only a subset of the plan's defect register with incomplete required fields such as reproduction, commit/PR, and per-defect manual verification.
 
 The plan's final-release deliverables were also checked individually:
 
@@ -57,7 +57,7 @@ The plan's final-release deliverables were also checked individually:
 | Settings schema/truth table generated or verified | Partial; typed schema descriptors and revision tests exist, but the UI is not generated from the schema and the full truth table is incomplete. |
 | Lifecycle/state-machine documentation | Present; implementation and full evidence remain partial. |
 | Defect/contradiction registers with no untriaged severity 0/1 | Not met; the defect register is incomplete and several severity-1 items remain unverified. |
-| Deterministic verification report | Partial; report is machine-readable, but deterministic clock and leak assertions are absent. |
+| Deterministic verification report | Partial; report is machine-readable and includes a bounded resource-stability gate, but deterministic clock and process/thread/window leak assertions are absent. |
 | Manual evidence bundle | Present only as a not-run template. |
 | Migration fixtures | Partial; one legacy fixture exists, not the full required fixture set. |
 | Release notes | Missing as a release artifact. |
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 114 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 114 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 

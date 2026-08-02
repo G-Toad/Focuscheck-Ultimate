@@ -5,6 +5,7 @@
 - Branch: `main`
 - Automated test baseline: 114 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
+- Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Release status: `NOT_READY`.
 
 ## Known limitations
