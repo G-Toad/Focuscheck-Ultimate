@@ -250,6 +250,8 @@ class App:
         self._next_due_mono = None
         self._next_total_s = None
         self._shutdown_requested = False
+        self._heartbeat_sequence = 0
+        self._process_start_utc = datetime.now(timezone.utc).isoformat()
         # Snooze reminder tracking
         self._snooze_reminder_next_mono = 0.0
         self._snooze_reminder_dialog = None
@@ -1559,6 +1561,8 @@ class App:
     # Heartbeat file for watchdogs
     def _write_heartbeat(self):
         try:
+            self._heartbeat_sequence = getattr(self, "_heartbeat_sequence", 0) + 1
+            process_start_utc = getattr(self, "_process_start_utc", datetime.now(timezone.utc).isoformat())
             manual_paused = bool(self.settings.get("paused", False))
             guard_paused = bool(self.guard.should_pause())
             if manual_paused:
@@ -1568,8 +1572,15 @@ class App:
             else:
                 pause_reason = ""
             payload = {
+                "protocol_version": 1,
+                "supervisor_id": os.environ.get("FOCUSCHECK_SUPERVISOR_ID", ""),
+                "generation": os.environ.get("FOCUSCHECK_CHILD_GENERATION", ""),
                 "utc": datetime.now(timezone.utc).isoformat(),
                 "pid": os.getpid(),
+                "process_start_utc": process_start_utc,
+                "sequence": self._heartbeat_sequence,
+                "readiness": "ready",
+                "tk_pulse": True,
                 "paused": bool(manual_paused or guard_paused),
                 "manual_paused": manual_paused,
                 "guard_paused": guard_paused,

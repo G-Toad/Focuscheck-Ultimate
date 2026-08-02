@@ -16,6 +16,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from pathlib import Path
 
 DEFAULT_CHECK_INTERVAL = 10.0
@@ -262,6 +263,8 @@ class FocusCheckSupervisor:
         self.heartbeat_path = heartbeat_path or default_heartbeat_path()
         self.stop_file = stop_file or default_supervisor_stop_path()
         self._heartbeat_grace_deadline = 0.0
+        self.supervisor_id = uuid.uuid4().hex
+        self.child_generation: str | None = None
         suppress_windows_error_dialogs()
         self._clear_stop_request()
 
@@ -302,6 +305,9 @@ class FocusCheckSupervisor:
         cmd = [self.python_executable, str(self.target_script)]
         env = os.environ.copy()
         env.setdefault("FOCUSCHECK_SUPERVISED", "1")
+        self.child_generation = uuid.uuid4().hex
+        env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
+        env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
         # explicit force-start command may set this environment variable.
         env["FOCUSCHECK_SUPERVISOR_STOP_FILE"] = str(self.stop_file)
@@ -377,6 +383,12 @@ class FocusCheckSupervisor:
         try:
             raw = self.heartbeat_path.read_text(encoding="utf-8").strip()
             payload = json.loads(raw)
+            if int(payload.get("protocol_version", 0)) != 1:
+                return True
+            if payload.get("readiness") != "ready":
+                return True
+            if self.child_generation and payload.get("generation") != self.child_generation:
+                return True
             heartbeat_utc = payload.get("utc")
             heartbeat_pid = int(payload.get("pid", 0))
             if heartbeat_pid and self.child is not None and heartbeat_pid != self.child.pid:

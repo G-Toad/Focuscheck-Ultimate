@@ -8,5 +8,6 @@
 | V2 subpopup timer | `EngineV2._schedule_subpopup_check` | `EngineV2.shutdown`. | unit tests/QA |
 | Tk dialog timers | dialog cleanup methods | dialog close/destructor paths. | keyboard tests; manual UI pending |
 | Supervisor child process | `subprocess.Popen` | process-tree termination. | fake supervisor harness |
+| Structured heartbeat | `App._write_heartbeat` | supervisor validates protocol/generation/PID/freshness. | heartbeat protocol tests |
 | Windows hooks/tray | platform modules | explicit close methods. | self-test; manual Windows pending |
 | Camera/overlay handles | dialog/window implementations | exception cleanup paths. | imports and QA; native manual pending |
