@@ -10,6 +10,26 @@ from focuscheck.monitoring.activity import ActivitySnapshot, safe_activity_snaps
 
 
 class ActivitySnapshotTests(unittest.TestCase):
+    def test_provider_payload_is_typed_bounded_and_clocked(self):
+        captured = datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)
+        snapshot = ActivitySnapshot.from_mapping(
+            {
+                "hwnd": "not-an-int",
+                "pid": "not-an-int",
+                "title": "x" * 3000,
+                "url": "https://example.com/" + ("x" * 5000),
+            },
+            now=captured,
+        )
+
+        self.assertEqual(captured.isoformat(), snapshot.captured_utc)
+        self.assertEqual(2048, len(snapshot.title))
+        self.assertEqual(4096, len(snapshot.url))
+        self.assertIn("invalid hwnd", snapshot.errors)
+        self.assertIn("invalid pid", snapshot.errors)
+        self.assertIn("title truncated", snapshot.errors)
+        self.assertIn("url truncated", snapshot.errors)
+
     def test_normalization_redacts_query_and_fragment(self):
         snapshot = ActivitySnapshot.from_mapping({
             "hwnd": "12", "pid": "34", "title": "Browser",
@@ -40,6 +60,26 @@ class ActivitySnapshotTests(unittest.TestCase):
         self.assertLess(elapsed, 0.2)
         self.assertEqual(("provider timeout",), snapshot.errors)
         self.assertEqual("low", snapshot.confidence)
+
+    def test_provider_error_and_timeout_share_injected_capture_clock(self):
+        captured = datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)
+        error = safe_activity_snapshot(
+            lambda: (_ for _ in ()).throw(RuntimeError("boom")),
+            clock=lambda: captured,
+        )
+        self.assertEqual(captured.isoformat(), error.captured_utc)
+
+        release = threading.Event()
+        try:
+            timeout = safe_activity_snapshot(
+                lambda: release.wait(1.0),
+                timeout_seconds=0.01,
+                clock=lambda: captured,
+            )
+            self.assertEqual(captured.isoformat(), timeout.captured_utc)
+            self.assertEqual(("provider timeout",), timeout.errors)
+        finally:
+            release.set()
 
     def test_title_only_activity_is_medium_confidence(self):
         snapshot = ActivitySnapshot.from_mapping({"hwnd": 12, "title": "Browser"})

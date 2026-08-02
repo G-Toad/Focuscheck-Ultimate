@@ -9,6 +9,35 @@ from typing import Any, Callable
 from urllib.parse import urlsplit, urlunsplit
 
 
+_MAX_TITLE_LENGTH = 2048
+_MAX_PROCESS_LENGTH = 512
+_MAX_APP_LENGTH = 256
+_MAX_SOURCE_LENGTH = 128
+_MAX_URL_LENGTH = 4096
+
+
+def _utc_now(clock=None) -> datetime:
+    if clock is None:
+        value = datetime.now(timezone.utc)
+    elif callable(clock):
+        value = clock()
+    else:
+        value = clock.now_utc()
+    if not isinstance(value, datetime):
+        raise TypeError("activity clock must return datetime")
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _bounded_text(value: Any, limit: int, field: str, errors: list[str]) -> str:
+    text = str(value or "")
+    if len(text) > limit:
+        errors.append(f"{field} truncated")
+        return text[:limit]
+    return text
+
+
 @dataclass(frozen=True)
 class ActivitySnapshot:
     hwnd: int | None = None
@@ -23,7 +52,13 @@ class ActivitySnapshot:
     errors: tuple[str, ...] = field(default_factory=tuple)
 
     @classmethod
-    def from_mapping(cls, raw: Any, *, source: str = "activity_probe") -> "ActivitySnapshot":
+    def from_mapping(
+        cls,
+        raw: Any,
+        *,
+        source: str = "activity_probe",
+        now: datetime | None = None,
+    ) -> "ActivitySnapshot":
         errors: list[str] = []
         if not isinstance(raw, dict):
             errors.append("provider returned non-dict")
@@ -43,20 +78,23 @@ class ActivitySnapshot:
             try:
                 parts = urlsplit(str(url))
                 url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+                if len(url) > _MAX_URL_LENGTH:
+                    url = url[:_MAX_URL_LENGTH]
+                    errors.append("url truncated")
             except ValueError:
                 url = None
                 errors.append("invalid url")
         confidence = "high" if hwnd is not None and url else "medium" if hwnd is not None and raw.get("title") else "low"
         return cls(
             hwnd=hwnd,
-            title=str(raw.get("title") or ""),
+            title=_bounded_text(raw.get("title"), _MAX_TITLE_LENGTH, "title", errors),
             pid=pid,
-            process_name=str(raw.get("process_name") or ""),
-            app_name=str(raw.get("app_name") or "Desktop"),
+            process_name=_bounded_text(raw.get("process_name"), _MAX_PROCESS_LENGTH, "process_name", errors),
+            app_name=_bounded_text(raw.get("app_name") or "Desktop", _MAX_APP_LENGTH, "app_name", errors),
             url=url,
-            source=str(raw.get("source") or source),
+            source=_bounded_text(raw.get("source") or source, _MAX_SOURCE_LENGTH, "source", errors),
             confidence=confidence,
-            captured_utc=datetime.now(timezone.utc).isoformat(),
+            captured_utc=(now or _utc_now()).isoformat(),
             errors=tuple(errors),
         )
 
@@ -77,7 +115,12 @@ class ActivitySnapshot:
         return data
 
 
-def safe_activity_snapshot(provider: Callable[[], Any], *, timeout_seconds: float = 0.25) -> ActivitySnapshot:
+def safe_activity_snapshot(
+    provider: Callable[[], Any],
+    *,
+    timeout_seconds: float = 0.25,
+    clock=None,
+) -> ActivitySnapshot:
     """Run an external activity provider without blocking the Tk owner thread."""
     result: dict[str, Any] = {}
 
@@ -90,13 +133,13 @@ def safe_activity_snapshot(provider: Callable[[], Any], *, timeout_seconds: floa
     worker = threading.Thread(target=invoke, name="focuscheck-activity-provider", daemon=True)
     worker.start()
     worker.join(max(0.0, float(timeout_seconds)))
-    now = datetime.now(timezone.utc).isoformat()
+    now = _utc_now(clock)
     if worker.is_alive():
-        return ActivitySnapshot(captured_utc=now, errors=("provider timeout",))
+        return ActivitySnapshot(captured_utc=now.isoformat(), errors=("provider timeout",))
     if "error" in result:
         exc = result["error"]
-        return ActivitySnapshot(captured_utc=now, errors=(f"provider error: {type(exc).__name__}",))
+        return ActivitySnapshot(captured_utc=now.isoformat(), errors=(f"provider error: {type(exc).__name__}",))
     try:
-        return ActivitySnapshot.from_mapping(result.get("value"))
+        return ActivitySnapshot.from_mapping(result.get("value"), now=now)
     except Exception as exc:
-        return ActivitySnapshot(captured_utc=now, errors=(f"provider error: {type(exc).__name__}",))
+        return ActivitySnapshot(captured_utc=now.isoformat(), errors=(f"provider error: {type(exc).__name__}",))
