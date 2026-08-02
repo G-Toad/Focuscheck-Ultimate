@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tkinter as tk
 import unittest
+from unittest import mock
 
 
 def _make_root():
@@ -136,7 +137,7 @@ class DialogKeyboardTests(unittest.TestCase):
         root = _make_root()
         events = []
         try:
-            with unittest.mock.patch.object(v2_subpopup_dialog, "_get_virtual_screen_rect", return_value=(0, 0, 800, 600)):
+            with mock.patch.object(v2_subpopup_dialog, "_get_virtual_screen_rect", return_value=(0, 0, 800, 600)):
                 dialog = v2_subpopup_dialog.V2SubPopupDialog(
                     root,
                     "example.com",
@@ -176,7 +177,7 @@ class DialogKeyboardTests(unittest.TestCase):
         root = _make_root()
         events = []
         try:
-            with unittest.mock.patch.object(v2_subpopup_dialog, "_get_virtual_screen_rect", return_value=(0, 0, 800, 600)):
+            with mock.patch.object(v2_subpopup_dialog, "_get_virtual_screen_rect", return_value=(0, 0, 800, 600)):
                 dialog = v2_subpopup_dialog.V2SubPopupDialog(
                     root,
                     "example.com",
