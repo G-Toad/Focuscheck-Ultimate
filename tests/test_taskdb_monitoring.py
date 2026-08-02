@@ -371,6 +371,17 @@ class EngineV2MatchingTests(unittest.TestCase):
 
 
 class StartupCommandTests(unittest.TestCase):
+    def test_frozen_startup_command_targets_packaged_supervisor(self):
+        from focuscheck.platform_specific import startup
+
+        with mock.patch.object(startup.sys, "frozen", True, create=True), \
+                mock.patch.object(startup.sys, "executable", "C:\\FocusCheck\\app\\FocusCheck.exe"):
+            command = startup.compose_startup_command()
+
+        self.assertIn('"C:\\FocusCheck\\app\\FocusCheckSupervisor.exe"', command)
+        self.assertIn("--run", command)
+        self.assertIn('--base-dir "C:\\FocusCheck\\app"', command)
+
     def test_compose_startup_command_targets_supervisor_entrypoint(self):
         from focuscheck.platform_specific import startup
 

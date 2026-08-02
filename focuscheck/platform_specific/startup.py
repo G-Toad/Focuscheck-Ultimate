@@ -4,6 +4,7 @@ import sys
 import os
 import platform as _platform
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,9 @@ def compose_startup_command(entrypoint=None):
     """Generate command for Windows startup."""
     try:
         if getattr(sys, 'frozen', False):
-            return f'"{sys.executable}"'
+            child = Path(sys.executable).resolve()
+            supervisor = child.with_name("FocusCheckSupervisor.exe")
+            return f'"{supervisor}" --run --base-dir "{child.parent}"'
         if entrypoint is None:
             root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             entrypoint = os.path.join(root, "focuscheck_supervisor.py")
