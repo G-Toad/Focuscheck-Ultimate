@@ -8,6 +8,8 @@ for both development and PyInstaller-frozen environments.
 import os
 import sys
 import platform
+from dataclasses import dataclass
+from pathlib import Path
 
 
 def get_base_dir():
@@ -112,13 +114,69 @@ def choose_path(filename):
     return os.path.join(get_data_dir(), filename)
 
 
+@dataclass(frozen=True)
+class AppPaths:
+    """Canonical paths for one FocusCheck data root.
+
+    Keeping this object immutable prevents components from independently
+    recomputing paths during a process lifetime. Legacy files remain available
+    through ``choose_path`` for migration tooling, not for new runtime state.
+    """
+
+    root: Path
+    settings: Path
+    settings_backup: Path
+    settings_quarantine_prefix: Path
+    task_db: Path
+    focus_log: Path
+    waste_log: Path
+    study_log: Path
+    intervention_log: Path
+    app_log: Path
+    supervisor_log: Path
+    heartbeat: Path
+    stop_request: Path
+    lock: Path
+    diagnostic_bundle: Path
+    exports: Path
+    cache: Path
+    temp: Path
+
+
+def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
+    """Return one canonical, created path set for the selected data root."""
+    root = Path(data_dir) if data_dir is not None else Path(get_data_dir())
+    root.mkdir(parents=True, exist_ok=True)
+    return AppPaths(
+        root=root,
+        settings=root / "focus_settings.json",
+        settings_backup=root / "focus_settings.json.bak",
+        settings_quarantine_prefix=root / "focus_settings.json.corrupt-",
+        task_db=root / "focus_tasks.sqlite3",
+        focus_log=root / "focus_log.csv",
+        waste_log=root / "focus_waste_log.csv",
+        study_log=root / "focus_study_log.csv",
+        intervention_log=root / "focus_intervention_reflections.jsonl",
+        app_log=root / "focus_app.log",
+        supervisor_log=root / "focuscheck_supervisor.log",
+        heartbeat=root / "hb.txt",
+        stop_request=root / "supervisor.stop",
+        lock=root / "supervisor.lock",
+        diagnostic_bundle=root / "diagnostic_bundle.zip",
+        exports=root / "exports",
+        cache=root / "cache",
+        temp=root / "tmp",
+    )
+
+
 # -------------------- Path Constants --------------------
 # These constants define the standard locations for application data files
 
-SETTINGS_PATH = choose_path("focus_settings.json")
-LOG_PATH = choose_path("focus_log.csv")
+_APP_PATHS = get_app_paths()
+SETTINGS_PATH = str(_APP_PATHS.settings)
+LOG_PATH = str(_APP_PATHS.focus_log)
 # The application heartbeat and supervisor heartbeat are one protocol/file.
-HEARTBEAT_PATH = choose_path("hb.txt")
-TASK_DB_PATH = choose_path("focus_tasks.sqlite3")
-APP_LOG_PATH = choose_path("focus_app.log")
-WASTE_LOG_PATH = choose_path("focus_waste_log.csv")
+HEARTBEAT_PATH = str(_APP_PATHS.heartbeat)
+TASK_DB_PATH = str(_APP_PATHS.task_db)
+APP_LOG_PATH = str(_APP_PATHS.app_log)
+WASTE_LOG_PATH = str(_APP_PATHS.waste_log)

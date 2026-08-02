@@ -1,6 +1,6 @@
 # Release Evidence
 
-- Automated: `79` unittest cases pass in the isolated verification runner.
+- Automated: `82` unittest cases pass in the isolated verification runner.
 - Compileall, application self-test, tray self-test, QA scenario runner, and settings inventory pass.
 - Release decision: `NOT_READY`.
 - No reproducible installer/signing contract is currently present.

@@ -10,6 +10,7 @@ from ..ui.dialogs.v2_prompt_dialog import V2PromptDialog
 from ..ui.dialogs.v2_subpopup_dialog import V2SubPopupDialog
 from ..ui.dialogs.intervention_wizard import InterventionWizard
 from ..settings import save_settings
+from ..utils.timers import TimerRegistry
 
 try:
     from ..utils.logging_utils import get_logger
@@ -28,10 +29,10 @@ class EngineV2(BaseEngine):
         super().__init__(app)
         self._last_hwnd = None
         self._last_switch_mono = time.monotonic()
-        self._subpopup_timer_id = None
         self._subpopup_active = False
         self._settings = None
         self._activity_provider = activity_provider or get_active_window_info
+        self._timers = TimerRegistry(getattr(app, "root", None)) if getattr(app, "root", None) is not None else None
 
     def create_prompt(self, settings, slot_info):
         activity_info = self._get_activity_info()
@@ -50,15 +51,8 @@ class EngineV2(BaseEngine):
         self._schedule_subpopup_check()
 
     def shutdown(self):
-        root = getattr(self.app, "root", None)
-        if root is None:
-            return
-        if self._subpopup_timer_id is not None:
-            try:
-                root.after_cancel(self._subpopup_timer_id)
-            except Exception:
-                pass
-            self._subpopup_timer_id = None
+        if self._timers is not None:
+            self._timers.close()
 
     def _get_activity_info(self):
         info = self._activity_provider()
@@ -74,24 +68,18 @@ class EngineV2(BaseEngine):
         return info
 
     def _schedule_subpopup_check(self):
-        root = getattr(self.app, "root", None)
-        if root is None:
+        if self._timers is None or self._timers.closed:
             return
-        if self._subpopup_timer_id is not None:
-            try:
-                root.after_cancel(self._subpopup_timer_id)
-            except Exception:
-                pass
-            self._subpopup_timer_id = None
-        self._subpopup_timer_id = root.after(3000, self._subpopup_tick)
+        self._timers.schedule(
+            "website-subpopup",
+            3000,
+            self._subpopup_tick,
+            interval_ms=3000,
+        )
 
     def _subpopup_tick(self):
-        self._subpopup_timer_id = None
-        try:
-            if self._should_check_subpopup():
-                self._maybe_show_subpopup()
-        finally:
-            self._schedule_subpopup_check()
+        if self._should_check_subpopup():
+            self._maybe_show_subpopup()
 
     def _should_check_subpopup(self):
         if self._subpopup_active:
