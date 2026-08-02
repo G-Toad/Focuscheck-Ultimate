@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `207` unittest cases passing.
+- Current automated baseline after hardening: `208` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -32,5 +32,6 @@
 - The export inventory allowlist covers application/supervisor logs, settings recovery artifacts, audit journals, heartbeat/stop markers, diagnostic bundles, and camera files without exposing contents in inventory metadata.
 - The tray diagnostic bundle action previews allowlisted operational files and creates a sanitized bundle that excludes settings, tasks, camera files, and exports.
 - Tray fallback activation is idempotent and stops pystray before native tray activation on the Tk owner thread.
+- Prompt ticks use the validated in-memory settings snapshot; settings reload is explicit rather than hot-path.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

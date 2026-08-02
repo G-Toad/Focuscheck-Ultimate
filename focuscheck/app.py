@@ -686,7 +686,9 @@ class App:
         return guard_paused
 
     def _maybe_show_prompt(self):
-        self.settings = load_settings()  # refresh
+        # Prompt eligibility uses the validated snapshot owned by App. Settings
+        # reloads happen at startup and explicit settings/tray entry points,
+        # not on every scheduler tick.
         if getattr(self, "_runtime_state", None) is not None:
             self._runtime_state.refresh_from_settings(self.settings)
             guard_paused = self._refresh_guard_state()

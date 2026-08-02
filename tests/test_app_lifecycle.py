@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
 from unittest import mock
 
@@ -249,6 +250,22 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertTrue(App._refresh_guard_state(app))
         app.guard.should_pause.assert_called_once_with()
         app._runtime_state.set_guard_reason.assert_called_once_with("system_guard", True)
+
+    def test_prompt_tick_uses_in_memory_settings_snapshot(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"paused": True, "pause_poll_interval_seconds": 5}
+        app._runtime_state = mock.Mock()
+        app._runtime_state.snapshot = SimpleNamespace(effectively_paused=True)
+        app._refresh_guard_state = mock.Mock(return_value=False)
+        app._schedule_next = mock.Mock()
+
+        with mock.patch("focuscheck.app.load_settings", side_effect=AssertionError("hot-path reload")):
+            App._maybe_show_prompt(app)
+
+        app._runtime_state.refresh_from_settings.assert_called_once_with(app.settings)
+        app._schedule_next.assert_called_once_with(5000)
 
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
