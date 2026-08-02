@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 164 unittest cases.
+- Automated test baseline: 166 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -15,3 +15,4 @@
 - The full runtime state and timer architecture is being migrated incrementally; legacy App callbacks still exist.
 - Code signing is not configured.
 - A disposable PyInstaller build, packaged self-test, and disposable install/upgrade/uninstall lifecycle have passed; real installer shell and signing remain pending.
+- Supervisor restart waits are cancellation-aware, and accepted generation-bound stop requests receive an atomic durable acknowledgement.

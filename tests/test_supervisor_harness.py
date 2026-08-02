@@ -181,6 +181,7 @@ class HarnessSupervisor:
             resume_gap=10,
             restart_delay=1,
             stop_file=Path(temp_dir) / "supervisor.stop",
+            stop_ack_file=Path(temp_dir) / "supervisor.stop.ack",
         )
         self.supervisor.stop_event = FakeEvent()
         self.supervisor.launches = []
@@ -294,6 +295,69 @@ class SupervisorHarnessTests(unittest.TestCase):
         self.assertEqual(1.0, supervisor.current_delay)
         self.assertEqual([], supervisor._restart_history)
         self.assertEqual(0.0, supervisor._degraded_until)
+
+    def test_intentional_stop_is_acknowledged_for_current_generation(self):
+        from focuscheck_supervisor import FocusCheckSupervisor, FileLogger
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            stop_file = root / "supervisor.stop"
+            ack_file = root / "supervisor.stop.ack"
+            supervisor = FocusCheckSupervisor(
+                target_script=root / "main.py",
+                python_executable="python",
+                logger=FileLogger(root / "supervisor.log"),
+                stop_file=stop_file,
+                stop_ack_file=ack_file,
+                heartbeat_path=root / "hb.txt",
+            )
+            supervisor.child_generation = "generation-1"
+            request = {
+                "protocol_version": 1,
+                "request_id": "request-1",
+                "supervisor_id": supervisor.supervisor_id,
+                "generation": "generation-1",
+                "pid": 1234,
+                "process_start_utc": "2026-08-03T00:00:00+00:00",
+                "utc": datetime.now(timezone.utc).isoformat(),
+                "reason": "user_exit",
+            }
+            stop_file.write_text(json.dumps(request), encoding="utf-8")
+
+            self.assertTrue(supervisor._intentional_stop_requested(expected_pid=1234))
+            supervisor._acknowledge_stop_request()
+            ack = json.loads(ack_file.read_text(encoding="utf-8"))
+            self.assertEqual("request-1", ack["request_id"])
+            self.assertEqual("generation-1", ack["generation"])
+            self.assertEqual("acknowledged", ack["status"])
+
+    def test_intentional_stop_acknowledgement_ignores_foreign_generation(self):
+        from focuscheck_supervisor import FocusCheckSupervisor, FileLogger
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            stop_file = root / "supervisor.stop"
+            ack_file = root / "supervisor.stop.ack"
+            supervisor = FocusCheckSupervisor(
+                target_script=root / "main.py",
+                python_executable="python",
+                logger=FileLogger(root / "supervisor.log"),
+                stop_file=stop_file,
+                stop_ack_file=ack_file,
+                heartbeat_path=root / "hb.txt",
+            )
+            supervisor.child_generation = "generation-current"
+            stop_file.write_text(json.dumps({
+                "protocol_version": 1,
+                "request_id": "request-foreign",
+                "supervisor_id": supervisor.supervisor_id,
+                "generation": "generation-old",
+                "pid": 1234,
+                "utc": datetime.now(timezone.utc).isoformat(),
+            }), encoding="utf-8")
+
+            self.assertFalse(supervisor._intentional_stop_requested(expected_pid=1234))
+            self.assertFalse(ack_file.exists())
 
 
 if __name__ == "__main__":

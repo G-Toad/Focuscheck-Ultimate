@@ -36,6 +36,7 @@ STILL_ACTIVE = 259
 HEARTBEAT_FILENAME = "hb.txt"
 SUPERVISOR_LOCK_FILENAME = "supervisor.lock"
 SUPERVISOR_STOP_FILENAME = "supervisor.stop"
+SUPERVISOR_STOP_ACK_FILENAME = "supervisor.stop.ack"
 HEARTBEAT_MAX_AGE = 12.0
 HEARTBEAT_GRACE_PERIOD = 15.0
 FILE_HEARTBEAT_INTERVAL_SECONDS = 60.0
@@ -74,6 +75,13 @@ def default_supervisor_stop_path() -> Path:
     if override:
         return Path(override)
     return _resolve_focuscheck_dir() / SUPERVISOR_STOP_FILENAME
+
+
+def default_supervisor_stop_ack_path() -> Path:
+    override = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_ACK_FILE")
+    if override:
+        return Path(override)
+    return _resolve_focuscheck_dir() / SUPERVISOR_STOP_ACK_FILENAME
 
 
 def _pid_is_alive(pid: int) -> bool:
@@ -347,6 +355,7 @@ class FocusCheckSupervisor:
         resume_gap: float = DEFAULT_RESUME_GAP,
         restart_delay: float = DEFAULT_RESTART_DELAY,
         stop_file: Path | None = None,
+        stop_ack_file: Path | None = None,
         heartbeat_path: Path | None = None,
     ) -> None:
         self.target_script = target_script
@@ -363,6 +372,7 @@ class FocusCheckSupervisor:
         self._setup_signal_handlers()
         self.heartbeat_path = heartbeat_path or default_heartbeat_path()
         self.stop_file = stop_file or default_supervisor_stop_path()
+        self.stop_ack_file = stop_ack_file or default_supervisor_stop_ack_path()
         self._heartbeat_grace_deadline = 0.0
         self.supervisor_id = uuid.uuid4().hex
         self.child_generation: str | None = None
@@ -375,6 +385,7 @@ class FocusCheckSupervisor:
         self._degraded_until = 0.0
         suppress_windows_error_dialogs()
         self._clear_stop_request()
+        self._clear_stop_ack()
 
     def _setup_signal_handlers(self) -> None:
         def _signal_handler(signum, _frame):
@@ -424,6 +435,7 @@ class FocusCheckSupervisor:
         # A normal supervised launch must preserve a durable manual pause. An
         # explicit force-start command may set this environment variable.
         env["FOCUSCHECK_SUPERVISOR_STOP_FILE"] = str(self.stop_file)
+        env["FOCUSCHECK_SUPERVISOR_STOP_ACK_FILE"] = str(self.stop_ack_file)
         creationflags = 0
         startupinfo = None
         if os.name == "nt":
@@ -442,7 +454,7 @@ class FocusCheckSupervisor:
             self._heartbeat_grace_deadline = time.monotonic() + HEARTBEAT_GRACE_PERIOD
         except Exception as exc:
             self.logger.log(f"Failed to start FocusCheck: {exc}")
-            time.sleep(min(self.current_delay, MAX_RESTART_DELAY))
+            self.stop_event.wait(min(self.current_delay, MAX_RESTART_DELAY))
     def _kill_child_tree(self) -> None:
         if not self.child:
             return
@@ -463,7 +475,7 @@ class FocusCheckSupervisor:
         self._kill_child_tree()
         self.current_delay = self.restart_delay
         self.last_tick = time.monotonic()
-        time.sleep(FORCED_RESTART_PAUSE)
+        self.stop_event.wait(FORCED_RESTART_PAUSE)
 
     def _record_restart_failure(self, reason: str) -> None:
         now = time.monotonic()
@@ -586,6 +598,46 @@ class FocusCheckSupervisor:
         except OSError:
             pass
 
+    def _clear_stop_ack(self) -> None:
+        try:
+            self.stop_ack_file.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+    def _acknowledge_stop_request(self) -> None:
+        """Publish a durable acknowledgement before leaving the supervisor."""
+        try:
+            payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
+            ack = {
+                "protocol_version": 1,
+                "request_id": payload.get("request_id", ""),
+                "supervisor_id": self.supervisor_id,
+                "generation": self.child_generation,
+                "pid": int(payload.get("pid", 0)),
+                "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "status": "acknowledged",
+            }
+            self.stop_ack_file.parent.mkdir(parents=True, exist_ok=True)
+            temporary = self.stop_ack_file.with_name(
+                f"{self.stop_ack_file.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+            )
+            try:
+                with temporary.open("w", encoding="ascii") as handle:
+                    json.dump(ack, handle, separators=(",", ":"))
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, self.stop_ack_file)
+            finally:
+                try:
+                    temporary.unlink()
+                except OSError:
+                    pass
+            self.logger.log(f"Intentional FocusCheck stop acknowledged (request_id={ack['request_id']})")
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            self.logger.log(f"Could not acknowledge intentional stop: {exc}")
+
     def _intentional_stop_requested(self, expected_pid: int | None = None) -> bool:
         try:
             payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
@@ -625,6 +677,7 @@ class FocusCheckSupervisor:
                     self.logger.log(f"FocusCheck exited with {exit_code}")
                     self.child = None
                     if self._intentional_stop_requested(exited_pid):
+                        self._acknowledge_stop_request()
                         self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
                         self._clear_stop_request()
                         self.stop_event.set()
