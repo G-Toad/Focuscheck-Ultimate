@@ -351,6 +351,20 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
         self.assertIsNone(app._current_prompt)
 
+    def test_prompt_completion_cancels_owned_observer_timers(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._current_prompt = None
+        app._timers = mock.Mock()
+        app._prompt_visibility_timer_id = None
+        app._prompt_closed_timer_id = None
+
+        App._on_prompt_done(app)
+
+        app._timers.cancel.assert_any_call("prompt-visible")
+        app._timers.cancel.assert_any_call("prompt-closed")
+
     def test_refresh_guard_samples_guard_once_and_publishes_state(self):
         from focuscheck.app import App
 

@@ -886,20 +886,17 @@ class App:
                 except Exception:
                     pass
 
-        try:
-            self.root.after(300, _check_prompt_visible)
-        except Exception:
-            pass
-
         # Use non-blocking approach instead of wait_window() to avoid GIL issues with pystray
         def _check_dialog_closed():
             try:
                 if not self._prompt_coordinator.is_current(dlg, prompt_generation):
+                    self._cancel_prompt_observers()
                     return
                 # Check if dialog window still exists
                 if dlg.winfo_exists():
                     # Dialog still open, check again in 100ms
-                    self.root.after(100, _check_dialog_closed)
+                    if not hasattr(self, "_timers"):
+                        self._prompt_closed_timer_id = self.root.after(100, _check_dialog_closed)
                 else:
                     # Dialog closed, schedule next prompt
                     self._on_prompt_done()
@@ -907,8 +904,12 @@ class App:
                 # Dialog destroyed or error, schedule next prompt
                 self._on_prompt_done()
 
-        # Start checking if dialog is closed
-        self.root.after(100, _check_dialog_closed)
+        if hasattr(self, "_timers"):
+            self._timers.schedule("prompt-visible", 300, _check_prompt_visible)
+            self._timers.schedule("prompt-closed", 100, _check_dialog_closed, interval_ms=100)
+        else:
+            self._prompt_visibility_timer_id = self.root.after(300, _check_prompt_visible)
+            self._prompt_closed_timer_id = self.root.after(100, _check_dialog_closed)
 
 
 
@@ -979,6 +980,7 @@ class App:
         self._quit(reason=f"windows_{stage}")
 
     def _on_prompt_done(self):
+        self._cancel_prompt_observers()
         prompt = self._current_prompt
         if prompt is None:
             return
@@ -992,6 +994,23 @@ class App:
         if state is not None:
             state.end_prompt()
         self._schedule_next()
+
+    def _cancel_prompt_observers(self):
+        """Cancel visibility/closed polling owned by the current prompt."""
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.cancel("prompt-visible")
+            timers.cancel("prompt-closed")
+        root = getattr(self, "root", None)
+        for attribute in ("_prompt_visibility_timer_id", "_prompt_closed_timer_id"):
+            timer_id = getattr(self, attribute, None)
+            if timer_id is None or root is None:
+                continue
+            try:
+                root.after_cancel(timer_id)
+            except Exception:
+                pass
+            setattr(self, attribute, None)
 
     def run_intervention(self, settings, *, preselect_hwnd=None, preselect_title=None) -> bool:
         """Run one intervention under the application-owned lease."""
@@ -1363,6 +1382,7 @@ class App:
                     pass
 
     def _close_current_prompt(self, source="unknown"):
+        self._cancel_prompt_observers()
         prompt = getattr(self, "_current_prompt", None)
         if prompt is None:
             return False
