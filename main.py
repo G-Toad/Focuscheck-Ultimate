@@ -24,42 +24,6 @@ if os.name == "nt":
     except Exception:
         pass
 
-HEARTBEAT_FILENAME = "hb.txt"
-HEARTBEAT_INTERVAL_MS = 1500
-
-
-def _focuscheck_data_dir() -> str:
-    base = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
-    if base:
-        return os.path.join(base, "FocusCheck")
-    return os.path.join(os.path.expanduser("~"), "FocusCheck")
-
-
-HEARTBEAT_PATH = os.path.join(_focuscheck_data_dir(), HEARTBEAT_FILENAME)
-
-
-def start_heartbeat_writer(app, interval_ms: int = HEARTBEAT_INTERVAL_MS) -> None:
-    """Write a heartbeat file periodically so the supervisor can detect hangs."""
-    directory = os.path.dirname(HEARTBEAT_PATH)
-
-    def _beat() -> None:
-        try:
-            os.makedirs(directory, exist_ok=True)
-            with open(HEARTBEAT_PATH, "w", encoding="ascii") as handle:
-                handle.write(str(time.time()))
-        except Exception:
-            pass
-        try:
-            app.root.after(interval_ms, _beat)
-        except Exception:
-            pass
-
-    try:
-        _beat()
-    except Exception:
-        pass
-
-
 from focuscheck import App
 from focuscheck.platform_specific import install_startup, uninstall_startup
 from focuscheck.utils import acquire_single_instance, get_logger
@@ -191,8 +155,6 @@ def main():
     try:
         # Instantiate app first so we can schedule actions on its Tk loop
         app = App()
-        start_heartbeat_writer(app)
-
         # Optional: run for N seconds then quit (prevents running forever during tests)
         run_secs = None
         for arg in sys.argv:

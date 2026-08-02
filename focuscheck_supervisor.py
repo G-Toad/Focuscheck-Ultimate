@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import json
 import os
 import shutil
 import signal
@@ -39,13 +40,17 @@ FORCED_RESTART_PAUSE = 0.2
 
 
 def _resolve_focuscheck_dir() -> Path:
+    override = os.environ.get("FOCUS_DATA_DIR")
+    if override:
+        return Path(override)
     base = os.environ.get("APPDATA") or os.environ.get("LOCALAPPDATA")
     if base:
         return Path(base) / LOG_DIR_NAME
     return Path.home() / LOG_DIR_NAME
 
 
-HEARTBEAT_PATH = _resolve_focuscheck_dir() / HEARTBEAT_FILENAME
+def default_heartbeat_path() -> Path:
+    return _resolve_focuscheck_dir() / HEARTBEAT_FILENAME
 
 
 def default_supervisor_lock_path() -> Path:
@@ -202,17 +207,8 @@ def kill_process_tree(pid: int) -> None:
 
 
 def kill_werfault_dialogs() -> None:
-    if os.name != "nt":
-        return
-    try:
-        subprocess.run(
-            ["taskkill", "/F", "/IM", "WerFault.exe", "/T"],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except Exception:
-        pass
+    """Retained compatibility hook; never terminate unrelated system processes."""
+    return
 
 class FileLogger:
     """Very small file based logger with cheap rotation."""
@@ -249,6 +245,7 @@ class FocusCheckSupervisor:
         resume_gap: float = DEFAULT_RESUME_GAP,
         restart_delay: float = DEFAULT_RESTART_DELAY,
         stop_file: Path | None = None,
+        heartbeat_path: Path | None = None,
     ) -> None:
         self.target_script = target_script
         self.python_executable = python_executable
@@ -262,7 +259,7 @@ class FocusCheckSupervisor:
         self.current_delay = self.restart_delay
         self._ctrl_handler = None
         self._setup_signal_handlers()
-        self.heartbeat_path = HEARTBEAT_PATH
+        self.heartbeat_path = heartbeat_path or default_heartbeat_path()
         self.stop_file = stop_file or default_supervisor_stop_path()
         self._heartbeat_grace_deadline = 0.0
         suppress_windows_error_dialogs()
@@ -305,7 +302,8 @@ class FocusCheckSupervisor:
         cmd = [self.python_executable, str(self.target_script)]
         env = os.environ.copy()
         env.setdefault("FOCUSCHECK_SUPERVISED", "1")
-        env.setdefault("FOCUSCHECK_FORCE_STARTED", "1")
+        # A normal supervised launch must preserve a durable manual pause. An
+        # explicit force-start command may set this environment variable.
         env["FOCUSCHECK_SUPERVISOR_STOP_FILE"] = str(self.stop_file)
         creationflags = 0
         startupinfo = None
@@ -321,7 +319,6 @@ class FocusCheckSupervisor:
                 startupinfo=startupinfo,
             )
             self.logger.log(f"FocusCheck started (pid={self.child.pid})")
-            self.current_delay = self.restart_delay
             self.last_tick = time.monotonic()
             self._heartbeat_grace_deadline = time.monotonic() + HEARTBEAT_GRACE_PERIOD
         except Exception as exc:
@@ -344,7 +341,6 @@ class FocusCheckSupervisor:
     def _force_restart(self, reason: str) -> None:
         self.logger.log(f"{reason}; forcing restart")
         self._kill_child_tree()
-        kill_werfault_dialogs()
         self.current_delay = self.restart_delay
         self.last_tick = time.monotonic()
         time.sleep(FORCED_RESTART_PAUSE)
@@ -379,12 +375,20 @@ class FocusCheckSupervisor:
         if time.monotonic() < self._heartbeat_grace_deadline:
             return False
         try:
-            mtime = self.heartbeat_path.stat().st_mtime
+            raw = self.heartbeat_path.read_text(encoding="utf-8").strip()
+            payload = json.loads(raw)
+            heartbeat_utc = payload.get("utc")
+            heartbeat_pid = int(payload.get("pid", 0))
+            if heartbeat_pid and self.child is not None and heartbeat_pid != self.child.pid:
+                return True
+            from datetime import datetime, timezone
+            timestamp = datetime.fromisoformat(str(heartbeat_utc).replace("Z", "+00:00"))
+            age = time.time() - timestamp.astimezone(timezone.utc).timestamp()
+            return age > HEARTBEAT_MAX_AGE or age < -HEARTBEAT_MAX_AGE
         except FileNotFoundError:
             return True
-        except OSError:
-            return False
-        return (time.time() - mtime) > HEARTBEAT_MAX_AGE
+        except (ValueError, TypeError, OSError, json.JSONDecodeError):
+            return True
 
     def stop(self) -> None:
         self.stop_event.set()
@@ -410,7 +414,6 @@ class FocusCheckSupervisor:
                 if self.child is not None:
                     exit_code = self.child.poll()
                     self.logger.log(f"FocusCheck exited with {exit_code}")
-                    kill_werfault_dialogs()
                     self.child = None
                     if self._intentional_stop_requested():
                         self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
@@ -436,6 +439,8 @@ class FocusCheckSupervisor:
                 self._force_restart("Heartbeat stale; FocusCheck unresponsive")
                 continue
             self.last_tick = now
+            if now - self._heartbeat_grace_deadline > 300:
+                self.current_delay = self.restart_delay
             self.stop_event.wait(self.check_interval)
         self.logger.log("Supervisor loop stopping")
         self._terminate_child()

@@ -13,7 +13,7 @@ class LaunchScriptContractTests(unittest.TestCase):
     def test_startup_batch_launches_supervisor_started(self):
         script = (ROOT / "start_focuscheck.bat").read_text(encoding="utf-8").lower()
 
-        self.assertIn("focuscheck_force_started=1", script)
+        self.assertNotIn("focuscheck_force_started", script)
         self.assertIn("focuscheck_supervisor.py", script)
         self.assertIn("--run", script)
         self.assertIn("--base-dir", script)

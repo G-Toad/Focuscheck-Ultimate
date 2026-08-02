@@ -73,6 +73,8 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertEqual(1, stats["completed"])
             self.assertEqual(0, stats["failed"])
 
+            self.assertFalse(db.mark_failed(task_id))
+
     def test_changed_counts_as_failed_when_configured(self):
         from focuscheck.database.task_db import TaskDB
 
@@ -127,6 +129,41 @@ class EngineV2MatchingTests(unittest.TestCase):
         flags = [{"domain": "reddit.com", "enabled": True, "cooldown_minutes": 10, "last_dismissed": datetime.now().timestamp()}]
 
         self.assertIsNone(engine._match_flag({"url": "https://reddit.com", "title": ""}, flags))
+
+    def test_cancelled_intervention_does_not_start_cooldown(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        class Root:
+            def after(self, _delay, callback):
+                return callback()
+
+            def after_cancel(self, _timer):
+                return None
+
+        class App:
+            root = Root()
+            _current_prompt = None
+            _intervention_active = False
+            settings = {"website_flags": [{"domain": "reddit.com", "severity": 3, "cooldown_minutes": 5}]}
+
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = App()
+        engine._last_hwnd = None
+        engine._last_switch_mono = 0.0
+        engine._settings = App.settings
+        engine._subpopup_active = False
+        engine._activity_provider = lambda: {"hwnd": 10, "title": "Reddit", "url": "https://reddit.com"}
+
+        class CancelledWizard:
+            def __init__(self, *_args):
+                pass
+
+            def run(self, **_kwargs):
+                return False
+
+        with mock.patch("focuscheck.monitoring.engine_v2.InterventionWizard", CancelledWizard), mock.patch("focuscheck.monitoring.engine_v2.save_settings") as save:
+            engine._maybe_show_subpopup()
+        save.assert_not_called()
 
     def test_match_flag_rejects_suffix_attack_when_host_parsed(self):
         from focuscheck.monitoring.engine_v2 import EngineV2

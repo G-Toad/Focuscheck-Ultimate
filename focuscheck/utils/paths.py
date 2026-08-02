@@ -107,7 +107,8 @@ def choose_path(filename):
 
 SETTINGS_PATH = choose_path("focus_settings.json")
 LOG_PATH = choose_path("focus_log.csv")
-HEARTBEAT_PATH = choose_path("focus_heartbeat.json")
+# The application heartbeat and supervisor heartbeat are one protocol/file.
+HEARTBEAT_PATH = choose_path("hb.txt")
 TASK_DB_PATH = choose_path("focus_tasks.sqlite3")
 APP_LOG_PATH = choose_path("focus_app.log")
 WASTE_LOG_PATH = choose_path("focus_waste_log.csv")

@@ -139,9 +139,12 @@ class EngineV2(BaseEngine):
 
         def _on_yes():
             try:
-                _update_cooldown()
                 wizard = InterventionWizard(self.app.root, settings)
-                wizard.run(preselect_hwnd=info.get("hwnd"), preselect_title=info.get("title"))
+                completed = bool(wizard.run(preselect_hwnd=info.get("hwnd"), preselect_title=info.get("title")))
+                # A cancelled or failed intervention must remain retryable;
+                # only a completed intervention starts the cooldown.
+                if completed:
+                    _update_cooldown()
             finally:
                 _finish()
 

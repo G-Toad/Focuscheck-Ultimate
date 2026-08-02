@@ -1,0 +1,96 @@
+{
+  "generated_utc": "2026-08-02T14:51:58.576894+00:00",
+  "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
+  "isolated_data_dir": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data",
+  "results": [
+    {
+      "name": "compileall",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "-m",
+        "compileall",
+        "main.py",
+        "focuscheck",
+        "focuscheck_supervisor.py",
+        "tests",
+        "tools"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 187,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\compileall.log"
+    },
+    {
+      "name": "unittest",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test*.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 6312,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
+    },
+    {
+      "name": "qa_scenario_runner",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "tools/qa_scenario_runner.py",
+        "--reset",
+        "--skip-gui"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 891,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\qa_scenario_runner.log"
+    },
+    {
+      "name": "main_selftest",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "main.py",
+        "--selftest"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 827,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\main_selftest.log"
+    },
+    {
+      "name": "tray_selftest",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "main.py",
+        "--tray-selftest"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 625,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\tray_selftest.log"
+    },
+    {
+      "name": "settings_inventory",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "tools/settings_inventory.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 5172,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
+    }
+  ],
+  "manual_gates": [
+    "live tray and Tk interaction",
+    "Windows startup registry and real supervisor restart",
+    "browser/window activity provider matrix",
+    "native lock/sleep/resume and monitor overlay behavior",
+    "release packaging and install/uninstall lifecycle"
+  ]
+}

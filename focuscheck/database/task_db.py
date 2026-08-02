@@ -19,7 +19,8 @@ class TaskDB:
         con = sqlite3.connect(self.path, timeout=30)
         try:
             con.execute("PRAGMA journal_mode=WAL")
-            con.execute("PRAGMA synchronous=NORMAL")
+            con.execute("PRAGMA synchronous=FULL")
+            con.execute("PRAGMA foreign_keys=ON")
         except Exception:
             pass
         try:
@@ -52,14 +53,17 @@ class TaskDB:
                 )
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)")
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_utc)")
-                # Add timed_out column if missing
-                try:
-                    cur.execute("PRAGMA table_info(tasks)")
-                    cols = [r[1] for r in cur.fetchall()]
-                    if "timed_out" not in cols:
-                        cur.execute("ALTER TABLE tasks ADD COLUMN timed_out INTEGER DEFAULT 0")
-                except Exception:
-                    pass
+                cur.execute("PRAGMA table_info(tasks)")
+                cols = [r[1] for r in cur.fetchall()]
+                if "timed_out" not in cols:
+                    cur.execute("ALTER TABLE tasks ADD COLUMN timed_out INTEGER NOT NULL DEFAULT 0")
+                # Repair legacy databases before enforcing the one-active-task
+                # invariant; retain the newest active row as authoritative.
+                cur.execute(
+                    "UPDATE tasks SET status='changed', change_reason='reconciled duplicate active task' "
+                    "WHERE status='active' AND id != (SELECT MAX(id) FROM tasks WHERE status='active')"
+                )
+                cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_one_active ON tasks(status) WHERE status = 'active'")
                 # Waste events table (what the user was wasting time on)
                 cur.execute(
                     """
@@ -85,9 +89,14 @@ class TaskDB:
                     """
                 )
                 cur.execute("CREATE INDEX IF NOT EXISTS idx_focus_created ON focus_events(created_utc)")
+                cur.execute("PRAGMA user_version")
+                schema_version = int(cur.fetchone()[0] or 0)
+                if schema_version < 1:
+                    cur.execute("PRAGMA user_version = 1")
                 con.commit()
-        except Exception:
+        except Exception as exc:
             log_exception("TaskDB: failed ensuring schema")
+            raise RuntimeError(f"TaskDB schema initialization failed: {exc}") from exc
 
     def get_active(self):
         with self._conn() as con:
@@ -118,6 +127,7 @@ class TaskDB:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='completed', completed_utc=? WHERE id=? AND status='active'", (when_utc, task_id))
             con.commit()
+            return cur.rowcount == 1
 
     def mark_failed(self, task_id, when_utc=None, timed_out=False):
         if when_utc is None:
@@ -125,17 +135,19 @@ class TaskDB:
         with self._conn() as con:
             cur = con.cursor()
             try:
-                cur.execute("UPDATE tasks SET status='failed', completed_utc=?, timed_out=? WHERE id=? AND status IN ('active','completed')", (when_utc, 1 if timed_out else 0, task_id))
+                cur.execute("UPDATE tasks SET status='failed', completed_utc=?, timed_out=? WHERE id=? AND status = 'active'", (when_utc, 1 if timed_out else 0, task_id))
             except Exception:
                 # Fallback for DBs without timed_out column
-                cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status IN ('active','completed')", (when_utc, task_id))
+                cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status = 'active'", (when_utc, task_id))
             con.commit()
+            return cur.rowcount == 1
 
     def mark_changed(self, task_id, reason):
         with self._conn() as con:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='changed', change_reason=? WHERE id=? AND status='active'", (reason, task_id))
             con.commit()
+            return cur.rowcount == 1
 
     def _row_to_dict(self, row):
         if not row:
@@ -160,9 +172,10 @@ class TaskDB:
                         due = due.astimezone(timezone.utc)
                     if datetime.now(timezone.utc) > due:
                         cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status='active'", (now_iso, tid))
-                        affected.append(tid)
-                except Exception:
-                    pass
+                        if cur.rowcount == 1:
+                            affected.append(tid)
+                except (TypeError, ValueError, OverflowError):
+                    continue
             con.commit()
         return affected
 

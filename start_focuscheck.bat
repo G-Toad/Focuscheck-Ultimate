@@ -12,8 +12,6 @@ set "PY_CMD=pythonw.exe"
 where pythonw.exe >NUL 2>&1
 if errorlevel 1 set "PY_CMD=python.exe"
 
-set "FOCUSCHECK_FORCE_STARTED=1"
-
 start "FocusCheck Supervisor" "%PY_CMD%" focuscheck_supervisor.py --run --base-dir "%CD%"
 popd >NUL
 endlocal

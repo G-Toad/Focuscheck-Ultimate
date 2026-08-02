@@ -21,6 +21,29 @@ class SettingsSaveTests(unittest.TestCase):
             replace_mock.assert_called_once()
             self.assertTrue(Path(settings_path).exists())
 
+    def test_save_settings_returns_false_and_keeps_existing_file_on_write_failure(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = str(Path(temp_dir) / "focus_settings.json")
+            Path(settings_path).write_text('{"interval_seconds": 120}', encoding="utf-8")
+            with mock.patch.object(manager, "choose_path", return_value=settings_path), mock.patch.object(manager.os, "replace", side_effect=OSError("disk full")):
+                self.assertFalse(manager.save_settings({"interval_seconds": 30}))
+            self.assertEqual('{"interval_seconds": 120}', Path(settings_path).read_text(encoding="utf-8"))
+
+    def test_malformed_settings_are_quarantined_and_backup_is_recovered(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = Path(temp_dir) / "focus_settings.json"
+            settings_path.write_text("{not-json", encoding="utf-8")
+            Path(f"{settings_path}.bak").write_text('{"interval_seconds": 90}', encoding="utf-8")
+            with mock.patch.object(manager, "choose_path", return_value=str(settings_path)):
+                loaded = manager.load_settings()
+            self.assertEqual(90, loaded["interval_seconds"])
+            self.assertFalse(settings_path.exists())
+            self.assertTrue(list(Path(temp_dir).glob("focus_settings.json.corrupt-*")))
+
 
 class TaskDbTests(unittest.TestCase):
     def test_overdue_naive_datetime_is_treated_as_utc(self):

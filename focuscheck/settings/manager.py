@@ -3,8 +3,12 @@
 import json
 import os
 import platform
+import shutil
 import threading
+import uuid
+from datetime import date
 from .defaults import DEFAULT_SETTINGS
+from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
 from ..utils.paths import choose_path
 from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode
 from .registry import SETTINGS_REGISTRY
@@ -20,7 +24,9 @@ def validate_settings(data):
     # FIRST: Merge ALL keys from data (including unknown ones from plugins/future versions)
     for k, v in data.items():
         if k not in SETTINGS_REGISTRY:
-            log_doctor_mode("UnknownSetting", f"Unknown setting key '{k}' found.", {"key": k, "value": v})
+            # Unknown settings are retained for forward compatibility, but their
+            # values must not be copied into diagnostic output.
+            log_doctor_mode("UnknownSetting", f"Unknown setting key '{k}' found.", {"key": k, "value_type": type(v).__name__})
         s[k] = v
 
     # SECOND: Apply defaults for any missing keys
@@ -50,7 +56,7 @@ def validate_settings(data):
             if normalized in ("0", "false", "no", "n", "off", ""):
                 return False
         return bool(d)
-    s["settings_schema_version"] = 1
+    s["settings_schema_version"] = CURRENT_SETTINGS_SCHEMA_VERSION
     s["interval_seconds"] = max(10, _int(s.get("interval_seconds"), DEFAULT_SETTINGS["interval_seconds"]))
     s["intensify_after_seconds"] = max(5, _int(s.get("intensify_after_seconds"), DEFAULT_SETTINGS["intensify_after_seconds"]))
     s["overdrive_after_seconds"] = max(20, _int(s.get("overdrive_after_seconds"), DEFAULT_SETTINGS["overdrive_after_seconds"]))
@@ -487,7 +493,8 @@ def validate_settings(data):
                 month = int(parts[1])
                 day = int(parts[2])
                 # Validate ranges
-                if 1900 <= year <= 2100 and 1 <= month <= 12 and 1 <= day <= 31:
+                if 1900 <= year <= 2100:
+                    date(year, month, day)
                     return txt
             return default
         except Exception:
@@ -550,6 +557,9 @@ def load_settings():
                     logger.info("    File opened successfully")
                     logger.info("    Parsing JSON...")
                     data = json.load(f)
+                    if not isinstance(data, dict):
+                        raise ValueError("settings root must be a JSON object")
+                    data = migrate_settings(data)
                     logger.info("    JSON parsed successfully")
                     logger.info("      Raw data type: %s", type(data))
                     logger.info("      Number of keys: %s", len(data) if isinstance(data, dict) else "N/A")
@@ -565,6 +575,23 @@ def load_settings():
                 logger.error("  ERROR loading settings file: %s", e)
                 logger.exception("  Full exception:")
                 log_exception("load_settings: failed to parse settings; using defaults")
+                # Preserve the corrupt input for diagnosis and attempt the last
+                # known-good backup before falling back to defaults.
+                quarantine_path = f"{SETTINGS_PATH}.corrupt-{uuid.uuid4().hex[:12]}"
+                try:
+                    os.replace(SETTINGS_PATH, quarantine_path)
+                    logger.warning("settings quarantined at %s", quarantine_path)
+                except OSError:
+                    logger.exception("failed to quarantine corrupt settings")
+                backup_path = f"{SETTINGS_PATH}.bak"
+                if os.path.exists(backup_path):
+                    try:
+                        with open(backup_path, "r", encoding="utf-8") as f:
+                            backup_data = json.load(f)
+                        if isinstance(backup_data, dict):
+                            return validate_settings(migrate_settings(backup_data))
+                    except Exception:
+                        logger.exception("last-known-good settings backup is unusable")
                 logger.info("  Falling through to default settings...")
         else:
             logger.info("  Settings file does not exist, will use defaults")
@@ -611,7 +638,7 @@ def save_settings(s):
         except Exception as e:
             logger.error("    ERROR creating directory: %s", e)
 
-        temp_path = SETTINGS_PATH + ".tmp"
+        temp_path = f"{SETTINGS_PATH}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
         logger.info("  Temporary file path: %s", temp_path)
 
         try:
@@ -639,6 +666,9 @@ def save_settings(s):
             logger.info("  Temporary file written successfully")
             logger.info("    File size: %s bytes", os.path.getsize(temp_path))
 
+            backup_path = f"{SETTINGS_PATH}.bak"
+            if os.path.exists(SETTINGS_PATH):
+                shutil.copy2(SETTINGS_PATH, backup_path)
             logger.info("  Replacing settings file atomically...")
             os.replace(temp_path, SETTINGS_PATH)
             logger.info("    Replace completed successfully")
@@ -648,6 +678,7 @@ def save_settings(s):
             get_logger().info("settings saved")
             logger.info("save_settings() COMPLETED - SUCCESS")
             logger.info("=" * 80)
+            return True
 
         except Exception as e:
             logger.error("  ERROR during save operation: %s", e)
@@ -668,3 +699,4 @@ def save_settings(s):
             log_exception("save_settings: failed to write file")
             logger.info("save_settings() COMPLETED - FAILED")
             logger.info("=" * 80)
+            return False

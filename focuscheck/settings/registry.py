@@ -4,7 +4,7 @@ Canonical registry of all settings keys.
 
 SETTINGS_REGISTRY = {
     # General
-    "settings_schema_version": {"type": int, "default": 1, "description": "Schema version for settings file."},
+    "settings_schema_version": {"type": int, "default": 2, "description": "Schema version for settings file."},
     "interval_seconds": {"type": int, "default": 60, "description": "Interval between prompts in seconds."},
     "intensify_after_seconds": {"type": int, "default": 15, "description": "Time before prompt intensifies."},
     "overdrive_after_seconds": {"type": int, "default": 60, "description": "Time before prompt goes into overdrive."},

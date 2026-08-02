@@ -84,11 +84,28 @@ def _rotate_csv_if_needed(path, max_bytes=5_000_000, backups=2):
         log_exception("rotate_csv_if_needed failed")
 
 
+def _rotate_jsonl_if_needed(path, max_bytes=5_000_000, backups=2):
+    """Bound JSONL growth while holding the caller's per-file lock."""
+    try:
+        if not os.path.exists(path) or os.path.getsize(path) < max_bytes:
+            return
+        for index in range(backups, 0, -1):
+            older = f"{path}.{index}"
+            newer = f"{path}.{index + 1}"
+            if os.path.exists(older):
+                if index == backups:
+                    os.remove(older)
+                else:
+                    os.replace(older, newer)
+        os.replace(path, f"{path}.1")
+    except OSError:
+        log_exception("rotate_jsonl_if_needed failed")
+
+
 def ensure_log_header():
     """Ensure CSV log file exists with proper headers."""
-    _rotate_csv_if_needed(LOG_PATH)
-
     def _write_header():
+        _rotate_csv_if_needed(LOG_PATH)
         needs_header = True
         try:
             if os.path.exists(LOG_PATH):
@@ -189,6 +206,7 @@ def append_intervention_reflection(record):
         pass
 
     def _write():
+        _rotate_jsonl_if_needed(INTERVENTION_REFLECTION_PATH)
         with open(INTERVENTION_REFLECTION_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
@@ -202,9 +220,8 @@ def append_intervention_reflection(record):
 
 def ensure_waste_log_header():
     """Ensure waste log CSV exists with headers."""
-    _rotate_csv_if_needed(WASTE_LOG_PATH)
-
     def _write_header():
+        _rotate_csv_if_needed(WASTE_LOG_PATH)
         needs_header = True
         try:
             if os.path.exists(WASTE_LOG_PATH):
@@ -263,9 +280,8 @@ def append_waste_log(*, slot_start_dt, latency_ms, what, consequences, active_ta
 
 def ensure_focus_log_header():
     """Ensure focus confirmation log CSV exists with headers."""
-    _rotate_csv_if_needed(FOCUS_LOG_PATH)
-
     def _write_header():
+        _rotate_csv_if_needed(FOCUS_LOG_PATH)
         needs_header = True
         try:
             if os.path.exists(FOCUS_LOG_PATH):

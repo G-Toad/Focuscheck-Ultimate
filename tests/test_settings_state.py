@@ -28,6 +28,12 @@ class SettingsValidationTests(unittest.TestCase):
         self.assertEqual(150, settings["ui_scale_percent"])
         self.assertEqual("kept", settings["future_plugin_key"])
 
+    def test_validate_settings_rejects_impossible_calendar_dates(self):
+        from focuscheck.settings.manager import validate_settings
+
+        settings = validate_settings({"biodata_birthdate": "2024-02-31"})
+        self.assertEqual("2005-01-01", settings["biodata_birthdate"])
+
     def test_validate_settings_parses_string_booleans(self):
         from focuscheck.settings.manager import validate_settings
 
@@ -44,6 +50,13 @@ class SettingsValidationTests(unittest.TestCase):
 
         missing = sorted(set(DEFAULT_SETTINGS) - set(SETTINGS_REGISTRY))
         self.assertEqual([], missing)
+
+    def test_legacy_settings_are_migrated_to_current_schema(self):
+        from focuscheck.settings.migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
+
+        migrated = migrate_settings({"settings_schema_version": 1, "snooze_until": "2030-01-01T00:00:00+00:00"})
+        self.assertEqual(CURRENT_SETTINGS_SCHEMA_VERSION, migrated["settings_schema_version"])
+        self.assertEqual(migrated["snooze_until"], migrated["snooze_until_utc"])
 
     def test_validate_settings_clamps_stage5_timing_alpha_and_engine(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS

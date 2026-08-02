@@ -1,0 +1,11 @@
+{
+  "status": "not_run",
+  "environment": "isolated administrator Windows machine required",
+  "cases": [
+    {"id": "WIN-001", "name": "supervisor and startup", "status": "not_run"},
+    {"id": "WIN-002", "name": "tray and Tk UI", "status": "not_run"},
+    {"id": "WIN-003", "name": "lock sleep resume", "status": "not_run"},
+    {"id": "WIN-004", "name": "browser flags and overlays", "status": "not_run"},
+    {"id": "WIN-005", "name": "packaging install upgrade uninstall", "status": "not_run"}
+  ]
+}

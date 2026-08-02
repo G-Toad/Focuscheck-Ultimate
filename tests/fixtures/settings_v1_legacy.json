@@ -1,0 +1,6 @@
+{
+  "settings_schema_version": 1,
+  "interval_seconds": 90,
+  "snooze_until": "2030-01-01T00:00:00+00:00",
+  "website_flags": {"domain": "reddit.com", "severity": 2}
+}
