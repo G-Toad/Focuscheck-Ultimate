@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -47,12 +48,52 @@ class SupervisorEntrypointTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             stop_file = Path(temp_dir) / "supervisor.stop"
-            stop_file.write_text(json.dumps({"protocol_version": 1, "pid": 222, "reason": "user_exit"}), encoding="ascii")
+            stop_file.write_text(json.dumps({
+                "protocol_version": 1,
+                "request_id": "frozen-inner",
+                "supervisor_id": "supervisor",
+                "generation": "generation",
+                "pid": 222,
+                "process_start_utc": "2030-01-01T00:00:00+00:00",
+                "utc": datetime.now(timezone.utc).isoformat(),
+                "reason": "user_exit",
+            }), encoding="ascii")
             supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
             supervisor.stop_file = stop_file
             supervisor.child = type("Child", (), {"pid": 111})()
             supervisor._last_heartbeat_pid = 222
+            supervisor._last_heartbeat_process_start_utc = "2030-01-01T00:00:00+00:00"
+            supervisor.supervisor_id = "supervisor"
+            supervisor.child_generation = "generation"
             self.assertTrue(supervisor._intentional_stop_requested())
+
+    def test_stop_handshake_rejects_foreign_generation_and_stale_request(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stop_file = Path(temp_dir) / "supervisor.stop"
+            supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+            supervisor.stop_file = stop_file
+            supervisor.child = type("Child", (), {"pid": 111})()
+            supervisor._last_heartbeat_pid = 111
+            supervisor._last_heartbeat_process_start_utc = "2030-01-01T00:00:00+00:00"
+            supervisor.supervisor_id = "current"
+            supervisor.child_generation = "generation-current"
+            request = {
+                "protocol_version": 1,
+                "request_id": "nonce",
+                "supervisor_id": "foreign",
+                "generation": "generation-current",
+                "pid": 111,
+                "process_start_utc": supervisor._last_heartbeat_process_start_utc,
+                "utc": datetime.now(timezone.utc).isoformat(),
+            }
+            stop_file.write_text(json.dumps(request), encoding="ascii")
+            self.assertFalse(supervisor._intentional_stop_requested())
+            request["supervisor_id"] = "current"
+            request["utc"] = "2000-01-01T00:00:00+00:00"
+            stop_file.write_text(json.dumps(request), encoding="ascii")
+            self.assertFalse(supervisor._intentional_stop_requested())
 
 
 class FakeEvent:
@@ -109,7 +150,13 @@ class HarnessSupervisor:
                 if item == "intentional-exit":
                     proc = FakeProcess(200 + len(inner_self.launches), exit_code=0)
                     Path(temp_dir, "supervisor.stop").write_text(json.dumps({
-                        "protocol_version": 1, "pid": proc.pid, "reason": "user_exit",
+                        "protocol_version": 1, "request_id": "fake-nonce",
+                        "supervisor_id": inner_self.supervisor_id,
+                        "generation": inner_self.child_generation,
+                        "pid": proc.pid,
+                        "process_start_utc": "",
+                        "utc": datetime.now(timezone.utc).isoformat(),
+                        "reason": "user_exit",
                     }), encoding="ascii")
                 elif item == "crash":
                     proc = FakeProcess(200 + len(inner_self.launches), exit_code=7)

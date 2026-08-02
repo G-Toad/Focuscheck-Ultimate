@@ -404,7 +404,14 @@ def run_supervisor_scenarios(log: QaLog):
             if item == "intentional-exit":
                 proc = FakeProcess(500 + len(supervisor.launches), exit_code=0)
                 supervisor.stop_file.write_text(json.dumps({
-                    "protocol_version": 1, "pid": proc.pid, "reason": "user_exit",
+                    "protocol_version": 1,
+                    "request_id": "qa-intentional-exit",
+                    "supervisor_id": supervisor.supervisor_id,
+                    "generation": supervisor.child_generation,
+                    "pid": proc.pid,
+                    "process_start_utc": "",
+                    "utc": datetime.now(timezone.utc).isoformat(),
+                    "reason": "user_exit",
                 }), encoding="ascii")
             elif item == "crash":
                 proc = FakeProcess(500 + len(supervisor.launches), exit_code=7)

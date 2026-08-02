@@ -15,6 +15,8 @@ import tempfile
 import threading
 import platform
 import ctypes
+import uuid
+from pathlib import Path
 from ctypes import wintypes
 from datetime import datetime, timedelta, timezone
 import tkinter as tk
@@ -1644,20 +1646,37 @@ class App:
         stop_file = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE")
         if not stop_file:
             return
+        temp_path = None
         try:
-            os.makedirs(os.path.dirname(stop_file), exist_ok=True)
-            with open(stop_file, "w", encoding="ascii") as handle:
-                json.dump({
-                    "protocol_version": 1,
-                    "pid": os.getpid(),
-                    "utc": datetime.now(timezone.utc).isoformat(),
-                    "reason": "user_exit",
-                }, handle)
+            stop_path = Path(stop_file)
+            stop_path.parent.mkdir(parents=True, exist_ok=True)
+            request = {
+                "protocol_version": 1,
+                "request_id": uuid.uuid4().hex,
+                "supervisor_id": os.environ.get("FOCUSCHECK_SUPERVISOR_ID", ""),
+                "generation": os.environ.get("FOCUSCHECK_CHILD_GENERATION", ""),
+                "pid": os.getpid(),
+                "process_start_utc": getattr(self, "_process_start_utc", ""),
+                "utc": datetime.now(timezone.utc).isoformat(),
+                "reason": "user_exit",
+            }
+            temp_path = stop_path.with_name(f"{stop_path.name}.{os.getpid()}.{request['request_id']}.tmp")
+            with temp_path.open("w", encoding="ascii") as handle:
+                json.dump(request, handle, separators=(",", ":"))
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, stop_path)
         except Exception:
             try:
                 get_logger().warning("failed writing supervisor stop request", exc_info=True)
             except Exception:
                 pass
+        finally:
+            if temp_path is not None:
+                try:
+                    temp_path.unlink()
+                except OSError:
+                    pass
 
     # Heartbeat file for watchdogs
     def _write_heartbeat(self):

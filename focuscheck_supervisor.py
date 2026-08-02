@@ -37,6 +37,8 @@ SUPERVISOR_LOCK_FILENAME = "supervisor.lock"
 SUPERVISOR_STOP_FILENAME = "supervisor.stop"
 HEARTBEAT_MAX_AGE = 12.0
 HEARTBEAT_GRACE_PERIOD = 15.0
+STOP_REQUEST_MAX_AGE = 120.0
+STOP_REQUEST_FUTURE_SKEW = 30.0
 FORCED_RESTART_PAUSE = 0.2
 RESTART_WINDOW_SECONDS = 300.0
 MAX_RESTARTS_IN_WINDOW = 5
@@ -269,6 +271,7 @@ class FocusCheckSupervisor:
         self.supervisor_id = uuid.uuid4().hex
         self.child_generation: str | None = None
         self._last_heartbeat_pid: int | None = None
+        self._last_heartbeat_process_start_utc: str | None = None
         self._restart_history: list[float] = []
         self._degraded_until = 0.0
         suppress_windows_error_dialogs()
@@ -313,6 +316,7 @@ class FocusCheckSupervisor:
         env.setdefault("FOCUSCHECK_SUPERVISED", "1")
         self.child_generation = uuid.uuid4().hex
         self._last_heartbeat_pid = None
+        self._last_heartbeat_process_start_utc = None
         env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
         env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
@@ -421,6 +425,7 @@ class FocusCheckSupervisor:
             heartbeat_utc = payload.get("utc")
             heartbeat_pid = int(payload.get("pid", 0))
             self._last_heartbeat_pid = heartbeat_pid or None
+            self._last_heartbeat_process_start_utc = str(payload.get("process_start_utc") or "") or None
             if heartbeat_pid and self.child is not None and heartbeat_pid != self.child.pid:
                 # One-file PyInstaller builds report the inner bootloader PID
                 # in the heartbeat while Popen owns the outer PID. Accept the
@@ -454,11 +459,27 @@ class FocusCheckSupervisor:
             payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
             if int(payload.get("protocol_version", 0)) != 1:
                 return False
+            if not payload.get("request_id"):
+                return False
+            if payload.get("supervisor_id") != self.supervisor_id:
+                return False
+            if payload.get("generation") != self.child_generation:
+                return False
+            from datetime import datetime, timezone
+            request_utc = datetime.fromisoformat(str(payload.get("utc")).replace("Z", "+00:00"))
+            age = time.time() - request_utc.astimezone(timezone.utc).timestamp()
+            if age < -STOP_REQUEST_FUTURE_SKEW or age > STOP_REQUEST_MAX_AGE:
+                return False
             requested_pid = int(payload.get("pid", 0))
             if expected_pid is None and self.child is not None:
                 expected_pid = self.child.pid
             accepted = {pid for pid in (expected_pid, self._last_heartbeat_pid) if pid}
-            return requested_pid > 0 and (not accepted or requested_pid in accepted)
+            if requested_pid <= 0 or (accepted and requested_pid not in accepted):
+                return False
+            process_start = str(payload.get("process_start_utc") or "")
+            if self._last_heartbeat_process_start_utc and process_start != self._last_heartbeat_process_start_utc:
+                return False
+            return True
         except (OSError, ValueError, TypeError, json.JSONDecodeError):
             return False
 

@@ -8,5 +8,6 @@
 | SUP-003 | 1 | confirmed defect | Supervisor killed every `WerFault.exe` process system-wide. | Compatibility hook is a no-op; no call sites remain. | source review and compile. | Target Windows crash test required. | fixed |
 | SUP-001 | 1 | confirmed defect | Normal launcher forced start over durable pause. | Removed force-start from normal launcher. | launch script regression. | Live supervised pause test required. | fixed |
 | SUP-007 | 1 | confirmed defect | Two heartbeat writers/files existed. | Single App-owned JSON heartbeat. | self-tests and verification runner. | Live hang/restart test required. | fixed |
+| SUP-004 | 1 | confirmed defect | Intentional-stop marker was existence/PID-only and could be stale or foreign. | Atomic structured request bound to supervisor, generation, PID, process-start time, nonce, and freshness window. | `SupervisorEntrypointTests`, lifecycle tests. | Live user-exit race required. | fixed |
 | DB-003 | 2 | confirmed defect | No database invariant prevented duplicate active tasks. | Unique partial index and legacy reconciliation. | TaskDB lifecycle tests. | Concurrent live UI test required. | fixed |
 | LOGDATA-001 | 2 | confirmed defect | CSV rotation happened outside the per-file lock. | Rotation now occurs inside the lock. | CSV tests. | Not run. | fixed |

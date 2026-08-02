@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 import os
 import sys
 import types
@@ -543,6 +544,9 @@ class SupervisorLifecycleTests(unittest.TestCase):
                 app._request_supervisor_stop()
 
             self.assertTrue(stop_file.exists())
+            payload = json.loads(stop_file.read_text(encoding="ascii"))
+            self.assertEqual(1, payload["protocol_version"])
+            self.assertTrue(payload["request_id"])
 
 
 if __name__ == "__main__":
