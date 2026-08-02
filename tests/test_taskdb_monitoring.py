@@ -70,6 +70,26 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertTrue(db.mark_completed(task_id, "2030-01-01T13:00:00+08:00"))
             self.assertEqual("2030-01-01T05:00:00+00:00", db.list_history(limit=1)[0]["completed_utc"])
 
+    def test_task_transitions_and_overdue_use_injected_utc_clock(self):
+        from focuscheck.database.task_db import TaskDB
+
+        now = datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"), clock=lambda: now)
+            task_id = db.start_task(
+                title="Clocked task",
+                due_utc="2026-07-20T09:59:00+00:00",
+                why="",
+                consequences="",
+            )
+            self.assertEqual(now.isoformat(), db.get_active()["created_utc"])
+            self.assertEqual([task_id], db.overdue_active_to_failed())
+            self.assertEqual(now.isoformat(), db.list_history(limit=1)[0]["completed_utc"])
+
+            second_id = db.start_task(title="Completed task", due_utc=None, why="", consequences="")
+            self.assertTrue(db.mark_completed(second_id))
+            self.assertEqual(now.isoformat(), db.list_history(limit=1)[0]["completed_utc"])
+
     def test_invalid_task_timestamp_is_rejected_at_persistence_boundary(self):
         from focuscheck.database.task_db import TaskDB
 

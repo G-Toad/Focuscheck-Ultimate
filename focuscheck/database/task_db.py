@@ -36,10 +36,26 @@ def _normalize_utc(value, *, allow_none=False):
 class TaskDB:
     """Manages tasks and sessions in SQLite database."""
     
-    def __init__(self, path):
+    def __init__(self, path, clock=None):
         self.path = path
+        self._clock = clock
         self.pre_migration_backup = None
         self._ensure_schema()
+
+    def _now_utc(self):
+        """Return the injected UTC clock value or the system UTC time."""
+        source = self._clock
+        if source is None:
+            value = datetime.now(timezone.utc)
+        elif callable(source):
+            value = source()
+        else:
+            value = source.now_utc()
+        if not isinstance(value, datetime):
+            raise TypeError("TaskDB clock must return datetime")
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
 
     @contextmanager
     def _conn(self):
@@ -127,14 +143,14 @@ class TaskDB:
                     cur.execute("PRAGMA user_version = 1")
                     cur.execute(
                         "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
-                        (1, datetime.now(timezone.utc).isoformat()),
+                        (1, self._now_utc().isoformat()),
                     )
                 if schema_version < 2:
                     # Version 2 records the active-task invariant and the
                     # timed-out transition in the durable migration journal.
                     cur.execute(
                         "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
-                        (2, datetime.now(timezone.utc).isoformat()),
+                        (2, self._now_utc().isoformat()),
                     )
                     cur.execute("PRAGMA user_version = 2")
                 if schema_version < CURRENT_TASK_SCHEMA_VERSION:
@@ -176,7 +192,7 @@ class TaskDB:
                             )
                     cur.execute(
                         "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
-                        (3, datetime.now(timezone.utc).isoformat()),
+                        (3, self._now_utc().isoformat()),
                     )
                     cur.execute(f"PRAGMA user_version = {CURRENT_TASK_SCHEMA_VERSION}")
                 con.commit()
@@ -263,7 +279,7 @@ class TaskDB:
             return self._row_to_dict(row) if row else None
 
     def start_task(self, *, title, due_utc, why, consequences):
-        now = datetime.now(timezone.utc).isoformat()
+        now = self._now_utc().isoformat()
         due_utc = _normalize_utc(due_utc, allow_none=True)
         with self._conn() as con:
             cur = con.cursor()
@@ -280,7 +296,7 @@ class TaskDB:
 
     def mark_completed(self, task_id, when_utc=None):
         if when_utc is None:
-            when_utc = datetime.now(timezone.utc).isoformat()
+            when_utc = self._now_utc().isoformat()
         else:
             when_utc = _normalize_utc(when_utc)
         with self._conn() as con:
@@ -291,7 +307,7 @@ class TaskDB:
 
     def mark_failed(self, task_id, when_utc=None, timed_out=False):
         if when_utc is None:
-            when_utc = datetime.now(timezone.utc).isoformat()
+            when_utc = self._now_utc().isoformat()
         else:
             when_utc = _normalize_utc(when_utc)
         with self._conn() as con:
@@ -318,7 +334,7 @@ class TaskDB:
         return dict(zip(keys, row))
 
     def overdue_active_to_failed(self):
-        now_iso = datetime.now(timezone.utc).isoformat()
+        now_iso = self._now_utc().isoformat()
         affected = []
         with self._conn() as con:
             cur = con.cursor()
@@ -332,7 +348,7 @@ class TaskDB:
                         due = due.replace(tzinfo=timezone.utc)
                     else:
                         due = due.astimezone(timezone.utc)
-                    if datetime.now(timezone.utc) > due:
+                    if self._now_utc() > due:
                         cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status='active'", (now_iso, tid))
                         if cur.rowcount == 1:
                             affected.append(tid)
@@ -356,7 +372,7 @@ class TaskDB:
         """
         where = ""
         params = []
-        current = now or datetime.now(timezone.utc)
+        current = now or self._now_utc()
         if current.tzinfo is None:
             current = current.replace(tzinfo=timezone.utc)
         current = current.astimezone(timezone.utc)
@@ -438,7 +454,7 @@ class TaskDB:
     def record_waste_event(self, *, what, consequences, active_task_id=None, when_utc=None):
         try:
             if when_utc is None:
-                when_utc = datetime.now(timezone.utc).isoformat()
+                when_utc = self._now_utc().isoformat()
             else:
                 when_utc = _normalize_utc(when_utc)
             with self._conn() as con:
@@ -457,7 +473,7 @@ class TaskDB:
     def record_focus_event(self, *, doing, benefits, active_task_id=None, when_utc=None):
         try:
             if when_utc is None:
-                when_utc = datetime.now(timezone.utc).isoformat()
+                when_utc = self._now_utc().isoformat()
             else:
                 when_utc = _normalize_utc(when_utc)
             with self._conn() as con:
