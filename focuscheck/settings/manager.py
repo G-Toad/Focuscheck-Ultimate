@@ -13,6 +13,7 @@ from ..utils.paths import choose_path
 from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode
 from .registry import SETTINGS_REGISTRY
 from .file_lock import settings_file_lock
+from .website_flags import normalize_website_domain
 
 
 _settings_lock = threading.Lock()
@@ -601,17 +602,17 @@ def validate_settings(data):
         for entry in flags:
             if not isinstance(entry, dict):
                 continue
-            domain = str(entry.get("domain", "")).strip().lower()
+            domain = normalize_website_domain(entry.get("domain", ""))
             if not domain:
                 continue
             severity = entry.get("severity", 1)
             cooldown = entry.get("cooldown_minutes", 5)
             normalized.append({
                 "domain": domain,
-                "enabled": bool(entry.get("enabled", True)),
+                "enabled": _bool(entry.get("enabled", True), True),
                 "severity": max(1, min(3, _int(severity, 1))),
                 "cooldown_minutes": max(0, _int(cooldown, 5)),
-                "allow_once": bool(entry.get("allow_once", False)),
+                "allow_once": _bool(entry.get("allow_once", False), False),
                 "last_dismissed": float(entry.get("last_dismissed", 0.0)) if isinstance(entry.get("last_dismissed"), (int, float)) else None,
             })
     s["website_flags"] = normalized

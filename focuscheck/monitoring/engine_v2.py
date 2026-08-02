@@ -3,6 +3,7 @@
 import time
 import re
 from urllib.parse import urlparse
+from ..settings.website_flags import normalize_website_domain
 
 from .base import BaseEngine
 from ..platform_specific.activity_probe import get_active_window_info
@@ -179,7 +180,7 @@ class EngineV2(BaseEngine):
             try:
                 if not entry.get("enabled", True):
                     continue
-                domain = str(entry.get("domain", "")).strip().lower()
+                domain = normalize_website_domain(entry.get("domain", ""))
                 if not domain:
                     continue
                 cooldown = int(entry.get("cooldown_minutes", 5))
@@ -189,12 +190,15 @@ class EngineV2(BaseEngine):
                         continue
                 if host and self._domain_matches(domain, host):
                     return entry, domain
-                tokens = [domain]
-                if "." in domain:
-                    tokens.append(domain.split(".")[0])
-                url_fallback = not host and any(tok and tok in url for tok in tokens)
-                title_fallback = any(tok and re.search(rf"(?<![a-z0-9]){re.escape(tok)}(?![a-z0-9])", title) for tok in tokens)
-                if url_fallback or title_fallback:
+                # A parsed host is authoritative. Title fallback is only for
+                # providers that cannot supply a URL; never let an unrelated
+                # page title override a valid non-matching host.
+                tokens = [domain.split(".")[0]] if "." in domain else [domain]
+                title_fallback = not host and any(
+                    tok and re.search(rf"(?<![a-z0-9]){re.escape(tok)}(?![a-z0-9])", title)
+                    for tok in tokens
+                )
+                if title_fallback:
                     return entry, domain
             except Exception:
                 continue

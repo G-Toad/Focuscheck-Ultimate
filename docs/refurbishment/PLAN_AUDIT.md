@@ -29,7 +29,7 @@ Status meanings:
 | 13 Prompt coordinator | Partial | `PromptCoordinator` now owns one active prompt generation and makes polling, tray close, and destruction completion idempotent. Dialog-specific timer/grab cleanup and the complete close-path matrix remain unverified. |
 | 14 V1 prompt flow | Unverified | Existing source and tests cover selected flows; the plan's full visible UI, interruption, persistence, cleanup, and manual evidence matrix was not executed. |
 | 15 V2 prompt/activity model | Partial | V2 intervention outcome behavior has regression coverage. Full typed activity snapshots, provider isolation, stale/error behavior, and every intervention outcome are not proven. |
-| 16 Website flags | Partial | Matching/cooldown tests exist. Confidence model, all paused/locked suppression states, provider matrix, and live browser coverage are absent. |
+| 16 Website flags | Partial | Canonical hostname normalization now rejects ambiguous URL/port/wildcard input, preserves IDN/IP matching, and prevents title fallback from overriding an authoritative non-matching host; matching/cooldown tests exist. Confidence model, all paused/locked suppression states, provider matrix, and live browser coverage are absent. |
 | 17 Intervention coordinator/overlays | Partial | Cancellation no longer consumes cooldown and App now owns an intervention lease/coordinator entry point. Generation cancellation proof, full cleanup matrix, and overlay manual matrix remain absent. |
 | 18 Settings UI | Partial | Existing UI tests, revision conflict result handling, and owner-thread/tray contract tests exist. Schema-generated controls, complete visible-control round trips, runtime-consumer proof, and manual UI evidence are absent. |
 | 19 Task database | Partial | Stronger SQLite setup, active-task index, transition returns, versioned migration journal, checkpointed backup/restore, concurrent-writer tests, and a UTC normalization/rejection boundary now exist. UI flow tests, legacy-row normalization, and full timezone matrix remain incomplete. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and scripted non-destructive package promotion/rollback now executes in disposable tests. Installer shell integration, signing, and target-machine lifecycle evidence remain open. |
 | 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
-| 27 Automated test expansion | Partial | 129 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, a full-schema boolean coercion matrix, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 132 unittest cases, self-tests, a bounded performance soak, package lifecycle tests, settings and website-domain coercion matrices, and a native cleanup regression exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native live tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 129 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, runtime transition metadata, cross-process settings locking, UTC task timestamp normalization, settings input budgets, and boolean coercion for every boolean default in the schema. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 132 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback, native overlay handle cleanup, runtime transition metadata, cross-process settings locking, UTC task timestamp normalization, settings input budgets, boolean coercion for every boolean default in the schema, and canonical website-domain matching. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 

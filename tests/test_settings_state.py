@@ -53,6 +53,38 @@ class SettingsValidationTests(unittest.TestCase):
         self.assertTrue(all(false_values[key] is False for key in boolean_keys), false_values)
         self.assertTrue(all(true_values[key] is True for key in boolean_keys), true_values)
 
+    def test_website_flags_use_canonical_domains_and_boolean_coercion(self):
+        from focuscheck.settings.manager import validate_settings
+
+        settings = validate_settings({
+            "website_flags": [
+                {"domain": " HTTPS://Bücher.Example./ ", "enabled": "false", "allow_once": "true"},
+                {"domain": "example.com:443"},
+                {"domain": "*.example.com"},
+                {"domain": "https://example.com/path"},
+                {"domain": "2001:db8::1"},
+            ]
+        })
+
+        self.assertEqual(
+            [{
+                "domain": "xn--bcher-kva.example",
+                "enabled": False,
+                "severity": 1,
+                "cooldown_minutes": 5,
+                "allow_once": True,
+                "last_dismissed": None,
+            }, {
+                "domain": "2001:db8::1",
+                "enabled": True,
+                "severity": 1,
+                "cooldown_minutes": 5,
+                "allow_once": False,
+                "last_dismissed": None,
+            }],
+            settings["website_flags"],
+        )
+
     def test_default_settings_are_registered(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
         from focuscheck.settings.registry import SETTINGS_REGISTRY

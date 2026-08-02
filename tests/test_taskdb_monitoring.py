@@ -196,6 +196,27 @@ class EngineV2MatchingTests(unittest.TestCase):
 
         self.assertIsNone(engine._match_flag({"url": "https://badreddit.com", "title": ""}, flags))
 
+    def test_match_flag_does_not_use_title_when_host_is_authoritative(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        flags = [{"domain": "reddit.com", "enabled": True, "cooldown_minutes": 0}]
+
+        self.assertIsNone(engine._match_flag({"url": "https://example.com", "title": "Reddit"}, flags))
+
+    def test_match_flag_normalizes_idn_and_ipv6_domains(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        self.assertIsNotNone(engine._match_flag(
+            {"url": "https://xn--bcher-kva.example/", "title": ""},
+            [{"domain": "bücher.example", "enabled": True, "cooldown_minutes": 0}],
+        ))
+        self.assertIsNotNone(engine._match_flag(
+            {"url": "http://[2001:db8::1]/", "title": ""},
+            [{"domain": "2001:db8::1", "enabled": True, "cooldown_minutes": 0}],
+        ))
+
     def test_active_window_flag_triggers_severity_three_intervention(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 
