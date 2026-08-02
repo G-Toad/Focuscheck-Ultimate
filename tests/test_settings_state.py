@@ -383,6 +383,46 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertFalse(app.guard.sleeping)
         self.assertEqual(0, scheduled[-1])
 
+    def test_lock_event_closes_active_prompt_before_polling(self):
+        from focuscheck.app import App
+
+        class Guard:
+            def set_locked(self, value):
+                self.locked = bool(value)
+
+            def set_sleeping(self, value):
+                self.sleeping = bool(value)
+
+        class Prompt:
+            _closed = False
+
+            def __init__(self):
+                self.events = []
+
+            def winfo_exists(self):
+                return True
+
+            def _cleanup_camera_feed(self):
+                self.events.append("camera")
+
+            def _cleanup_all_timers(self):
+                self.events.append("timers")
+
+            def destroy(self):
+                self.events.append("destroy")
+
+        app = App.__new__(App)
+        app.guard = Guard()
+        app.settings = {"pause_poll_interval_seconds": 5}
+        prompt = Prompt()
+        app._current_prompt = prompt
+        app._schedule_next = lambda _delay_ms=None: None
+
+        App._on_pause_event(app, "lock")
+
+        self.assertTrue(app._current_prompt is None)
+        self.assertEqual(["camera", "timers", "destroy"], prompt.events)
+
 
 if __name__ == "__main__":
     unittest.main()

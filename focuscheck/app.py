@@ -927,6 +927,15 @@ class App:
             pass
 
         if reason in {"lock", "sleep"}:
+            # Do not leave a prompt or camera capture alive while the session
+            # is locked or the workstation is entering sleep.
+            try:
+                self._close_current_prompt(source=f"system_{reason}")
+            except Exception:
+                try:
+                    get_logger().exception("failed to close prompt for system pause", exc_info=True)
+                except Exception:
+                    pass
             try:
                 self._schedule_next(int(self.settings.get("pause_poll_interval_seconds", 5)) * 1000)
             except Exception:

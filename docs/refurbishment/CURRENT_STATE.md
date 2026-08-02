@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `214` unittest cases passing.
+- Current automated baseline after hardening: `215` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -36,6 +36,7 @@
 - Intervention selection now owns recurring Tk callback IDs and cancels them on close; the parent-owned visibility fail-safe is cancelled after selection exits.
 - V1/V2 prompt timer registries remove fired IDs and own initial focus, follow-monitor, and time-display callbacks for bounded cleanup.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
+- Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.
 - Heartbeat publication uses the frozen App path snapshot, keeping the supervisor marker in the composed data root.
 - Logger initialization binds to the frozen App log path before creating its first handler.
 - Direct test discovery defaults to a per-process external temporary data root, avoiding repository-local and cross-process profile contention.
