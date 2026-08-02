@@ -36,11 +36,11 @@ Status meanings:
 | 20 Logs/export/privacy/retention | Partial | CSV locking, JSONL rotation, spreadsheet-formula neutralization, data inventory, and a dry-run-by-default retention tool now exist. Export privacy evidence and bounded doctor anomalies remain incomplete. |
 | 21 Camera/optional dependencies | Unverified | Existing camera code is present, but dependency isolation, no-frame-persistence proof, missing-dependency behavior, and live validation are absent. |
 | 22 Browser/activity providers | Partial | Typed activity snapshots now normalize provider errors, freshness/confidence, and strip URL query/fragment data. Provider timeouts, fake-provider matrix breadth, and live supported-browser evidence remain incomplete. |
-| 23 Observability/supportability | Partial | A sanitized bundle generator exists. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
+| 23 Observability/supportability | Partial | A sanitized bundle generator and bounded Doctor anomaly storage now exist. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 109 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 110 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 109 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 110 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
