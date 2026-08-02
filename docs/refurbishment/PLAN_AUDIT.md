@@ -37,7 +37,7 @@ Status meanings:
 | 21 Camera/optional dependencies | Unverified | Existing camera code is present, but dependency isolation, no-frame-persistence proof, missing-dependency behavior, and live validation are absent. |
 | 22 Browser/activity providers | Partial | Typed activity snapshots now normalize provider errors, freshness/confidence, and strip URL query/fragment data. Provider timeouts, fake-provider matrix breadth, and live supported-browser evidence remain incomplete. |
 | 23 Observability/supportability | Partial | A sanitized bundle generator and bounded Doctor anomaly storage now exist. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
-| 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
+| 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and install/rollback contracts exist. Installer lifecycle, signing, and rollback execution remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
 | 27 Automated test expansion | Partial | 112 unittest cases and self-tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
@@ -64,7 +64,7 @@ The plan's final-release deliverables were also checked individually:
 | Rollback instructions | Present in `docs/ROLLBACK.md`, but untested. |
 | Packaging/install instructions | Present as a PyInstaller contract, but unverified on Windows. |
 | Privacy/data-retention documentation | Partial; privacy notes exist, but retention/data inventory controls are incomplete. |
-| Support diagnostic instructions | Partial; generator exists, but user-facing support instructions are absent. |
+| Support diagnostic instructions | Present in `docs/SUPPORT_DIAGNOSTICS.md`; redaction is pattern-based and target-machine support evidence remains open. |
 
 ## Automated Evidence
 
