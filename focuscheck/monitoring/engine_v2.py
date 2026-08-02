@@ -128,8 +128,16 @@ class EngineV2(BaseEngine):
 
         def _on_yes():
             try:
-                wizard = InterventionWizard(self.app.root, settings)
-                completed = bool(wizard.run(preselect_hwnd=info.get("hwnd"), preselect_title=info.get("title")))
+                runner = getattr(self.app, "run_intervention", None) if hasattr(type(self.app), "run_intervention") else None
+                if callable(runner):
+                    completed = bool(runner(
+                        settings,
+                        preselect_hwnd=info.get("hwnd"),
+                        preselect_title=info.get("title"),
+                    ))
+                else:
+                    wizard = InterventionWizard(self.app.root, settings)
+                    completed = bool(wizard.run(preselect_hwnd=info.get("hwnd"), preselect_title=info.get("title")))
                 # A cancelled or failed intervention must remain retryable;
                 # only a completed intervention starts the cooldown.
                 if completed:

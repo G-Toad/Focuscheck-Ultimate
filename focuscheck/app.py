@@ -880,6 +880,27 @@ class App:
             pass
         self._schedule_next()
 
+    def run_intervention(self, settings, *, preselect_hwnd=None, preselect_title=None) -> bool:
+        """Run one intervention under the application-owned lease."""
+        state = getattr(self, "_runtime_state", None)
+        if state is not None and not state.begin_intervention():
+            return False
+        self._intervention_active = True
+        try:
+            from .ui.dialogs.intervention_wizard import InterventionWizard
+            wizard = InterventionWizard(self.root, settings)
+            return bool(wizard.run(preselect_hwnd=preselect_hwnd, preselect_title=preselect_title))
+        except Exception:
+            try:
+                get_logger().exception("intervention coordinator failed", exc_info=True)
+            except Exception:
+                pass
+            return False
+        finally:
+            self._intervention_active = False
+            if state is not None:
+                state.end_intervention()
+
     # Display/DPI change: keep dialogs on-screen
     def _on_display_change(self):
         try:

@@ -30,7 +30,7 @@ Status meanings:
 | 14 V1 prompt flow | Unverified | Existing source and tests cover selected flows; the plan's full visible UI, interruption, persistence, cleanup, and manual evidence matrix was not executed. |
 | 15 V2 prompt/activity model | Partial | V2 intervention outcome behavior has regression coverage. Full typed activity snapshots, provider isolation, stale/error behavior, and every intervention outcome are not proven. |
 | 16 Website flags | Partial | Matching/cooldown tests exist. Confidence model, all paused/locked suppression states, provider matrix, and live browser coverage are absent. |
-| 17 Intervention coordinator/overlays | Partial | Cancellation no longer consumes cooldown and state docs exist. No single intervention lease/coordinator, generation cancellation proof, full cleanup matrix, or overlay manual matrix exists. |
+| 17 Intervention coordinator/overlays | Partial | Cancellation no longer consumes cooldown and App now owns an intervention lease/coordinator entry point. Generation cancellation proof, full cleanup matrix, and overlay manual matrix remain absent. |
 | 18 Settings UI | Partial | Existing UI tests, revision conflict result handling, and owner-thread/tray contract tests exist. Schema-generated controls, complete visible-control round trips, runtime-consumer proof, and manual UI evidence are absent. |
 | 19 Task database | Partial | Stronger SQLite setup, active-task index, transition returns, versioned migration journal, checkpointed backup/restore, and tests now exist. Concurrent writers, timezone contract, and UI flow tests remain incomplete. |
 | 20 Logs/export/privacy/retention | Partial | CSV locking, JSONL rotation, and spreadsheet-formula neutralization now exist. Data inventory, retention policy, export privacy evidence, and bounded doctor anomalies remain incomplete. |
@@ -40,7 +40,7 @@ Status meanings:
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
 | 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 103 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 104 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -68,7 +68,7 @@ The plan's final-release deliverables were also checked individually:
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 103 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 104 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
