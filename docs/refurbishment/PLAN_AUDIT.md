@@ -44,7 +44,7 @@ Status meanings:
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
-The Phase 27 row retains its capability inventory prose; the current checkpoint result is `254` unittest cases, as recorded in the automated evidence below. A deterministic property-style suite now covers settings-validation and domain-normalization idempotency plus 300 generated runtime transitions, and a bounded mutation-smoke stage kills three selected high-risk mutants; withdrawn-root Tk breadth, broader integration breadth, and full mutation coverage remain open.
+The Phase 27 row retains its capability inventory prose; the current checkpoint result is `256` unittest cases, as recorded in the automated evidence below. A deterministic property-style suite now covers settings-validation and domain-normalization idempotency plus 300 generated runtime transitions, and a bounded mutation-smoke stage kills three selected high-risk mutants; withdrawn-root Tk breadth, broader integration breadth, and full mutation coverage remain open.
 The older Phase 27 table sentence still says property and mutation tests are absent; that wording is historical and is superseded by the current checkpoint evidence above. Full mutation breadth and the remaining integration/UI/native categories are still open.
 The packaging checkpoint now also includes a shell transaction wrapper that validates promoted packages and optionally manages the canonical supervisor Run entry; clean-VM installer, signing, and target-machine lifecycle evidence remain manual requirements.
 
@@ -102,6 +102,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `254` unittest cases and all 14 bounded stages pass, including startup snooze timer ownership, V1 prompt owner notification, prompt observer, camera save-feedback, snooze-dialog, snooze-reminder, biodata-pulse, and live Gentle Reminder timer/cleanup regressions.
+Latest verification checkpoint: `256` unittest cases and all 14 bounded stages pass, including injected-clock snooze reconciliation, startup snooze timer ownership, V1 prompt owner notification, prompt observer, camera save-feedback, snooze-dialog, snooze-reminder, biodata-pulse, and live Gentle Reminder timer/cleanup regressions.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.

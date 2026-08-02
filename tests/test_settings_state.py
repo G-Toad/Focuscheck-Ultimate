@@ -335,6 +335,32 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertIsNotNone(app._timers.callback_id("snooze-expiry"))
         self.assertEqual([], app.root.scheduled)
 
+    def test_startup_snooze_reconciliation_uses_injected_clock(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        app = App.__new__(App)
+        app.root = FakeRoot()
+        app._timers = mock.Mock()
+        app._timers.callback_id.return_value = "registry-timer-2"
+        app._runtime_state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""}, clock=clock
+        )
+        app.settings = {
+            "snooze_until_utc": (clock.now_utc() + timedelta(minutes=5)).isoformat(),
+            "paused": False,
+        }
+        app._snooze_unpause_timer_id = None
+        app._set_paused = mock.Mock()
+        app._schedule_next = mock.Mock()
+
+        with mock.patch("focuscheck.app.save_settings"):
+            App._reconcile_snooze_state_on_startup(app)
+
+        self.assertEqual(300000, app._timers.schedule.call_args.args[1])
+
     def test_snooze_state_preserves_manual_pause_and_expires_without_clearing_it(self):
         from focuscheck.runtime.state import RuntimeStateCoordinator
 

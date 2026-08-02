@@ -545,7 +545,7 @@ class App:
                 until = until.replace(tzinfo=timezone.utc)
             else:
                 until = until.astimezone(timezone.utc)
-            now = datetime.now(timezone.utc)
+            now = self._now_utc()
             if until <= now:
                 self.settings["snooze_until_utc"] = ""
                 self.settings["paused"] = False
@@ -553,6 +553,7 @@ class App:
                 return
             self.settings["paused"] = True
             save_settings(self.settings)
+
             remaining_ms = max(1, int((until - now).total_seconds() * 1000))
 
             def _expire_snooze():
@@ -569,6 +570,18 @@ class App:
         except Exception:
             self.settings["snooze_until_utc"] = ""
             save_settings(self.settings)
+
+    def _now_utc(self):
+        """Return the coordinator clock value, with a standalone fallback."""
+        state = getattr(self, "_runtime_state", None)
+        clock = getattr(state, "clock", None)
+        now_utc = getattr(clock, "now_utc", None)
+        if callable(now_utc):
+            try:
+                return now_utc().astimezone(timezone.utc)
+            except (AttributeError, TypeError, ValueError, OverflowError):
+                pass
+        return datetime.now(timezone.utc)
 
     def _get_engine_class(self, settings):
         try:
@@ -1498,7 +1511,7 @@ class App:
                 pass
 
             # Set paused to True for snooze duration
-            until = datetime.now(timezone.utc) + timedelta(milliseconds=ms)
+            until = self._now_utc() + timedelta(milliseconds=ms)
             state = getattr(self, "_runtime_state", None)
             if state is not None:
                 if not state.set_snooze_until(until):
@@ -2277,7 +2290,7 @@ class App:
                     snooze_until = snooze_until.replace(tzinfo=timezone.utc)
                 else:
                     snooze_until = snooze_until.astimezone(timezone.utc)
-                if snooze_until <= datetime.now(timezone.utc):
+                if snooze_until <= self._now_utc():
                     self._snooze_reminder_next_mono = 0.0
                     return
             except (TypeError, ValueError, OverflowError):
