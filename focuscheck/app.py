@@ -38,6 +38,7 @@ from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
+from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
 
 # Monitoring engines
@@ -204,6 +205,7 @@ class App:
         except Exception:
             pass
         self.root.withdraw()
+        self._timers = TimerRegistry(self.root)
         # Ensure window handle is realized before using it for shell hooks
         try:
             self.root.update_idletasks()
@@ -551,7 +553,7 @@ class App:
     def _schedule_next(self, delay_ms=None):
         if delay_ms is None:
             delay_ms = int(self.settings["interval_seconds"] * 1000)
-        if self._scheduled:
+        if self._scheduled and not hasattr(self, "_timers"):
             try:
                 self.root.after_cancel(self._scheduled)
             except Exception:
@@ -561,7 +563,11 @@ class App:
             get_logger().debug("scheduling next prompt in %sms", delay_ms)
         except Exception:
             pass
-        self._scheduled = self.root.after(delay_ms, self._maybe_show_prompt)
+        if hasattr(self, "_timers"):
+            self._timers.schedule("prompt", delay_ms, self._maybe_show_prompt)
+            self._scheduled = self._timers.callback_id("prompt")
+        else:
+            self._scheduled = self.root.after(delay_ms, self._maybe_show_prompt)
         # Track next due for tray meter
         try:
             self._next_total_s = max(1, int(delay_ms // 1000))
@@ -595,8 +601,12 @@ class App:
                 self._last_paused_state = paused_now
             except Exception:
                 pass
+            if hasattr(self, "_timers"):
+                return
             self.root.after(1000, tick)  # 1 Hz
         tick()
+        if hasattr(self, "_timers"):
+            self._timers.schedule("pause-edge", 1000, tick, interval_ms=1000)
 
     def _maybe_show_prompt(self):
         self.settings = load_settings()  # refresh
@@ -1141,6 +1151,8 @@ class App:
         return True
 
     def _cancel_snooze(self):
+        if hasattr(self, "_timers"):
+            self._timers.cancel("snooze-expiry")
         if self._snooze_unpause_timer_id is not None:
             try:
                 self.root.after_cancel(self._snooze_unpause_timer_id)
@@ -1292,7 +1304,11 @@ class App:
                 # Resume normal reminder schedule
                 self._schedule_next(0)
 
-            self._snooze_unpause_timer_id = self.root.after(ms, _unpause_after_snooze)
+            if hasattr(self, "_timers"):
+                self._timers.schedule("snooze-expiry", ms, _unpause_after_snooze)
+                self._snooze_unpause_timer_id = self._timers.callback_id("snooze-expiry")
+            else:
+                self._snooze_unpause_timer_id = self.root.after(ms, _unpause_after_snooze)
             try:
                 get_logger().info("tray: scheduled unpause timer ms=%s", ms)
             except Exception:
@@ -1529,6 +1545,13 @@ class App:
             pass
         self._request_supervisor_stop()
         try:
+            if getattr(self, "_runtime_state", None) is not None:
+                self._runtime_state.request_shutdown()
+            if getattr(self, "_timers", None) is not None:
+                self._timers.close()
+        except Exception:
+            get_logger().exception("shutdown coordinator cleanup failed", exc_info=True)
+        try:
             if getattr(self, "_tray", None):
                 self._tray.stop()
         except Exception:
@@ -1597,8 +1620,11 @@ class App:
             try:
                 self._write_heartbeat()
             finally:
-                self.root.after(60_000, hb)
+                if not hasattr(self, "_timers"):
+                    self.root.after(60_000, hb)
         hb()
+        if hasattr(self, "_timers"):
+            self._timers.schedule("file-heartbeat", 60_000, hb, interval_ms=60_000)
 
     def _start_snooze_reminder_check(self):
         """Start periodic check for showing snooze reminder."""
@@ -1607,8 +1633,11 @@ class App:
                 self._maybe_show_snooze_reminder()
             finally:
                 # Check every 10 seconds
-                self.root.after(10_000, check)
+                if not hasattr(self, "_timers"):
+                    self.root.after(10_000, check)
         check()
+        if hasattr(self, "_timers"):
+            self._timers.schedule("snooze-reminder", 10_000, check, interval_ms=10_000)
 
     def _maybe_show_snooze_reminder(self):
         """Show snooze reminder dialog if conditions are met."""
