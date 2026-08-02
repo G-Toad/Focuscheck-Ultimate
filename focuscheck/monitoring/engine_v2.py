@@ -11,6 +11,7 @@ from ..ui.dialogs.v2_subpopup_dialog import V2SubPopupDialog
 from ..ui.dialogs.intervention_wizard import InterventionWizard
 from ..settings import save_settings
 from ..utils.timers import TimerRegistry
+from .activity import safe_activity_snapshot
 
 try:
     from ..utils.logging_utils import get_logger
@@ -55,7 +56,7 @@ class EngineV2(BaseEngine):
             self._timers.close()
 
     def _get_activity_info(self):
-        info = self._activity_provider()
+        info = safe_activity_snapshot(self._activity_provider).as_mapping()
         hwnd = info.get("hwnd")
         now = time.monotonic()
         if hwnd and hwnd == self._last_hwnd:
