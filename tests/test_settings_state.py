@@ -182,6 +182,36 @@ class FeatureGateTests(unittest.TestCase):
         guard.set_sleeping(False)
         self.assertFalse(guard.should_pause())
 
+    def test_windows_idle_guard_declares_pointer_width_and_wrap_safe_ticks(self):
+        import ctypes
+        from focuscheck.ui.guards import PauseGuard
+
+        class Api:
+            def __init__(self, result):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, pointer=None):
+                if pointer is not None:
+                    pointer._obj.dwTime = self.result
+                return 1
+
+        get_last_input = Api(0xFFFFFFF0)
+        get_tick_count = Api(0x00000010)
+        kernel32 = type("Kernel", (), {"GetTickCount64": get_tick_count})()
+        user32 = type("User", (), {"GetLastInputInfo": get_last_input})()
+        windll = type("Windll", (), {"user32": user32, "kernel32": kernel32})()
+        settings = {"pause_on_idle": True, "inactive_as_sleep_seconds": 0}
+        guard = PauseGuard(lambda: settings)
+        guard._os = "windows"
+        with mock.patch("focuscheck.ui.guards.platform.system", return_value="Windows"), mock.patch(
+            "focuscheck.ui.guards.ctypes.windll", windll
+        ):
+            self.assertTrue(guard._looks_inactive_by_idle())
+        self.assertEqual([], get_tick_count.argtypes)
+        self.assertIs(ctypes.c_ulonglong, get_tick_count.restype)
+
 
 class StartupStateTests(unittest.TestCase):
     def test_resolve_initial_monitoring_state_env_overrides(self):

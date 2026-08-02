@@ -2,6 +2,7 @@
 
 import platform
 import ctypes
+from ctypes import wintypes
 import glob
 import subprocess
 
@@ -58,20 +59,29 @@ class PauseGuard:
                     _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
                 plii = LASTINPUTINFO()
                 plii.cbSize = ctypes.sizeof(LASTINPUTINFO)
-                if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(plii)):
+                user32 = ctypes.windll.user32
+                get_last_input = user32.GetLastInputInfo
+                get_last_input.argtypes = [ctypes.POINTER(LASTINPUTINFO)]
+                get_last_input.restype = wintypes.BOOL
+                if get_last_input(ctypes.byref(plii)):
                     k32 = ctypes.windll.kernel32
                     # Prefer 64-bit tick count to avoid 49.7-day wrap
                     get64 = getattr(k32, 'GetTickCount64', None)
                     if get64:
-                        tick_now = get64()
-                        idle_ms = int(tick_now - plii.dwTime)
+                        get64.argtypes = []
+                        get64.restype = ctypes.c_ulonglong
+                        tick_now = int(get64())
+                        # LASTINPUTINFO.dwTime is the low 32 bits of the
+                        # system tick count; unsigned subtraction is wrap-safe.
+                        idle_ms = (tick_now & 0xFFFFFFFF) - int(plii.dwTime)
+                        idle_ms &= 0xFFFFFFFF
                     else:
-                        tick_now = k32.GetTickCount()
+                        get32 = k32.GetTickCount
+                        get32.argtypes = []
+                        get32.restype = ctypes.c_uint
+                        tick_now = int(get32())
                         # Handle wrap-around for 32-bit tick count (proper signed arithmetic)
-                        diff = (int(tick_now) - int(plii.dwTime)) & 0xFFFFFFFF
-                        if diff > 0x7FFFFFFF:
-                            diff -= 0x100000000
-                        idle_ms = abs(diff)
+                        idle_ms = (tick_now - int(plii.dwTime)) & 0xFFFFFFFF
                     return idle_ms >= thresh_ms
                 # If API fails, fall back to no-pause
                 return False
