@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import sqlite3
 import json
 import os
 import sys
@@ -125,6 +126,38 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertEqual(second_id, db.get_active()["id"])
             self.assertEqual([second_id], [row["id"] for row in active])
             self.assertIn(first_id, [row["id"] for row in changed])
+
+    def test_analytics_today_uses_explicit_timezone_at_dst_boundary(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = Path(temp_dir) / "tasks.sqlite3"
+            db = TaskDB(str(path))
+            with sqlite3.connect(path) as con:
+                con.executemany(
+                    "INSERT INTO tasks(created_utc, title, why, consequences, status, completed_utc) "
+                    "VALUES (?, ?, '', '', 'completed', ?)",
+                    [
+                        ("2026-03-08T04:30:00+00:00", "previous local day", "2026-03-08T04:31:00+00:00"),
+                        ("2026-03-08T05:30:00+00:00", "current local day", "2026-03-08T05:31:00+00:00"),
+                    ],
+                )
+                con.commit()
+
+            counts = db.analytics_counts(
+                timescale="today",
+                user_timezone="America/New_York",
+                now=datetime(2026, 3, 8, 7, 30, tzinfo=timezone.utc),
+            )
+            self.assertEqual(1, counts["completed"])
+
+    def test_analytics_rejects_unknown_timezone_instead_of_using_machine_zone(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"))
+            with self.assertRaises(ValueError):
+                db.analytics_counts(timescale="today", user_timezone="Not/AZone")
 
 
 class EngineV2MatchingTests(unittest.TestCase):

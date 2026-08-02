@@ -5,6 +5,7 @@ import os
 import shutil
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..utils.logging_utils import log_exception
 
 
@@ -251,20 +252,43 @@ class TaskDB:
             con.commit()
         return affected
 
-    def analytics_counts(self, *, timescale="lifetime", treat_changed_as_fail=True):
+    def analytics_counts(
+        self,
+        *,
+        timescale="lifetime",
+        treat_changed_as_fail=True,
+        user_timezone="UTC",
+        now=None,
+    ):
+        """Return task counts using UTC storage and an explicit local-day policy.
+
+        ``now`` is injectable for deterministic boundary and DST tests. Unknown
+        timezone names are rejected rather than silently using the machine zone.
+        """
         where = ""
         params = []
-        now = datetime.now(timezone.utc)
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        current = current.astimezone(timezone.utc)
+        if isinstance(user_timezone, str):
+            try:
+                local_zone = ZoneInfo(user_timezone)
+            except ZoneInfoNotFoundError as exc:
+                raise ValueError(f"unknown user timezone: {user_timezone!r}") from exc
+        else:
+            local_zone = user_timezone
+        local_now = current.astimezone(local_zone)
         if timescale == "today":
-            start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            start = local_now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
             where = "WHERE datetime(created_utc) >= datetime(?)"
             params = [start.isoformat()]
         elif timescale == "7d":
-            start = now - timedelta(days=7)
+            start = (local_now - timedelta(days=7)).astimezone(timezone.utc)
             where = "WHERE datetime(created_utc) >= datetime(?)"
             params = [start.isoformat()]
         elif timescale == "30d":
-            start = now - timedelta(days=30)
+            start = (local_now - timedelta(days=30)).astimezone(timezone.utc)
             where = "WHERE datetime(created_utc) >= datetime(?)"
             params = [start.isoformat()]
 
