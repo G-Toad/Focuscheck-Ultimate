@@ -137,6 +137,28 @@ class SettingsWindowSaveTests(unittest.TestCase):
             with contextlib.suppress(tk.TclError):
                 root.destroy()
 
+    def test_every_schema_generated_control_round_trips_defaults(self):
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.schema_controls import SCHEMA_CONTROL_KEYS
+
+        root = _make_root()
+        try:
+            window, saved_payloads = self._save_window_payload(root, DEFAULT_SETTINGS)
+            self.assertEqual(set(SCHEMA_CONTROL_KEYS), set(window._schema_settings.variables))
+            self.assertEqual(set(SCHEMA_CONTROL_KEYS), set(window._schema_settings._widgets))
+
+            with mock.patch("focuscheck.settings.manager.save_settings") as save_settings:
+                window._save()
+
+            payload = saved_payloads[0]
+            save_settings.assert_called_once_with(payload)
+            for key in SCHEMA_CONTROL_KEYS:
+                self.assertIn(key, payload)
+                self.assertEqual(DEFAULT_SETTINGS[key], payload[key], key)
+        finally:
+            with contextlib.suppress(tk.TclError):
+                root.destroy()
+
     def test_save_payload_round_trips_representative_active_tabs(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
