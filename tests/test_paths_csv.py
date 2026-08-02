@@ -60,6 +60,24 @@ class PathHelperTests(unittest.TestCase):
 
 
 class CsvLoggerTests(unittest.TestCase):
+    def test_logger_uses_composition_root_path_before_first_use(self):
+        import focuscheck.utils.logging_utils as logging_utils
+
+        logger = mock.Mock()
+        logger.handlers = []
+        handler = mock.Mock()
+        with tempfile.TemporaryDirectory() as temp_dir, \
+                mock.patch.object(logging_utils, "_logger", None), \
+                mock.patch.object(logging_utils, "_configured_log_path", None), \
+                mock.patch.object(logging_utils.logging, "getLogger", return_value=logger), \
+                mock.patch.object(logging_utils, "SafeRotatingFileHandler", return_value=handler) as handler_factory:
+            target = Path(temp_dir) / "composed" / "focus_app.log"
+            self.assertTrue(logging_utils.configure_log_path(target))
+            logging_utils.get_logger()
+
+        handler_factory.assert_called_once()
+        self.assertEqual(str(target), handler_factory.call_args.args[0])
+
     def test_diagnostic_logging_redacts_user_response(self):
         import focuscheck.database.csv_logger as logger
 

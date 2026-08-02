@@ -11,6 +11,7 @@ from logging.handlers import RotatingFileHandler
 
 
 _logger = None
+_configured_log_path = None
 
 
 class SafeRotatingFileHandler(RotatingFileHandler):
@@ -39,6 +40,16 @@ def privacy_summary(value):
     return {"type": type(value).__name__, "length": len(text), "sha256": digest}
 
 
+def configure_log_path(path):
+    """Bind the application log to the composition root before first use."""
+    global _configured_log_path
+    if _logger is not None:
+        return False
+    if path:
+        _configured_log_path = os.fspath(path)
+    return True
+
+
 def get_logger():
     """
     Get or create the application logger.
@@ -56,7 +67,7 @@ def get_logger():
     # Import here to avoid circular dependency
     from ..utils.paths import choose_path
     
-    APP_LOG_PATH = choose_path("focus_app.log")
+    APP_LOG_PATH = _configured_log_path or choose_path("focus_app.log")
     
     try:
         os.makedirs(os.path.dirname(APP_LOG_PATH), exist_ok=True)

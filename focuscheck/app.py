@@ -65,6 +65,7 @@ from .platform_specific import (
 
 # Utilities
 from .utils import (
+    configure_log_path,
     get_logger,
     log_exception,
     get_data_dir,
@@ -201,6 +202,7 @@ class App:
     def __init__(self):
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()
+        configure_log_path(self.paths.app_log)
         self._event_ledger = StructuredEventLedger(self.paths.structured_events)
         self.lifecycle = LifecycleCoordinator(
             _sink=lambda event: self._event_ledger.append("lifecycle", event)
