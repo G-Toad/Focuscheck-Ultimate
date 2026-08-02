@@ -31,6 +31,31 @@ except Exception:
     InterventionReflectionDialog = None  # type: ignore
 
 
+def _configure_spotlight_region_api(user32, gdi32):
+    """Declare region/cursor signatures before native spotlight updates."""
+    import ctypes
+    from ctypes import wintypes
+
+    region_args = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
+    gdi32.CreateRectRgn.argtypes = region_args
+    gdi32.CreateRectRgn.restype = wintypes.HANDLE
+    gdi32.CreateEllipticRgn.argtypes = region_args
+    gdi32.CreateEllipticRgn.restype = wintypes.HANDLE
+    gdi32.CombineRgn.argtypes = [
+        wintypes.HANDLE,
+        wintypes.HANDLE,
+        wintypes.HANDLE,
+        ctypes.c_int,
+    ]
+    gdi32.CombineRgn.restype = ctypes.c_int
+    gdi32.DeleteObject.argtypes = [wintypes.HANDLE]
+    gdi32.DeleteObject.restype = wintypes.BOOL
+    user32.SetWindowRgn.argtypes = [wintypes.HWND, wintypes.HANDLE, wintypes.BOOL]
+    user32.SetWindowRgn.restype = ctypes.c_int
+    user32.GetCursorPos.argtypes = [ctypes.c_void_p]
+    user32.GetCursorPos.restype = wintypes.BOOL
+
+
 class WindowSelectionDialog(tk.Toplevel):
     """Select open windows to close."""
 
@@ -399,6 +424,7 @@ class SpotlightOverlay(tk.Toplevel):
             import ctypes
             self._user32 = ctypes.windll.user32
             self._gdi32 = ctypes.windll.gdi32
+            _configure_spotlight_region_api(self._user32, self._gdi32)
             self._RGN_DIFF = 4
             return True
         except Exception:

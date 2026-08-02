@@ -626,6 +626,31 @@ class ImportHardeningTests(unittest.TestCase):
             overlay.destroy()
         self.assertEqual({"brush": 1, "window": 1}, calls)
 
+    def test_spotlight_region_declares_native_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {name: Api() for name in ("SetWindowRgn", "GetCursorPos")})()
+        gdi32 = type("Gdi32", (), {
+            name: Api() for name in ("CreateRectRgn", "CreateEllipticRgn", "CombineRgn", "DeleteObject")
+        })()
+        intervention_wizard._configure_spotlight_region_api(user32, gdi32)
+
+        self.assertEqual(
+            [ctypes.c_int] * 4,
+            gdi32.CreateRectRgn.argtypes,
+        )
+        self.assertEqual(
+            [wintypes.HWND, wintypes.HANDLE, wintypes.BOOL],
+            user32.SetWindowRgn.argtypes,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

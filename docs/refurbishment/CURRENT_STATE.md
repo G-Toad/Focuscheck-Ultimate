@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `269` unittest cases passing.
+- Current automated baseline after hardening: `270` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -47,6 +47,7 @@
 - TaskDB transition, overdue, and event timestamps accept an optional injected UTC clock for deterministic persistence tests.
 - Activity snapshots now bound provider text/URLs, record truncation errors, and accept deterministic capture clocks across success, error, and timeout paths.
 - Icon extraction declares shell32, user32, and GDI handle/function signatures before native icon and bitmap operations.
+- Spotlight region and cursor operations declare their user32/GDI signatures before native updates.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.
 - Monitoring engine switches synchronously close the active prompt before replacing the old engine.
