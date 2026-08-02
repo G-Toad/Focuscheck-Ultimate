@@ -29,5 +29,38 @@ class InterventionCoordinatorTests(unittest.TestCase):
         app._intervention_active = False
         with mock.patch("focuscheck.ui.dialogs.intervention_wizard.InterventionWizard", side_effect=RuntimeError("failed")):
             self.assertFalse(App.run_intervention(app, {}, preselect_hwnd=None, preselect_title=None))
-        self.assertFalse(app._intervention_active)
+            self.assertFalse(app._intervention_active)
         app._runtime_state.end_intervention.assert_called_once()
+
+    def test_off_thread_intervention_timeout_invalidates_queued_tk_callback(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        class Parent:
+            _focuscheck_tk_thread_id = -1
+
+            def __init__(self):
+                self.callbacks = []
+
+            def after(self, _delay, callback):
+                self.callbacks.append(callback)
+                return "dispatch"
+
+        parent = Parent()
+        wizard = intervention_wizard.InterventionWizard(parent, {})
+        wizard._run_internal = mock.Mock(return_value=True)
+        done = mock.Mock()
+        done.wait.return_value = False
+        cancelled = mock.Mock()
+        cancelled.is_set.return_value = False
+
+        with mock.patch.object(
+            intervention_wizard.threading,
+            "Event",
+            side_effect=[done, cancelled],
+        ):
+            self.assertFalse(wizard.run())
+
+        cancelled.set.assert_called_once_with()
+        cancelled.is_set.return_value = True
+        parent.callbacks[0]()
+        wizard._run_internal.assert_not_called()

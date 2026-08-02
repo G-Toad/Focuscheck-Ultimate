@@ -650,9 +650,13 @@ class InterventionWizard:
             except Exception:
                 pass
             done = threading.Event()
+            cancelled = threading.Event()
             result_holder = {}
 
             def _run_on_ui():
+                if cancelled.is_set() or getattr(self, "_closed", False):
+                    done.set()
+                    return
                 try:
                     result_holder["value"] = self._run_internal(
                         preselect_hwnd=preselect_hwnd,
@@ -673,7 +677,12 @@ class InterventionWizard:
                 if logger:
                     logger.exception("intervention: failed to marshal to Tk thread", exc_info=True)
                 return False
-            done.wait(timeout=60.0)
+            if not done.wait(timeout=60.0):
+                # The UI callback may still be queued after the caller's
+                # bounded wait. Invalidate it so a late Tk dispatch cannot
+                # open an intervention invisibly.
+                cancelled.set()
+                return False
             return bool(result_holder.get("value"))
         return self._run_internal(
             preselect_hwnd=preselect_hwnd,
