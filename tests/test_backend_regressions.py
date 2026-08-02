@@ -626,6 +626,42 @@ class ImportHardeningTests(unittest.TestCase):
             overlay.destroy()
         self.assertEqual({"brush": 1, "window": 1}, calls)
 
+    def test_native_overlay_declares_lifecycle_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        names = (
+            "RegisterClassExW", "CreateWindowExW", "DefWindowProcW", "BeginPaint",
+            "GetClientRect", "EndPaint", "FillRect", "GetClassLongPtrW", "SetClassLongPtrW",
+            "ShowWindow", "SetWindowPos", "RedrawWindow", "SetLayeredWindowAttributes",
+            "DestroyWindow",
+        )
+        user32 = type("User32", (), {name: Api() for name in names})()
+        gdi32 = type("Gdi32", (), {
+            name: Api() for name in ("CreateSolidBrush", "FillRect", "DeleteObject")
+        })()
+        kernel32 = type("Kernel32", (), {"GetModuleHandleW": Api()})()
+
+        windows._configure_overlay_api(user32, gdi32, kernel32)
+
+        self.assertEqual([wintypes.HWND], user32.DestroyWindow.argtypes)
+        self.assertEqual(
+            [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+             ctypes.c_int, ctypes.c_int, wintypes.UINT],
+            user32.SetWindowPos.argtypes,
+        )
+        self.assertEqual(
+            [wintypes.HDC, ctypes.POINTER(wintypes.RECT), wintypes.HBRUSH],
+            user32.FillRect.argtypes,
+        )
+        self.assertEqual([wintypes.LPCWSTR], kernel32.GetModuleHandleW.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

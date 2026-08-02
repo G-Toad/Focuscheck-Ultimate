@@ -73,6 +73,56 @@ def _kernel32():
     return ctypes.WinDLL("kernel32", use_last_error=True)
 
 
+def _configure_overlay_api(user32, gdi32, kernel32):
+    """Declare the native signatures used by the overlay lifecycle."""
+    user32.RegisterClassExW.argtypes = [ctypes.c_void_p]
+    user32.RegisterClassExW.restype = wintypes.ATOM
+    user32.CreateWindowExW.argtypes = [
+        wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
+        ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+        wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, ctypes.c_void_p,
+    ]
+    user32.CreateWindowExW.restype = wintypes.HWND
+    user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
+    user32.DefWindowProcW.restype = LRESULT
+    user32.BeginPaint.argtypes = [wintypes.HWND, ctypes.c_void_p]
+    user32.BeginPaint.restype = wintypes.HDC
+    user32.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetClientRect.restype = wintypes.BOOL
+    user32.EndPaint.argtypes = [wintypes.HWND, ctypes.c_void_p]
+    user32.EndPaint.restype = wintypes.BOOL
+    user32.FillRect.argtypes = [wintypes.HDC, ctypes.POINTER(wintypes.RECT), wintypes.HBRUSH]
+    user32.FillRect.restype = ctypes.c_int
+    user32.GetClassLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.GetClassLongPtrW.restype = LONG_PTR
+    user32.SetClassLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
+    user32.SetClassLongPtrW.restype = LONG_PTR
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.ShowWindow.restype = wintypes.BOOL
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+        ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    user32.RedrawWindow.argtypes = [
+        wintypes.HWND, ctypes.POINTER(wintypes.RECT), wintypes.HRGN, wintypes.UINT,
+    ]
+    user32.RedrawWindow.restype = wintypes.BOOL
+    user32.SetLayeredWindowAttributes.argtypes = [
+        wintypes.HWND, wintypes.COLORREF, wintypes.BYTE, wintypes.DWORD,
+    ]
+    user32.SetLayeredWindowAttributes.restype = wintypes.BOOL
+    user32.DestroyWindow.argtypes = [wintypes.HWND]
+    user32.DestroyWindow.restype = wintypes.BOOL
+
+    gdi32.CreateSolidBrush.argtypes = [wintypes.COLORREF]
+    gdi32.CreateSolidBrush.restype = wintypes.HBRUSH
+    gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
+    gdi32.DeleteObject.restype = wintypes.BOOL
+    kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
+    kernel32.GetModuleHandleW.restype = wintypes.HINSTANCE
+
+
 def _get_last_error_info():
     try:
         code = ctypes.get_last_error()
@@ -227,6 +277,7 @@ class WinClickThroughOverlay:
             return
         user32 = _user32()
         gdi32 = _gdi32()
+        _configure_overlay_api(user32, gdi32, _kernel32())
         class WNDCLASSEXW(ctypes.Structure):
             _fields_ = [
                 ("cbSize", ctypes.c_uint),
@@ -268,7 +319,7 @@ class WinClickThroughOverlay:
                     hbr = ctypes.windll.user32.GetClassLongPtrW(h, -10)
                 except Exception:
                     hbr = ctypes.windll.user32.GetClassLongW(h, -10)
-                gdi32.FillRect(hdc, ctypes.byref(rect), hbr)
+                user32.FillRect(hdc, ctypes.byref(rect), hbr)
                 user32.EndPaint(h, ctypes.byref(ps))
                 return 0
             return user32.DefWindowProcW(h, msg, wParam, lParam)
@@ -313,6 +364,7 @@ class WinClickThroughOverlay:
     def _create_window(self, x, y, w, h, color_hex):
         user32 = _user32()
         gdi32 = _gdi32()
+        _configure_overlay_api(user32, gdi32, _kernel32())
         hinst = _kernel32().GetModuleHandleW(None)
         # Create popup layered transparent, topmost, no-activate toolwindow
         ex = (WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOPMOST | WS_EX_TOOLWINDOW)
