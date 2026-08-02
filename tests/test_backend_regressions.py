@@ -636,7 +636,9 @@ class ImportHardeningTests(unittest.TestCase):
                 self.argtypes = None
                 self.restype = None
 
-        user32 = type("User32", (), {name: Api() for name in ("SetWindowRgn", "GetCursorPos")})()
+        user32 = type("User32", (), {
+            name: Api() for name in ("SetWindowRgn", "GetCursorPos", "GetSystemMetrics", "SetWindowPos")
+        })()
         gdi32 = type("Gdi32", (), {
             name: Api() for name in ("CreateRectRgn", "CreateEllipticRgn", "CombineRgn", "DeleteObject")
         })()
@@ -649,6 +651,13 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual(
             [wintypes.HWND, wintypes.HANDLE, wintypes.BOOL],
             user32.SetWindowRgn.argtypes,
+        )
+        intervention_wizard._configure_window_position_api(user32)
+        self.assertEqual([ctypes.c_int], user32.GetSystemMetrics.argtypes)
+        self.assertEqual(
+            [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+             ctypes.c_int, ctypes.c_int, wintypes.UINT],
+            user32.SetWindowPos.argtypes,
         )
 
 

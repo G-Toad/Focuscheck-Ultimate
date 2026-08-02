@@ -48,6 +48,7 @@
 - Activity snapshots now bound provider text/URLs, record truncation errors, and accept deterministic capture clocks across success, error, and timeout paths.
 - Icon extraction declares shell32, user32, and GDI handle/function signatures before native icon and bitmap operations.
 - Spotlight region and cursor operations declare their user32/GDI signatures before native updates.
+- Virtual-screen metrics and intervention window positioning declare shared user32 signatures before geometry/recovery operations.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.
 - Monitoring engine switches synchronously close the active prompt before replacing the old engine.

@@ -56,6 +56,25 @@ def _configure_spotlight_region_api(user32, gdi32):
     user32.GetCursorPos.restype = wintypes.BOOL
 
 
+def _configure_window_position_api(user32):
+    """Declare user32 signatures used by virtual-screen positioning helpers."""
+    import ctypes
+    from ctypes import wintypes
+
+    user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+    user32.GetSystemMetrics.restype = ctypes.c_int
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND,
+        wintypes.HWND,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+
+
 class WindowSelectionDialog(tk.Toplevel):
     """Select open windows to close."""
 
@@ -1255,6 +1274,7 @@ def _get_virtual_screen_rect():
         if platform.system().lower() == "windows":
             import ctypes
             user32 = ctypes.windll.user32
+            _configure_window_position_api(user32)
             SM_XVIRTUALSCREEN = 76
             SM_YVIRTUALSCREEN = 77
             SM_CXVIRTUALSCREEN = 78
@@ -1303,6 +1323,7 @@ def _apply_absolute_geometry(window, x, y, w, h):
             return False
         import ctypes
         user32 = ctypes.windll.user32
+        _configure_window_position_api(user32)
         SWP_NOZORDER = 0x0004
         SWP_NOACTIVATE = 0x0010
         user32.SetWindowPos(window.winfo_id(), None, int(x), int(y), int(w), int(h), SWP_NOZORDER | SWP_NOACTIVATE)
@@ -1318,6 +1339,7 @@ def _raise_above_window(window, below_window):
             return False
         import ctypes
         user32 = ctypes.windll.user32
+        _configure_window_position_api(user32)
         SWP_NOMOVE = 0x0002
         SWP_NOSIZE = 0x0001
         SWP_NOACTIVATE = 0x0010
@@ -1342,6 +1364,7 @@ def _raise_above_hwnd(window, below_hwnd):
             return False
         import ctypes
         user32 = ctypes.windll.user32
+        _configure_window_position_api(user32)
         SWP_NOMOVE = 0x0002
         SWP_NOSIZE = 0x0001
         SWP_NOACTIVATE = 0x0010
