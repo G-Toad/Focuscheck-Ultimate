@@ -5,6 +5,7 @@ Camera test preview window for testing camera settings before applying.
 import tkinter as tk
 from tkinter import ttk
 import time
+from ..utils.timers import TimerRegistry
 
 try:
     import cv2
@@ -42,6 +43,7 @@ class CameraTestWindow(tk.Toplevel):
         self._closed = False
         self._camera_capture = None
         self._camera_update_timer = None
+        self._timers = TimerRegistry(self)
         self._camera_generation = 0
         self._camera_label = None
         self._camera_last_face_rect = None
@@ -165,7 +167,7 @@ class CameraTestWindow(tk.Toplevel):
             ret, frame = self._camera_capture.read()
             if not ret or frame is None:
                 self._camera_label.configure(text="No camera frame available", fg="#f00")
-                self._camera_update_timer = self.after(33, self._update_camera_feed, generation)
+                self._schedule_camera_update(33, generation)
                 return
 
             # Process frame using camera feed mixin logic
@@ -174,7 +176,7 @@ class CameraTestWindow(tk.Toplevel):
             processed_frame = self._process_camera_frame(frame)
 
             if processed_frame is None:
-                self._camera_update_timer = self.after(33, self._update_camera_feed, generation)
+                self._schedule_camera_update(33, generation)
                 return
 
             # Pad to display size
@@ -199,11 +201,21 @@ class CameraTestWindow(tk.Toplevel):
             # Schedule next update
             fps = self.camera_settings.get("camera_fps", 30)
             delay_ms = int(1000 / fps)
-            self._camera_update_timer = self.after(delay_ms, self._update_camera_feed, generation)
+            self._schedule_camera_update(delay_ms, generation)
 
         except Exception as e:
             self._camera_label.configure(text=f"Error: {e}")
-            self._camera_update_timer = self.after(100, self._update_camera_feed, generation)
+            self._schedule_camera_update(100, generation)
+
+    def _schedule_camera_update(self, delay_ms, generation):
+        if self._closed:
+            return
+        self._timers.schedule(
+            "camera-feed",
+            delay_ms,
+            lambda: self._update_camera_feed(generation),
+        )
+        self._camera_update_timer = self._timers.callback_id("camera-feed")
 
     def _show_error(self, message):
         """Show error message in camera display."""
@@ -214,13 +226,15 @@ class CameraTestWindow(tk.Toplevel):
         self._closed = True
         self._camera_generation = getattr(self, "_camera_generation", 0) + 1
 
-        # Cancel pending camera update timer
-        if self._camera_update_timer is not None:
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+        elif self._camera_update_timer is not None:
             try:
                 self.after_cancel(self._camera_update_timer)
             except Exception:
                 pass
-            self._camera_update_timer = None
+        self._camera_update_timer = None
 
         # Release camera
         if self._camera_capture is not None:

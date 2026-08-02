@@ -10,6 +10,7 @@ from tkinter import ttk, messagebox, font as tkfont
 import platform
 from ..settings.manager import save_settings
 from .camera.manual_crop_utils import calculate_crop_region
+from ..utils.timers import TimerRegistry
 
 # Try to import cv2 for camera access
 try:
@@ -66,6 +67,7 @@ class CropAdjustmentWindow(tk.Toplevel):
         self.camera_update_timer = None
         self._camera_generation = 0
         self._camera_init_timer = None
+        self._timers = TimerRegistry(self)
         self.current_frame = None
         self.preview_photo = None
         self.crop_preview_photo = None
@@ -94,7 +96,12 @@ class CropAdjustmentWindow(tk.Toplevel):
 
         # Start camera if available
         if CV2_AVAILABLE and PIL_AVAILABLE:
-            self._camera_init_timer = self.after(500, self._initialize_camera, self._camera_generation)
+            self._timers.schedule(
+                "camera-init",
+                500,
+                lambda: self._initialize_camera(self._camera_generation),
+            )
+            self._camera_init_timer = self._timers.callback_id("camera-init")
         else:
             messagebox.showwarning(
                 "Camera Unavailable",
@@ -871,10 +878,20 @@ class CropAdjustmentWindow(tk.Toplevel):
                 self._update_preview()
 
             # Schedule next update (30 FPS)
-            self.camera_update_timer = self.after(33, self._update_camera_feed, generation)
+            self._schedule_camera_update(33, generation)
 
         except Exception:
             pass
+
+    def _schedule_camera_update(self, delay_ms, generation):
+        if getattr(self, "_closed", False):
+            return
+        self._timers.schedule(
+            "camera-feed",
+            delay_ms,
+            lambda: self._update_camera_feed(generation),
+        )
+        self.camera_update_timer = self._timers.callback_id("camera-feed")
 
     def _update_preview(self):
         """Update preview canvas with current frame and crop overlay."""
@@ -1953,17 +1970,22 @@ class CropAdjustmentWindow(tk.Toplevel):
         """Clean up resources."""
         self._camera_generation = getattr(self, "_camera_generation", 0) + 1
 
-        if self._camera_init_timer:
-            try:
-                self.after_cancel(self._camera_init_timer)
-            except Exception:
-                pass
-            self._camera_init_timer = None
-
-        # Cancel camera update timer
-        if self.camera_update_timer:
-            self.after_cancel(self.camera_update_timer)
-            self.camera_update_timer = None
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+        else:
+            if self._camera_init_timer:
+                try:
+                    self.after_cancel(self._camera_init_timer)
+                except Exception:
+                    pass
+            if self.camera_update_timer:
+                try:
+                    self.after_cancel(self.camera_update_timer)
+                except Exception:
+                    pass
+        self._camera_init_timer = None
+        self.camera_update_timer = None
 
         # Release camera
         if self.camera:

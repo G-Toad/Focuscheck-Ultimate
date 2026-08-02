@@ -15,6 +15,7 @@ from .camera.adjustment_helpers import (
     apply_manual_adjustments,
     frame_to_photo,
 )
+from ..utils.timers import TimerRegistry
 
 
 class CameraAdjustmentWindow(tk.Toplevel):
@@ -39,6 +40,7 @@ class CameraAdjustmentWindow(tk.Toplevel):
         self._save_feedback_timer = None
         self._save_feedback_label = None
         self._camera_generation = 0
+        self._timers = TimerRegistry(self)
 
         # Manual adjustment values (0.0 - 1.0 range for all)
         self.brightness_var = tk.DoubleVar(value=self.settings.get("camera_manual_brightness", 0.5))
@@ -251,7 +253,7 @@ class CameraAdjustmentWindow(tk.Toplevel):
             ret, frame = self._camera_capture.read()
 
             if not ret or frame is None:
-                self._update_timer = self.after(33, self._update_feed, generation)
+                self._schedule_update(33, generation)
                 return
 
             # Resize for display (maintain aspect ratio)
@@ -276,11 +278,21 @@ class CameraAdjustmentWindow(tk.Toplevel):
             self._display_frame(enhanced, self.enhanced_label)
 
             # Schedule next update
-            self._update_timer = self.after(33, self._update_feed, generation)
+            self._schedule_update(33, generation)
 
         except Exception as e:
             print(f"Update error: {e}")
-            self._update_timer = self.after(100, self._update_feed, generation)
+            self._schedule_update(100, generation)
+
+    def _schedule_update(self, delay_ms, generation):
+        if self._closed:
+            return
+        self._timers.schedule(
+            "camera-feed",
+            delay_ms,
+            lambda: self._update_feed(generation),
+        )
+        self._update_timer = self._timers.callback_id("camera-feed")
 
     def _display_frame(self, frame, label):
         """Display frame in the given label."""
@@ -320,12 +332,8 @@ class CameraAdjustmentWindow(tk.Toplevel):
                 self.master._save_camera_adjustment_settings(settings)
 
             # Show confirmation
-            if self._save_feedback_timer is not None:
-                try:
-                    self.after_cancel(self._save_feedback_timer)
-                except Exception:
-                    pass
-                self._save_feedback_timer = None
+            self._timers.cancel("save-feedback")
+            self._save_feedback_timer = None
             if self._save_feedback_label is not None:
                 try:
                     self._save_feedback_label.destroy()
@@ -334,7 +342,8 @@ class CameraAdjustmentWindow(tk.Toplevel):
             self._save_feedback_label = tk.Label(self, text="✓ Settings saved!",
                                                  fg="#0f0", bg="#111", font=("Segoe UI", 10, "bold"))
             self._save_feedback_label.place(relx=0.5, rely=0.5, anchor="center")
-            self._save_feedback_timer = self.after(1500, self._clear_save_feedback)
+            self._timers.schedule("save-feedback", 1500, self._clear_save_feedback)
+            self._save_feedback_timer = self._timers.callback_id("save-feedback")
 
         except Exception as e:
             print(f"Save error: {e}")
@@ -361,21 +370,18 @@ class CameraAdjustmentWindow(tk.Toplevel):
         self._camera_generation = getattr(self, "_camera_generation", 0) + 1
 
         feedback_timer = getattr(self, "_save_feedback_timer", None)
-        if feedback_timer is not None:
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+        elif feedback_timer is not None:
             try:
                 self.after_cancel(feedback_timer)
             except Exception:
                 pass
-            self._save_feedback_timer = None
+        self._save_feedback_timer = None
         self._save_feedback_label = None
 
-        # Cancel pending update timer
-        if self._update_timer is not None:
-            try:
-                self.after_cancel(self._update_timer)
-            except Exception:
-                pass
-            self._update_timer = None
+        self._update_timer = None
 
         if self._camera_capture is not None:
             try:
