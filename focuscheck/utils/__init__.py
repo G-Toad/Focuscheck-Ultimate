@@ -2,7 +2,7 @@
 
 from .audio import AudioAlarm, get_audio_alarm
 from .colors import parse_rgb_hex
-from .file_ops import acquire_single_instance, get_file_lock
+from .file_ops import acquire_single_instance, get_file_lock, release_single_instance
 from .due_time import parse_due_time
 from .logging_utils import get_logger, log_exception, rotate_log_if_needed
 from .paths import (
@@ -39,6 +39,7 @@ __all__ = [
     "TASK_DB_PATH",
     "WASTE_LOG_PATH",
     "acquire_single_instance",
+    "release_single_instance",
     "choose_path",
     "legacy_path",
     "get_app_paths",

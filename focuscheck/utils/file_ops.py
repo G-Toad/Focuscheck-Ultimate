@@ -48,21 +48,33 @@ def acquire_single_instance():
     
     if platform.system().lower() != "windows":
         return True
+
+    if _single_instance_handle is not None:
+        return True
     
     try:
         from .logging_utils import get_logger
         
         k32 = ctypes.windll.kernel32
         ERROR_ALREADY_EXISTS = 183
+        create_mutex = k32.CreateMutexW
+        create_mutex.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p)
+        create_mutex.restype = ctypes.c_void_p
+        get_last_error = k32.GetLastError
+        get_last_error.argtypes = ()
+        get_last_error.restype = ctypes.c_ulong
+        close_handle = k32.CloseHandle
+        close_handle.argtypes = (ctypes.c_void_p,)
+        close_handle.restype = ctypes.c_int
         names = ["Global\\FocusCheck_Mutex", "Local\\FocusCheck_Mutex"]
         
         for name in names:
-            handle = k32.CreateMutexW(None, True, ctypes.c_wchar_p(name))
+            handle = create_mutex(None, True, ctypes.c_wchar_p(name))
             if handle:
-                last = k32.GetLastError()
+                last = get_last_error()
                 if last == ERROR_ALREADY_EXISTS:
                     # Another instance already running - STOP immediately
-                    k32.CloseHandle(handle)
+                    close_handle(handle)
                     try:
                         get_logger().warning("single-instance: another instance detected via '%s'; exiting", name)
                     except Exception:
@@ -85,6 +97,7 @@ def acquire_single_instance():
         return False
         
     except Exception:
+        release_single_instance()
         # Fail-open rather than hard crash
         try:
             from .logging_utils import get_logger
@@ -92,4 +105,20 @@ def acquire_single_instance():
         except Exception:
             pass
         return True
+
+
+def release_single_instance():
+    """Release the process-owned mutex handle, if one was acquired."""
+    global _single_instance_handle
+    handle = _single_instance_handle
+    _single_instance_handle = None
+    if handle is None or platform.system().lower() != "windows":
+        return False
+    try:
+        close_handle = ctypes.windll.kernel32.CloseHandle
+        close_handle.argtypes = (ctypes.c_void_p,)
+        close_handle.restype = ctypes.c_int
+        return bool(close_handle(handle))
+    except Exception:
+        return False
 

@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 168 unittest cases.
+- Automated test baseline: 169 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -18,3 +18,4 @@
 - Supervisor restart waits are cancellation-aware, and accepted generation-bound stop requests receive an atomic durable acknowledgement.
 - Native pause-guard API failures now expose bounded health metadata in diagnostics and heartbeats while retaining safe fail-open behavior.
 - Startup inspection now detects legacy Startup-folder launchers and duplicate registry/folder startup, with an explicit canonical-route repair operation.
+- Single-instance mutex API signatures are explicit and the owned Windows handle is released through the main lifecycle finally block.

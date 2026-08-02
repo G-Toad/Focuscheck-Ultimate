@@ -10,6 +10,36 @@ from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    def test_single_instance_mutex_handle_is_released(self):
+        import focuscheck.utils.file_ops as file_ops
+
+        class Api:
+            def __init__(self, result=None):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+                self.calls = []
+
+            def __call__(self, *args):
+                self.calls.append(args)
+                return self.result
+
+        create_mutex = Api(123)
+        get_last_error = Api(0)
+        close_handle = Api(1)
+        kernel32 = type("Kernel", (), {
+            "CreateMutexW": create_mutex,
+            "GetLastError": get_last_error,
+            "CloseHandle": close_handle,
+        })()
+        with mock.patch.object(file_ops.platform, "system", return_value="Windows"), \
+                mock.patch.object(file_ops.ctypes, "windll", type("Windll", (), {"kernel32": kernel32})()):
+            file_ops._single_instance_handle = None
+            self.assertTrue(file_ops.acquire_single_instance())
+            self.assertTrue(file_ops.release_single_instance())
+
+        self.assertEqual(123, close_handle.calls[0][0])
+        self.assertIsNone(file_ops._single_instance_handle)
     def test_prompt_done_is_idempotent(self):
         from focuscheck.app import App
 

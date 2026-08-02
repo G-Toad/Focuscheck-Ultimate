@@ -26,7 +26,7 @@ if os.name == "nt":
 
 from focuscheck import App
 from focuscheck.platform_specific import install_startup, uninstall_startup
-from focuscheck.utils import acquire_single_instance, get_logger
+from focuscheck.utils import acquire_single_instance, get_logger, release_single_instance
 
 def setup_exception_handler():
     """Set up global exception handler."""
@@ -192,6 +192,8 @@ def main():
         get_logger().exception("Application crashed: %s", e)
         print(f"Application error: {e}", file=sys.stderr)
         sys.exit(1)
+    finally:
+        release_single_instance()
 
 
 if __name__ == "__main__":
