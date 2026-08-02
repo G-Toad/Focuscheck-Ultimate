@@ -12,10 +12,14 @@
 
 ## Retention
 
-`tools/retention.py` plans deletion only for known log/rotation patterns. It is dry-run by default; deletion requires an explicit `--apply` and a selected root. Settings and task databases are never selected by this tool. Symlink candidates are rejected, and applied deletions append only filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
+`tools/retention.py` and the tray's **Clean old logs** action use the packaged retention service. It plans deletion only for known log/rotation patterns; the CLI is dry-run by default, while the tray requires an explicit age and confirmation flow. Settings and task databases are never selected. Symlink candidates are ignored, and applied deletions append only filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
 
 Automated verification never runs with `--apply` and uses `_verify_runtime/data` as its data root.
 
 ## Export
 
 Use `tools/export_data.py` with an explicit source and destination. The default export includes only logs and operational metadata; settings, tasks, and camera files require explicit `--include` selection. Archives contain an `EXPORT_MANIFEST.json` with relative paths, sizes, sensitivity labels, and SHA-256 hashes. Symlink sources and existing destinations without `--overwrite` are rejected.
+
+## User controls
+
+The tray provides a metadata-only data inventory, export, clear logs, clear personal data, and old-log retention actions. Clear logs removes only known log files. Clear personal data removes only settings, task database, and camera categories after confirmation, leaves operational logs intact, and records filename/size/outcome metadata in `data_clear_audit.jsonl`; it does not record file contents.

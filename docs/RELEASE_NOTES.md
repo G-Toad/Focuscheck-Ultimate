@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 192 unittest cases.
+- Automated test baseline: 195 unittest cases.
 - Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -32,3 +32,4 @@
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
 - `tools/export_data.py` now provides an atomic, allowlisted ZIP export with explicit sensitive-category opt-in, symlink rejection, and a SHA-256 manifest; the bounded runner exercises it in a disposable root.
+- Tray/App data controls now provide metadata-only inventory, confirmed clear-log/personal-data actions, and explicit-age log retention through packaged services with metadata-only audit records.

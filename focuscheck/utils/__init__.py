@@ -24,7 +24,8 @@ from .paths import (
 from .timers import TimerRegistry
 from .clock import FakeClock, SystemClock
 from .ui_utils import log_window_state
-from .data_export import export_data
+from .data_export import clear_data, export_data, inventory_data
+from .data_retention import apply_retention, retention_plan
 
 # Backwards-compatible name used by older callers.
 AudioEngine = AudioAlarm
@@ -53,6 +54,10 @@ __all__ = [
     "migrate_legacy_data",
     "get_file_lock",
     "export_data",
+    "clear_data",
+    "inventory_data",
+    "apply_retention",
+    "retention_plan",
     "get_logger",
     "log_exception",
     "log_window_state",

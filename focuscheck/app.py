@@ -1073,7 +1073,11 @@ class App:
                 CMD_DATA = 1009
                 CMD_LOGS = 1010
                 CMD_EXPORT = 1011
-                CMD_EXIT = 1012
+                CMD_INVENTORY = 1012
+                CMD_CLEAR_LOGS = 1013
+                CMD_CLEAR_DATA = 1014
+                CMD_RETAIN_LOGS = 1015
+                CMD_EXIT = 1016
 
                 actions = {}
                 labels = []
@@ -1114,6 +1118,10 @@ class App:
                         _append(CMD_DATA, "Open Data Folder", action=self._tray_open_data_folder)
                         _append(CMD_LOGS, "Open Logs Folder", action=self._tray_open_logs_folder)
                         _append(CMD_EXPORT, "Export Data", action=self._tray_export_data)
+                        _append(CMD_INVENTORY, "Data Inventory", action=self._tray_show_data_inventory)
+                        _append(CMD_CLEAR_LOGS, "Clear Logs", action=self._tray_clear_logs)
+                        _append(CMD_CLEAR_DATA, "Clear Personal Data", action=self._tray_clear_data)
+                        _append(CMD_RETAIN_LOGS, "Clean Old Logs", action=self._tray_retain_logs)
                         _separator()
                         _append(CMD_EXIT, "Exit", enabled=exit_enabled, action=self._tray_exit)
 
@@ -1599,6 +1607,107 @@ class App:
                 return False
 
         return self._call_on_ui_thread(_do_export)
+
+    def _tray_show_data_inventory(self):
+        """Show a metadata-only inventory without exposing file contents."""
+        def _show_inventory():
+            from .utils.data_export import inventory_data
+
+            try:
+                report = inventory_data(get_data_dir())
+                totals = {}
+                for item in report["files"]:
+                    category = item["category"]
+                    totals[category] = totals.get(category, 0) + 1
+                lines = [f"Data root: {report['root']}", ""]
+                if not totals:
+                    lines.append("No known FocusCheck data files were found.")
+                else:
+                    lines.append("Known files by category:")
+                    lines.extend(f"- {category}: {count}" for category, count in sorted(totals.items()))
+                messagebox.showinfo("FocusCheck data inventory", "\n".join(lines))
+                return True
+            except Exception as exc:
+                messagebox.showerror("Data inventory failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_show_inventory)
+
+    def _tray_clear_logs(self):
+        """Clear only known log files after an explicit user confirmation."""
+        def _clear_logs():
+            from .utils.data_export import clear_data
+
+            if not messagebox.askyesno(
+                "Clear logs",
+                "Delete FocusCheck log and response files, including rotated copies?",
+            ):
+                return False
+            try:
+                report = clear_data(get_data_dir(), categories=("logs",), confirmed=True)
+                deleted = sum(1 for item in report["files"] if item.get("deleted"))
+                messagebox.showinfo("Logs cleared", f"Deleted {deleted} log files.")
+                return True
+            except Exception as exc:
+                messagebox.showerror("Clear logs failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_clear_logs)
+
+    def _tray_clear_data(self):
+        """Clear settings, tasks, and camera files, leaving operational logs intact."""
+        def _clear_personal_data():
+            from .utils.data_export import clear_data
+
+            if not messagebox.askyesno(
+                "Clear personal data",
+                "Delete settings, task history, and captured camera files?\n\n"
+                "This cannot be undone and the app should be restarted afterward.",
+            ):
+                return False
+            try:
+                report = clear_data(
+                    get_data_dir(),
+                    categories=("settings", "tasks", "camera"),
+                    confirmed=True,
+                )
+                deleted = sum(1 for item in report["files"] if item.get("deleted"))
+                messagebox.showinfo(
+                    "Personal data cleared",
+                    f"Deleted {deleted} personal data files. Restart FocusCheck to reload defaults.",
+                )
+                return True
+            except Exception as exc:
+                messagebox.showerror("Clear personal data failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_clear_personal_data)
+
+    def _tray_retain_logs(self):
+        """Apply an explicitly selected retention period to old log files."""
+        def _retain_logs():
+            from tkinter import simpledialog
+            from .utils.data_retention import apply_retention
+
+            days = simpledialog.askinteger(
+                "Clean old logs",
+                "Delete log files older than how many days?",
+                initialvalue=90,
+                minvalue=1,
+                maxvalue=3650,
+            )
+            if days is None:
+                return False
+            try:
+                result = apply_retention(get_data_dir(), max_age_days=days, apply=True)
+                deleted = sum(1 for item in result if item.get("deleted"))
+                messagebox.showinfo("Log cleanup complete", f"Deleted {deleted} old log files.")
+                return True
+            except Exception as exc:
+                messagebox.showerror("Log cleanup failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_retain_logs)
 
     def _tray_exit(self):
         def _do_exit():

@@ -728,6 +728,18 @@ class SystemTray:
         """Delegate the user-facing export flow to the application UI owner."""
         self._call_app("_tray_export_data")
 
+    def _clear_logs(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_clear_logs")
+
+    def _clear_data(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_clear_data")
+
+    def _retain_logs(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_retain_logs")
+
+    def _show_data_inventory(self, icon: Any, item: Any) -> None:
+        self._call_app("_tray_show_data_inventory")
+
     def _open_task(self, icon: Any, item: Any) -> None:
         logger.info("=" * 80)
         logger.info("MENU ACTION: _open_task() CALLED")
@@ -956,6 +968,18 @@ class SystemTray:
 
         logger.info("  Adding menu item: 'Export data'")
         items.append(pystray.MenuItem("Export data", self._export_data))
+
+        logger.info("  Adding menu item: 'Data inventory'")
+        items.append(pystray.MenuItem("Data inventory", self._show_data_inventory))
+
+        logger.info("  Adding menu item: 'Clear logs'")
+        items.append(pystray.MenuItem("Clear logs", self._clear_logs))
+
+        logger.info("  Adding menu item: 'Clear personal data'")
+        items.append(pystray.MenuItem("Clear personal data", self._clear_data))
+
+        logger.info("  Adding menu item: 'Clean old logs'")
+        items.append(pystray.MenuItem("Clean old logs", self._retain_logs))
 
         logger.info("  Adding separator")
         items.append(pystray.Menu.SEPARATOR)

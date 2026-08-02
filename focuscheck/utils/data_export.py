@@ -25,6 +25,14 @@ _CATEGORY_PATTERNS = {
 _SENSITIVE_CATEGORIES = {"settings", "tasks", "camera"}
 
 
+def _selected_categories(categories) -> set[str]:
+    selected = {str(category).strip().lower() for category in categories}
+    unknown = selected - set(CATEGORIES)
+    if unknown:
+        raise ValueError(f"unknown export categories: {', '.join(sorted(unknown))}")
+    return selected
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -50,10 +58,7 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
     """Create an atomic ZIP export; sensitive categories are never implicit."""
     root = Path(source_root).resolve()
     output = Path(destination).resolve()
-    selected = {str(category).strip().lower() for category in categories}
-    unknown = selected - set(CATEGORIES)
-    if unknown:
-        raise ValueError(f"unknown export categories: {', '.join(sorted(unknown))}")
+    selected = _selected_categories(categories)
     if not root.is_dir():
         raise NotADirectoryError(root)
     if output.exists() and not overwrite:
@@ -95,4 +100,63 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
                 pass
 
 
-__all__ = ["CATEGORIES", "export_data"]
+def inventory_data(source_root, *, categories=CATEGORIES) -> dict:
+    """Return a metadata-only inventory suitable for a user preview."""
+    root = Path(source_root).resolve()
+    selected = _selected_categories(categories)
+    if not root.is_dir():
+        raise NotADirectoryError(root)
+    files = []
+    for path, category in _files_for_categories(root, selected):
+        stat = path.stat()
+        files.append({
+            "path": path.relative_to(root).as_posix(),
+            "category": category,
+            "size": stat.st_size,
+            "sensitive": category in _SENSITIVE_CATEGORIES,
+        })
+    return {"root": str(root), "categories": sorted(selected), "files": files}
+
+
+def clear_data(source_root, *, categories, confirmed=False) -> dict:
+    """Delete only allowlisted files after an explicit confirmation."""
+    if not confirmed:
+        raise PermissionError("clear_data requires explicit confirmation")
+    root = Path(source_root).resolve()
+    selected = _selected_categories(categories)
+    if not root.is_dir():
+        raise NotADirectoryError(root)
+    records = []
+    for path, category in _files_for_categories(root, selected):
+        record = {
+            "path": path.relative_to(root).as_posix(),
+            "category": category,
+            "size": path.stat().st_size,
+            "sensitive": category in _SENSITIVE_CATEGORIES,
+        }
+        try:
+            path.unlink()
+            record["deleted"] = True
+        except OSError as exc:
+            record["deleted"] = False
+            record["error"] = type(exc).__name__
+        records.append(record)
+
+    audit = {
+        "utc": datetime.now(timezone.utc).isoformat(),
+        "operation": "clear_data",
+        "categories": sorted(selected),
+        "files": records,
+    }
+    audit_path = root / "data_clear_audit.jsonl"
+    try:
+        with audit_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(audit, separators=(",", ":")) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except OSError:
+        pass
+    return audit
+
+
+__all__ = ["CATEGORIES", "clear_data", "export_data", "inventory_data"]

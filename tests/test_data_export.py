@@ -8,6 +8,30 @@ from pathlib import Path
 
 
 class DataExportTests(unittest.TestCase):
+    def test_inventory_is_metadata_only_and_clear_requires_confirmation(self):
+        from focuscheck.utils.data_export import clear_data, inventory_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir) / "data"
+            root.mkdir()
+            (root / "focus_log.csv").write_text("private response", encoding="utf-8")
+            (root / "focus_settings.json").write_text('{"private":"value"}', encoding="utf-8")
+            (root / "focus_tasks.sqlite3").write_bytes(b"private tasks")
+
+            inventory = inventory_data(root)
+            self.assertEqual({"focus_log.csv", "focus_settings.json", "focus_tasks.sqlite3"},
+                             {item["path"] for item in inventory["files"]})
+            self.assertNotIn("private response", json.dumps(inventory))
+            with self.assertRaises(PermissionError):
+                clear_data(root, categories=("logs",), confirmed=False)
+
+            report = clear_data(root, categories=("logs",), confirmed=True)
+            self.assertEqual(["logs"], report["categories"])
+            self.assertFalse((root / "focus_log.csv").exists())
+            self.assertTrue((root / "focus_settings.json").exists())
+            self.assertTrue((root / "focus_tasks.sqlite3").exists())
+            self.assertIn('"operation":"clear_data"', (root / "data_clear_audit.jsonl").read_text(encoding="utf-8"))
+
     def test_default_export_excludes_sensitive_categories_and_writes_manifest(self):
         from tools.export_data import export_data
 

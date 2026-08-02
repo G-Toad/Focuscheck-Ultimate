@@ -106,6 +106,42 @@ class AppLifecycleTests(unittest.TestCase):
             export_mock.call_args.kwargs["categories"],
         )
 
+    def test_tray_clear_logs_dispatches_confirmation_and_allowlisted_service(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._call_on_ui_thread = lambda callback: callback()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with (
+                mock.patch("focuscheck.app.get_data_dir", return_value=temp_dir),
+                mock.patch("focuscheck.app.messagebox.askyesno", return_value=True),
+                mock.patch("focuscheck.app.messagebox.showinfo"),
+                mock.patch("focuscheck.utils.data_export.clear_data", return_value={"files": [{"deleted": True}]}) as clear_mock,
+            ):
+                result = App._tray_clear_logs(app)
+
+        self.assertTrue(result)
+        self.assertEqual(("logs",), clear_mock.call_args.kwargs["categories"])
+        self.assertTrue(clear_mock.call_args.kwargs["confirmed"])
+
+    def test_tray_retention_dispatches_selected_duration_to_service(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._call_on_ui_thread = lambda callback: callback()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with (
+                mock.patch("focuscheck.app.get_data_dir", return_value=temp_dir),
+                mock.patch("tkinter.simpledialog.askinteger", return_value=30),
+                mock.patch("focuscheck.app.messagebox.showinfo"),
+                mock.patch("focuscheck.utils.data_retention.apply_retention", return_value=[{"deleted": True}]) as retain_mock,
+            ):
+                result = App._tray_retain_logs(app)
+
+        self.assertTrue(result)
+        self.assertEqual(30, retain_mock.call_args.kwargs["max_age_days"])
+        self.assertTrue(retain_mock.call_args.kwargs["apply"])
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

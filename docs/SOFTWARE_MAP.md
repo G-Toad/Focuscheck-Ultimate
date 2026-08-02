@@ -46,7 +46,7 @@ This document maps the extracted project by runtime phase, functional area, and 
 ## Phase 6: Tray And User Control
 
 - `focuscheck.system_tray.SystemTray` provides optional pystray integration.
-- Tray state supports start reminders, stop reminders, toggle pause, open settings, open logs, open data folder, prompt now, snooze, and exit.
+- Tray state supports start reminders, stop reminders, toggle pause, open settings, open logs/data folders, prompt now, snooze, export, data inventory, clear logs, clear personal data, retention cleanup, and exit.
 - If pystray or Pillow are missing, tray setup is expected to fail gracefully without stopping the core app.
 - Manual pause is persisted via the `paused` setting.
 - Snooze pauses reminders temporarily and schedules automatic unpause.
