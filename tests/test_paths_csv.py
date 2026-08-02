@@ -33,6 +33,18 @@ class PathHelperTests(unittest.TestCase):
         with mock.patch.object(paths.sys, "_MEIPASS", None, create=True), mock.patch.object(paths, "get_base_dir", return_value="C:\\Project"):
             self.assertEqual("C:\\Project\\asset.png", paths.resource_path("asset.png"))
 
+    def test_data_dir_never_falls_back_to_package_directory(self):
+        from focuscheck.utils import paths
+
+        with mock.patch.dict(paths.os.environ, {"FOCUS_DATA_DIR": "", "APPDATA": ""}, clear=False), \
+                mock.patch.object(paths, "get_base_dir", return_value="C:\\Installed\\FocusCheck"), \
+                mock.patch.object(paths.platform, "system", return_value="Windows"), \
+                mock.patch.object(paths.os, "makedirs", side_effect=OSError("read-only")):
+            data_dir = paths.get_data_dir()
+
+        self.assertNotEqual("C:\\Installed\\FocusCheck", data_dir)
+        self.assertTrue(data_dir.endswith("FocusCheck"))
+
 
 class CsvLoggerTests(unittest.TestCase):
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):

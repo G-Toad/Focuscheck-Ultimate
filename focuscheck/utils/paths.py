@@ -8,6 +8,7 @@ for both development and PyInstaller-frozen environments.
 import os
 import sys
 import platform
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,7 +30,7 @@ def get_data_dir():
     Priority:
     1. FOCUS_DATA_DIR environment variable
     2. Windows: %APPDATA%/FocusCheck
-    3. Fallback: script directory
+    3. Fallback: controlled temporary recovery directory
     """
     from ..config import APP_NAME
     
@@ -53,8 +54,8 @@ def get_data_dir():
         except Exception:
             pass
     
-    # Fallback to script directory
-    base = get_base_dir()
+    # Never use the package/source directory for mutable user data.
+    base = os.path.join(tempfile.gettempdir(), APP_NAME)
     try:
         os.makedirs(base, exist_ok=True)
     except Exception:
