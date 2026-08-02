@@ -137,7 +137,13 @@ class RuntimeStateCoordinator:
         self._record("guard", "committed")
 
     def begin_prompt(self) -> bool:
-        if self.snapshot.shutdown_requested or self.snapshot.prompt_active or self.snapshot.intervention_active:
+        if (
+            self.snapshot.shutdown_requested
+            or self.snapshot.prompt_active
+            or self.snapshot.intervention_active
+            or self.is_effectively_paused()
+        ):
+            self._record("prompt", "denied")
             return False
         self.snapshot.prompt_active = True
         self._record("prompt", "begun")

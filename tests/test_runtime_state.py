@@ -15,6 +15,8 @@ class RuntimeStateTests(unittest.TestCase):
             transition_sink=events.append,
         )
         self.assertTrue(state.set_manual_paused(True))
+        self.assertFalse(state.begin_prompt())
+        state.set_manual_paused(False)
         self.assertTrue(state.begin_prompt())
         state.end_prompt()
         self.assertTrue(events)
