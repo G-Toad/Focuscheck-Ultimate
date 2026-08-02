@@ -1,4 +1,4 @@
-numpy
-opencv-python
-Pillow
-pystray
+numpy==2.3.5
+opencv-python==4.13.0.90
+Pillow==11.3.0
+pystray==0.19.5

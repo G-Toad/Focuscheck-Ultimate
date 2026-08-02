@@ -1,7 +1,7 @@
 # Release Evidence
 
-- Automated: `86` unittest cases pass in the isolated verification runner.
+- Automated: `88` unittest cases pass in the isolated verification runner.
 - Compileall, application self-test, tray self-test, QA scenario runner, and settings inventory pass.
 - Release decision: `NOT_READY`.
-- No reproducible installer/signing contract is currently present.
+- A pinned PyInstaller packaging contract and rollback/install documentation are present; the Windows build, installer lifecycle, and signing remain unverified.
 - Native Windows and UI evidence is pending and must be attached before release claims.

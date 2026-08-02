@@ -38,9 +38,9 @@ Status meanings:
 | 22 Browser/activity providers | Unverified | Providers exist, but timeout, stale/confidence, URL privacy, fake-provider matrix, and live supported-browser evidence are not complete. |
 | 23 Observability/supportability | Partial | A sanitized bundle generator exists. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
 | 24 Security/abuse review | Missing | No dedicated security/abuse-resistance review artifact or evidence was found. |
-| 25 Dependencies/packaging | Missing | `requirements.txt` remains unpinned. No reproducible installer, upgrade/uninstall/rollback process, or signing policy is present. |
+| 25 Dependencies/packaging | Partial | Runtime requirements are pinned and PyInstaller spec/build/install/rollback contracts now exist. PyInstaller build, installer lifecycle, signing, and rollback remain unverified. |
 | 26 Performance/resource stability | Missing | No explicit resource budgets, soak tests, or performance gates were found. |
-| 27 Automated test expansion | Partial | 86 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 88 unittest cases and self-tests exist. Property tests, integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -61,14 +61,14 @@ The plan's final-release deliverables were also checked individually:
 | Manual evidence bundle | Present only as a not-run template. |
 | Migration fixtures | Partial; one legacy fixture exists, not the full required fixture set. |
 | Release notes | Missing as a release artifact. |
-| Rollback instructions | Missing. |
-| Packaging/install instructions | Missing as a reproducible process. |
+| Rollback instructions | Present in `docs/ROLLBACK.md`, but untested. |
+| Packaging/install instructions | Present as a PyInstaller contract, but unverified on Windows. |
 | Privacy/data-retention documentation | Partial; privacy notes exist, but retention/data inventory controls are incomplete. |
 | Support diagnostic instructions | Partial; generator exists, but user-facing support instructions are absent. |
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 86 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 88 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, and diagnostic bundle generation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
