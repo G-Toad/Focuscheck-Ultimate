@@ -38,9 +38,9 @@ Status meanings:
 | 22 Browser/activity providers | Partial | Typed activity snapshots normalize provider errors, freshness/confidence, and strip URL query/fragment data; CDP discovery now has a bounded overall deadline and per-request cap with fake-provider tests. Broader provider matrices and live supported-browser evidence remain incomplete. |
 | 23 Observability/supportability | Partial | A sanitized bundle generator and bounded Doctor anomaly storage now exist. Structured event schema, throttling, user-facing diagnostics, and verified bundle contents across real failures are incomplete. |
 | 24 Security/abuse review | Partial | A dedicated source-level security/abuse review now records data, export, startup, supervisor, and residual-risk controls; penetration testing and target-machine evidence remain absent. |
-| 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and install/rollback contracts exist. Installer lifecycle, signing, and rollback execution remain unverified. |
+| 25 Dependencies/packaging | Partial | Runtime requirements are pinned, PyInstaller build/self-test evidence exists, and scripted non-destructive package promotion/rollback now executes in disposable tests. Installer shell integration, signing, and target-machine lifecycle evidence remain open. |
 | 26 Performance/resource stability | Partial | Explicit core-service budgets and a disposable timer/state/SQLite soak gate now pass. Long-duration UI/native/camera/browser measurements and production-session budgets remain open. |
-| 27 Automated test expansion | Partial | 120 unittest cases, self-tests, and a bounded performance soak exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
+| 27 Automated test expansion | Partial | 122 unittest cases, self-tests, a bounded performance soak, and package lifecycle tests exist. Property tests, broader integration breadth, withdrawn-root Tk tests, native tests, and mutation testing are absent. |
 | 28 Manual Windows matrix | Unverified | `docs/refurbishment/manual-evidence.json` explicitly records all five groups as `not_run`. |
 | 29 Cleanup after correctness | Missing | The plan's final cleanup/reverification gate cannot be satisfied while release and manual gates remain open. |
 
@@ -61,14 +61,14 @@ The plan's final-release deliverables were also checked individually:
 | Manual evidence bundle | Present only as a not-run template. |
 | Migration fixtures | Partial; one legacy fixture exists, not the full required fixture set. |
 | Release notes | Missing as a release artifact. |
-| Rollback instructions | Present in `docs/ROLLBACK.md`, but untested. |
-| Packaging/install instructions | Present as a PyInstaller contract, but unverified on Windows. |
+| Rollback instructions | Present in `docs/ROLLBACK.md` and exercised by the disposable package transaction test; target-machine evidence remains open. |
+| Packaging/install instructions | Present with scripted promotion/rollback and PyInstaller build contract; installer shell integration and target-machine evidence remain open. |
 | Privacy/data-retention documentation | Partial; privacy notes exist, but retention/data inventory controls are incomplete. |
 | Support diagnostic instructions | Present in `docs/SUPPORT_DIAGNOSTICS.md`; redaction is pattern-based and target-machine support evidence remains open. |
 
 ## Automated Evidence
 
-The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 120 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. These stages do not prove the plan's native Windows, packaging, browser, overlay, sleep/resume, registry, or manual UI requirements.
+The bounded runner at `tools/verification_runner.py` currently reports passing stages for compileall, 122 unittest cases, QA scenario, app self-test, tray self-test, settings inventory, diagnostic bundle generation, performance soak, and profile isolation. The unittest stage also exercises package promotion/rollback. These stages do not prove the plan's native Windows, installer shell, signing, browser, overlay, sleep/resume, registry, or manual UI requirements.
 
 ## Final Acceptance Gates
 
