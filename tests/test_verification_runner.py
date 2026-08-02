@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,13 @@ from unittest import mock
 
 
 class VerificationRunnerTests(unittest.TestCase):
+    def test_test_bootstrap_uses_disposable_external_fallback_root(self):
+        import tests
+
+        configured = Path(os.environ["FOCUS_DATA_DIR"])
+        self.assertNotEqual(Path(__file__).resolve().parents[1] / "_qa_runtime" / "unit_data", configured)
+        self.assertTrue(configured.name.startswith("FocusCheck-tests-") or "FOCUS_DATA_DIR" in os.environ)
+
     def test_snapshot_tree_is_read_only_and_detects_content_changes(self):
         from tools.verification_runner import snapshot_tree
 

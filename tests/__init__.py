@@ -8,10 +8,14 @@ verification runner supplies its own root; this fallback protects direct
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 
 
 os.environ.setdefault(
     "FOCUS_DATA_DIR",
-    str(Path(__file__).resolve().parents[1] / "_qa_runtime" / "unit_data"),
+    os.environ.get(
+        "FOCUSCHECK_TEST_DATA_DIR",
+        str(Path(tempfile.gettempdir()) / f"FocusCheck-tests-{os.getpid()}"),
+    ),
 )
