@@ -17,6 +17,7 @@ LOG_PATH = choose_path("focus_log.csv")
 WASTE_LOG_PATH = choose_path("focus_waste_log.csv")
 FOCUS_LOG_PATH = choose_path("focus_study_log.csv")
 INTERVENTION_REFLECTION_PATH = choose_path("focus_intervention_reflections.jsonl")
+MAX_JSONL_RECORD_BYTES = 256 * 1024
 
 
 def _excel_safe(value):
@@ -107,6 +108,23 @@ def _rotate_jsonl_if_needed(path, max_bytes=5_000_000, backups=2):
         os.replace(path, f"{path}.1")
     except OSError:
         log_exception("rotate_jsonl_if_needed failed")
+
+
+def iter_jsonl_records(path=None, max_record_bytes=MAX_JSONL_RECORD_BYTES):
+    """Yield valid JSONL records while ignoring malformed or oversized lines."""
+    target = str(path or INTERVENTION_REFLECTION_PATH)
+    try:
+        with open(target, "rb") as handle:
+            for raw_line in handle:
+                if len(raw_line) > int(max_record_bytes):
+                    continue
+                try:
+                    record = json.loads(raw_line.decode("utf-8"))
+                except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
+                    continue
+                yield record
+    except (OSError, TypeError, ValueError):
+        return
 
 
 def ensure_log_header(path=None):
@@ -209,6 +227,16 @@ def append_intervention_reflection(record):
     """Append an intervention reflection record as JSONL."""
     logger = get_logger()
     try:
+        encoded_record = (json.dumps(record, ensure_ascii=False) + "\n").encode("utf-8")
+    except (TypeError, ValueError):
+        return False
+    if len(encoded_record) > MAX_JSONL_RECORD_BYTES:
+        try:
+            logger.warning("DATABASE: intervention reflection rejected: record exceeds size limit")
+        except Exception:
+            pass
+        return False
+    try:
         os.makedirs(os.path.dirname(INTERVENTION_REFLECTION_PATH), exist_ok=True)
     except Exception:
         pass
@@ -216,7 +244,7 @@ def append_intervention_reflection(record):
     def _write():
         _rotate_jsonl_if_needed(INTERVENTION_REFLECTION_PATH)
         with open(INTERVENTION_REFLECTION_PATH, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            f.write(encoded_record.decode("utf-8"))
 
     ok = _safe_jsonl_write(INTERVENTION_REFLECTION_PATH, _write)
     try:

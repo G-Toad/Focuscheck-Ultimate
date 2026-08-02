@@ -132,6 +132,32 @@ class CsvLoggerTests(unittest.TestCase):
 
         self.assertFalse(logger._safe_csv_write("bad.csv", lambda: (_ for _ in ()).throw(OSError("boom"))))
 
+    def test_jsonl_reflections_bound_records_rotate_and_skip_corrupt_lines(self):
+        import focuscheck.database.csv_logger as logger
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = str(Path(temp_dir) / "reflections.jsonl")
+            with mock.patch.object(logger, "INTERVENTION_REFLECTION_PATH", path), \
+                    mock.patch.object(logger, "MAX_JSONL_RECORD_BYTES", 64):
+                self.assertFalse(logger.append_intervention_reflection({"text": "x" * 100}))
+                self.assertTrue(logger.append_intervention_reflection({"text": "ok"}))
+                with open(path, "ab") as handle:
+                    handle.write(b"not-json\n")
+                    handle.write(b"{\"valid\": true}\n")
+                records = list(logger.iter_jsonl_records(path, max_record_bytes=64))
+
+            self.assertEqual([{"text": "ok"}, {"valid": True}], records)
+
+    def test_jsonl_rotation_keeps_bounded_backups(self):
+        import focuscheck.database.csv_logger as logger
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "reflections.jsonl"
+            path.write_text("x" * 20, encoding="utf-8")
+            logger._rotate_jsonl_if_needed(str(path), max_bytes=10, backups=2)
+            self.assertFalse(path.exists())
+            self.assertTrue(Path(f"{path}.1").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

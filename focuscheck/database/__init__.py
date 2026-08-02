@@ -15,6 +15,7 @@ from .csv_logger import (
     append_waste_log,
     append_focus_log,
     append_intervention_reflection,
+    iter_jsonl_records,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     'append_waste_log',
     'append_focus_log',
     'append_intervention_reflection',
+    'iter_jsonl_records',
 ]
