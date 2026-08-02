@@ -60,6 +60,12 @@ def _ui_save_keys():
     return keys | set(EXISTING_DYNAMIC_KEYS) | set(SCHEMA_CONTROL_KEYS)
 
 
+def _non_visible_classifications():
+    from focuscheck.ui.schema_controls import NON_VISIBLE_SETTING_CLASSIFICATIONS
+
+    return dict(NON_VISIBLE_SETTING_CLASSIFICATIONS)
+
+
 def _runtime_source_files():
     """Return application files outside the settings editor and test/tool trees."""
     files = []
@@ -80,6 +86,9 @@ def main() -> int:
     try:
         print(f"settings={len(defaults)}")
         visible_keys = sorted(_ui_save_keys() - {"settings_revision"})
+        excluded = _non_visible_classifications()
+        unclassified = sorted((set(defaults) - set(visible_keys)) - set(excluded))
+        unexpected_classifications = sorted(set(excluded) - set(defaults) - {"settings_revision"})
         runtime_only_refs = {
             key: [path.relative_to(ROOT).as_posix() for path in runtime_files if key in path.read_text(encoding="utf-8", errors="ignore")]
             for key in visible_keys
@@ -87,6 +96,14 @@ def main() -> int:
         missing_runtime = [key for key, refs in runtime_only_refs.items() if not refs]
         print(f"visible_save_keys={len(visible_keys)}")
         print(f"visible_without_runtime_consumer={len(missing_runtime)}")
+        print(f"classified_non_visible={len(set(defaults) & set(excluded))}")
+        print(f"unclassified_non_visible={len(unclassified)}")
+        if unexpected_classifications:
+            print("unexpected_classifications=" + ",".join(unexpected_classifications))
+        if unclassified:
+            print("unclassified_keys=" + ",".join(unclassified))
+        if unclassified or unexpected_classifications:
+            return 1
         if missing_runtime:
             print("missing_runtime_keys=" + ",".join(missing_runtime))
         print("key\treferences\tfiles")

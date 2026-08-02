@@ -7,7 +7,11 @@ from pathlib import Path
 import unittest
 
 from focuscheck.settings.schema import get_settings_schema, schema_manifest
-from focuscheck.ui.schema_controls import EXISTING_DYNAMIC_KEYS, SCHEMA_CONTROL_KEYS
+from focuscheck.ui.schema_controls import (
+    EXISTING_DYNAMIC_KEYS,
+    NON_VISIBLE_SETTING_CLASSIFICATIONS,
+    SCHEMA_CONTROL_KEYS,
+)
 
 
 class SettingsSchemaContractTests(unittest.TestCase):
@@ -60,6 +64,15 @@ class SettingsSchemaContractTests(unittest.TestCase):
             and not any(key in path.read_text(encoding="utf-8", errors="ignore") for path in runtime_files)
         ]
         self.assertEqual([], missing)
+
+    def test_every_non_visible_default_has_an_explicit_classification(self):
+        from tools import settings_inventory
+
+        defaults = set(settings_inventory._load_defaults())
+        visible = settings_inventory._ui_save_keys() - {"settings_revision"}
+        excluded = set(NON_VISIBLE_SETTING_CLASSIFICATIONS)
+        self.assertEqual(set(), (defaults - visible) - excluded)
+        self.assertEqual(set(), excluded - defaults - {"settings_revision"})
 
 
 if __name__ == "__main__":

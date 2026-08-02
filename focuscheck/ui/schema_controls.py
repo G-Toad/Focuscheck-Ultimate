@@ -55,6 +55,36 @@ EXISTING_DYNAMIC_KEYS = tuple(
     )]
 )
 
+# Every default intentionally absent from the ordinary settings payload must
+# have an explicit owner or compatibility reason.
+NON_VISIBLE_SETTING_CLASSIFICATIONS = {
+    "manual_crop_anchor_mode": "specialized_editor",
+    "manual_crop_box_height": "specialized_editor",
+    "manual_crop_box_width": "specialized_editor",
+    "manual_crop_center_offset_x": "specialized_editor",
+    "manual_crop_center_offset_y": "specialized_editor",
+    "manual_crop_corner": "specialized_editor",
+    "manual_crop_corner_expand_x": "specialized_editor",
+    "manual_crop_corner_expand_y": "specialized_editor",
+    "manual_crop_edge": "specialized_editor",
+    "manual_crop_edge_offset": "specialized_editor",
+    "manual_crop_grid_overlay": "specialized_editor",
+    "manual_crop_lock_aspect": "specialized_editor",
+    "manual_crop_presets": "specialized_editor",
+    "manual_crop_preview_opacity": "specialized_editor",
+    "manual_crop_show_safe_zones": "specialized_editor",
+    "manual_crop_zoom": "specialized_editor",
+    "paused": "state_only",
+    "settings_revision": "state_only",
+    "settings_schema_version": "state_only",
+    "snooze_until_utc": "state_only",
+    "study_phrase_index": "state_only",
+    "tasks_decision_threshold_minutes": "migration_only",
+    "tasks_post_eval_minutes": "migration_only",
+    "waste_phrase_index": "state_only",
+    "webhook_url": "deferred_compatibility",
+}
+
 
 def _label_for_key(key: str) -> str:
     return key.replace("_", " ").capitalize()
@@ -152,4 +182,9 @@ class SchemaSettingsBinding:
         return result
 
 
-__all__ = ["EXISTING_DYNAMIC_KEYS", "SCHEMA_CONTROL_KEYS", "SchemaSettingsBinding"]
+__all__ = [
+    "EXISTING_DYNAMIC_KEYS",
+    "NON_VISIBLE_SETTING_CLASSIFICATIONS",
+    "SCHEMA_CONTROL_KEYS",
+    "SchemaSettingsBinding",
+]
