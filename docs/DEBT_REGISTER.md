@@ -24,9 +24,9 @@ This register separates known defects, design debt, dormant features, and uncert
 
 ## Dormant Or Product-Decision Features
 
-- `GentleReminderDialog` is intentionally deferred and has no active launcher path.
+- `GentleReminderDialog` is active through the App-owned gentle-reminder scheduler; visual/manual interaction QA remains pending.
 - `webhook_url` is intentionally deferred legacy/default state with no dispatch implementation and is not saved from Settings.
-- Gentle-reminder settings remain deferred legacy/default keys and are not saved from Settings.
+- Gentle-reminder settings are exposed through the schema-generated Advanced settings tab and are persisted with the normal settings transaction.
 - Some legacy task threshold keys exist for migration compatibility.
 
 ## Uncertain Behaviour To Characterize Before Refactor
