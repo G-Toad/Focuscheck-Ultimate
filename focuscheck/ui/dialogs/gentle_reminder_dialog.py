@@ -18,6 +18,8 @@ except ImportError:
         import logging
         return logging.getLogger(__name__)
 
+from ...utils.timers import TimerRegistry
+
 # Import camera feed mixin
 try:
     from .prompt_dialog_mixins.camera_feed import CameraFeedMixin
@@ -68,6 +70,9 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
         # Drift-back state
         self._active_timers = set()
         self._drift_timer = None
+        self._timer_names = {}
+        self._timer_sequence = 0
+        self._timers = TimerRegistry(self)
 
         # Window setup
         self.title("Gentle Reminder")
@@ -269,6 +274,30 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
     def _schedule_timer(self, delay_ms, callback):
         if self._closed:
             return None
+
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            self._timer_sequence = getattr(self, "_timer_sequence", 0) + 1
+            name = f"gentle-{self._timer_sequence}"
+            timer_ref = {}
+
+            def run_callback():
+                timer_id = timer_ref.get("id")
+                if timer_id is not None:
+                    self._active_timers.discard(timer_id)
+                    self._timer_names.pop(timer_id, None)
+                    if self._drift_timer == timer_id:
+                        self._drift_timer = None
+                if not self._closed:
+                    callback()
+
+            timers.schedule(name, delay_ms, run_callback)
+            timer_id = timers.callback_id(name)
+            timer_ref["id"] = timer_id
+            self._timer_names[timer_id] = name
+            self._active_timers.add(timer_id)
+            return timer_id
+
         timer_ref = {}
 
         def run_callback():
@@ -286,6 +315,14 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
         return timer_id
 
     def _cleanup_timers(self):
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+            self._timer_names.clear()
+            self._active_timers.clear()
+            self._drift_timer = None
+            return
+
         for timer_id in list(self._active_timers):
             try:
                 self.after_cancel(timer_id)
@@ -308,7 +345,13 @@ class GentleReminderDialog(tk.Toplevel, CameraFeedMixin):
     def _restart_drift_timer(self):
         """Restart the drift timer (user just dragged the window)."""
         if self._drift_timer:
-            self.after_cancel(self._drift_timer)
+            timers = getattr(self, "_timers", None)
+            timer_name = getattr(self, "_timer_names", {}).pop(self._drift_timer, None)
+            if timers is not None and timer_name is not None:
+                timers.cancel(timer_name)
+            else:
+                self.after_cancel(self._drift_timer)
+            self._active_timers.discard(self._drift_timer)
             self._drift_timer = None
 
         self._start_drift_timer()

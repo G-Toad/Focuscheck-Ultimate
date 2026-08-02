@@ -343,6 +343,30 @@ class ImportHardeningTests(unittest.TestCase):
         dialog._closed = True
         self.assertIsNone(dialog._schedule_timer(300, lambda: callbacks.append("closed")))
 
+    def test_gentle_reminder_registry_invalidates_dequeued_callbacks(self):
+        from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
+        from focuscheck.utils.timers import TimerRegistry
+
+        dialog = GentleReminderDialog.__new__(GentleReminderDialog)
+        dialog._closed = False
+        dialog._active_timers = set()
+        dialog._drift_timer = None
+        dialog._timer_names = {}
+        dialog._timer_sequence = 0
+        scheduled = []
+        events = []
+        dialog.after = lambda delay, callback: (scheduled.append(callback) or f"timer-{len(scheduled)}")
+        dialog.after_cancel = lambda _timer_id: None
+        dialog._timers = TimerRegistry(dialog)
+
+        dialog._schedule_timer(100, lambda: events.append("stale"))
+        dialog._cleanup_timers()
+        scheduled[0]()
+
+        self.assertEqual([], events)
+        self.assertEqual(set(), dialog._active_timers)
+        self.assertTrue(dialog._timers.closed)
+
     def test_camera_capability_reports_bounded_states(self):
         from focuscheck.ui.camera.capability import build_camera_capability
 
