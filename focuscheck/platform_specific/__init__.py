@@ -12,7 +12,9 @@ from .startup import (
     compose_startup_command,
     install_startup,
     uninstall_startup,
-    is_startup_installed
+    is_startup_installed,
+    inspect_startup,
+    StartupInspection,
 )
 
 if _platform.system().lower() == "windows":
@@ -29,6 +31,8 @@ if _platform.system().lower() == "windows":
         'install_startup',
         'uninstall_startup',
         'is_startup_installed',
+        'inspect_startup',
+        'StartupInspection',
         'enable_click_through_windows',
         'install_httransparent_wndproc',
         'WindowsWakeWatcher',
@@ -42,5 +46,7 @@ else:
         'install_startup',
         'uninstall_startup',
         'is_startup_installed',
+        'inspect_startup',
+        'StartupInspection',
     ]
 

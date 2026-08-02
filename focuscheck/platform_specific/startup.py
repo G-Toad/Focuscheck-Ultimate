@@ -3,6 +3,25 @@
 import sys
 import os
 import platform as _platform
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class StartupInspection:
+    """Observed state of the application's per-user startup value."""
+
+    status: str
+    command: str = ""
+    expected_command: str = ""
+    detail: str = ""
+
+    @property
+    def present(self) -> bool:
+        return self.status in {"valid", "stale", "malformed"}
+
+    @property
+    def repairable(self) -> bool:
+        return self.status in {"stale", "malformed"}
 
 
 def compose_startup_command(entrypoint=None):
@@ -94,20 +113,41 @@ def uninstall_startup(name: str = "FocusCheck"):
 
 
 def is_startup_installed(name: str = "FocusCheck") -> bool:
-    """Check if startup entry exists."""
+    """Check whether a non-empty startup entry exists."""
+    return inspect_startup(name).present
+
+
+def inspect_startup(name: str = "FocusCheck") -> StartupInspection:
+    """Inspect the current user's startup value without modifying the registry."""
     if _platform.system().lower() != 'windows':
-        return False
+        return StartupInspection("unsupported", detail="Windows startup registry is unavailable")
     try:
         import winreg
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_READ)
         try:
             val, typ = winreg.QueryValueEx(key, name)
-            return bool(val)
+            command = str(val or "").strip()
         except FileNotFoundError:
-            return False
+            return StartupInspection("absent")
         finally:
             winreg.CloseKey(key)
-    except Exception:
-        return False
+    except FileNotFoundError:
+        return StartupInspection("absent")
+    except Exception as exc:
+        return StartupInspection("error", detail=str(exc))
+
+    if not command:
+        return StartupInspection("malformed", detail="startup value is empty")
+
+    expected = compose_startup_command()
+    normalize = lambda value: " ".join(str(value).replace("/", "\\").casefold().split())
+    if normalize(command) == normalize(expected):
+        return StartupInspection("valid", command=command, expected_command=expected)
+    return StartupInspection(
+        "stale",
+        command=command,
+        expected_command=expected,
+        detail="startup command does not target the current installation",
+    )
 

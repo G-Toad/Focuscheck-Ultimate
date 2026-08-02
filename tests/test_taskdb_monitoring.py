@@ -341,6 +341,44 @@ class StartupCommandTests(unittest.TestCase):
         self.assertFalse(missing)
         self.assertEqual("key", calls["closed"])
 
+    def test_inspect_startup_classifies_stale_command(self):
+        from focuscheck.platform_specific import startup
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            OpenKey=lambda *args: "key",
+            QueryValueEx=lambda *_args: ('"C:\\Old\\FocusCheck.exe"', 1),
+            CloseKey=lambda _key: None,
+        )
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                mock.patch.object(startup._platform, "system", return_value="Windows"), \
+                mock.patch.object(startup, "compose_startup_command", return_value='"C:\\New\\FocusCheck.exe"'):
+            inspection = startup.inspect_startup("FocusCheckTest")
+
+        self.assertEqual("stale", inspection.status)
+        self.assertTrue(inspection.present)
+        self.assertTrue(inspection.repairable)
+
+    def test_inspect_startup_normalizes_slashes_for_valid_command(self):
+        from focuscheck.platform_specific import startup
+
+        command = '"C:/FocusCheck/focuscheck_supervisor.py" --run'
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            OpenKey=lambda *args: "key",
+            QueryValueEx=lambda *_args: (command, 1),
+            CloseKey=lambda _key: None,
+        )
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                mock.patch.object(startup._platform, "system", return_value="Windows"), \
+                mock.patch.object(startup, "compose_startup_command", return_value='"C:\\FocusCheck\\focuscheck_supervisor.py" --run'):
+            inspection = startup.inspect_startup("FocusCheckTest")
+
+        self.assertEqual("valid", inspection.status)
+        self.assertFalse(inspection.repairable)
+
 
 class SupervisorLifecycleTests(unittest.TestCase):
     def test_supervisor_lock_rejects_duplicate_and_cleans_up(self):
