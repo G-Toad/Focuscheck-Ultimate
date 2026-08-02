@@ -724,6 +724,10 @@ class SystemTray:
 
         logger.info("=" * 80)
 
+    def _export_data(self, icon: Any, item: Any) -> None:
+        """Delegate the user-facing export flow to the application UI owner."""
+        self._call_app("_tray_export_data")
+
     def _open_task(self, icon: Any, item: Any) -> None:
         logger.info("=" * 80)
         logger.info("MENU ACTION: _open_task() CALLED")
@@ -949,6 +953,9 @@ class SystemTray:
 
         logger.info("  Adding menu item: 'Open logs folder'")
         items.append(pystray.MenuItem("Open logs folder", self._open_logs))
+
+        logger.info("  Adding menu item: 'Export data'")
+        items.append(pystray.MenuItem("Export data", self._export_data))
 
         logger.info("  Adding separator")
         items.append(pystray.Menu.SEPARATOR)

@@ -51,6 +51,10 @@ class FakeTrayApp:
         self.calls.append("logs")
         return True
 
+    def _tray_export_data(self):
+        self.calls.append("export")
+        return True
+
     def _is_startup_enabled(self):
         return self.startup_enabled
 
@@ -83,9 +87,10 @@ class SystemTrayCommandTests(unittest.TestCase):
         tray._open_task(None, None)
         tray._open_data(None, None)
         tray._open_logs(None, None)
+        tray._export_data(None, None)
 
         self.assertEqual(
-            ["pause", "resume", "prompt_now", ("snooze", 5), "task", "data", "logs"],
+            ["pause", "resume", "prompt_now", ("snooze", 5), "task", "data", "logs", "export"],
             app.calls,
         )
 

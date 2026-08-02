@@ -16,7 +16,7 @@ This is the current repository-grounded operation matrix. `automated` means the 
 | Activity | CDP discovery | Page targets only, URL query/fragment removed, bounded request/discovery timeout. | `automated`; live browsers `manual_pending` |
 | Data | Settings | Migration, quarantine, rotating backups, readback validation, revision conflicts, and OS-level sidecar lock. | `automated` |
 | Data | Tasks | SQLite schema journal, one active task, UTC timestamp boundary, integrity-checked pre-migration backup, and backup/restore. | `automated`; full UI flow `manual_pending` |
-| Data | Export | Allowlisted ZIP export defaults to logs/metadata; settings, tasks, and camera data require explicit category selection and are recorded in a SHA-256 manifest. | `automated`; user-facing control `manual_pending` |
+| Data | Export | Tray/App export control dispatches through the Tk owner thread; allowlisted ZIP export defaults to logs/metadata, while settings, tasks, and camera data require explicit category selection and are recorded in a SHA-256 manifest. | `automated`; live dialog interaction `manual_pending` |
 | Privacy | Camera | Disabled by default, optional dependencies degrade, capture is opt-in, photos stay in app data or controlled temp recovery. | `automated`/source; camera hardware `manual_pending` |
 | Privacy | Diagnostics | Bundle excludes raw settings/tasks and applies pattern-based path/secret redaction. | `automated`; sharing review required |
 | Packaging | Build | Pinned PyInstaller build and packaged self-test. | `automated` |

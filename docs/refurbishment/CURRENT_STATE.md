@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `191` unittest cases passing.
+- Current automated baseline after hardening: `192` unittest cases passing.
 - Runtime state now writes bounded metadata-only transition records under the canonical data root.
 - Compile/self-tests: passing.
 - Isolated native overlay self-test: passing with virtual-screen region updates.
@@ -25,6 +25,6 @@
 - TaskDB schema migration version 3 normalizes recoverable legacy timestamps and clears invalid legacy due dates with an auditable repair reason; a checked-in legacy SQL fixture covers the path.
 - Settings inventory now distinguishes editor references from runtime consumers and proves all 170 visible save keys have a non-editor consumer.
 - TaskDB now verifies SQLite integrity and creates a numbered pre-migration backup before mutating an older database; corrupt files are rejected without replacement.
-- `tools/export_data.py` now provides an atomic, allowlisted ZIP export with explicit sensitive-category opt-in, symlink rejection, and a SHA-256 manifest; the bounded runner exercises it in a disposable root.
+- `tools/export_data.py` and the tray/App export control provide an atomic, allowlisted ZIP export with explicit sensitive-category opt-in, symlink rejection, and a SHA-256 manifest; the bounded runner exercises it in a disposable root.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

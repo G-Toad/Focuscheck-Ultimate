@@ -1072,7 +1072,8 @@ class App:
                 CMD_STARTUP = 1008
                 CMD_DATA = 1009
                 CMD_LOGS = 1010
-                CMD_EXIT = 1011
+                CMD_EXPORT = 1011
+                CMD_EXIT = 1012
 
                 actions = {}
                 labels = []
@@ -1112,6 +1113,7 @@ class App:
                             _append(CMD_STARTUP, "Enable Run on Startup", action=self._tray_install_startup)
                         _append(CMD_DATA, "Open Data Folder", action=self._tray_open_data_folder)
                         _append(CMD_LOGS, "Open Logs Folder", action=self._tray_open_logs_folder)
+                        _append(CMD_EXPORT, "Export Data", action=self._tray_export_data)
                         _separator()
                         _append(CMD_EXIT, "Exit", enabled=exit_enabled, action=self._tray_exit)
 
@@ -1552,6 +1554,51 @@ class App:
             return True  # Successfully opened folder
         except Exception:
             return False  # Failed to open folder
+
+    def _tray_export_data(self):
+        """Export privacy-safe data from a tray callback on the Tk thread."""
+        def _do_export():
+            from tkinter import filedialog
+            from .utils.data_export import export_data
+
+            try:
+                data_dir = Path(get_data_dir())
+                export_dir = data_dir / "exports"
+                export_dir.mkdir(parents=True, exist_ok=True)
+                output = filedialog.asksaveasfilename(
+                    title="Export FocusCheck data",
+                    initialdir=str(export_dir),
+                    initialfile="focuscheck-export.zip",
+                    defaultextension=".zip",
+                    filetypes=[("FocusCheck export", "*.zip"), ("All files", "*.*")],
+                )
+                if not output:
+                    return False
+
+                categories = ("logs", "metadata")
+                include_sensitive = messagebox.askyesno(
+                    "Sensitive data",
+                    "Include settings and task data in this export?\n\n"
+                    "These files may contain personal productivity information.",
+                )
+                if include_sensitive:
+                    categories += ("settings", "tasks")
+
+                manifest = export_data(data_dir, output, categories=categories)
+                messagebox.showinfo(
+                    "Export complete",
+                    f"Exported {len(manifest['files'])} files to:\n{output}",
+                )
+                return True
+            except Exception as exc:
+                try:
+                    get_logger().exception("Data export failed", exc_info=True)
+                except Exception:
+                    pass
+                messagebox.showerror("Export failed", str(exc))
+                return False
+
+        return self._call_on_ui_thread(_do_export)
 
     def _tray_exit(self):
         def _do_exit():

@@ -81,6 +81,31 @@ class AppLifecycleTests(unittest.TestCase):
 
         self.assertEqual(["dispatch"], calls)
 
+    def test_tray_export_dispatches_ui_flow_and_requires_sensitive_confirmation(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        dispatches = []
+        app._call_on_ui_thread = lambda callback: dispatches.append("dispatch") or callback()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "export.zip"
+            with (
+                mock.patch("focuscheck.app.get_data_dir", return_value=temp_dir),
+                mock.patch("tkinter.filedialog.asksaveasfilename", return_value=str(output)),
+                mock.patch("focuscheck.app.messagebox.askyesno", return_value=True),
+                mock.patch("focuscheck.app.messagebox.showinfo"),
+                mock.patch("focuscheck.utils.data_export.export_data", return_value={"files": ["x"]}) as export_mock,
+            ):
+                result = App._tray_export_data(app)
+
+        self.assertTrue(result)
+        self.assertEqual(["dispatch"], dispatches)
+        self.assertEqual(
+            ("logs", "metadata", "settings", "tasks"),
+            export_mock.call_args.kwargs["categories"],
+        )
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 
