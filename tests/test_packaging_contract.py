@@ -75,6 +75,13 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Get-CanonicalStartupCommand", lifecycle)
         self.assertIn("Startup entry retained", lifecycle)
 
+    def test_lifecycle_rolls_back_when_post_promotion_validation_fails(self):
+        root = Path(__file__).resolve().parents[1]
+        lifecycle = (root / "tools/package_lifecycle.ps1").read_text(encoding="utf-8")
+        self.assertIn("function Restore-FailedPromotion", lifecycle)
+        self.assertIn("Restore-FailedPromotion $install", lifecycle)
+        self.assertIn("Failed package retained", lifecycle)
+
     def test_package_validation_checks_artifacts_manifest_and_optional_signing(self):
         root = Path(__file__).resolve().parents[1]
         validator = (root / "tools/validate_package.ps1").read_text(encoding="utf-8")

@@ -38,6 +38,31 @@ function Remove-MatchingStartup([string]$InstallPath, [string]$Name) {
     }
 }
 
+function Restore-FailedPromotion([string]$InstallPath) {
+    if (-not (Test-Path -LiteralPath $InstallPath)) { return }
+    $manifestPath = Join-Path $InstallPath "package-manifest.json"
+    $backup = $null
+    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
+        try {
+            $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+            if (-not [string]::IsNullOrWhiteSpace([string]$manifest.backup_dir)) {
+                $backup = [IO.Path]::GetFullPath([string]$manifest.backup_dir)
+            }
+        } catch {
+            Write-Warning "Unable to read promoted package manifest during rollback: $($_.Exception.Message)"
+        }
+    }
+    $parent = Split-Path -Parent $InstallPath
+    $failed = Join-Path $parent (".FocusCheck.failed.{0}" -f [Guid]::NewGuid().ToString("N"))
+    Move-Item -LiteralPath $InstallPath -Destination $failed
+    if ($backup -and (Test-Path -LiteralPath $backup)) {
+        Move-Item -LiteralPath $backup -Destination $InstallPath
+        Write-Warning "Validation failed; previous package restored. Failed package retained at $failed"
+    } else {
+        Write-Warning "Validation failed; no previous package was available. Failed package retained at $failed"
+    }
+}
+
 if ($Action -ne "Uninstall" -and [string]::IsNullOrWhiteSpace($PackageDir)) {
     throw "$Action requires -PackageDir"
 }
@@ -49,14 +74,19 @@ if ($Action -eq "Install" -or $Action -eq "Upgrade") {
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\promote_package.ps1") `
         -PackageDir $PackageDir -InstallDir $install -Version $Version
     if ($LASTEXITCODE -ne 0) { throw "Package promotion failed with exit code $LASTEXITCODE" }
-    if ($RequireSigned) {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
-            -PackageDir $install -RequireSigned
-    } else {
-        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
-            -PackageDir $install
+    try {
+        if ($RequireSigned) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
+                -PackageDir $install -RequireSigned
+        } else {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
+                -PackageDir $install
+        }
+        if ($LASTEXITCODE -ne 0) { throw "Promoted package validation failed with exit code $LASTEXITCODE" }
+    } catch {
+        Restore-FailedPromotion $install
+        throw
     }
-    if ($LASTEXITCODE -ne 0) { throw "Promoted package validation failed with exit code $LASTEXITCODE" }
     if ($RegisterStartup) { Install-CanonicalStartup $install $StartupName }
     Write-Output "$Action completed; data root preserved at $data"
     exit 0
