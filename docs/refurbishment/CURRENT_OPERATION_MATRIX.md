@@ -21,6 +21,6 @@ This is the current repository-grounded operation matrix. `automated` means the 
 | Privacy | Diagnostics | Bundle excludes raw settings/tasks and applies pattern-based path/secret redaction. | `automated`; sharing review required |
 | Packaging | Build | Pinned PyInstaller build and packaged self-test. | `automated` |
 | Packaging | Promotion/rollback | Non-destructive staged promotion and retained-backup rollback with SHA-256 manifest. | `automated`; installer/signing `manual_pending` |
-| Native | Overlay/tray/session hooks | Pointer-sized declarations, idempotent overlay resource release, and isolated virtual-screen region-update self-test. | automated smoke; broader live Windows `manual_pending` |
+| Native | Overlay/tray/session hooks | Pointer-sized declarations, idempotent overlay resource release, and isolated virtual-screen region-update self-test. | automated stress (`100/100` lifecycle, `199/199` region updates); broader live Windows `manual_pending` |
 
 Release status remains `NOT_READY` until all `manual_pending` rows have target-machine evidence and the final acceptance gates are rerun.

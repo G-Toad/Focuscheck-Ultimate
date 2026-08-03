@@ -242,6 +242,8 @@ Audit correction: The automated test expansion is not missing property or mutati
 
 Native verification correction: The bounded Windows overlay stage now runs `20` real create/update/destroy cycles with `100/100` region updates by default, while retaining environment overrides for longer target-specific runs. This strengthens automated native stress evidence but does not replace live multi-monitor, DPI, lock, sleep, or hardware evidence.
 
+Extended native verification correction: a real Windows run with `FOCUSCHECK_NATIVE_OVERLAY_CYCLES=100` and `FOCUSCHECK_NATIVE_OVERLAY_SECONDS=0.10` completed `100/100` overlay lifecycle cycles and `199/199` virtual-screen region updates on a `3840x1080` desktop spanning `x=-1920`. This remains automated native stress evidence and does not replace live multi-monitor DPI, lock, sleep, or hardware evidence.
+
 Supervisor verification correction: The stop protocol now has an explicit rejection matrix for unsupported protocol versions, missing/non-matching identity, PID, generation, process-start, malformed-time, stale, and future-skew requests, plus a valid-request case.
 
 Tk resource correction: The real withdrawn-root leak stage now also constructs and closes the Phrase Acronym challenge and V2 website subpopup, in addition to the reminder, V1/V2 prompt, and Focus/Waste surfaces. It reports zero remaining Tk children and zero non-daemon thread leaks.

@@ -170,6 +170,27 @@ This is automated Tk/resource evidence only. It does not replace the manual
 Windows matrix for interactive tray commands, focus/DPI behavior, browser
 providers, lock/sleep/resume, or native overlay observation.
 
+## Extended native overlay stress
+
+Command:
+
+```powershell
+$env:FOCUSCHECK_NATIVE_OVERLAY_CYCLES='100'
+$env:FOCUSCHECK_NATIVE_OVERLAY_SECONDS='0.10'
+python tools/spotlight_overlay_selftest.py
+```
+
+Observed on 2026-08-03:
+
+- Exit code: `0` on the real Windows host.
+- Virtual screen: `x=-1920`, `y=0`, `w=3840`, `h=1080`.
+- `100/100` overlay create/update/destroy lifecycle cycles passed.
+- `199/199` `SetWindowRgn` updates passed with no reported native failure.
+
+This strengthens automated native resource evidence. It does not prove live
+multi-monitor DPI transitions, user-visible intervention restoration, or
+hardware-specific overlay behavior.
+
 ## Current runtime probes
 
 On 2026-08-03, an isolated `python main.py --run-seconds=20` process exited
