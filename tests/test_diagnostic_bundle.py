@@ -75,3 +75,22 @@ class DiagnosticBundleTests(unittest.TestCase):
             self.assertNotIn("Private title", content)
             self.assertNotIn("secret", content)
             self.assertNotIn("hunter2", content)
+
+    def test_diagnostic_operations_reject_symlinked_root(self):
+        from focuscheck.utils.diagnostics import create_bundle, preview_bundle
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            real_root = base / "real"
+            real_root.mkdir()
+            (real_root / "stage.log").write_text("safe", encoding="utf-8")
+            linked_root = base / "linked"
+            try:
+                linked_root.symlink_to(real_root, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                preview_bundle(linked_root)
+            with self.assertRaises(ValueError):
+                create_bundle(linked_root, base / "diagnostic.zip")

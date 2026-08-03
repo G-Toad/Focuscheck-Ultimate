@@ -22,6 +22,13 @@ _PRIVATE_FIELD_PATTERNS = (
 DIAGNOSTIC_FORMAT_VERSION = 1
 
 
+def _diagnostic_root(runtime: Path) -> Path:
+    supplied = Path(runtime)
+    if supplied.is_symlink():
+        raise ValueError("refusing symlink diagnostic root")
+    return supplied.resolve()
+
+
 def format_status_snapshot(snapshot: dict) -> str:
     """Render a bounded, privacy-safe health snapshot for the status window."""
     if not isinstance(snapshot, dict):
@@ -89,7 +96,7 @@ def sanitize(text: str, *, root: Path) -> str:
 
 def preview_bundle(runtime: Path) -> dict:
     """Return filenames and sizes without reading or returning their contents."""
-    root = Path(runtime).resolve()
+    root = _diagnostic_root(runtime)
     if not root.is_dir():
         raise NotADirectoryError(root)
     files = [{"path": path.name, "size": path.stat().st_size} for path in _candidates(root)]
@@ -109,7 +116,7 @@ def _bundle_manifest(root: Path) -> dict:
 
 def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Path:
     """Create an atomic sanitized diagnostic ZIP from allowlisted sources."""
-    root = Path(runtime).resolve()
+    root = _diagnostic_root(runtime)
     destination = Path(output).resolve()
     preview_bundle(root)
     if destination.exists() and not overwrite:
