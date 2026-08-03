@@ -205,6 +205,163 @@ class TaskDbLifecycleTests(unittest.TestCase):
                 )
             self.assertEqual(old_id, db.get_active()["id"])
 
+    def test_prompt_change_form_uses_atomic_task_replacement(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import task_management
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        class FakeVar:
+            def __init__(self):
+                self.value = ""
+
+            def get(self):
+                return self.value
+
+            def set(self, value):
+                self.value = value
+
+        class FakeWidget:
+            def __init__(self, *args, **kwargs):
+                self.destroyed = False
+
+            def pack(self, *args, **kwargs):
+                return None
+
+            def grid(self, *args, **kwargs):
+                return None
+
+            def winfo_exists(self):
+                return 0 if self.destroyed else 1
+
+            def destroy(self):
+                self.destroyed = True
+
+            def lift(self):
+                return None
+
+        buttons = []
+
+        class FakeButton(FakeWidget):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.command = kwargs.get("command")
+                buttons.append(self)
+
+        variables = []
+
+        def make_var():
+            var = FakeVar()
+            variables.append(var)
+            return var
+
+        taskdb = mock.Mock()
+        taskdb.change_task.return_value = 23
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._task_panel = FakeWidget()
+        prompt._task_change_form = None
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        with mock.patch.object(task_management.tk, "Frame", FakeWidget), \
+                mock.patch.object(task_management.tk, "Label", FakeWidget), \
+                mock.patch.object(task_management.tk, "StringVar", side_effect=make_var), \
+                mock.patch.object(task_management.ttk, "Frame", FakeWidget), \
+                mock.patch.object(task_management.ttk, "Entry", FakeWidget), \
+                mock.patch.object(task_management.ttk, "Button", FakeButton):
+            prompt._show_change_form(7)
+            variables[0].set("scope changed")
+            variables[1].set("New task")
+            variables[2].set("")
+            variables[3].set("why")
+            variables[4].set("consequences")
+            buttons[-1].command()
+
+        taskdb.change_task.assert_called_once_with(
+            7,
+            "scope changed",
+            new_task={
+                "title": "New task",
+                "why": "why",
+                "consequences": "consequences",
+                "due_utc": None,
+            },
+        )
+        self.assertIsNone(prompt._task_change_form)
+        prompt._render_task_panel.assert_called_once_with()
+        prompt._refresh_analytics.assert_called_once_with()
+
+    def test_prompt_change_form_keeps_form_on_atomic_failure(self):
+        from focuscheck.ui.dialogs import prompt_dialog_mixins as package
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import task_management
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        class FakeVar:
+            def __init__(self):
+                self.value = ""
+
+            def get(self):
+                return self.value
+
+            def set(self, value):
+                self.value = value
+
+        class FakeWidget:
+            def __init__(self, *args, **kwargs):
+                self.destroyed = False
+
+            def pack(self, *args, **kwargs):
+                return None
+
+            def grid(self, *args, **kwargs):
+                return None
+
+            def winfo_exists(self):
+                return 0 if self.destroyed else 1
+
+            def destroy(self):
+                self.destroyed = True
+
+            def lift(self):
+                return None
+
+        buttons = []
+        variables = []
+
+        class FakeButton(FakeWidget):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.command = kwargs.get("command")
+                buttons.append(self)
+
+        def make_var():
+            var = FakeVar()
+            variables.append(var)
+            return var
+
+        taskdb = mock.Mock()
+        taskdb.change_task.return_value = False
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._task_panel = FakeWidget()
+        prompt._task_change_form = None
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        with mock.patch.object(task_management.tk, "Frame", FakeWidget), \
+                mock.patch.object(task_management.tk, "Label", FakeWidget), \
+                mock.patch.object(task_management.tk, "StringVar", side_effect=make_var), \
+                mock.patch.object(task_management.ttk, "Frame", FakeWidget), \
+                mock.patch.object(task_management.ttk, "Entry", FakeWidget), \
+                mock.patch.object(task_management.ttk, "Button", FakeButton), \
+                mock.patch.object(package.task_management.messagebox, "showerror") as showerror:
+            prompt._show_change_form(7)
+            variables[0].set("scope changed")
+            buttons[-1].command()
+
+        showerror.assert_called_once_with("Task Error", "The task change could not be saved.")
+        self.assertIsNotNone(prompt._task_change_form)
+        prompt._render_task_panel.assert_not_called()
+
     def test_prompt_task_done_marks_overdue_task_as_timed_out(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
 
