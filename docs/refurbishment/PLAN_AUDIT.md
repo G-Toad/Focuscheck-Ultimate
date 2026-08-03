@@ -46,9 +46,11 @@ Latest fault-injection correction: the real 13-checkpoint constructor failure ma
 
 Latest fault-injection extension: the same constructor matrix now injects tray and watcher adapters, eliminating global optional-backend and platform patches while exercising the composed startup path through watcher initialization.
 
+Latest lifecycle cleanup correction: partial construction cleanup no longer assumes an injected lifecycle adapter exposes `phase`, `begin_shutdown`, or `mark_stopped`; capability checks preserve the original startup error and continue owned-resource cleanup. Minimal-adapter regression coverage passes.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `e4e88b1`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `c4b59dc`; the post-push verifier records `528` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
