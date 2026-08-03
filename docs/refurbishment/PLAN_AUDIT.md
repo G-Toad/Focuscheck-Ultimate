@@ -183,6 +183,8 @@ Current checkpoint addition: The latest `29cd4c9` slice extends fallback tray st
 
 Current checkpoint addition: The latest `b97e264` checkpoint reconciles startup snooze expiry before selecting the initial monitoring state, preventing an expired legacy snooze from creating manual pause; the full verifier records `402` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `a22ccc5` checkpoint makes the diagnostic status snapshot report coordinator-derived effective pause rather than raw compatibility pause; the full verifier records `403` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -204,6 +206,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `402` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `b97e264`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `403` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `a22ccc5`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
