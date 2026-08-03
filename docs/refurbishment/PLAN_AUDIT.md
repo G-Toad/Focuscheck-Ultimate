@@ -237,6 +237,8 @@ Current checkpoint addition: The latest audit-path slice rejects symlinked clear
 
 Current checkpoint addition: The latest audit-rotation slice bounds clear-data and retention audit JSONL streams to two rotated generations and includes those generations in metadata inventory/export allowlists. The focused privacy suite records `22` passing tests with five environment-dependent symlink cases skipped. Full verification now records `437` passing unittest cases and all 18 automated stages; the overall report remains partial only because manual release and target-machine gates are not automated.
 
+Audit correction: The automated test expansion is not missing property or mutation evidence. The repository contains `tests/test_property_invariants.py` covering boolean coercion, domain normalization, runtime-state invariants, timer generations, UTC due-time boundaries, and migration idempotency, while `tools/mutation_smoke.py` is an active bounded verification stage. Broader integration and native live coverage remain open.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

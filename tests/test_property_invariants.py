@@ -6,6 +6,56 @@ from datetime import datetime, timedelta, timezone
 
 
 class PropertyInvariantTests(unittest.TestCase):
+    def test_timer_generation_rejects_stale_callbacks_after_replacement(self):
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Scheduler:
+            def __init__(self):
+                self.callbacks = {}
+                self.next_id = 0
+
+            def after(self, _delay, callback):
+                self.next_id += 1
+                self.callbacks[self.next_id] = callback
+                return self.next_id
+
+            def after_cancel(self, callback_id):
+                self.callbacks.pop(callback_id, None)
+
+        scheduler = Scheduler()
+        registry = TimerRegistry(scheduler)
+        calls = []
+        registry.schedule("prompt", 0, lambda: calls.append("old"))
+        old_callback = next(iter(scheduler.callbacks.values()))
+        registry.schedule("prompt", 0, lambda: calls.append("new"))
+        old_callback()
+        next(iter(scheduler.callbacks.values()))()
+
+        self.assertEqual(["new"], calls)
+
+    def test_due_time_boundaries_are_utc_and_never_in_the_past(self):
+        from focuscheck.utils.due_time import parse_due_time
+
+        now = datetime(2030, 6, 1, 12, 0, tzinfo=timezone.utc)
+        for text in ("1", "12:00", "23:59"):
+            parsed = datetime.fromisoformat(parse_due_time(text, now=now))
+            self.assertEqual(timezone.utc, parsed.tzinfo)
+            self.assertGreaterEqual(parsed, now)
+        self.assertIsNone(parse_due_time("24:00", now=now))
+        self.assertIsNone(parse_due_time("not-a-time", now=now))
+
+    def test_settings_migration_is_idempotent_for_legacy_shapes(self):
+        from focuscheck.settings.migrations import migrate_settings
+
+        cases = [
+            {"snooze_until": "2030-01-01T00:00:00+00:00"},
+            {"settings_schema_version": 1, "website_flags": {"domain": "example.com"}},
+            {"settings_schema_version": 2, "future_key": {"preserve": True}},
+        ]
+        for raw in cases:
+            migrated = migrate_settings(raw)
+            self.assertEqual(migrated, migrate_settings(migrated), raw)
+
     def test_settings_validation_is_idempotent_for_generated_adversarial_inputs(self):
         from focuscheck.settings.manager import validate_settings
 
