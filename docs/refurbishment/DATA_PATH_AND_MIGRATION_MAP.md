@@ -5,7 +5,7 @@
 - Failed platform-root resolution uses a controlled temporary `FocusCheck` recovery directory, never the source/install directory.
 - Runtime transition metadata is stored as `runtime_state.jsonl` under the canonical root and is bounded/metadata-only.
 - Settings: `focus_settings.json`, with `.bak` and timestamped `.corrupt-*` recovery artifacts.
-- Legacy settings imports reject symlink sources before reading or copying them; migration journal entries use an explicit format version and the journal writer returns a durable success/failure result.
+- Canonical settings and rotated backup recovery reject symlink sources before reading them; legacy settings imports also reject symlink sources before copying. Migration journal entries use an explicit format version and the journal writer returns a durable success/failure result.
 - Supervisor heartbeat: `hb.txt`, JSON payload containing UTC timestamp and child pid.
 - Task database: `focus_tasks.sqlite3`, SQLite `user_version=3` plus legacy column/index/timestamp repair; timestamps are stored as UTC.
 - CSV/JSONL logs are per-file locked and size-bounded.
