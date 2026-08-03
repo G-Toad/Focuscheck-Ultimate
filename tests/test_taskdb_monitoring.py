@@ -969,12 +969,19 @@ class SupervisorLifecycleTests(unittest.TestCase):
             stop_file = Path(temp_dir) / "stop.flag"
             app = App.__new__(App)
             with mock.patch.dict(os.environ, {"FOCUSCHECK_SUPERVISOR_STOP_FILE": str(stop_file)}):
-                app._request_supervisor_stop()
+                self.assertTrue(app._request_supervisor_stop())
 
             self.assertTrue(stop_file.exists())
             payload = json.loads(stop_file.read_text(encoding="ascii"))
             self.assertEqual(1, payload["protocol_version"])
             self.assertTrue(payload["request_id"])
+
+    def test_app_supervisor_stop_request_without_supervisor_is_explicit_failure(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(app._request_supervisor_stop())
 
 
 if __name__ == "__main__":

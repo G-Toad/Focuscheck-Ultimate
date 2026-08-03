@@ -2314,7 +2314,8 @@ class App:
             lifecycle.begin_shutdown(reason=reason)
         if request_supervisor:
             try:
-                self._request_supervisor_stop(reason=reason)
+                if self._request_supervisor_stop(reason=reason) is False:
+                    get_logger().warning("supervisor stop request durability is not confirmed")
             except Exception:
                 try:
                     get_logger().exception("failed requesting supervisor stop", exc_info=True)
@@ -2358,10 +2359,10 @@ class App:
             if lifecycle.phase == LifecyclePhase.STOPPING:
                 lifecycle.mark_stopped(reason=f"{reason}_complete")
 
-    def _request_supervisor_stop(self, *, reason: str = "user_exit"):
+    def _request_supervisor_stop(self, *, reason: str = "user_exit") -> bool:
         stop_file = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE")
         if not stop_file:
-            return
+            return False
         temp_path = None
         try:
             stop_path = Path(stop_file)
@@ -2382,11 +2383,13 @@ class App:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temp_path, stop_path)
+            return True
         except Exception:
             try:
                 get_logger().warning("failed writing supervisor stop request", exc_info=True)
             except Exception:
                 pass
+            return False
         finally:
             if temp_path is not None:
                 try:

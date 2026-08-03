@@ -651,7 +651,7 @@ class FocusCheckSupervisor:
         except OSError:
             pass
 
-    def _acknowledge_stop_request(self, *, termination: str = "unknown") -> None:
+    def _acknowledge_stop_request(self, *, termination: str = "unknown") -> bool:
         """Publish a durable acknowledgement before leaving the supervisor."""
         try:
             payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
@@ -684,8 +684,10 @@ class FocusCheckSupervisor:
                 f"Intentional FocusCheck stop acknowledged "
                 f"(request_id={ack['request_id']}, termination={ack['termination']})"
             )
+            return True
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
             self.logger.log(f"Could not acknowledge intentional stop: {exc}")
+            return False
 
     def _intentional_stop_requested(self, expected_pid: int | None = None) -> bool:
         try:

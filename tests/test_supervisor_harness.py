@@ -408,7 +408,7 @@ class SupervisorHarnessTests(unittest.TestCase):
             stop_file.write_text(json.dumps(request), encoding="utf-8")
 
             self.assertTrue(supervisor._intentional_stop_requested(expected_pid=1234))
-            supervisor._acknowledge_stop_request()
+            self.assertTrue(supervisor._acknowledge_stop_request())
             ack = json.loads(ack_file.read_text(encoding="utf-8"))
             self.assertEqual("request-1", ack["request_id"])
             self.assertEqual("generation-1", ack["generation"])
@@ -498,7 +498,7 @@ class SupervisorHarnessTests(unittest.TestCase):
             (root / "supervisor.stop").write_text("{not-json", encoding="ascii")
 
             with mock.patch.object(supervisor.logger, "log") as log:
-                supervisor._acknowledge_stop_request()
+                self.assertFalse(supervisor._acknowledge_stop_request())
 
             log.assert_called_once()
             self.assertIn("Could not acknowledge intentional stop", log.call_args.args[0])
