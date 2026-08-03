@@ -68,6 +68,22 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertIsNone(dialog._ensure_visible_timer_id)
         self.assertTrue(dialog._timers.closed)
 
+    def test_snooze_prompt_shutdown_close_does_not_notify_user_cancel(self):
+        from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+
+        dialog = object.__new__(SnoozePromptDialog)
+        dialog._timers = mock.Mock()
+        dialog.grab_release = mock.Mock()
+        dialog.destroy = mock.Mock()
+        dialog.on_cancel = mock.Mock()
+
+        dialog.close()
+
+        dialog._timers.close.assert_called_once_with()
+        dialog.grab_release.assert_called_once_with()
+        dialog.destroy.assert_called_once_with()
+        dialog.on_cancel.assert_not_called()
+
     def test_snooze_reminder_close_cancels_focus_timer(self):
         from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 

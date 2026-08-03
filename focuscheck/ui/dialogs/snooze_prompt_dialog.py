@@ -581,6 +581,22 @@ class SnoozePromptDialog(tk.Toplevel):
         except Exception:
             pass
 
+    def close(self):
+        """Close during application shutdown without invoking a user callback."""
+        self._cancel_pending_timers()
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
+    def destroy(self):
+        self._cancel_pending_timers()
+        return super().destroy()
+
     # ----- Key handlers -----
     def _on_return(self, _event):
         # Only submit if focus is on last entry (typed) or confirm button; else do nothing

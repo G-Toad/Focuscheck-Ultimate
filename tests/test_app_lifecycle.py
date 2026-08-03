@@ -508,6 +508,7 @@ class AppLifecycleTests(unittest.TestCase):
         app.lifecycle = None
         app._runtime_state = None
         app._close_current_prompt_for_shutdown = lambda: events.append("prompt")
+        app._close_snooze_confirmation = lambda: events.append("snooze_confirmation")
         app._close_snooze_reminder = lambda: events.append("snooze")
         app._close_gentle_reminder = lambda: events.append("gentle")
         app._shutdown_engine = lambda: events.append("engine")
@@ -517,7 +518,7 @@ class AppLifecycleTests(unittest.TestCase):
         app.root = mock.Mock()
         App._cleanup_runtime(app, reason="test", request_supervisor=False)
 
-        self.assertEqual(["prompt", "snooze", "gentle", "engine"], events)
+        self.assertEqual(["prompt", "snooze_confirmation", "snooze", "gentle", "engine"], events)
         app.root.destroy.assert_called_once_with()
 
     def test_prompt_visibility_recovery_close_uses_full_cleanup_contract(self):
