@@ -32,6 +32,28 @@ except ImportError:
         return DummyAlarm()
 
 
+def _configure_gamma_api(user32, gdi32):
+    """Declare device-context and gamma-ramp signatures."""
+    user32.GetDC.argtypes = [wintypes.HWND]
+    user32.GetDC.restype = wintypes.HDC
+    user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+    user32.ReleaseDC.restype = ctypes.c_int
+    gdi32.GetDeviceGammaRamp.argtypes = [wintypes.HDC, ctypes.c_void_p]
+    gdi32.GetDeviceGammaRamp.restype = wintypes.BOOL
+    gdi32.SetDeviceGammaRamp.argtypes = [wintypes.HDC, ctypes.c_void_p]
+    gdi32.SetDeviceGammaRamp.restype = wintypes.BOOL
+
+
+def _configure_magnification_api(magnification):
+    """Declare the fullscreen magnification lifecycle signatures."""
+    magnification.MagInitialize.argtypes = []
+    magnification.MagInitialize.restype = wintypes.BOOL
+    magnification.MagUninitialize.argtypes = []
+    magnification.MagUninitialize.restype = wintypes.BOOL
+    magnification.MagSetFullscreenColorEffect.argtypes = [ctypes.c_void_p]
+    magnification.MagSetFullscreenColorEffect.restype = wintypes.BOOL
+
+
 class IntensificationMixin:
     """Mixin for intensification and overdrive functionality in PromptDialog."""
 
@@ -295,6 +317,7 @@ class IntensificationMixin:
             return
         gdi32 = ctypes.windll.gdi32
         user32 = ctypes.windll.user32
+        _configure_gamma_api(user32, gdi32)
         class GAMMARAMP(ctypes.Structure):
             _fields_ = [("Red", ctypes.c_ushort * 256),
                         ("Green", ctypes.c_ushort * 256),
@@ -337,6 +360,7 @@ class IntensificationMixin:
         except Exception:
             b = 1.0
         gdi32 = ctypes.windll.gdi32
+        _configure_gamma_api(ctypes.windll.user32, gdi32)
         class GAMMARAMP(ctypes.Structure):
             _fields_ = [("Red", ctypes.c_ushort * 256),
                         ("Green", ctypes.c_ushort * 256),
@@ -359,6 +383,7 @@ class IntensificationMixin:
         try:
             gdi32 = ctypes.windll.gdi32
             user32 = ctypes.windll.user32
+            _configure_gamma_api(user32, gdi32)
             if self._gamma_hdc and self._gamma_orig:
                 gdi32.SetDeviceGammaRamp(self._gamma_hdc, ctypes.byref(self._gamma_orig))
             if self._gamma_hdc:
@@ -383,6 +408,7 @@ class IntensificationMixin:
             self._magnification = ctypes.windll.magnification
         except Exception as e:
             raise RuntimeError("Magnification API not available") from e
+        _configure_magnification_api(self._magnification)
         if not self._magnification.MagInitialize():
             raise RuntimeError("MagInitialize failed")
         try:

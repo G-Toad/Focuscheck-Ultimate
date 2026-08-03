@@ -861,6 +861,28 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HWND, ctypes.c_void_p], user32.GetWindowRect.argtypes)
         self.assertEqual([ctypes.c_void_p, wintypes.DWORD], user32.MonitorFromPoint.argtypes)
 
+    def test_intensification_declares_gamma_and_magnification_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import intensification
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {name: Api() for name in ("GetDC", "ReleaseDC")})()
+        gdi32 = type("Gdi32", (), {name: Api() for name in ("GetDeviceGammaRamp", "SetDeviceGammaRamp")})()
+        magnification = type("Magnification", (), {
+            name: Api() for name in ("MagInitialize", "MagUninitialize", "MagSetFullscreenColorEffect")
+        })()
+        intensification._configure_gamma_api(user32, gdi32)
+        intensification._configure_magnification_api(magnification)
+        self.assertEqual([wintypes.HWND], user32.GetDC.argtypes)
+        self.assertEqual([wintypes.HDC, ctypes.c_void_p], gdi32.SetDeviceGammaRamp.argtypes)
+        self.assertEqual([], magnification.MagInitialize.argtypes)
+        self.assertEqual([ctypes.c_void_p], magnification.MagSetFullscreenColorEffect.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes
