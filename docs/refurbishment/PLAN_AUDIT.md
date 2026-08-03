@@ -236,6 +236,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `422` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `eb2a099` until this checkpoint is committed. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `422` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `36fc8b3`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
