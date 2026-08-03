@@ -187,6 +187,92 @@ class TaskDbLifecycleTests(unittest.TestCase):
         self.assertFalse(prompt._task_decision_required)
         self.assertFalse(prompt._focus_prompt_open)
 
+    def test_prompt_new_task_refreshes_only_after_durable_success(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        taskdb = mock.Mock()
+        taskdb.start_task.return_value = 17
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        prompt._on_new_task({
+            "title": "  Write tests ",
+            "why": "quality",
+            "consequences": "regressions",
+            "due_utc": "2030-01-01T00:00:00+00:00",
+        })
+
+        taskdb.start_task.assert_called_once_with(
+            title="Write tests",
+            due_utc="2030-01-01T00:00:00+00:00",
+            why="quality",
+            consequences="regressions",
+        )
+        prompt._render_task_panel.assert_called_once_with()
+        prompt._refresh_analytics.assert_called_once_with()
+
+    def test_prompt_new_task_reports_durability_failure_without_refresh(self):
+        from focuscheck.ui.dialogs import prompt_dialog_mixins as package
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        taskdb = mock.Mock()
+        taskdb.start_task.return_value = None
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        with mock.patch.object(package.task_management.messagebox, "showerror") as showerror:
+            prompt._on_new_task({"title": "Task"})
+
+        showerror.assert_called_once_with("Task Error", "The task could not be saved.")
+        prompt._render_task_panel.assert_not_called()
+        prompt._refresh_analytics.assert_not_called()
+
+    def test_prompt_new_task_reports_database_exception(self):
+        from focuscheck.ui.dialogs import prompt_dialog_mixins as package
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        taskdb = mock.Mock()
+        taskdb.start_task.side_effect = RuntimeError("disk full")
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        with mock.patch.object(package.task_management.messagebox, "showerror") as showerror, \
+                mock.patch.object(package.task_management, "log_exception") as log_error:
+            prompt._on_new_task({"title": "Task"})
+
+        log_error.assert_called_once_with("Task UI: failed to create task")
+        showerror.assert_called_once_with("Task Error", "The task could not be saved.")
+        prompt._render_task_panel.assert_not_called()
+
+    def test_prompt_task_done_reports_transition_failure_without_clearing_state(self):
+        from focuscheck.ui.dialogs import prompt_dialog_mixins as package
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        taskdb = mock.Mock()
+        taskdb.mark_completed.return_value = False
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._task_decision_required = True
+        prompt._task_decision_task_id = 42
+        prompt._focus_prompt_open = True
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        with mock.patch.object(package.task_management.messagebox, "showerror") as showerror:
+            prompt._task_mark_done(42, None)
+
+        showerror.assert_called_once_with("Task Error", "The task status could not be saved.")
+        self.assertTrue(prompt._task_decision_required)
+        self.assertTrue(prompt._focus_prompt_open)
+        prompt._render_task_panel.assert_not_called()
+        prompt._refresh_analytics.assert_not_called()
+
     def test_prompt_task_deadline_uses_injected_clock(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
         from focuscheck.utils.clock import FakeClock

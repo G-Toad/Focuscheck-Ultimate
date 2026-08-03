@@ -121,11 +121,20 @@ class TaskManagementMixin:
             due_iso = task_data.get("due_utc")
             if not title:
                 return
-            self.taskdb.start_task(title=title, due_utc=due_iso, why=why, consequences=cons)
+            task_id = self.taskdb.start_task(
+                title=title,
+                due_utc=due_iso,
+                why=why,
+                consequences=cons,
+            )
+            if not task_id:
+                messagebox.showerror("Task Error", "The task could not be saved.")
+                return
             self._render_task_panel()
             self._refresh_analytics()
         except Exception:
-            pass
+            log_exception("Task UI: failed to create task")
+            messagebox.showerror("Task Error", "The task could not be saved.")
 
     def _render_task_panel(self):
         """
@@ -350,11 +359,16 @@ class TaskManagementMixin:
                 is_overdue = False
             if is_overdue:
                 # Mark as failed with timed_out=True to distinguish from manual fails
-                self.taskdb.mark_failed(task_id, timed_out=True)
+                saved = self.taskdb.mark_failed(task_id, timed_out=True)
             else:
-                self.taskdb.mark_completed(task_id)
+                saved = self.taskdb.mark_completed(task_id)
+            if not saved:
+                messagebox.showerror("Task Error", "The task status could not be saved.")
+                return
         except Exception:
-            pass
+            log_exception("Task UI: failed to save task status")
+            messagebox.showerror("Task Error", "The task status could not be saved.")
+            return
         self._task_decision_required = False
         self._task_decision_task_id = None
         self._focus_prompt_open = False
