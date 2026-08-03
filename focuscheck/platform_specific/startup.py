@@ -122,6 +122,15 @@ def uninstall_startup(name: str = "FocusCheck"):
         except Exception:
             pass
         return True
+    except FileNotFoundError:
+        # A missing Run key already represents the requested uninstalled state.
+        print(f"No startup registry key found; startup entry '{name}' is absent.")
+        try:
+            from ..utils.logging_utils import get_logger
+            get_logger().info("uninstalled startup: %s (registry key absent)", name)
+        except Exception:
+            pass
+        return True
     except Exception as e:
         try:
             from ..utils.logging_utils import get_logger

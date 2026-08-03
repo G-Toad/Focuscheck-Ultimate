@@ -1141,6 +1141,23 @@ class StartupCommandTests(unittest.TestCase):
         self.assertNotIn("FocusCheckTest", calls["values"])
         self.assertEqual("key", calls["closed"])
 
+    def test_uninstall_startup_is_idempotent_when_run_key_is_absent(self):
+        from focuscheck.platform_specific import startup
+
+        def open_missing_key(*_args):
+            raise FileNotFoundError("Run key absent")
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_SET_VALUE=1,
+            OpenKey=open_missing_key,
+        )
+
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), mock.patch.object(
+            startup._platform, "system", return_value="Windows"
+        ):
+            self.assertTrue(startup.uninstall_startup("FocusCheckTest"))
+
     def test_is_startup_installed_queries_registry_safely(self):
         from focuscheck.platform_specific import startup
 
