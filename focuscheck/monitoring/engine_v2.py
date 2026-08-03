@@ -30,15 +30,32 @@ class EngineV2(BaseEngine):
     def __init__(self, app, activity_provider=None, clock=None):
         super().__init__(app)
         self._last_hwnd = None
-        self._last_switch_mono = time.monotonic()
         self._subpopup_active = False
         self._settings = None
         self._activity_provider = activity_provider or get_active_window_info
         runtime_clock = getattr(getattr(app, "_runtime_state", None), "clock", None)
-        if clock is not None:
+        clock_source = clock if clock is not None else runtime_clock
+        monotonic = getattr(clock_source, "monotonic", None)
+
+        def _safe_monotonic():
+            if callable(monotonic):
+                try:
+                    return float(monotonic())
+                except (TypeError, ValueError, OverflowError):
+                    pass
+            return time.monotonic()
+
+        self._monotonic = _safe_monotonic
+        self._last_switch_mono = self._monotonic()
+        if callable(clock):
             self._now = clock
-        elif runtime_clock is not None and hasattr(runtime_clock, "now_utc"):
-            self._now = lambda: runtime_clock.now_utc().timestamp()
+        elif clock_source is not None and hasattr(clock_source, "now_utc"):
+            def _safe_now():
+                try:
+                    return clock_source.now_utc().timestamp()
+                except (AttributeError, TypeError, ValueError, OverflowError):
+                    return time.time()
+            self._now = _safe_now
         else:
             self._now = time.time
         self._timers = TimerRegistry(getattr(app, "root", None)) if getattr(app, "root", None) is not None else None
@@ -66,7 +83,7 @@ class EngineV2(BaseEngine):
     def _get_activity_info(self):
         info = safe_activity_snapshot(self._activity_provider).as_mapping()
         hwnd = info.get("hwnd")
-        now = time.monotonic()
+        now = getattr(self, "_monotonic", time.monotonic)()
         if hwnd and hwnd == self._last_hwnd:
             duration = now - self._last_switch_mono
         else:

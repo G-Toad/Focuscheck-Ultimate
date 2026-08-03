@@ -423,6 +423,22 @@ class EngineV2MatchingTests(unittest.TestCase):
         self.assertEqual(0.0, third["active_duration_s"])
         self.assertEqual(3, provider.call_count)
 
+    def test_activity_duration_uses_injected_clock(self):
+        from datetime import datetime, timezone
+        from focuscheck.monitoring.engine_v2 import EngineV2
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        provider = mock.Mock(return_value={"title": "Example", "hwnd": 99})
+        engine = EngineV2(mock.Mock(), activity_provider=provider, clock=clock)
+
+        first = engine._get_activity_info()
+        clock.advance(7)
+        second = engine._get_activity_info()
+
+        self.assertEqual(0.0, first["active_duration_s"])
+        self.assertEqual(7.0, second["active_duration_s"])
+
 
 class StartupCommandTests(unittest.TestCase):
     def test_frozen_startup_command_targets_packaged_supervisor(self):

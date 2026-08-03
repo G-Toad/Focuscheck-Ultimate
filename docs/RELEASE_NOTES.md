@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 315 unittest cases.
+- Automated test baseline: 316 unittest cases.
 - Verification runner: all 15 bounded stages pass, including compile, tests, mutation smoke, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
@@ -19,6 +19,7 @@
 - Normal direct and supervised launches preserve durable manual pause; overriding it requires the explicit `--force-start` argument, which is forwarded only to that invocation.
 - Response, waste, study, and intervention-reflection logging now follows the App-composed data root at runtime rather than module-import path state.
 - Heartbeats and the FocusCheck Status view now publish coordinator-derived effective-pause, snooze, and guard-reason metadata.
+- V2 activity duration tracking is deterministic under the injected clock and remains compatible with standalone activity providers.
 - Supervisor restart waits are cancellation-aware, and accepted generation-bound stop requests receive an atomic durable acknowledgement.
 - Native pause-guard API failures now expose bounded health metadata in diagnostics and heartbeats while retaining safe fail-open behavior.
 - Startup inspection now detects legacy Startup-folder launchers and duplicate registry/folder startup, with an explicit canonical-route repair operation.
