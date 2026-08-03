@@ -84,6 +84,16 @@ class ActivitySnapshot:
             except ValueError:
                 url = None
                 errors.append("invalid url")
+        captured = now or _utc_now()
+        supplied_capture = raw.get("captured_utc")
+        if supplied_capture:
+            try:
+                captured = datetime.fromisoformat(str(supplied_capture).replace("Z", "+00:00"))
+                if captured.tzinfo is None:
+                    captured = captured.replace(tzinfo=timezone.utc)
+                captured = captured.astimezone(timezone.utc)
+            except (TypeError, ValueError, OverflowError):
+                errors.append("invalid captured_utc")
         confidence = "high" if hwnd is not None and url else "medium" if hwnd is not None and raw.get("title") else "low"
         return cls(
             hwnd=hwnd,
@@ -94,7 +104,7 @@ class ActivitySnapshot:
             url=url,
             source=_bounded_text(raw.get("source") or source, _MAX_SOURCE_LENGTH, "source", errors),
             confidence=confidence,
-            captured_utc=(now or _utc_now()).isoformat(),
+            captured_utc=captured.isoformat(),
             errors=tuple(errors),
         )
 

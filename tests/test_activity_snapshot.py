@@ -96,6 +96,22 @@ class ActivitySnapshotTests(unittest.TestCase):
         self.assertTrue(snapshot.is_fresh(max_age_seconds=5, now=captured + timedelta(seconds=4)))
         self.assertFalse(snapshot.is_fresh(max_age_seconds=5, now=captured + timedelta(seconds=6)))
 
+    def test_provider_capture_timestamp_is_preserved_and_invalid_values_fallback(self):
+        captured = datetime(2030, 1, 1, tzinfo=timezone.utc)
+        snapshot = ActivitySnapshot.from_mapping(
+            {"hwnd": 1, "url": "https://example.com", "captured_utc": captured.isoformat()},
+            now=captured + timedelta(seconds=10),
+        )
+        self.assertEqual(captured.isoformat(), snapshot.captured_utc)
+        self.assertFalse(snapshot.is_fresh(max_age_seconds=5, now=captured + timedelta(seconds=10)))
+
+        invalid = ActivitySnapshot.from_mapping(
+            {"hwnd": 1, "url": "https://example.com", "captured_utc": "not-a-date"},
+            now=captured,
+        )
+        self.assertIn("invalid captured_utc", invalid.errors)
+        self.assertEqual(captured.isoformat(), invalid.captured_utc)
+
 
 class WindowsActivityProbeTests(unittest.TestCase):
     def test_icon_extraction_declares_shell_user_and_gdi_signatures(self):

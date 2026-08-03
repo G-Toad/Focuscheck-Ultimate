@@ -665,6 +665,38 @@ class EngineV2MatchingTests(unittest.TestCase):
 
         dialog_cls.assert_not_called()
 
+    def test_stale_activity_is_not_usable_for_website_intervention(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+        from focuscheck.utils.clock import FakeClock
+
+        captured = datetime(2030, 1, 1, tzinfo=timezone.utc)
+        clock = FakeClock(captured + timedelta(seconds=10))
+
+        class App:
+            root = mock.Mock()
+            _current_prompt = None
+            _intervention_active = False
+            settings = {
+                "paused": False,
+                "pause_when_inactive_or_lid_closed": False,
+                "website_flags": [{"domain": "reddit.com", "severity": 2, "cooldown_minutes": 0}],
+            }
+
+        engine = EngineV2(
+            App(),
+            activity_provider=lambda: {
+                "hwnd": 1,
+                "title": "Reddit",
+                "url": "https://reddit.com",
+                "captured_utc": captured.isoformat(),
+            },
+            clock=clock,
+        )
+        with mock.patch("focuscheck.monitoring.engine_v2.V2SubPopupDialog") as dialog_cls:
+            engine._maybe_show_subpopup()
+
+        dialog_cls.assert_not_called()
+
 
 class StartupCommandTests(unittest.TestCase):
     def test_frozen_startup_command_targets_packaged_supervisor(self):
