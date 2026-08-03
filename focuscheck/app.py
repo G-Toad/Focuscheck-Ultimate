@@ -323,6 +323,9 @@ class App:
                 get_logger().exception("startup: failed applying initial monitoring state", exc_info=True)
             except Exception:
                 pass
+            # Do not enter READY with an unknown durable pause state. The
+            # constructor-level lifecycle handler owns partial cleanup.
+            raise
         self._engine = None
         self._engine_shutdown = False
         # App start times for runtime reporting

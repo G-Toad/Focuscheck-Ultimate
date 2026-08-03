@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import os
 import tempfile
 import unittest
@@ -11,6 +12,25 @@ from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    def test_initial_monitoring_failure_is_re_raised_from_composition(self):
+        source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        app_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "App")
+        initialize = next(node for node in app_class.body if isinstance(node, ast.FunctionDef) and node.name == "_initialize")
+        guarded = []
+        for node in ast.walk(initialize):
+            if not isinstance(node, ast.Try):
+                continue
+            if any(
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Attribute)
+                and call.func.attr == "_apply_initial_monitoring_state"
+                for call in ast.walk(node)
+            ):
+                guarded.extend(node.handlers)
+        self.assertTrue(guarded)
+        self.assertTrue(any(isinstance(stmt, ast.Raise) for handler in guarded for stmt in handler.body))
+
     def test_prompt_regeneration_uses_timer_registry_and_cancels_on_shutdown(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
