@@ -21,6 +21,10 @@ class BaseEngine:
         """Hook for coordinator-owned intervention lease transitions."""
         return None
 
+    def on_prompt_changed(self, active: bool, *, source: str = "unknown"):
+        """Hook for coordinator-owned prompt lifecycle transitions."""
+        return None
+
     def create_prompt(self, settings, slot_info):
         """Create and return the prompt dialog for this engine."""
         raise NotImplementedError

@@ -1033,6 +1033,7 @@ class App:
         if runtime_state is not None and not runtime_state.begin_prompt():
             self._schedule_next(1500)
             return
+        self._notify_engine_prompt_state(active=True, source="prompt_started")
 
         slot_info = self._slot_start_info()
         try:
@@ -1049,11 +1050,13 @@ class App:
             log_exception("monitoring engine failed to create prompt")
             if runtime_state is not None:
                 runtime_state.end_prompt()
+            self._notify_engine_prompt_state(active=False, source="prompt_failed")
             self._schedule_next()
             return
         if dlg is None:
             if runtime_state is not None:
                 runtime_state.end_prompt()
+            self._notify_engine_prompt_state(active=False, source="prompt_failed")
             self._schedule_next()
             return
         self._current_prompt = dlg
@@ -1062,6 +1065,7 @@ class App:
             self._current_prompt = None
             if runtime_state is not None:
                 runtime_state.end_prompt()
+            self._notify_engine_prompt_state(active=False, source="prompt_rejected")
             self._schedule_next(1500)
             return
         self._record_operational_event("prompt", event="opened", outcome="started")
@@ -1215,6 +1219,7 @@ class App:
         state = getattr(self, "_runtime_state", None)
         if state is not None:
             state.end_prompt()
+        self._notify_engine_prompt_state(active=False, source="prompt_completed")
         self._schedule_next()
 
     def _cancel_prompt_observers(self):
@@ -1752,11 +1757,26 @@ class App:
         state = getattr(self, "_runtime_state", None)
         if state is not None:
             state.end_prompt()
+        self._notify_engine_prompt_state(active=False, source=f"prompt_interrupted_{source}")
         try:
             get_logger().info("current prompt closed via %s", source)
         except Exception:
             pass
         return True
+
+    def _notify_engine_prompt_state(self, *, active: bool, source: str) -> None:
+        """Forward prompt ownership without coupling App to an engine type."""
+        engine = getattr(self, "_engine", None)
+        handler = getattr(type(engine), "on_prompt_changed", None) if engine is not None else None
+        if not callable(handler):
+            return
+        try:
+            handler(engine, bool(active), source=source)
+        except Exception:
+            try:
+                get_logger().exception("monitoring engine prompt notification failed", exc_info=True)
+            except Exception:
+                pass
 
     @staticmethod
     def _mark_prompt_interruption(prompt, outcome):

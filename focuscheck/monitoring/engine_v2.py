@@ -116,6 +116,15 @@ class EngineV2(BaseEngine):
         elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
             self._schedule_subpopup_check()
 
+    def on_prompt_changed(self, active: bool, *, source: str = "unknown"):
+        """Suspend website polling while a prompt owns the application UI."""
+        if self._timers is None or self._timers.closed:
+            return
+        if active:
+            self._timers.cancel("website-subpopup")
+        elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
+            self._schedule_subpopup_check()
+
     def shutdown(self):
         self._subpopup_generation += 1
         dialog = self._subpopup_dialog
