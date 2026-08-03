@@ -111,6 +111,8 @@ Current checkpoint addition: The latest `6f278f7` run verifies that legacy migra
 
 Current checkpoint addition: The latest `cd38e1a` run verifies that transition-journal failures remain fail-safe but are counted in the immutable runtime view and App status/heartbeat metadata; the full verifier records `375` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `eb5b201` run verifies that runtime journal filesystem failures propagate as an explicit non-success result to the coordinator without interrupting state transitions; the full verifier records `376` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -132,6 +134,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `375` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `cd38e1a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `376` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `eb5b201`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
