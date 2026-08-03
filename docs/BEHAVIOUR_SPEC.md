@@ -40,7 +40,7 @@ This file defines externally observable behaviour that agents must preserve unle
 
 1. `main.py --install-startup` and tray startup enablement use the same platform startup API.
 2. The startup command points at `focuscheck_supervisor.py --run --base-dir ...`.
-3. Startup registration must not point at `main.py`, a test runner, a temporary extraction path, or a stale folder.
+3. Startup registration and manual launchers must not point at `main.py`, a test runner, a temporary extraction path, or a stale folder; all supported launchers use the supervisor.
 4. Uninstall removes the same app name used during install.
 5. Non-Windows startup operations return false or no-op safely without crashing.
 

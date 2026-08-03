@@ -19,6 +19,7 @@
 - App publishes a READY heartbeat immediately after lifecycle transition so the supervisor cannot classify normal startup as stale during the 60-second heartbeat cadence.
 - Pause-guard native API failures now publish bounded health metadata rather than degrading silently.
 - Startup inspection distinguishes legacy and duplicate launch mechanisms, and repair promotes the registry route while removing the known legacy launcher.
+- The compatibility `Start FocusCheck.cmd` launcher now delegates to `start_focuscheck.bat`, so manual launch cannot bypass the supervisor.
 - Single-instance mutex ownership now has explicit Win32 signatures and deterministic handle release on application exit/failure.
 - App lifecycle transitions are validated by a coordinator and exposed in the App heartbeat.
 - Lifecycle/runtime metadata is persisted in a bounded privacy-safe structured event ledger and is eligible for sanitized diagnostic bundles.

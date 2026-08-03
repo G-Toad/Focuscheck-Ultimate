@@ -1,4 +1,3 @@
 @echo off
-cd /d "%~dp0"
-pythonw main.py
-
+REM Keep every manual launch on the canonical supervised path.
+call "%~dp0start_focuscheck.bat"

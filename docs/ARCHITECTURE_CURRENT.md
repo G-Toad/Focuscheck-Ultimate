@@ -14,7 +14,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 
 - Preferred manual launch: `start_focuscheck.bat`.
 - Canonical startup registration: Current User Run key pointing at `focuscheck_supervisor.py --run --base-dir ...`.
-- Supervisor also supports a Startup-folder `.cmd` helper for manual use.
+- `Start FocusCheck.cmd` is a compatibility alias that delegates to `start_focuscheck.bat`; it does not bypass supervision.
 - Direct `main.py` launch remains available for selftests and lightweight manual troubleshooting, but it is not the release startup target.
 
 ## Main Application Coordination
@@ -56,4 +56,3 @@ This document describes the architecture as it exists now. It is descriptive, no
 - V1/V2 prompt completion and intervention cancellation.
 - Website flag subpopup and intervention transitions.
 - Settings normalization of legacy, hidden, and dormant keys.
-

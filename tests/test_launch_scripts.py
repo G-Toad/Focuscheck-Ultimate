@@ -18,11 +18,11 @@ class LaunchScriptContractTests(unittest.TestCase):
         self.assertIn("--run", script)
         self.assertIn("--base-dir", script)
 
-    def test_legacy_command_remains_direct_child_launch(self):
+    def test_legacy_command_delegates_to_canonical_supervisor_launcher(self):
         script = (ROOT / "Start FocusCheck.cmd").read_text(encoding="utf-8").lower()
 
-        self.assertIn("pythonw main.py", script)
-        self.assertNotIn("focuscheck_supervisor.py", script)
+        self.assertIn("start_focuscheck.bat", script)
+        self.assertNotIn("pythonw main.py", script)
         self.assertNotIn("focuscheck_force_started", script)
 
 
