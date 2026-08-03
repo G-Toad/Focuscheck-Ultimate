@@ -43,7 +43,7 @@
 - App lifecycle transitions are validated by a coordinator and exposed in the App heartbeat.
 - Lifecycle/runtime metadata is persisted in a bounded privacy-safe structured event ledger and is eligible for sanitized diagnostic bundles.
 - The structured event ledger applies a bounded default rate limit of 600 events per 60 seconds, exposes suppressed-event counts, and supports an injected monotonic clock for deterministic tests.
-- Settings UI save-key/schema drift is statically checked, saves patch the loaded revision draft so state-only, plugin, and future keys survive untouched, and a schema-generated Advanced tab owns additional editable configuration; complete schema coverage and full visible-control round trips remain open.
+- Settings UI save-key/schema drift is statically checked, saves patch the loaded revision draft so state-only, plugin, and future keys survive untouched, the schema-generated Advanced tab owns additional editable configuration, and the real hand-built Advanced save path has headless round-trip coverage; interactive/manual UI review remains open.
 - Windows shutdown query and committed end-session paths are distinct; committed shutdown uses the normal cleanup coordinator.
 - Guard refreshes are coordinator-owned and unchanged guard states do not create duplicate transition records.
 - The activity process-path probe now declares its Win32 handle, buffer, and pointer signatures before crossing the ctypes boundary.
