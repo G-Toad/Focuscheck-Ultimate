@@ -235,7 +235,7 @@ Current checkpoint addition: The latest V2 activity slice suppresses standalone 
 
 Current checkpoint addition: The latest audit-path slice rejects symlinked clear-data and retention audit destinations before writing, with both external-target preservation cases covered where symlink creation is available. The focused privacy suite records `20` passing tests with five environment-dependent symlink cases skipped; the full verifier records `435` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
-Current checkpoint addition: The latest audit-rotation slice bounds clear-data and retention audit JSONL streams to two rotated generations and includes those generations in metadata inventory/export allowlists. The focused privacy suite records `22` passing tests with five environment-dependent symlink cases skipped. Full verification now records `437` passing unittest cases and all 18 automated stages; the overall report remains partial only because manual release and target-machine gates are not automated.
+Current checkpoint addition: The latest audit-rotation slice bounds clear-data and retention audit JSONL streams to two rotated generations and includes those generations in metadata inventory/export allowlists. The focused privacy suite records `22` passing tests with five environment-dependent symlink cases skipped. Full verification now records `440` passing unittest cases and all 18 automated stages; the overall report remains partial only because manual release and target-machine gates are not automated.
 
 Audit correction: The automated test expansion is not missing property or mutation evidence. The repository contains `tests/test_property_invariants.py` covering boolean coercion, domain normalization, runtime-state invariants, timer generations, UTC due-time boundaries, and migration idempotency, while `tools/mutation_smoke.py` is an active bounded verification stage. Broader integration and native live coverage remain open.
 
@@ -260,6 +260,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `437` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `99aec5b`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `440` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `7813af2`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
