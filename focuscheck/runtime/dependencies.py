@@ -26,3 +26,4 @@ class AppDependencies:
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None
+    tk_root_factory: Callable[[], Any] | None = None

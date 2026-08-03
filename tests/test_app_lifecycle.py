@@ -136,7 +136,7 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
-                "heartbeat_writer", "camera_capture_factory", "filesystem", "startup_stage_hook", "shutdown_stage_hook",
+                "heartbeat_writer", "camera_capture_factory", "filesystem", "startup_stage_hook", "shutdown_stage_hook", "tk_root_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -163,6 +163,16 @@ class AppLifecycleTests(unittest.TestCase):
         app._dependencies = AppDependencies(shutdown_stage_hook=shutdown_stages.append)
         App._shutdown_stage(app, "tk_destroyed")
         self.assertEqual(["tk_destroyed"], shutdown_stages)
+
+    def test_tk_root_factory_is_retained_as_a_composition_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        root_factory = mock.Mock()
+        dependencies = AppDependencies(tk_root_factory=root_factory)
+        app = App.__new__(App)
+        app._dependencies = dependencies
+        self.assertIs(root_factory, app._dependencies.tk_root_factory)
 
     def test_initialize_declares_all_startup_failure_injection_checkpoints(self):
         from focuscheck.app import App
@@ -260,10 +270,10 @@ class AppLifecycleTests(unittest.TestCase):
                     settings_loader=lambda: {"monitoring_mode": "v1"},
                     task_db_factory=lambda *_args, **_kwargs: object(),
                     startup_stage_hook=inject,
+                    tk_root_factory=lambda: root,
                 )
                 with ExitStack() as stack:
                     stack.enter_context(mock.patch.dict(os.environ, {"FOCUS_DATA_DIR": temp_dir}, clear=False))
-                    stack.enter_context(mock.patch("focuscheck.app.tk.Tk", return_value=root))
                     stack.enter_context(mock.patch("focuscheck.app.TimerRegistry", return_value=mock.Mock()))
                     stack.enter_context(mock.patch("focuscheck.app.migrate_legacy_data", return_value=[]))
                     stack.enter_context(mock.patch("focuscheck.app.ensure_log_header"))

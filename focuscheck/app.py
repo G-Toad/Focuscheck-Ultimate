@@ -270,7 +270,8 @@ class App:
         )
         self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
         self._startup_stage("lifecycle_starting")
-        self.root = tk.Tk()
+        root_factory = getattr(self._dependencies, "tk_root_factory", None) or tk.Tk
+        self.root = root_factory()
         self._tk_thread_id = threading.get_ident()
         try:
             self.root._focuscheck_tk_thread_id = self._tk_thread_id
