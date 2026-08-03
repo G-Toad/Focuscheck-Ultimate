@@ -94,3 +94,11 @@ studying response, and exited cleanly. The log recorded
 observed. This proves a direct automated runtime response path, not manual
 keyboard/mouse focus, tray-menu, browser, lock/sleep/resume, hardware, or
 release evidence.
+
+An isolated composed Settings probe opened one real `AdvancedSettingsWindow`
+through `App._open_settings_from_tray`, changed `interval_seconds` to `42`,
+and invoked the window save path on the Tk owner thread. The process exited
+with code `0`; the canonical `focus_settings.json` read back
+`interval_seconds=42`, with no save error, traceback, or exception observed.
+This proves one durable Settings path, not full visual control-by-control or
+target-user migration evidence.
