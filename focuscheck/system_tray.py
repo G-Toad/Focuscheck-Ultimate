@@ -252,6 +252,8 @@ class SystemTray:
             with contextlib.suppress(Exception):
                 previous.cancel()
 
+        timer_holder = {}
+
         def _check():
             try:
                 if self._icon is None:
@@ -283,11 +285,12 @@ class SystemTray:
                     except Exception:
                         logger.exception("SystemTray: on_failure callback failed")
             finally:
-                if self._post_start_timer is timer:
+                if self._post_start_timer is timer_holder.get("timer"):
                     self._post_start_timer = None
 
         t = threading.Timer(0.6, _check)
         t.daemon = True
+        timer_holder["timer"] = t
         self._post_start_timer = t
         t.start()
 
