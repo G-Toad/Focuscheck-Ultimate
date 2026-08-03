@@ -179,6 +179,8 @@ Current checkpoint addition: The current fallback-tray slice reads coordinator-o
 
 Current checkpoint addition: The latest `468ecb5` slice centralizes coordinator-owned manual-pause intent for both App tray menu presentation and command toggling, with compatibility fallback; live native-tray guard/snooze evidence remains pending.
 
+Current checkpoint addition: The latest `29cd4c9` slice extends fallback tray state lookup to migrated standalone `manual_paused` settings before legacy `paused`; the full verifier records `401` unittest cases and all 18 bounded stages passed, while live fallback-tray guard/snooze evidence remains pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -200,6 +202,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `400` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `468ecb5`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `401` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `29cd4c9`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
