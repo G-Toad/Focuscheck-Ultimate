@@ -170,6 +170,54 @@ class TaskDbLifecycleTests(unittest.TestCase):
         self.assertFalse(prompt._task_decision_required)
         self.assertFalse(prompt._focus_prompt_open)
 
+    def test_render_task_panel_restarts_after_automatic_timeout(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import task_management
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        class FakeWidget:
+            def __init__(self, *args, **kwargs):
+                self.children = []
+
+            def pack(self, *args, **kwargs):
+                return None
+
+            def bind(self, *args, **kwargs):
+                return None
+
+            def winfo_children(self):
+                return list(self.children)
+
+            def destroy(self):
+                return None
+
+        taskdb = mock.Mock()
+        taskdb.get_active.side_effect = [
+            {
+                "id": 7,
+                "status": "active",
+                "title": "Overdue",
+                "why": "",
+                "consequences": "",
+                "due_utc": (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat(),
+            },
+            None,
+        ]
+        taskdb.mark_failed.return_value = True
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt.settings = {"tasks_decision_window_minutes": 10, "tasks_decision_prompt_enabled": True,
+                           "tasks_evaluation_mode": "before"}
+        prompt._task_panel = FakeWidget()
+        prompt._task_timer_id = None
+        prompt._open_task_history = mock.Mock()
+
+        with mock.patch.object(task_management.tk, "Frame", FakeWidget), \
+             mock.patch.object(task_management.tk, "Label", FakeWidget):
+            prompt._render_task_panel()
+
+        taskdb.mark_failed.assert_called_once_with(7, timed_out=True)
+        self.assertEqual(2, taskdb.get_active.call_count)
+
     def test_analytics_today_uses_explicit_timezone_at_dst_boundary(self):
         from focuscheck.database.task_db import TaskDB
 

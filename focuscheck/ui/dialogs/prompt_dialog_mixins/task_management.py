@@ -207,6 +207,7 @@ class TaskManagementMixin:
             window_m = 10
         decision_enabled = bool(self.settings.get("tasks_decision_prompt_enabled", True))
         decision_due = False
+        auto_failed = False
         eval_mode = str(self.settings.get("tasks_evaluation_mode", "before")).strip().lower()
         try:
             if due_iso:
@@ -219,9 +220,7 @@ class TaskManagementMixin:
                         # Auto-fail: evaluation window ended at due time
                         try:
                             if active.get("status") == "active":
-                                self.taskdb.mark_failed(active.get("id"), timed_out=True)
-                                active = self.taskdb.get_active()
-                                overdue = True
+                                auto_failed = bool(self.taskdb.mark_failed(active.get("id"), timed_out=True))
                         except Exception:
                             pass
                         decision_due = False
@@ -238,14 +237,18 @@ class TaskManagementMixin:
                         # Auto-fail after window end
                         try:
                             if active.get("status") == "active":
-                                self.taskdb.mark_failed(active.get("id"), timed_out=True)
-                                active = self.taskdb.get_active()
-                                overdue = True
+                                auto_failed = bool(self.taskdb.mark_failed(active.get("id"), timed_out=True))
                         except Exception:
                             pass
                         decision_due = False
         except Exception:
             decision_due = False
+
+        # The transition removed the active task; never build stale controls
+        # against the now-failed record.
+        if auto_failed:
+            self._render_task_panel()
+            return
 
         if decision_enabled and decision_due:
             self._task_decision_required = True
