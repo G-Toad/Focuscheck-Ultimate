@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest intervention-lifecycle correction: App-owned intervention lease transitions now notify the selected engine; V2 cancels website polling for the full wizard lease and resumes only after cleanup, with finalization protected against lease-release failures. The full verifier passed at source checkpoint `a948f12` with 554 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest tray-snooze correction: the fallback tray's direct snooze-setting command now forwards a real state transition to the monitoring engine, closing the last App-owned snooze entry point that could leave V2 polling disabled. The full verifier passed at source checkpoint `f5b25ed` with 553 tests across 19 stages; manual Windows and release evidence remains pending.
 
 Latest snooze-lifecycle correction: cancelling an active snooze now notifies the monitoring engine even when manual pause is already clear, preventing V2 website polling from remaining permanently cancelled after resume. The full verifier passed at source checkpoint `6b62ff6` with 552 tests across 19 stages; manual Windows and release evidence remains pending.
