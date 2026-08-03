@@ -12,7 +12,7 @@
 
 ## Retention
 
-`tools/retention.py` and the tray's **Clean old logs** action use the packaged retention service. It plans deletion only for known log/rotation patterns; the CLI is dry-run by default, while the tray requires an explicit age and confirmation flow. Settings and task databases are never selected. Symlink candidates are ignored, and applied deletions append only filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
+`tools/retention.py` and the tray's **Clean old logs** action use the packaged retention service. It plans deletion only for known log/rotation patterns; the CLI is dry-run by default, while the tray requires an explicit age and confirmation flow. Settings and task databases are never selected. Symlink candidates are ignored, and deletion rechecks the candidate's size and modification time before unlinking so a changed path is retained. Applied deletions append versioned filename/size/outcome metadata to `retention_audit.jsonl`, never log contents.
 
 Automated verification never runs with `--apply` and uses `_verify_runtime/data` as its data root.
 
