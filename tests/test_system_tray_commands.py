@@ -176,6 +176,30 @@ class SystemTrayCommandTests(unittest.TestCase):
         self.assertTrue(tray._icon.stopped)
         exit_mock.assert_not_called()
 
+    def test_post_start_timer_is_cancelled_when_tray_stops(self):
+        from focuscheck.system_tray import SystemTray
+
+        class Timer:
+            def __init__(self, _delay, _callback):
+                self.cancelled = False
+                self.daemon = False
+
+            def start(self):
+                return None
+
+            def cancel(self):
+                self.cancelled = True
+
+        tray = SystemTray(app=FakeTrayApp(), name="FocusCheckTest")
+        with mock.patch("focuscheck.system_tray.threading.Timer", Timer):
+            tray._schedule_post_start_check()
+            timer = tray._post_start_timer
+            self.assertIsNotNone(timer)
+            tray.stop()
+
+        self.assertTrue(timer.cancelled)
+        self.assertIsNone(tray._post_start_timer)
+
     def test_setting_fallback_delegates_to_app_without_module_persistence(self):
         from focuscheck.system_tray import SystemTray
 

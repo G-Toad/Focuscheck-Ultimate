@@ -111,6 +111,7 @@ class SystemTray:
         logger.info("  Initializing internal state variables...")
         self._icon: Optional["pystray.Icon"] = None
         self._thread: Optional[threading.Thread] = None
+        self._post_start_timer: Optional[threading.Timer] = None
         self._running = False
         self._on_failure = on_failure
         self._on_alive = on_alive
@@ -246,6 +247,11 @@ class SystemTray:
 
     def _schedule_post_start_check(self) -> None:
         # Non-blocking post-start smoke test: update tooltip once. If it fails, log and trigger fallback.
+        previous = self._post_start_timer
+        if previous is not None:
+            with contextlib.suppress(Exception):
+                previous.cancel()
+
         def _check():
             try:
                 if self._icon is None:
@@ -276,12 +282,22 @@ class SystemTray:
                         self._on_failure()
                     except Exception:
                         logger.exception("SystemTray: on_failure callback failed")
+            finally:
+                if self._post_start_timer is timer:
+                    self._post_start_timer = None
+
         t = threading.Timer(0.6, _check)
         t.daemon = True
+        self._post_start_timer = t
         t.start()
 
     def stop(self) -> None:
         self._running = False
+        timer = self._post_start_timer
+        self._post_start_timer = None
+        if timer is not None:
+            with contextlib.suppress(Exception):
+                timer.cancel()
         with contextlib.suppress(Exception):
             if self._icon is not None:
                 self._icon.visible = False
