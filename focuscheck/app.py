@@ -260,8 +260,10 @@ class App:
         clock_factory = self._dependencies.clock_factory or SystemClock
         self._runtime_clock = self._clock_override or clock_factory()
         self._startup_stage("clock_composed")
-        configure_csv_paths(self.paths)
-        configure_log_path(self.paths.app_log)
+        csv_paths_configurator = self._dependencies.csv_paths_configurator or configure_csv_paths
+        csv_paths_configurator(self.paths)
+        log_path_configurator = self._dependencies.log_path_configurator or configure_log_path
+        log_path_configurator(self.paths.app_log)
         event_ledger_factory = self._dependencies.event_ledger_factory or StructuredEventLedger
         self._event_ledger = event_ledger_factory(
             self.paths.structured_events,

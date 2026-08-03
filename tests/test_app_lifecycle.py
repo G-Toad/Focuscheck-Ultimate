@@ -210,7 +210,7 @@ class AppLifecycleTests(unittest.TestCase):
         deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
         self.assertEqual(
             {
-                "settings_loader", "settings_saver", "app_paths_factory", "legacy_migration_factory", "log_header_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
+                "settings_loader", "settings_saver", "app_paths_factory", "csv_paths_configurator", "log_path_configurator", "legacy_migration_factory", "log_header_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
@@ -275,6 +275,40 @@ class AppLifecycleTests(unittest.TestCase):
 
         paths_factory.assert_called_once_with(filesystem=None)
         self.assertIs(paths, app.paths)
+
+    def test_path_configurators_receive_the_frozen_app_paths_snapshot(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+        from focuscheck.utils.clock import FakeClock
+
+        paths = mock.Mock()
+        paths_factory = mock.Mock(return_value=paths)
+        csv_configurator = mock.Mock()
+        log_configurator = mock.Mock()
+        lifecycle = mock.Mock()
+        ledger = mock.Mock()
+
+        def fail_after_path_configuration(stage):
+            if stage == "lifecycle_starting":
+                raise RuntimeError("stop after path configuration")
+
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(
+            app_paths_factory=paths_factory,
+            csv_paths_configurator=csv_configurator,
+            log_path_configurator=log_configurator,
+            clock_factory=lambda: FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc)),
+            event_ledger_factory=lambda *_args, **_kwargs: ledger,
+            lifecycle_factory=lambda **_kwargs: lifecycle,
+            startup_stage_hook=fail_after_path_configuration,
+        )
+        app._clock_override = None
+
+        with self.assertRaisesRegex(RuntimeError, "stop after path configuration"):
+            App._initialize(app)
+
+        csv_configurator.assert_called_once_with(paths)
+        log_configurator.assert_called_once_with(paths.app_log)
 
     def test_prompt_coordinator_recovery_uses_composed_factory(self):
         from focuscheck.app import App

@@ -18,6 +18,8 @@ class AppDependencies:
     settings_loader: Callable[[], dict[str, Any]] | None = None
     settings_saver: Callable[[dict[str, Any]], Any] | None = None
     app_paths_factory: Callable[..., Any] | None = None
+    csv_paths_configurator: Callable[[Any], Any] | None = None
+    log_path_configurator: Callable[[Any], Any] | None = None
     legacy_migration_factory: Callable[[Any], Any] | None = None
     log_header_factory: Callable[[Any], Any] | None = None
     sqlite_connection_factory: Callable[..., Any] | None = None
