@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `519` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `520` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest native self-test checkpoint routes the standalone `--tray-test` timeout through a named timer registry and cleans up the registry/root when watcher construction fails; broader native/manual evidence remains pending.
 
 The latest timer-ownership checkpoint routes CLI run-limit and tray-simulation scheduling through the App-owned named registry and removes direct entrypoint `root.after()` calls; interactive/manual Windows evidence remains pending.
 

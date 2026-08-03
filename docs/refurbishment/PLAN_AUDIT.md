@@ -20,9 +20,11 @@ Latest tray-log privacy correction: `RETURNING (via ...)` and `Found in config f
 
 Latest entrypoint timer correction: CLI run-limit and tray-simulation callbacks now use the App-owned named `TimerRegistry`; direct `main.py` `root.after()` scheduling has been removed and shutdown rejection is regression-tested.
 
+Latest native self-test timer correction: the standalone `--tray-test` timeout now uses a named registry callback and closes its timer/root on construction failure, eliminating the final direct Tk timer in `main.py`.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `84ddc4c`; the post-push verifier records `519` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `75af352`; the post-push verifier records `520` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
