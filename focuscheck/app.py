@@ -1676,11 +1676,14 @@ class App:
         if str(self.settings.get("snooze_until_utc", "") or "").strip():
             state = getattr(self, "_runtime_state", None)
             if state is not None:
-                state.clear_snooze()
+                changed = state.clear_snooze()
+                if changed:
+                    self._notify_engine_pause_state(source="snooze_cancelled")
             else:
                 self.settings["snooze_until_utc"] = ""
                 try:
                     save_settings(self.settings)
+                    self._notify_engine_pause_state(source="snooze_cancelled")
                 except Exception:
                     pass
 
