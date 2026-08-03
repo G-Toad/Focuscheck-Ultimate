@@ -30,9 +30,11 @@ Latest composition-root extension: PauseGuard and PromptCoordinator are now inje
 
 Latest composition-root engine correction: selected V1/V2 monitoring engine construction now passes through an injectable factory receiving the selected class and App context, while the default engine constructors and V2 clock/provider wiring remain unchanged. Manual Windows and release evidence remain open.
 
+Latest startup composition correction: legacy migration now passes through an injectable App dependency, and the complete constructor failure matrix no longer patches the module-global migration function. Production defaults remain unchanged; existing-user migration evidence remains pending.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `cf22b9e`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `747fe33`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
