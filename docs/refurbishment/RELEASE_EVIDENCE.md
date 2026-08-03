@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `514` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `515` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest callback-portability checkpoint normalizes the remaining primary tray-watcher and dialog-overlay WNDPROC factories to the platform-safe callback fallback, with source-level regression coverage; live native behavior remains pending.
 
 The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage. Manual Windows, browser, power/session, installer/signing, target-user migration, and production-release evidence remain pending.
 

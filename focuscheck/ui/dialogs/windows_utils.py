@@ -210,7 +210,9 @@ class _WinClickThroughOverlay:
                 ("lpszClassName", wintypes.LPCWSTR),
                 ("hIconSm", wintypes.HICON),
             ]
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        WNDPROC = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T
+        )
         @WNDPROC
         def wnd_proc(hwnd, msg, wParam, lParam):
             if msg == WM_NCHITTEST:

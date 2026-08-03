@@ -766,7 +766,9 @@ class WindowsWakeWatcher:
         self._old_wndproc = self._GetWindowLongPtrW(self.hwnd, GWL_WNDPROC)
 
         # WNDPROC prototype (pointer-sized return type)
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        WNDPROC = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T
+        )
 
         WM_USER = 0x0400
         self._TRAY_MSG = WM_USER + 1

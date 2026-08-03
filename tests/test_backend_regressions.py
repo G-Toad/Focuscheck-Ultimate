@@ -565,6 +565,18 @@ class TaskDbTests(unittest.TestCase):
 
 
 class ImportHardeningTests(unittest.TestCase):
+    def test_native_callback_factories_are_platform_safe(self):
+        root = Path(__file__).resolve().parents[1]
+        sources = (
+            root / "focuscheck" / "platform_specific" / "windows.py",
+            root / "focuscheck" / "ui" / "dialogs" / "windows_utils.py",
+        )
+
+        for source_path in sources:
+            source = source_path.read_text(encoding="utf-8")
+            self.assertNotIn("ctypes.WINFUNCTYPE(", source)
+            self.assertIn('getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)', source)
+
     def test_gentle_reminder_timer_ownership_releases_fired_and_cancelled_ids(self):
         from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 
