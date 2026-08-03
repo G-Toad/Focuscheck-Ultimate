@@ -451,12 +451,12 @@ class AppLifecycleTests(unittest.TestCase):
                     legacy_migration_factory=lambda _paths: [],
                     log_header_factory=lambda _path: None,
                     task_db_factory=lambda *_args, **_kwargs: object(),
+                    timer_registry_factory=lambda *_args, **_kwargs: mock.Mock(),
                     startup_stage_hook=inject,
                     tk_root_factory=lambda: root,
                 )
                 with ExitStack() as stack:
                     stack.enter_context(mock.patch.dict(os.environ, {"FOCUS_DATA_DIR": temp_dir}, clear=False))
-                    stack.enter_context(mock.patch("focuscheck.app.TimerRegistry", return_value=mock.Mock()))
                     stack.enter_context(mock.patch.object(App, "_apply_initial_monitoring_state"))
                     stack.enter_context(mock.patch.object(App, "_ensure_engine"))
                     stack.enter_context(mock.patch.object(App, "_prepare_tray_icon"))
