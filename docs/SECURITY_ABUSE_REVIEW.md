@@ -14,6 +14,7 @@ This review covers local data handling, startup persistence, supervisor control 
 - Supervisor stop requests are JSON, PID-bound, and generation-aware; a child cannot be stopped solely because an unrelated process has the same executable name.
 - The compatibility WerFault hook is intentionally a no-op and does not terminate unrelated system processes.
 - Lock and runtime files are scoped to the canonical data root and disposable verification overrides are supported.
+- Generated Startup-folder batch launchers reject line breaks and escape percent expansion and command metacharacters in path arguments, with delayed expansion disabled before command execution.
 
 ## Residual risks
 

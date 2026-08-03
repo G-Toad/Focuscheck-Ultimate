@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `516` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `517` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest startup-security checkpoint hardens generated Startup-folder batch launchers against path metacharacter, percent-expansion, delayed-expansion, and line-break injection, with focused hostile-path coverage. Real startup-shell and target-machine evidence remain pending.
 
 The latest application-log checkpoint redacts unstructured tray diagnostic labels and adds regression coverage for returned values and settings values.
 
