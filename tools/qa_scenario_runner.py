@@ -101,6 +101,7 @@ def prepare_runtime(reset: bool):
 
 
 def run_settings_scenarios(log: QaLog):
+    import unittest.mock as mock
     from focuscheck.settings.defaults import DEFAULT_SETTINGS
     from focuscheck.settings.manager import validate_settings
     from focuscheck.settings.registry import SETTINGS_REGISTRY
@@ -137,6 +138,27 @@ def run_settings_scenarios(log: QaLog):
             "exit_off": gates.is_exit_enabled({"tray_exit_button_enabled": False}) is False,
         }
         log.event("settings.gates.pause_overlay_exit", "assert_gates", all(checks.values()), checks=checks)
+        assert all(checks.values())
+
+    with scenario(log, "settings.persistence.save_reload"):
+        from focuscheck.settings import manager
+
+        settings_path = DATA_DIR / "qa_round_trip_settings.json"
+        candidate = {
+            "interval_seconds": "42",
+            "paused": "false",
+            "snooze_until_utc": "",
+        }
+        with mock.patch.object(manager, "choose_path", return_value=str(settings_path)):
+            saved = manager.save_settings(candidate)
+            reloaded = manager.load_settings()
+        checks = {
+            "durable": bool(saved) and saved.durable_write,
+            "normalized_interval": reloaded["interval_seconds"] == 42,
+            "normalized_pause": reloaded["paused"] is False,
+            "revision_persisted": reloaded["settings_revision"] == saved.revision,
+        }
+        log.event("settings.persistence.save_reload", "assert_round_trip", all(checks.values()), checks=checks)
         assert all(checks.values())
 
 
@@ -221,6 +243,31 @@ def run_state_scenarios(log: QaLog):
         }
         log.event("guard.fake_lock_sleep_resume", "assert_guard_events", all(checks.values()), checks=checks, scheduled=scheduled)
         assert all(checks.values())
+
+    with scenario(log, "runtime.pause_snooze_prompt_eligibility"):
+        from datetime import timedelta
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        settings = {"paused": False, "snooze_until_utc": ""}
+        state = RuntimeStateCoordinator(settings, clock=clock)
+        initially_eligible = state.begin_prompt()
+        state.end_prompt()
+        snoozed = state.set_snooze_until(clock.now_utc() + timedelta(minutes=5))
+        snoozed_pause = state.settings["paused"] is True
+        denied_during_snooze = not state.begin_prompt()
+        state.clear_snooze()
+        eligible_after_snooze = state.begin_prompt()
+        checks = {
+            "initial_prompt_allowed": initially_eligible,
+            "snooze_committed": snoozed and snoozed_pause,
+            "prompt_denied_during_snooze": denied_during_snooze,
+            "prompt_allowed_after_clear": eligible_after_snooze,
+        }
+        log.event("runtime.pause_snooze_prompt_eligibility", "assert_state_transitions", all(checks.values()), checks=checks)
+        assert all(checks.values())
+        state.end_prompt()
 
 
 def run_tray_scenarios(log: QaLog):

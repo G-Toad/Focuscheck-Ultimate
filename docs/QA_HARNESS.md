@@ -7,7 +7,7 @@ Use `tools/qa_scenario_runner.py` when validating FocusCheck without touching th
 - Sets `FOCUS_DATA_DIR` to `_qa_runtime/data` before importing app modules.
 - Writes structured events to `_qa_runtime/events.jsonl`.
 - Generates a local visual report at `_qa_runtime/report.html`.
-- Exercises settings validation, feature gates, startup state resolution, expired scheduler timers, V2 intervention state/logging, TaskDB, CSV logging, website flag matching, and withdrawn Tk dialog keyboard flows.
+- Exercises settings validation, feature gates, durable settings save/reload, startup state resolution, expired scheduler timers, pause/snooze/prompt eligibility, tray prompt-now and snooze delegation, V2 intervention state/logging, TaskDB, CSV logging, website flag matching, and withdrawn Tk dialog keyboard flows.
 - The generated HTML report includes a Manual Windows Gates section for checks that automation cannot prove safely.
 
 ## Run

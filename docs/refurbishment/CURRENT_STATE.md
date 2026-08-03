@@ -64,6 +64,7 @@
 - The core overlay paint path reuses configured class-brush APIs, and GDI+ startup, bitmap-to-icon conversion, image disposal, and shutdown now have explicit signatures.
 - Snooze expiry and cancellation preserve manual pause in both coordinator and standalone fallback paths, and resnoozing cancels registry-owned timers even when no legacy callback ID exists.
 - Intentional supervisor-stop acknowledgements now include bounded termination outcomes, with explicit logging when the child exceeds the graceful termination timeout.
+- The isolated QA harness now exercises durable settings save/reload normalization and runtime pause/snooze/prompt eligibility transitions, in addition to tray prompt-now/snooze delegation and lock/sleep/resume scenarios.
 - Prompt Windows integration now declares style, positioning, taskbar flash, foreground, thread-attach, and current-thread APIs.
 - V2 subpopup metrics and phrase-acronym foreground/focus paths now use typed native API boundaries.
 - Prompt monitor placement now declares monitor/cursor/window-rect APIs and uses pointer-sized `LPARAM` in the monitor enumeration callback.
