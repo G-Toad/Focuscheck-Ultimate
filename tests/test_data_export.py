@@ -33,6 +33,19 @@ class DataExportTests(unittest.TestCase):
             self.assertTrue((root / "focus_tasks.sqlite3").exists())
             self.assertIn('"operation":"clear_data"', (root / "data_clear_audit.jsonl").read_text(encoding="utf-8"))
             self.assertIn('"format_version":1', (root / "data_clear_audit.jsonl").read_text(encoding="utf-8"))
+            self.assertTrue(report["audit_written"])
+
+    def test_clear_data_reports_audit_write_failure(self):
+        from focuscheck.utils.data_export import clear_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            with mock.patch("pathlib.Path.open", side_effect=OSError("disk full")):
+                report = clear_data(root, categories=("logs",), confirmed=True)
+            self.assertTrue(report["files"][0]["deleted"])
+            self.assertFalse(report["audit_written"])
+            self.assertEqual("OSError", report["audit_error"])
 
     def test_default_export_excludes_sensitive_categories_and_writes_manifest(self):
         from tools.export_data import export_data

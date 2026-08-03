@@ -80,6 +80,7 @@ def apply_retention(
             item["deleted"] = deleted
             if error:
                 item["error"] = error
+            item["audit_written"] = False
             try:
                 audit = {
                     "format_version": RETENTION_AUDIT_FORMAT_VERSION,
@@ -92,8 +93,11 @@ def apply_retention(
                 }
                 with audit_path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(audit, separators=(",", ":")) + "\n")
-            except OSError:
-                pass
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                item["audit_written"] = True
+            except OSError as exc:
+                item["audit_error"] = type(exc).__name__
     return candidates
 
 

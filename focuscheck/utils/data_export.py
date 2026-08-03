@@ -271,6 +271,7 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
         "operation": "clear_data",
         "categories": sorted(selected),
         "files": records,
+        "audit_written": False,
     }
     audit_path = root / "data_clear_audit.jsonl"
     try:
@@ -278,8 +279,9 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
             handle.write(json.dumps(audit, separators=(",", ":")) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
-    except OSError:
-        pass
+        audit["audit_written"] = True
+    except OSError as exc:
+        audit["audit_error"] = type(exc).__name__
     return audit
 
 

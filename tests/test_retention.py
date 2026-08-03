@@ -80,3 +80,17 @@ class RetentionTests(unittest.TestCase):
             self.assertEqual("changed_since_plan", result[0]["error"])
             self.assertTrue(old.exists())
             self.assertEqual(plan[0]["size"], 3)
+
+    def test_apply_retention_reports_audit_write_failure(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            old = root / "focus_log.csv.1"
+            old.write_text("old", encoding="utf-8")
+            import os
+            old_time = time.time() - 10 * 86400
+            os.utime(old, (old_time, old_time))
+            with mock.patch("pathlib.Path.open", side_effect=OSError("disk full")):
+                result = apply_retention(root, max_age_days=1, apply=True)
+            self.assertTrue(result[0]["deleted"])
+            self.assertFalse(result[0]["audit_written"])
+            self.assertEqual("OSError", result[0]["audit_error"])
