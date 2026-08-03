@@ -257,6 +257,28 @@ class SettingsSaveTests(unittest.TestCase):
 
             self.assertEqual("rejected_symlink", events[0]["outcome"])
 
+    def test_legacy_data_migration_rejects_symlinked_legacy_root(self):
+        from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            real_legacy = root / "real-legacy"
+            legacy = root / "legacy-link"
+            real_legacy.mkdir()
+            (real_legacy / "focus_log.csv").write_text("outside", encoding="utf-8")
+            try:
+                legacy.symlink_to(real_legacy, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            canonical = get_app_paths(root / "canonical")
+            events = migrate_legacy_data(canonical, legacy_root=legacy)
+
+            rejected = [event for event in events if event["outcome"] == "rejected_symlink"]
+            self.assertEqual(len(rejected), 5)
+            self.assertFalse(canonical.focus_log.exists())
+            self.assertEqual("outside", (real_legacy / "focus_log.csv").read_text(encoding="utf-8"))
+
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager
 

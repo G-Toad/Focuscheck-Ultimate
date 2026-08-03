@@ -148,11 +148,12 @@ def migrate_legacy_data(app_paths: "AppPaths | None" = None, *, legacy_root: str
     source_root = Path(legacy_root) if legacy_root is not None else Path(get_base_dir())
     journal = paths.root / "data_migration.jsonl"
     events: list[dict] = []
+    source_root_is_symlink = source_root.is_symlink()
 
     for name in _MIGRATABLE_DATA_FILES:
         source = source_root / name
         target = paths.root / name
-        if source.is_symlink():
+        if source_root_is_symlink or source.is_symlink():
             events.append({"file": name, "outcome": "rejected_symlink"})
             continue
         if source.resolve() == target.resolve() or not source.is_file():
