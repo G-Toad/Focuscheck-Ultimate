@@ -228,5 +228,22 @@ class SnoozeReminderDialog(tk.Toplevel):
         except Exception:
             pass
 
+    def close(self):
+        """Close during application shutdown without invoking a user action."""
+        if self._closed:
+            return
+        self._closed = True
+        self._cancel_focus_timer()
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
+    def destroy(self):
+        # Direct destruction must also release the dialog-owned timer registry.
+        self._closed = True
+        self._cancel_focus_timer()
+        return super().destroy()
+
 
 __all__ = ['SnoozeReminderDialog']

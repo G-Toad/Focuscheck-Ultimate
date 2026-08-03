@@ -499,6 +499,27 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
         self.assertIsNone(app._current_prompt)
 
+    def test_shutdown_closes_snooze_reminder_before_root_destroy(self):
+        from focuscheck.app import App
+
+        events = []
+        app = App.__new__(App)
+        app._shutdown_cleanup_complete = False
+        app.lifecycle = None
+        app._runtime_state = None
+        app._close_current_prompt_for_shutdown = lambda: events.append("prompt")
+        app._close_snooze_reminder = lambda: events.append("snooze")
+        app._close_gentle_reminder = lambda: events.append("gentle")
+        app._shutdown_engine = lambda: events.append("engine")
+        app._timers = mock.Mock()
+        app._tray = None
+        app._winwatch = None
+        app.root = mock.Mock()
+        App._cleanup_runtime(app, reason="test", request_supervisor=False)
+
+        self.assertEqual(["prompt", "snooze", "gentle", "engine"], events)
+        app.root.destroy.assert_called_once_with()
+
     def test_prompt_visibility_recovery_close_uses_full_cleanup_contract(self):
         from focuscheck.app import App
 

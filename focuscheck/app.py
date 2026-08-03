@@ -2328,6 +2328,7 @@ class App:
             get_logger().exception("runtime state shutdown failed", exc_info=True)
         for name, callback in (
             ("prompt", self._close_current_prompt_for_shutdown),
+            ("snooze_reminder", self._close_snooze_reminder),
             ("gentle_reminder", self._close_gentle_reminder),
             ("engine", self._shutdown_engine),
         ):
@@ -2536,6 +2537,24 @@ class App:
         check()
         if hasattr(self, "_timers"):
             self._timers.schedule("snooze-reminder", 10_000, check, interval_ms=10_000)
+
+    def _close_snooze_reminder(self):
+        """Close the reminder without treating shutdown as a user choice."""
+        dialog = getattr(self, "_snooze_reminder_dialog", None)
+        self._snooze_reminder_dialog = None
+        if dialog is None:
+            return
+        try:
+            close = getattr(dialog, "close", None)
+            if callable(close):
+                close()
+            else:
+                dialog.destroy()
+        except Exception:
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
 
     def _maybe_show_snooze_reminder(self):
         """Show snooze reminder dialog if conditions are met."""
