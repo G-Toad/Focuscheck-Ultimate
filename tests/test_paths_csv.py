@@ -60,6 +60,29 @@ class PathHelperTests(unittest.TestCase):
 
 
 class CsvLoggerTests(unittest.TestCase):
+    def test_csv_logger_paths_follow_composed_app_paths(self):
+        import focuscheck.database.csv_logger as logger
+        from focuscheck.utils.paths import get_app_paths
+
+        names = (
+            "LOG_PATH",
+            "WASTE_LOG_PATH",
+            "FOCUS_LOG_PATH",
+            "INTERVENTION_REFLECTION_PATH",
+        )
+        original = {name: getattr(logger, name) for name in names}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = get_app_paths(Path(temp_dir) / "composed")
+            try:
+                logger.configure_paths(paths)
+                self.assertEqual(str(paths.focus_log), logger.LOG_PATH)
+                self.assertEqual(str(paths.waste_log), logger.WASTE_LOG_PATH)
+                self.assertEqual(str(paths.study_log), logger.FOCUS_LOG_PATH)
+                self.assertEqual(str(paths.intervention_log), logger.INTERVENTION_REFLECTION_PATH)
+            finally:
+                for name, value in original.items():
+                    setattr(logger, name, value)
+
     def test_logger_uses_composition_root_path_before_first_use(self):
         import focuscheck.utils.logging_utils as logging_utils
 

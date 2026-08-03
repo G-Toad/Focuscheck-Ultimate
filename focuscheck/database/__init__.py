@@ -16,6 +16,7 @@ from .csv_logger import (
     append_focus_log,
     append_intervention_reflection,
     iter_jsonl_records,
+    configure_paths,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     'append_focus_log',
     'append_intervention_reflection',
     'iter_jsonl_records',
+    'configure_paths',
 ]

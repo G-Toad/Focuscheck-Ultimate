@@ -33,7 +33,7 @@ from .config import (
 from .settings import load_settings, save_settings, DEFAULT_SETTINGS
 
 # Database
-from .database import TaskDB, ensure_log_header
+from .database import TaskDB, configure_paths as configure_csv_paths, ensure_log_header
 
 # UI components
 from .ui.dialogs.task_entry_dialog import TaskEntryDialog
@@ -229,6 +229,7 @@ class App:
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()
+        configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
         self._event_ledger = StructuredEventLedger(self.paths.structured_events)
         self.lifecycle = LifecycleCoordinator(

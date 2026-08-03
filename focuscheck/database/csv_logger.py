@@ -20,6 +20,15 @@ INTERVENTION_REFLECTION_PATH = choose_path("focus_intervention_reflections.jsonl
 MAX_JSONL_RECORD_BYTES = 256 * 1024
 
 
+def configure_paths(app_paths) -> None:
+    """Bind CSV/JSONL output to the App composition-root snapshot."""
+    global LOG_PATH, WASTE_LOG_PATH, FOCUS_LOG_PATH, INTERVENTION_REFLECTION_PATH
+    LOG_PATH = str(app_paths.focus_log)
+    WASTE_LOG_PATH = str(app_paths.waste_log)
+    FOCUS_LOG_PATH = str(app_paths.study_log)
+    INTERVENTION_REFLECTION_PATH = str(app_paths.intervention_log)
+
+
 def _excel_safe(value):
     """Prevent spreadsheet formula execution in exported text fields."""
     if isinstance(value, str) and value[:1] in {"=", "+", "-", "@"}:
