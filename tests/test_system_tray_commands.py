@@ -143,6 +143,18 @@ class SystemTrayCommandTests(unittest.TestCase):
         self.assertTrue(tray._stop_enabled())
         self.assertFalse(tray._start_enabled())
 
+    def test_fallback_tray_pause_state_uses_migrated_manual_setting(self):
+        from focuscheck.system_tray import SystemTray
+
+        app = FakeTrayApp()
+        app.settings["manual_paused"] = True
+        app.settings["paused"] = False
+        tray = SystemTray(app=app, name="FocusCheckTest")
+
+        self.assertTrue(tray._is_paused())
+        self.assertFalse(tray._stop_enabled())
+        self.assertTrue(tray._start_enabled())
+
     def test_start_stop_and_exit_gates_block_handlers(self):
         from focuscheck.system_tray import SystemTray
 

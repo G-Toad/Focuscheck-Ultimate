@@ -534,7 +534,9 @@ class SystemTray:
                 return bool(runtime_state.snapshot.manual_paused)
             except Exception:
                 pass
-        return bool(self._get_setting("paused", False))
+        # Standalone adapters may not have the coordinator, but migrated
+        # settings still carry durable manual intent separately.
+        return bool(self._get_setting("manual_paused", self._get_setting("paused", False)))
 
     def _pause_checked(self, _: Any = None) -> bool:
         return self._is_paused()
