@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest plan-traceability correction: source checkpoint `8055695` adds explicit accepted alias rows for every one of the 84 defect identifiers named by the controlling V1 plan, plus a dedicated `plan_register_coverage` verifier stage. The full verifier passed all 20 stages with 562 tests and zero process leaks; the register contains 148 defect rows and 6 contradiction rows with no untriaged severity-0/1 entries. Manual/release gates remain pending.
+
 Latest resource-soak correction: source checkpoint `2b46a2c` extends the bounded performance stage with 500 activity-provider calls and a non-daemon-thread leak postcondition. The stage passed in 5.023 seconds with zero timer callbacks and zero non-daemon thread leaks; the full verifier passed all 19 stages with 561 tests and zero process leaks. Manual long-duration UI/native/browser and release gates remain pending.
 
 Latest status-window composition correction: source checkpoint `fa8c96c` routes the App-owned diagnostic status `Toplevel` through an injectable factory. The verifier report completed with all 19 stages passed, 561 tests, and zero process leaks; the outer command wrapper timed out after report generation, so the report is the authoritative result. Release status remains partial because manual Windows and packaging gates are not run.
