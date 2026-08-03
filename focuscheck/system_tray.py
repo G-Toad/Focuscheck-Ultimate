@@ -35,6 +35,7 @@ import platform
 import subprocess
 import sys
 import threading
+from enum import Enum
 from typing import Any, Callable, Optional
 
 # Route to the app's logger if available so messages land in the app log file
@@ -54,6 +55,16 @@ except Exception:  # pragma: no cover - optional
 
 
 from .settings import gates
+
+
+class TrayState(str, Enum):
+    """Explicit lifecycle state for the optional tray backend."""
+
+    STOPPED = "stopped"
+    STARTING = "starting"
+    READY = "ready"
+    FAILED = "failed"
+    STOPPING = "stopping"
 
 
 class SystemTray:
@@ -113,6 +124,7 @@ class SystemTray:
         self._thread: Optional[threading.Thread] = None
         self._post_start_timer: Optional[threading.Timer] = None
         self._running = False
+        self._state = TrayState.STOPPED
         self._on_failure = on_failure
         self._on_alive = on_alive
         logger.info("    - _running: False")
@@ -126,6 +138,10 @@ class SystemTray:
         logger.info("=" * 80)
 
     # ------------- Public API -------------
+    @property
+    def state(self) -> TrayState:
+        return self._state
+
     def start(self) -> bool:
         """Start the tray icon in a detached way. Returns True if started."""
         logger.info("=" * 80)
@@ -135,11 +151,14 @@ class SystemTray:
         logger.info("    - self.name: %s", self.name)
         logger.info("    - self.tooltip: %s", self.tooltip)
 
-        if self._running:
+        if self._state is TrayState.READY or self._running:
             logger.info("  Tray is already running, returning True")
             logger.info("SystemTray.start() COMPLETED - Already running")
             logger.info("=" * 80)
             return True
+        if self._state is TrayState.STARTING:
+            return False
+        self._state = TrayState.STARTING
 
         logger.info("  Checking dependencies...")
         logger.info("    - pystray available: %s", pystray is not None)
@@ -150,6 +169,7 @@ class SystemTray:
             logger.warning("    - pystray: %s", pystray)
             logger.warning("    - Image: %s", Image)
             logger.info("SystemTray.start() FAILED - Missing dependencies")
+            self._state = TrayState.FAILED
             logger.info("=" * 80)
             return False
 
@@ -165,15 +185,21 @@ class SystemTray:
         if image is None:
             logger.warning("SystemTray: no icon image available; skipping tray")
             logger.info("SystemTray.start() FAILED - No icon image")
+            self._state = TrayState.FAILED
             logger.info("=" * 80)
             return False
 
         logger.info("  Building menu...")
-        menu = self._build_menu()
-        logger.info("    - Menu built successfully: %s", menu)
-
-        logger.info("  Creating pystray.Icon object...")
-        self._icon = pystray.Icon(self.name, image, self.tooltip, menu)
+        try:
+            menu = self._build_menu()
+            logger.info("    - Menu built successfully: %s", menu)
+            logger.info("  Creating pystray.Icon object...")
+            self._icon = pystray.Icon(self.name, image, self.tooltip, menu)
+        except Exception:
+            logger.exception("SystemTray: icon construction failed")
+            self._icon = None
+            self._state = TrayState.FAILED
+            return False
         logger.info("    - Icon object created: %s", self._icon)
 
         # Prefer run_detached when available; otherwise a daemon thread
@@ -192,6 +218,7 @@ class SystemTray:
                 self._icon.run_detached()
                 logger.info("    - run_detached() completed")
                 self._running = True
+                self._state = TrayState.READY
                 logger.info("    - _running set to True")
 
                 # schedule post-start check
@@ -218,6 +245,12 @@ class SystemTray:
                 logger.exception("      SystemTray: icon loop crashed: %s", e)
                 logger.info("      Exception type: %s", type(e))
                 logger.info("      Exception args: %s", e.args)
+                if self._running:
+                    self._running = False
+                    self._state = TrayState.FAILED
+                    if callable(self._on_failure):
+                        with contextlib.suppress(Exception):
+                            self._on_failure()
 
         try:
             logger.info("SystemTray: running pystray icon on background thread")
@@ -231,11 +264,19 @@ class SystemTray:
         logger.info("      Thread daemon: %s", self._thread.daemon)
 
         logger.info("    - Starting thread...")
-        self._thread.start()
+        try:
+            self._thread.start()
+        except Exception:
+            logger.exception("SystemTray: tray thread failed to start")
+            self._thread = None
+            self._icon = None
+            self._state = TrayState.FAILED
+            return False
         logger.info("      Thread started successfully")
         logger.info("      Thread is_alive: %s", self._thread.is_alive())
 
         self._running = True
+        self._state = TrayState.READY
         logger.info("    - _running set to True")
 
         logger.info("    - Scheduling post-start check...")
@@ -281,6 +322,8 @@ class SystemTray:
                         logger.exception("SystemTray: on_alive callback failed")
             except Exception:
                 logger.exception("SystemTray: post-start check failed")
+                if self._running:
+                    self._state = TrayState.FAILED
                 if callable(self._on_failure):
                     try:
                         self._on_failure()
@@ -297,6 +340,14 @@ class SystemTray:
         t.start()
 
     def stop(self) -> None:
+        if (
+            self._state is TrayState.STOPPED
+            and not self._running
+            and self._icon is None
+            and self._post_start_timer is None
+        ):
+            return
+        self._state = TrayState.STOPPING
         self._running = False
         timer = self._post_start_timer
         self._post_start_timer = None
@@ -314,6 +365,7 @@ class SystemTray:
             with contextlib.suppress(Exception):
                 th.join(timeout=2.0)
         self._icon = None
+        self._state = TrayState.STOPPED
 
     # ------------- Internal helpers -------------
     def _detect_defaults(self) -> None:

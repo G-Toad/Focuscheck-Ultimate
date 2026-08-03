@@ -226,6 +226,47 @@ class SystemTrayCommandTests(unittest.TestCase):
         self.assertTrue(timer.cancelled)
         self.assertIsNone(tray._post_start_timer)
 
+    def test_tray_state_machine_is_explicit_and_idempotent(self):
+        from types import SimpleNamespace
+        import focuscheck.system_tray as tray_module
+        from focuscheck.system_tray import SystemTray, TrayState
+
+        class Icon:
+            def __init__(self, *_args):
+                self.title = "FocusCheck"
+                self.visible = True
+                self.stopped = False
+
+            def run_detached(self):
+                return None
+
+            def stop(self):
+                self.stopped = True
+
+        tray = SystemTray(app=FakeTrayApp(), name="FocusCheckTest", icon_image=object())
+        tray._build_menu = mock.Mock(return_value=object())
+        with mock.patch.object(tray_module, "pystray", SimpleNamespace(Icon=Icon)), \
+                mock.patch.object(tray_module, "Image", object()):
+            self.assertEqual(TrayState.STOPPED, tray.state)
+            self.assertTrue(tray.start())
+            self.assertEqual(TrayState.READY, tray.state)
+            self.assertTrue(tray.start())
+            tray.stop()
+            self.assertEqual(TrayState.STOPPED, tray.state)
+            tray.stop()
+            self.assertEqual(TrayState.STOPPED, tray.state)
+
+    def test_tray_dependency_failure_enters_failed_state_before_stop(self):
+        import focuscheck.system_tray as tray_module
+        from focuscheck.system_tray import SystemTray, TrayState
+
+        tray = SystemTray(app=FakeTrayApp(), name="FocusCheckTest")
+        with mock.patch.object(tray_module, "pystray", None), mock.patch.object(tray_module, "Image", None):
+            self.assertFalse(tray.start())
+        self.assertEqual(TrayState.FAILED, tray.state)
+        tray.stop()
+        self.assertEqual(TrayState.STOPPED, tray.state)
+
     def test_post_start_timer_callback_clears_its_owned_reference(self):
         from focuscheck.system_tray import SystemTray
 
