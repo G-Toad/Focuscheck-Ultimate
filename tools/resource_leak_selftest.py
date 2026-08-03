@@ -15,6 +15,8 @@ from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
 from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
 from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
 
@@ -88,6 +90,19 @@ def main() -> int:
             prompt._cleanup_camera_feed()
             prompt._cleanup_all_timers()
             prompt.destroy()
+
+        for dialog_type, kwargs in (
+            (FocusPromptDialog, {"ask_doing": False, "ask_benefits": False}),
+            (WastePromptDialog, {"ask_what": False, "ask_consequences": False}),
+        ):
+            dialog = dialog_type(
+                root,
+                auto_focus=True,
+                settings={"spam_detection_enabled": False, "challenge_system_enabled": False},
+                **kwargs,
+            )
+            dialog.withdraw()
+            dialog.destroy()
 
         root.update()
 
