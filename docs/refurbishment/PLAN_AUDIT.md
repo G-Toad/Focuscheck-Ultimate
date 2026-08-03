@@ -247,6 +247,8 @@ Tk resource correction: The real withdrawn-root leak stage now also constructs a
 
 V2 suppression correction: Website subpopup eligibility now rejects coordinator-owned shutdown state before consulting effective pause, preventing a shutdown with no active pause reason from opening a new website warning or intervention.
 
+Compatibility correction: Standalone V2 adapters now apply the same shutdown suppression through the app-level `_shutdown_requested` flag, while explicit-boolean checking preserves legacy fixtures that do not define that field.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -268,6 +270,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `442` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `bf8e1b4`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `443` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `7a027df`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
