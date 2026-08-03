@@ -179,12 +179,13 @@ class InterventionCoordinatorTests(unittest.TestCase):
 
         prompt.withdraw.assert_called_once_with()
         prompt.deiconify.assert_called_once_with()
-        wizard.run.assert_called_once_with(
-            preselect_hwnd=123,
-            preselect_title="summary only",
-            prompt_ref=prompt,
-            hide_prompt=True,
-        )
+        wizard.run.assert_called_once()
+        run_kwargs = wizard.run.call_args.kwargs
+        self.assertEqual(123, run_kwargs["preselect_hwnd"])
+        self.assertEqual("summary only", run_kwargs["preselect_title"])
+        self.assertIs(prompt, run_kwargs["prompt_ref"])
+        self.assertTrue(run_kwargs["hide_prompt"])
+        self.assertRegex(run_kwargs["intervention_id"], r"^[0-9a-f]{32}$")
         app._runtime_state.end_intervention.assert_called_once_with()
 
     def test_off_thread_intervention_timeout_invalidates_queued_tk_callback(self):

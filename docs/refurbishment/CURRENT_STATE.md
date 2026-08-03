@@ -23,6 +23,7 @@
 - Constructor failures after partial resource acquisition now use the same lifecycle cleanup boundary and re-raise the original startup error.
 - The state-restart integration self-test verifies manual pause persistence, active snooze restoration, expired snooze reconciliation, heartbeat pause metadata, and clean isolated entrypoint shutdown.
 - Tray fallback persistence now routes through an App-owned command; pause/snooze use the runtime coordinator and other settings use the validated repository result.
+- App-owned V2/site interventions now carry one coordinator-generated intervention ID through wizard execution and reflection logging, with cleanup clearing the active identity on success or failure.
 - App publishes a READY heartbeat immediately after lifecycle transition so the supervisor cannot classify normal startup as stale during the 60-second heartbeat cadence.
 - Pause-guard native API failures now publish bounded health metadata rather than degrading silently.
 - Startup inspection distinguishes legacy and duplicate launch mechanisms, and repair promotes the registry route while removing the known legacy launcher.

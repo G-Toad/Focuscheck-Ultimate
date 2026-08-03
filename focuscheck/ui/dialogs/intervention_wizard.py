@@ -704,7 +704,7 @@ class InterventionWizard:
         self.settings = settings if settings is not None else getattr(parent, "settings", {})
         self._error_shown = False
 
-    def run(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False):
+    def run(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False, intervention_id=None):
         logger = None
         try:
             logger = get_logger()
@@ -730,6 +730,7 @@ class InterventionWizard:
                         preselect_title=preselect_title,
                         prompt_ref=prompt_ref,
                         hide_prompt=hide_prompt,
+                        intervention_id=intervention_id,
                     )
                 except Exception:
                     if logger:
@@ -756,9 +757,10 @@ class InterventionWizard:
             preselect_title=preselect_title,
             prompt_ref=prompt_ref,
             hide_prompt=hide_prompt,
+            intervention_id=intervention_id,
         )
 
-    def _run_internal(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False):
+    def _run_internal(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False, intervention_id=None):
         logger = None
         try:
             logger = get_logger()
@@ -769,13 +771,13 @@ class InterventionWizard:
                 logger.info("intervention: run start | thread=%s", threading.current_thread().name)
         except Exception:
             pass
-        intervention_id = None
-        try:
-            intervention_id = uuid.uuid4().hex
-            if logger:
-                logger.info("intervention: id=%s", intervention_id)
-        except Exception:
-            intervention_id = None
+        if not intervention_id:
+            try:
+                intervention_id = uuid.uuid4().hex
+            except Exception:
+                intervention_id = None
+        if logger:
+            logger.info("intervention: id=%s", intervention_id)
         try:
             windows = list_top_level_windows()
         except Exception:

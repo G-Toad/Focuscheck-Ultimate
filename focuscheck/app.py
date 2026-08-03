@@ -328,6 +328,7 @@ class App:
         self._current_prompt = None
         self._prompt_coordinator = PromptCoordinator()
         self._intervention_active = False
+        self._active_intervention_id = None
         self._last_resume_mono = 0.0
         self._next_due_mono = None
         self._next_total_s = None
@@ -1087,6 +1088,8 @@ class App:
         if state is not None and not state.begin_intervention():
             return False
         self._intervention_active = True
+        intervention_id = uuid.uuid4().hex
+        self._active_intervention_id = intervention_id
         hidden = False
         try:
             from .ui.dialogs.intervention_wizard import InterventionWizard
@@ -1102,6 +1105,7 @@ class App:
                 preselect_title=preselect_title,
                 prompt_ref=prompt_ref,
                 hide_prompt=hide_prompt,
+                intervention_id=intervention_id,
             ))
         except Exception:
             try:
@@ -1118,6 +1122,7 @@ class App:
                 except Exception:
                     get_logger().exception("intervention prompt restore failed", exc_info=True)
             self._intervention_active = False
+            self._active_intervention_id = None
             if state is not None:
                 state.end_intervention()
 
@@ -1830,6 +1835,7 @@ class App:
             "guard_reasons": guard_reasons,
             "prompt_active": getattr(self, "_current_prompt", None) is not None,
             "intervention_active": bool(getattr(self, "_intervention_active", False)),
+            "intervention_id": getattr(self, "_active_intervention_id", None),
             "camera": camera,
             "guard_status": guard_status,
             "tray_backend": tray_backend,

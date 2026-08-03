@@ -10,6 +10,7 @@
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
 - Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.
 - Tray fallback setting writes now delegate to App-owned state and settings commands; the tray adapter no longer mutates settings or calls the persistence repository directly.
+- App-owned interventions now generate one identity at the coordinator boundary and pass it through the wizard to reflection logging; standalone wizard callers retain compatibility-generated IDs.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
 - Release status: `NOT_READY`.
