@@ -245,6 +245,7 @@ class App:
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()
+        self._runtime_clock = SystemClock()
         configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
         self._event_ledger = StructuredEventLedger(
@@ -291,7 +292,6 @@ class App:
                 get_logger().info("legacy data migration completed | events=%d", len(migration_events))
         except Exception:
             get_logger().exception("legacy data migration failed", exc_info=True)
-        self._runtime_clock = SystemClock()
         self._runtime_journal = RuntimeTransitionJournal(
             self.paths.runtime_state,
             clock=self._runtime_clock,
