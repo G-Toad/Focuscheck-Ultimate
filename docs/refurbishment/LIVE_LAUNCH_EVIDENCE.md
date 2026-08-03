@@ -44,7 +44,7 @@ Latest isolated source-supervisor rerun on 2026-08-03:
 - A generation-bound `source_live_selftest` stop request was atomically written; the supervisor exited, published `status=acknowledged`, and reported `termination=graceful`.
 - This proves one bounded source supervisor/child handshake and intentional stop. It does not prove sleep/resume, registry startup, interactive UI, or production-duration supervision.
 
-The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches a disposable child, verifies failure/restart into a second generation, sends a generation/PID-bound stop request, verifies the durable graceful acknowledgement, and asserts that the child PID is no longer alive. This is bounded crash/restart evidence, not production-duration or target-machine evidence.
+The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
 
