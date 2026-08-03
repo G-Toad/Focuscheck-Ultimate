@@ -1268,6 +1268,64 @@ class ImportHardeningTests(unittest.TestCase):
                           ctypes.c_int, ctypes.c_int, wintypes.UINT],
                          user32.SetWindowPos.argtypes)
 
+    def test_dialog_click_through_reports_native_failures(self):
+        from focuscheck.ui.dialogs import windows_utils
+
+        class Api:
+            def __init__(self, result):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, *_args):
+                return self.result
+
+        for result in (True, False):
+            with self.subTest(result=result):
+                user32 = type(
+                    "User32",
+                    (),
+                    {
+                        "GetWindowLongPtrW": Api(0),
+                        "SetWindowLongPtrW": Api(1),
+                        "SetWindowPos": Api(result),
+                        "CallWindowProcW": Api(1),
+                        "DefWindowProcW": Api(1),
+                    },
+                )()
+                with mock.patch.object(windows_utils.ctypes, "windll", type("Dlls", (), {"user32": user32})()):
+                    self.assertEqual(result, windows_utils._enable_click_through_windows(123))
+
+    def test_dialog_overlay_destroy_retains_handles_after_failure(self):
+        from focuscheck.ui.dialogs import windows_utils
+
+        class User32:
+            def __init__(self):
+                self.results = [False, True]
+
+            def DestroyWindow(self, _handle):
+                return self.results.pop(0)
+
+        class Gdi32:
+            def __init__(self):
+                self.deleted = 0
+
+            def DeleteObject(self, _handle):
+                self.deleted += 1
+
+        user32 = User32()
+        gdi32 = Gdi32()
+        overlay = windows_utils._WinClickThroughOverlay.__new__(windows_utils._WinClickThroughOverlay)
+        overlay.hwnd = 22
+        overlay._brush = 11
+        windll = type("Dlls", (), {"user32": user32, "gdi32": gdi32})()
+        with mock.patch.object(windows_utils.ctypes, "windll", windll):
+            self.assertFalse(overlay.destroy())
+            self.assertEqual(22, overlay.hwnd)
+            self.assertEqual(11, overlay._brush)
+            self.assertTrue(overlay.destroy())
+        self.assertEqual(1, gdi32.deleted)
+
     def test_watcher_declares_tray_and_session_native_signatures(self):
         import ctypes
         from ctypes import wintypes

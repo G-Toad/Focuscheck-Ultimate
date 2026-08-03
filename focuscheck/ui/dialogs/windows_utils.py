@@ -82,9 +82,10 @@ def _enable_click_through_windows(hwnd):
         SWP_NOZORDER = 0x0004
         SWP_NOACTIVATE = 0x0010
         SWP_FRAMECHANGED = 0x0020
-        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0,
-                            SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED)
-        return True
+        return bool(user32.SetWindowPos(
+            hwnd, None, 0, 0, 0, 0,
+            SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+        ))
     except Exception:
         return False
 
@@ -110,7 +111,9 @@ def _install_httransparent_wndproc(hwnd, owner_widget=None):
         except Exception:
             pass
         old = GetWindowLongPtrW(hwnd, GWL_WNDPROC)
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        WNDPROC = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T
+        )
         @WNDPROC
         def proc(h, msg, wParam, lParam):
             try:
@@ -122,7 +125,9 @@ def _install_httransparent_wndproc(hwnd, owner_widget=None):
                 return CallWindowProcW(ctypes.c_void_p(old), h, msg, wParam, lParam)
             except Exception:
                 return user32.DefWindowProcW(h, msg, wParam, lParam)
-        SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
+        installed = SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
+        if not installed:
+            return False
         if owner_widget is not None:
             try:
                 setattr(owner_widget, "_ct_click_oldproc", old)
@@ -283,15 +288,20 @@ class _WinClickThroughOverlay:
             pass
 
     def destroy(self):
-        if self.hwnd:
+        hwnd = self.hwnd
+        brush = self._brush
+        if hwnd:
             try:
-                ctypes.windll.user32.DestroyWindow(self.hwnd)
+                result = ctypes.windll.user32.DestroyWindow(hwnd)
+                if result is not None and not bool(result):
+                    return False
+            except Exception:
+                return False
+        self.hwnd = None
+        self._brush = None
+        if brush:
+            try:
+                ctypes.windll.gdi32.DeleteObject(brush)
             except Exception:
                 pass
-            self.hwnd = None
-        if self._brush:
-            try:
-                ctypes.windll.gdi32.DeleteObject(self._brush)
-            except Exception:
-                pass
-            self._brush = None
+        return True
