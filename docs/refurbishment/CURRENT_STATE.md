@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `711de87`; 558 unittest cases and all 19 bounded verification stages pass with zero process leaks. V2 polling resumes only when coordinator-owned eligibility gates allow it; manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `5035440`; 561 unittest cases and all 19 bounded verification stages pass with zero process leaks. App-owned UI factories now cover intervention, Settings, task, snooze, and reminder dialogs; manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
