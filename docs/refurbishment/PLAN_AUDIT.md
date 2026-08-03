@@ -139,7 +139,7 @@ Current checkpoint addition: The latest `8d2e4ff` run makes V2 sub-popup grab re
 
 Current checkpoint addition: The latest `6dda0dc` run makes stop-request and stop-acknowledgement durability outcomes explicit to callers and covers both success and failure paths; the full verifier records `384` unittest cases and all 18 bounded stages passed.
 
-Current checkpoint addition: The current intervention checkpoint routes wizard off-thread Tk dispatch through its owned timer registry and cancels the registry entry after timeout; focused intervention coverage passes pending the full verifier.
+Current checkpoint addition: The latest `d162449` run routes wizard off-thread Tk dispatch through its owned timer registry and cancels the registry entry after timeout; the full verifier records `384` unittest cases and all 18 bounded stages passed.
 
 ## Final Acceptance Gates
 
@@ -162,6 +162,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `384` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `6dda0dc`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `384` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `d162449`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
