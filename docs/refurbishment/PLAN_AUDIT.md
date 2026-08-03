@@ -331,4 +331,6 @@ Direct-launch evidence correction: an isolated 60-second `main.py --run-seconds=
 
 Extended direct-launch evidence correction: an isolated real `main.py --run-seconds=180` process exited `0` after approximately `181.8` seconds with zero `Traceback`, `ERROR`, or `Exception` log matches; the disposable root and application process were removed afterward. The run recorded three expected `SetForegroundWindow failed` warnings in the non-interactive session and a direct-launch supervisor-stop durability warning. This strengthens direct-entrypoint duration evidence but does not replace production-duration supervisor or interactive Windows acceptance.
 
+TaskDB concurrency correction: concurrent first opens now serialize schema migration with SQLite `BEGIN IMMEDIATE`, preventing duplicate-column races during `timed_out` migration. The targeted concurrent-writer regression passed `20/20` consecutive runs, and the latest full verifier records `466` passing unittest cases across all 19 stages.
+
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
