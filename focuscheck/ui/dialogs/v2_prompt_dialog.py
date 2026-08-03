@@ -400,7 +400,11 @@ class V2PromptDialog(
                     except Exception:
                         pass
                     self.destroy()
-                    self.app_ref.root.after(100, lambda: self.app_ref._schedule_next(0))
+                    regenerate = getattr(self.app_ref, "_schedule_prompt_regeneration", None)
+                    if callable(regenerate):
+                        regenerate()
+                    else:
+                        self.app_ref.root.after(100, lambda: self.app_ref._schedule_next(0))
                 except Exception:
                     pass
         SettingsWindow(

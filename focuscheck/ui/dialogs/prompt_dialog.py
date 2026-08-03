@@ -548,8 +548,12 @@ class PromptDialog(
                     self.destroy()
 
                     # Schedule immediate new prompt with updated settings
-                    # Use after() to ensure the old dialog is fully destroyed first
-                    self.app_ref.root.after(100, lambda: self.app_ref._schedule_next(0))
+                    regenerate = getattr(self.app_ref, "_schedule_prompt_regeneration", None)
+                    if callable(regenerate):
+                        regenerate()
+                    else:
+                        # Keep standalone prompt fixtures compatible.
+                        self.app_ref.root.after(100, lambda: self.app_ref._schedule_next(0))
 
                     try:
                         get_logger().info("Settings changed - regenerating popup with new settings")

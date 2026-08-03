@@ -150,6 +150,7 @@ class DialogKeyboardTests(unittest.TestCase):
             root = mock.Mock()
             _persist_settings_draft = mock.Mock()
             _schedule_next = mock.Mock()
+            _schedule_prompt_regeneration = mock.Mock()
 
         root = _make_root()
         try:
@@ -160,9 +161,18 @@ class DialogKeyboardTests(unittest.TestCase):
                 dialog = dialog_type.__new__(dialog_type)
                 dialog.settings = dict(DEFAULT_SETTINGS)
                 dialog.app_ref = App()
+                dialog._closed = False
+                dialog._cleanup_camera_feed = mock.Mock()
+                dialog._cleanup_all_timers = mock.Mock()
+                dialog._cleanup_timers = mock.Mock()
+                dialog._destroy_stage5_overlays = mock.Mock()
+                dialog.destroy = mock.Mock()
                 with mock.patch("focuscheck.ui.windows.SettingsWindow") as settings_window:
                     dialog_type._open_settings(dialog)
                 self.assertIs(settings_window.call_args.kwargs["persist_settings"], dialog.app_ref._persist_settings_draft)
+                settings_window.call_args.kwargs["on_save"]({"example": True})
+                dialog.app_ref._schedule_prompt_regeneration.assert_called_once_with()
+                dialog.app_ref._schedule_prompt_regeneration.reset_mock()
         finally:
             root.destroy()
 
