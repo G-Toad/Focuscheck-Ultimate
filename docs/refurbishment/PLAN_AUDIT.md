@@ -217,7 +217,7 @@ Current checkpoint addition: The latest privacy-boundary slice rejects symlinked
 
 Current checkpoint addition: The latest export-integrity slice validates the completed temporary ZIP against its embedded manifest before promotion, preventing source mutation between hashing and archive writing from producing a trusted-but-invalid export. The focused export suite records `10` passing tests with symlink cases skipped where the environment cannot create links; the full verifier records `423` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
-Current checkpoint addition: The latest diagnostic-boundary slice rejects symlinked runtime roots before preview or bundle resolution, closing the equivalent support-artifact scope escape. The focused diagnostic suite records `5` passing tests with the directory-symlink case skipped where the environment cannot create links; full verification remains pending for this slice.
+Current checkpoint addition: The latest diagnostic-boundary slice rejects symlinked runtime roots before preview or bundle resolution, closing the equivalent support-artifact scope escape. The focused diagnostic suite records `5` passing tests with the directory-symlink case skipped where the environment cannot create links; the full verifier records `424` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
 ## Final Acceptance Gates
 
@@ -240,6 +240,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `423` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `5ec9ab1`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `424` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `8b4d57e`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
