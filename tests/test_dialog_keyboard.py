@@ -397,6 +397,30 @@ class DialogKeyboardTests(unittest.TestCase):
         prompt.destroy.assert_called_once_with()
         self.assertEqual([True], submitted)
 
+    def test_v1_keyboard_activation_cannot_bypass_hold_requirement(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.button_handling import ButtonHandlingMixin
+
+        class InfoLabel:
+            def __init__(self):
+                self.text = None
+
+            def config(self, **kwargs):
+                self.text = kwargs.get("text")
+
+        prompt = ButtonHandlingMixin.__new__(ButtonHandlingMixin)
+        prompt.settings = {"anti_habit_enabled": True}
+        prompt._info_lbl = InfoLabel()
+        prompt._trigger_studying_choice = mock.Mock()
+        prompt._on_wasting_clicked = mock.Mock()
+
+        button = mock.Mock()
+        button.cget.return_value = "Studying"
+        prompt._invoke_action_button(button)
+
+        prompt._trigger_studying_choice.assert_not_called()
+        prompt._on_wasting_clicked.assert_not_called()
+        self.assertEqual("Use the mouse and hold the button to confirm.", prompt._info_lbl.text)
+
     def test_v2_prompt_closes_when_timer_cleanup_raises(self):
         from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
 

@@ -126,6 +126,15 @@ class ButtonHandlingMixin:
             logger.info("=" * 80)
             return
 
+        # Hold-to-confirm is intentionally a mouse gesture. Keyboard
+        # activation must not bypass the configured anti-habit safeguard.
+        if bool(self.settings.get("anti_habit_enabled", False)):
+            try:
+                self._info_lbl.config(text="Use the mouse and hold the button to confirm.")
+            except Exception:
+                pass
+            return
+
         logger.info("  Identifying which button was clicked...")
 
         try:
