@@ -285,6 +285,8 @@ Package startup evidence correction: a real disposable `package_lifecycle.ps1` I
 
 CDP evidence correction: a disposable headless Chrome profile exposed a page target only on late candidate port `9229`; the real provider discovered it, returned the bounded title/URL, and listed the tab before the process tree and profile were removed. Real user-browser, Firefox/UIA, and website-flag intervention evidence remain manual_pending.
 
+Edge CDP evidence correction: a disposable headless Microsoft Edge profile exposed a page target on port `9229`; the real provider returned `Edg/151.0.4129.59`, the bounded target, and its tab title before the process and profile were removed. Firefox/UIA extraction, real user-browser behavior, and website-flag intervention evidence remain manual_pending.
+
 Supervisor evidence correction: The real disposable source-supervisor self-test now includes a healthy-runtime scenario that observes heartbeat sequence advancement, retains one child PID, verifies the stable-ready backoff reset after an injected two-second stability window, and completes a generation-bound graceful stop; crash/restart, hang recovery, and circuit-breaker scenarios continue to pass.
 
 Live supervisor evidence correction: an isolated Windows probe launched the actual `main.py` child through `focuscheck_supervisor.py`, rejected a second supervisor on the same marker paths, and completed a generation-bound graceful stop with both supervisor processes exiting cleanly. Run-key startup, lock/sleep/resume, interactive tray, and production-duration evidence remain open.

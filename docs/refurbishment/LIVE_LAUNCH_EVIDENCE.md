@@ -135,6 +135,19 @@ This proves bounded CDP discovery and title/URL extraction for a disposable
 Chromium target. It does not prove real user-browser coverage, Firefox/UIA
 extraction, or the website-flag intervention matrix.
 
+Latest disposable live Edge CDP probe on 2026-08-03:
+
+- A headless Microsoft Edge instance with a unique temporary profile exposed
+  CDP on port `9229`.
+- The real provider discovered `Edg/151.0.4129.59`, returned the bounded
+  `about:blank` target and tab title, and exited without changing a user
+  profile.
+- The Edge process and temporary profile were removed after the probe.
+
+This adds a real supported Chromium-family provider result. It does not prove
+Firefox UI Automation extraction, real user-browser behavior, or website-flag
+intervention semantics.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
