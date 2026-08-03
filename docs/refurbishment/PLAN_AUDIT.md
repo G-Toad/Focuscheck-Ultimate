@@ -262,13 +262,15 @@ Export path correction: The same export boundary now rejects symlinked parent co
 | A Repository/build | Partial | The source tree and pinned dependency contract are verified, a dual-executable PyInstaller build/self-test and install lifecycle contract are evidenced; real installer, signing, long-running supervisor, and deployment verification remain open. |
 | B Automated verification | Partial | All eighteen bounded stages pass, including real-entrypoint pause/snooze restart integration; broader integration breadth, thread/window leak checks, and full test-category coverage remain incomplete. |
 | C Settings/data | Partial | Canonical path selection, legacy settings import/conflict handling, migration, recovery, backup, atomic save, revision conflict, the plan-listed settings-input fixture matrix, headless hand-built and schema-generated Settings round trips, and the complete durable task/log migration fixture matrix are tested; interactive Settings review and target-user one-root migration evidence remain absent. |
-| D Runtime state | Unverified | No complete truth-table/manual evidence proves pause, snooze, guards, effective pause, and duplicate-prompt invariants. |
+| D Runtime state | Partial | The coordinator has deterministic unit and isolated-QA truth-table coverage for manual pause, snooze, all guard subsets, prompt/intervention leases, shutdown, effective-pause reason precedence, and prompt eligibility; live tray, lock/sleep, restart, and duplicate-prompt evidence remain absent. |
 | E Supervisor/startup | Partial | Supervisor regressions and bounded real-process scenarios cover generation-bound stop, crash/restart, heartbeat hang recovery, circuit-breaker behavior, and reaping; live sleep/resume, native startup, and target-machine evidence remain absent. |
 | F Tk/tray/UI | Unverified | Source tests, headless hand-built/schema-generated Settings round trips, and self-tests exist, but owner-thread, tray uniqueness, deterministic dialog cleanup, persistence-error UI evidence, and interactive Settings review are incomplete. |
 | G Prompts/interventions | Partial | Selected cancellation/cooldown behavior is tested; full V1/V2 matrices and orphan-overlay evidence are absent. |
 | H Windows native | Unverified | No complete ctypes/resource audit or live lock/sleep/resume/multi-monitor/DPI evidence. |
 | I Tasks/logs/privacy | Partial | DB migration safety, logs, allowlisted export, complete known-artifact metadata inventory, confirmed user-facing clear controls, packaged retention, and diagnostic preview/sanitization hardening pass; export privacy evidence, complete privacy controls, and versioned recovery remain incomplete. |
 | J Release evidence | Not met | Manual checklist is `not_run`; disposable upgrade/rollback/install lifecycle is tested, but target-machine installer/signing and release-package consistency evidence are not complete. |
+
+Runtime-state evidence correction: The isolated QA harness now evaluates all `256` combinations of manual pause, snooze, the three guard reasons, prompt/intervention activity, and shutdown state, including effective-pause reason precedence and prompt eligibility; the scenario passes with zero failures.
 
 ## Explicit Scope Boundary
 
@@ -278,6 +280,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `446` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `7930411`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `448` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `ee5808b`. The isolated QA runtime-state scenario covers `256` combinations with zero failures. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
