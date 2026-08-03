@@ -333,11 +333,13 @@ class DialogKeyboardTests(unittest.TestCase):
                 )
                 dialog.withdraw()
 
-                result = dialog._on_escape()
+                with mock.patch.object(dialog, "grab_release") as release:
+                    result = dialog._on_escape()
                 root.update()
 
                 self.assertEqual("break", result)
                 self.assertEqual(["no"], events)
+                release.assert_called_once_with()
                 self.assertFalse(dialog.winfo_exists())
         finally:
             root.destroy()

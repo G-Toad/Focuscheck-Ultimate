@@ -112,6 +112,10 @@ class V2SubPopupDialog(tk.Toplevel):
 
     def destroy(self):
         self._closed = True
+        try:
+            self.grab_release()
+        except Exception:
+            pass
         return super().destroy()
 
 
