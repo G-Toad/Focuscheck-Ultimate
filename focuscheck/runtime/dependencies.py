@@ -24,3 +24,5 @@ class AppDependencies:
     heartbeat_writer: Callable[[Any, dict[str, Any]], Any] | None = None
     camera_capture_factory: Callable[[int], Any] | None = None
     filesystem: Any | None = None
+    startup_stage_hook: Callable[[str], Any] | None = None
+    shutdown_stage_hook: Callable[[str], Any] | None = None

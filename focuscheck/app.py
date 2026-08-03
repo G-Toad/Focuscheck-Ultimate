@@ -255,7 +255,9 @@ class App:
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths(filesystem=getattr(self._dependencies, "filesystem", None))
+        self._startup_stage("paths_composed")
         self._runtime_clock = self._clock_override or SystemClock()
+        self._startup_stage("clock_composed")
         configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
         self._event_ledger = StructuredEventLedger(
@@ -267,6 +269,7 @@ class App:
             _sink=lambda event: self._event_ledger.append("lifecycle", event)
         )
         self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
+        self._startup_stage("lifecycle_starting")
         self.root = tk.Tk()
         self._tk_thread_id = threading.get_ident()
         try:
@@ -287,6 +290,7 @@ class App:
             self.root,
             event_sink=lambda event: self._event_ledger.append("timer", event),
         )
+        self._startup_stage("tk_and_timers_created")
         self._ui_dispatch_sequence = 0
         # Ensure window handle is realized before using it for shell hooks
         try:
@@ -301,6 +305,7 @@ class App:
             pass
         settings_loader = self._dependencies.settings_loader or load_settings
         self.settings = settings_loader()
+        self._startup_stage("settings_loaded")
         try:
             migration_events = migrate_legacy_data(self.paths)
             if migration_events:
@@ -310,6 +315,7 @@ class App:
         except Exception:
             get_logger().exception("legacy data migration failed", exc_info=True)
             raise
+        self._startup_stage("migration_completed")
         self._runtime_journal = RuntimeTransitionJournal(
             self.paths.runtime_state,
             clock=self._runtime_clock,
@@ -338,6 +344,7 @@ class App:
             # Do not enter READY with an unknown durable pause state. The
             # constructor-level lifecycle handler owns partial cleanup.
             raise
+        self._startup_stage("initial_monitoring_state_applied")
         self._engine = None
         self._engine_shutdown = False
         # App start times for runtime reporting
@@ -360,9 +367,11 @@ class App:
         except Exception:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")
+        self._startup_stage("repositories_initialized")
         ensure_log_header(self.paths.focus_log)
         self.guard = PauseGuard(lambda: self.settings)
         self._ensure_engine()
+        self._startup_stage("engine_initialized")
         self._scheduled = None
         self._current_prompt = None
         self._prompt_coordinator = PromptCoordinator()
@@ -391,6 +400,7 @@ class App:
         self._start_snooze_reminder_check()
         # Optional non-blocking gentle reminder loop
         self._start_gentle_reminder_check()
+        self._startup_stage("services_started")
 
         # Startup diagnostics (log versions and tray import attempts)
         try:
@@ -478,6 +488,7 @@ class App:
             get_logger().exception("pystray setup failed", exc_info=True)
             self._pystray_started = False
             self._using_pystray = False
+        self._startup_stage("tray_initialized")
 
         # Windows: listen for power/session/display and enable native tray only if pystray failed.
         self._winwatch = None
@@ -503,14 +514,22 @@ class App:
                     pass
             except Exception as e:
                 print(f"Windows watcher/tray unavailable: {e}", file=sys.stderr)
+        self._startup_stage("watcher_initialized")
         # quick first pop to prove it works
         self._schedule_next(2000)
         self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")
+        self._startup_stage("ready")
         # The initial heartbeat is emitted during construction while the
         # lifecycle is still STARTING. Publish READY immediately so a
         # supervisor does not mistake the normal file-heartbeat cadence for a
         # hung startup.
         self._write_heartbeat()
+
+    def _startup_stage(self, name):
+        """Expose deterministic startup checkpoints without changing defaults."""
+        hook = getattr(getattr(self, "_dependencies", None), "startup_stage_hook", None)
+        if callable(hook):
+            hook(name)
 
     def _apply_initial_monitoring_state(self):
         # Reconcile snooze first so an expired effective pause cannot be
@@ -2433,6 +2452,7 @@ class App:
         try:
             if getattr(self, "_runtime_state", None) is not None:
                 self._runtime_state.request_shutdown()
+            self._shutdown_stage("runtime_rejected")
         except Exception:
             get_logger().exception("runtime state shutdown failed", exc_info=True)
         for name, callback in (
@@ -2445,31 +2465,42 @@ class App:
         ):
             try:
                 callback()
+                self._shutdown_stage(f"{name}_closed")
             except Exception:
                 get_logger().exception("shutdown cleanup failed: %s", name, exc_info=True)
         timers = getattr(self, "_timers", None)
         if timers is not None:
             try:
                 timers.close()
+                self._shutdown_stage("timers_closed")
             except Exception:
                 get_logger().exception("shutdown cleanup failed: timers", exc_info=True)
         try:
             if getattr(self, "_tray", None):
                 self._tray.stop()
+            self._shutdown_stage("tray_stopped")
         except Exception:
             get_logger().exception("shutdown cleanup failed: tray", exc_info=True)
         try:
             if getattr(self, "_winwatch", None):
                 self._winwatch.close()
+            self._shutdown_stage("watcher_closed")
         except Exception:
             get_logger().exception("shutdown cleanup failed: watcher", exc_info=True)
         try:
             self.root.destroy()
+            self._shutdown_stage("tk_destroyed")
         except Exception:
             get_logger().exception("shutdown cleanup failed: root", exc_info=True)
         if lifecycle is not None:
             if lifecycle.phase == LifecyclePhase.STOPPING:
                 lifecycle.mark_stopped(reason=f"{reason}_complete")
+
+    def _shutdown_stage(self, name):
+        """Expose deterministic shutdown checkpoints without changing defaults."""
+        hook = getattr(getattr(self, "_dependencies", None), "shutdown_stage_hook", None)
+        if callable(hook):
+            hook(name)
 
     def _request_supervisor_stop(self, *, reason: str = "user_exit") -> bool:
         stop_file = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE")

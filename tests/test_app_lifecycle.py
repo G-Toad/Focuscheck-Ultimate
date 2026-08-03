@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+from contextlib import ExitStack
 import os
 import tempfile
 import unittest
@@ -135,12 +136,156 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
-                "heartbeat_writer", "camera_capture_factory", "filesystem",
+                "heartbeat_writer", "camera_capture_factory", "filesystem", "startup_stage_hook", "shutdown_stage_hook",
             },
             set(deps.__dataclass_fields__),
         )
         self.assertIs(settings_loader, deps.settings_loader)
         self.assertIs(task_db_factory, deps.task_db_factory)
+
+    def test_startup_stage_hook_is_optional_and_propagates_failures(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        stages = []
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(startup_stage_hook=stages.append)
+        App._startup_stage(app, "paths_composed")
+        self.assertEqual(["paths_composed"], stages)
+
+        failure = RuntimeError("injected startup failure")
+        app._dependencies = AppDependencies(startup_stage_hook=mock.Mock(side_effect=failure))
+        with self.assertRaises(RuntimeError) as raised:
+            App._startup_stage(app, "settings_loaded")
+        self.assertIs(failure, raised.exception)
+
+        shutdown_stages = []
+        app._dependencies = AppDependencies(shutdown_stage_hook=shutdown_stages.append)
+        App._shutdown_stage(app, "tk_destroyed")
+        self.assertEqual(["tk_destroyed"], shutdown_stages)
+
+    def test_initialize_declares_all_startup_failure_injection_checkpoints(self):
+        from focuscheck.app import App
+
+        source = Path(App.__module__.replace(".", os.sep) + ".py")
+        if not source.is_absolute():
+            source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        initialize = next(
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == "_initialize"
+        )
+        checkpoints = {
+            node.args[0].value
+            for node in ast.walk(initialize)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "_startup_stage"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+        }
+        self.assertEqual(
+            {
+                "paths_composed", "clock_composed", "lifecycle_starting",
+                "tk_and_timers_created", "settings_loaded", "migration_completed",
+                "initial_monitoring_state_applied", "repositories_initialized",
+                "engine_initialized", "services_started", "tray_initialized",
+                "watcher_initialized", "ready",
+            },
+            checkpoints,
+        )
+
+    def test_cleanup_declares_all_shutdown_failure_injection_checkpoints(self):
+        from focuscheck.app import App
+
+        source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
+        tree = ast.parse(source.read_text(encoding="utf-8"))
+        cleanup = next(
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.FunctionDef) and node.name == "_cleanup_runtime"
+        )
+        checkpoints = {
+            node.args[0].value
+            for node in ast.walk(cleanup)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "_shutdown_stage"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+        }
+        self.assertEqual(
+            {
+                "runtime_rejected", "timers_closed", "tray_stopped",
+                "watcher_closed", "tk_destroyed",
+            },
+            checkpoints,
+        )
+
+    def test_constructor_failure_injection_covers_each_startup_checkpoint(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        startup_stages = (
+            "paths_composed", "clock_composed", "lifecycle_starting",
+            "tk_and_timers_created", "settings_loaded", "migration_completed",
+            "initial_monitoring_state_applied", "repositories_initialized",
+            "engine_initialized", "services_started", "tray_initialized",
+            "watcher_initialized", "ready",
+        )
+
+        class Root:
+            def withdraw(self):
+                return None
+
+            def update_idletasks(self):
+                return None
+
+            def bind_all(self, *_args):
+                return None
+
+            def destroy(self):
+                self.destroyed = True
+
+        for failed_stage in startup_stages:
+            with self.subTest(failed_stage=failed_stage), tempfile.TemporaryDirectory() as temp_dir:
+                root = Root()
+                observed = []
+
+                def inject(stage):
+                    observed.append(stage)
+                    if stage == failed_stage:
+                        raise RuntimeError(f"startup stage failed: {stage}")
+
+                dependencies = AppDependencies(
+                    settings_loader=lambda: {"monitoring_mode": "v1"},
+                    task_db_factory=lambda *_args, **_kwargs: object(),
+                    startup_stage_hook=inject,
+                )
+                with ExitStack() as stack:
+                    stack.enter_context(mock.patch.dict(os.environ, {"FOCUS_DATA_DIR": temp_dir}, clear=False))
+                    stack.enter_context(mock.patch("focuscheck.app.tk.Tk", return_value=root))
+                    stack.enter_context(mock.patch("focuscheck.app.TimerRegistry", return_value=mock.Mock()))
+                    stack.enter_context(mock.patch("focuscheck.app.migrate_legacy_data", return_value=[]))
+                    stack.enter_context(mock.patch("focuscheck.app.ensure_log_header"))
+                    stack.enter_context(mock.patch.object(App, "_apply_initial_monitoring_state"))
+                    stack.enter_context(mock.patch.object(App, "_ensure_engine"))
+                    stack.enter_context(mock.patch.object(App, "_prepare_tray_icon"))
+                    stack.enter_context(mock.patch.object(App, "_start_heartbeat"))
+                    stack.enter_context(mock.patch.object(App, "_start_file_heartbeat"))
+                    stack.enter_context(mock.patch.object(App, "_start_snooze_reminder_check"))
+                    stack.enter_context(mock.patch.object(App, "_start_gentle_reminder_check"))
+                    stack.enter_context(mock.patch.object(App, "_log_startup_diagnostics"))
+                    stack.enter_context(mock.patch.object(App, "_schedule_next"))
+                    stack.enter_context(mock.patch.object(App, "_write_heartbeat"))
+                    stack.enter_context(mock.patch("focuscheck.app.SystemTray", None))
+                    stack.enter_context(mock.patch("focuscheck.app.platform.system", return_value="Linux"))
+
+                    with self.assertRaisesRegex(RuntimeError, f"startup stage failed: {failed_stage}"):
+                        App(dependencies=dependencies)
+
+                self.assertEqual(failed_stage, observed[-1])
+                if failed_stage not in {"paths_composed", "clock_composed", "lifecycle_starting"}:
+                    self.assertTrue(getattr(root, "destroyed", False))
 
     def test_filesystem_dependency_controls_app_data_root_creation(self):
         from pathlib import Path
