@@ -16,9 +16,11 @@ Latest ledger privacy correction: free-form `reason` and `target` event fields a
 
 Latest application-log correction: rendered diagnostic labels such as `returned:`, `value:`, and `Found in app.settings:` now redact their payloads, covering tray fallback logs that do not use explicit private field names.
 
+Latest tray-log privacy correction: `RETURNING (via ...)` and `Found in config file:` fallback diagnostics now redact arbitrary setting values, closing the remaining unstructured tray lookup path.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `686f768`; the post-push verifier records `518` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `31b0292`; the post-push verifier records `518` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 

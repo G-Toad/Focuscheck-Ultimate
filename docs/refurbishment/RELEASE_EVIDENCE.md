@@ -6,6 +6,8 @@ The latest startup-security checkpoint hardens both generated Startup-folder bat
 
 The latest application-log checkpoint redacts unstructured tray diagnostic labels and adds regression coverage for returned values and settings values.
 
+The latest tray-log privacy checkpoint also redacts `RETURNING (via ...)` and `Found in config file:` fallback values; the complete target-user privacy evidence remains pending.
+
 The latest ledger privacy checkpoint bounds free-form `reason` and `target` fields to structural metadata, with regression coverage for private text and path leakage.
 
 The latest observability checkpoint prevents the status window from rendering the absolute data-root path and adds regression coverage; live status interaction remains pending.
