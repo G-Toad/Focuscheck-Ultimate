@@ -14,5 +14,5 @@ The current automated baseline is `291` tests; the detailed older bullets are re
 - Isolated native overlay self-test passes explicit region signatures and repeated bounded `3/3` create/update/destroy cycles without live-profile logging contention.
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.
-- Pinned PyInstaller packaging, packaged self-test, scripted package promotion/rollback, and disposable install/upgrade/uninstall evidence are present; real installer shell lifecycle and signing remain unverified.
+- Pinned PyInstaller packaging, direct frozen-child self-test, packaged supervisor READY/stop-acknowledgement, manifest validation, and current disposable install/upgrade/rollback/uninstall evidence are present; real installer shell lifecycle, signing, production-duration supervision, and target-machine evidence remain unverified.
 - Native Windows and broader UI evidence is pending and must be attached before release claims; the automated resource-leak stage now exercises representative V1/V2 prompt cleanup on a withdrawn Tk root.
