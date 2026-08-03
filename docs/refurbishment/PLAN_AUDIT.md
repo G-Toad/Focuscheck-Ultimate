@@ -28,7 +28,7 @@ Latest composition-root correction: core runtime services now have explicit inje
 
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `6edcefd`; the post-push verifier records `521` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `a89985a`; the post-push verifier records `521` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 

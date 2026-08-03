@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `521` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `521` tests across 19 bounded stages at source checkpoint `a89985a`; the detailed older bullets are retained as historical baseline context.
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
