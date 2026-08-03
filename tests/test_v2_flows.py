@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import unittest
 from unittest import mock
+from datetime import datetime, timezone
+
+from focuscheck.utils.clock import FakeClock
 
 
 class Var:
@@ -29,6 +32,42 @@ class AppRef:
 
 
 class V2FlowTests(unittest.TestCase):
+    def test_prompt_duration_uses_composed_monotonic_clock(self):
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        v1 = PromptDialog.__new__(PromptDialog)
+        v1._task_clock = clock
+        v2 = V2PromptDialog.__new__(V2PromptDialog)
+        v2._task_clock = clock
+
+        self.assertEqual(0.0, v1._monotonic_now())
+        self.assertEqual(0.0, v2._monotonic_now())
+        clock.advance(2.5)
+        self.assertEqual(2.5, v1._monotonic_now())
+        self.assertEqual(2.5, v2._monotonic_now())
+
+    def test_v1_anti_habit_hold_uses_composed_monotonic_clock(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+
+        class Prompt(AntiHabitMixin):
+            def __init__(self):
+                self.settings = {"anti_habit_enabled": True, "studying_hold_ms": 500}
+                self._hold_start = None
+                self._info_lbl = mock.Mock()
+                self._trigger_studying_choice = mock.Mock()
+                self._monotonic_now = clock.monotonic
+
+        prompt = Prompt()
+        prompt._study_hold_start(None)
+        clock.advance(0.5)
+        prompt._study_hold_end(None)
+
+        prompt._trigger_studying_choice.assert_called_once_with()
+
     def _dialog(self, answer="doing work", decision="yes"):
         from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
 

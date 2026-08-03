@@ -62,7 +62,7 @@ class V2PromptDialog(
         self.app_ref = app_ref
         self.taskdb = taskdb
         self._task_clock = getattr(getattr(app_ref, "_runtime_state", None), "clock", None)
-        self._dialog_shown_at = time.time()
+        self._dialog_shown_at = self._monotonic_now()
         self._closed = False
         self._submit_notified = False
         self._active_timers = set()
@@ -124,6 +124,16 @@ class V2PromptDialog(
                 self.bind("<KP_Enter>", self._focus_if_needed, add=True)
         except Exception:
             pass
+
+    def _monotonic_now(self):
+        """Use the composed runtime clock for prompt duration decisions."""
+        monotonic = getattr(self._task_clock, "monotonic", None)
+        if callable(monotonic):
+            try:
+                return float(monotonic())
+            except (TypeError, ValueError, OverflowError):
+                pass
+        return time.monotonic()
 
     def _init_validation(self):
         self._effective_settings = self._get_effective_validation_settings()
@@ -409,7 +419,7 @@ class V2PromptDialog(
 
         # Spam detection
         if self.spam_detector:
-            time_elapsed = time.time() - self._dialog_shown_at
+            time_elapsed = self._monotonic_now() - self._dialog_shown_at
             is_valid, error_msg = self.spam_detector.is_valid_response(answer, time_elapsed)
             if not is_valid:
                 get_logger().warning("spam_check: rejected | reason=%s", error_msg)
@@ -564,7 +574,8 @@ class V2PromptDialog(
 
     def _log_response(self, decision):
         try:
-            latency_ms = int((time.monotonic() - (self.slot_start_dt.get("mono_start") if self.slot_start_dt else time.monotonic())) * 1000)
+            start_mono = self.slot_start_dt.get("mono_start") if self.slot_start_dt else self._monotonic_now()
+            latency_ms = int((self._monotonic_now() - start_mono) * 1000)
         except Exception:
             latency_ms = 0
         try:

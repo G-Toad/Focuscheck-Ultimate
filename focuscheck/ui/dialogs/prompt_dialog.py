@@ -86,7 +86,7 @@ class PromptDialog(
         self.app_ref = app_ref
         self._task_clock = getattr(getattr(app_ref, "_runtime_state", None), "clock", None)
         self.persist_settings = persist_settings
-        self.start_monotonic = time.monotonic()
+        self.start_monotonic = self._monotonic_now()
 
         # Calculate UI scale factor
         scale_percent = self.settings.get("ui_scale_percent", 100)
@@ -218,6 +218,16 @@ class PromptDialog(
         self._gamma_orig = None
         # Magnification engine state (Windows only)
         self._mag_active = False
+
+    def _monotonic_now(self):
+        """Use the composed runtime clock for prompt duration decisions."""
+        monotonic = getattr(self._task_clock, "monotonic", None)
+        if callable(monotonic):
+            try:
+                return float(monotonic())
+            except (TypeError, ValueError, OverflowError):
+                pass
+        return time.monotonic()
 
     def _build_vertical_layout(self, container):
         """Build traditional vertical stacked layout (current default)."""
@@ -661,7 +671,7 @@ class PromptDialog(
                         pass
         except Exception:
             pass
-        latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+        latency_ms = int((self._monotonic_now() - self.start_monotonic) * 1000)
         try:
             try:
                 get_logger().info(

@@ -40,7 +40,7 @@ class AntiHabitMixin:
         """
         if not self.settings["anti_habit_enabled"]:
             return
-        self._hold_start = time.monotonic()
+        self._hold_start = getattr(self, "_monotonic_now", time.monotonic)()
         try:
             self._info_lbl.config(text="Hold to confirm you're actively studying.")
         except Exception:
@@ -61,7 +61,7 @@ class AntiHabitMixin:
             return
         if self._hold_start is None:
             return
-        held_ms = int((time.monotonic() - self._hold_start) * 1000)
+        held_ms = int((getattr(self, "_monotonic_now", time.monotonic)() - self._hold_start) * 1000)
         self._hold_start = None
         need = int(self.settings["studying_hold_ms"])
         if held_ms >= need:
@@ -119,7 +119,7 @@ class AntiHabitMixin:
                 except Exception:
                     log_exception("focus prompt: DB record failed")
                 try:
-                    latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+                    latency_ms = int((getattr(self, "_monotonic_now", time.monotonic)() - self.start_monotonic) * 1000)
                     append_focus_log(
                         slot_start_dt=self.slot_start_dt,
                         latency_ms=latency_ms,
@@ -159,7 +159,7 @@ class AntiHabitMixin:
         """
         if not self.settings["anti_habit_enabled"]:
             self._on_wasting_clicked(); return
-        self._hold_start = time.monotonic()
+        self._hold_start = getattr(self, "_monotonic_now", time.monotonic)()
         try:
             self._info_lbl.config(text="Hold to confirm you're wasting time...")
         except Exception:
@@ -178,7 +178,7 @@ class AntiHabitMixin:
             self._on_wasting_clicked(); return
         if self._hold_start is None:
             return
-        held_ms = int((time.monotonic() - self._hold_start) * 1000)
+        held_ms = int((getattr(self, "_monotonic_now", time.monotonic)() - self._hold_start) * 1000)
         self._hold_start = None
         need = int(self.settings["studying_hold_ms"])
         if held_ms >= need:
@@ -239,7 +239,7 @@ class AntiHabitMixin:
                     log_exception("waste prompt: DB record failed")
                 # Also record to CSV for quick export
                 try:
-                    latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
+                    latency_ms = int((getattr(self, "_monotonic_now", time.monotonic)() - self.start_monotonic) * 1000)
                     append_waste_log(
                         slot_start_dt=self.slot_start_dt,
                         latency_ms=latency_ms,

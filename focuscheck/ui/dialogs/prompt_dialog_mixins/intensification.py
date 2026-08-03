@@ -107,7 +107,7 @@ class IntensificationMixin:
         """
         if self._closed: return
         self._overdrive = True
-        self._overdrive_start_time = time.monotonic()  # Track when overdrive started
+        self._overdrive_start_time = getattr(self, "_monotonic_now", time.monotonic)()  # Track when overdrive started
         try: self._flash_taskbar_begin()
         except Exception: pass
         # Play audio alert if configured for overdrive trigger
@@ -301,7 +301,7 @@ class IntensificationMixin:
         self._stage5_dim_alpha = 0.0
         self._stage5_dim_dir = 1
         try:
-            self._stage5_start_mono = time.monotonic()
+            self._stage5_start_mono = getattr(self, "_monotonic_now", time.monotonic)()
         except Exception:
             self._stage5_start_mono = 0.0
         self._stage5_hold_engaged = False
@@ -625,7 +625,7 @@ class IntensificationMixin:
 
         # Determine target alpha
         a = self._stage5_dim_alpha
-        now_mono = time.monotonic()
+        now_mono = getattr(self, "_monotonic_now", time.monotonic)()
         if slow_enabled:
             # One-way slow dim to black
             if slow_secs <= 0:
