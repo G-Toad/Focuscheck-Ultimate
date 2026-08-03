@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import FrozenInstanceError
 from itertools import product
 from datetime import datetime, timezone, timedelta
 
@@ -11,6 +12,34 @@ from focuscheck.runtime.events import StructuredEventLedger
 
 
 class RuntimeStateTests(unittest.TestCase):
+    def test_snapshot_view_is_immutable_and_reports_effective_reason(self):
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""}, clock=clock
+        )
+        state.set_guard_reason("lock", True)
+        view = state.snapshot_view()
+
+        self.assertTrue(view.effective_pause)
+        self.assertEqual("lock", view.effective_pause_reason)
+        self.assertEqual(frozenset({"lock"}), view.guard_reasons)
+        with self.assertRaises(FrozenInstanceError):
+            view.revision = 99
+
+    def test_runtime_revision_advances_on_commit_and_rolls_back_with_state(self):
+        state = RuntimeStateCoordinator({"paused": False, "snooze_until_utc": ""})
+        self.assertEqual(0, state.snapshot_view().revision)
+        self.assertTrue(state.set_manual_paused(True))
+        committed_revision = state.snapshot_view().revision
+        self.assertGreater(committed_revision, 0)
+
+        failing = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            persist=lambda _settings: False,
+        )
+        self.assertFalse(failing.set_manual_paused(True))
+        self.assertEqual(0, failing.snapshot_view().revision)
+
     def test_transition_sink_records_metadata_and_not_settings_values(self):
         events = []
         state = RuntimeStateCoordinator(

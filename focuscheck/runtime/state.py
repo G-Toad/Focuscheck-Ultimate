@@ -11,6 +11,7 @@ from ..utils.clock import SystemClock
 
 @dataclass
 class RuntimeSnapshot:
+    revision: int = 0
     manual_paused: bool = False
     snooze_until_utc: str = ""
     guard_reasons: set[str] = field(default_factory=set)
@@ -35,6 +36,21 @@ class RuntimeSnapshot:
             return False
 
 
+@dataclass(frozen=True)
+class RuntimeStateView:
+    """Immutable, diagnostic-safe view of coordinator-owned runtime state."""
+
+    revision: int
+    manual_paused: bool
+    snooze_until_utc: str
+    guard_reasons: frozenset[str]
+    prompt_active: bool
+    intervention_active: bool
+    shutdown_requested: bool
+    effective_pause: bool
+    effective_pause_reason: str | None
+
+
 class RuntimeStateCoordinator:
     """Own state transitions and persist related settings atomically."""
 
@@ -57,12 +73,14 @@ class RuntimeStateCoordinator:
     def refresh_from_settings(self, settings: MutableMapping[str, Any]) -> None:
         """Adopt a reloaded settings document without losing runtime leases."""
         self.settings = settings
+        self.snapshot.revision += 1
         self.snapshot.manual_paused = bool(settings.get("paused", False))
         self.snapshot.snooze_until_utc = str(settings.get("snooze_until_utc", "") or "")
 
     def _safe_snapshot(self, snapshot: RuntimeSnapshot | None = None) -> dict:
         current = snapshot or self.snapshot
         return {
+            "revision": current.revision,
             "manual_paused": current.manual_paused,
             "snooze_active": current.snooze_active(self.clock.now_utc()),
             "guard_count": len(current.guard_reasons),
@@ -85,6 +103,7 @@ class RuntimeStateCoordinator:
         before_settings = deepcopy(dict(self.settings))
         before_snapshot = deepcopy(self.snapshot)
         mutate()
+        self.snapshot.revision = before_snapshot.revision + 1
         self.settings["paused"] = (
             self.snapshot.manual_paused
             or self.snapshot.snooze_active(self.clock.now_utc())
@@ -106,6 +125,32 @@ class RuntimeStateCoordinator:
                 return False
         self._record(event, "committed")
         return True
+
+    def snapshot_view(self, now: datetime | None = None) -> RuntimeStateView:
+        """Return an immutable point-in-time view for diagnostics and adapters."""
+        current = self.snapshot
+        current_time = now or self.clock.now_utc()
+        snooze_active = current.snooze_active(current_time)
+        guard_reasons = frozenset(str(reason) for reason in current.guard_reasons)
+        if current.manual_paused:
+            reason = "manual_pause"
+        elif snooze_active:
+            reason = "snooze"
+        elif guard_reasons:
+            reason = sorted(guard_reasons)[0]
+        else:
+            reason = None
+        return RuntimeStateView(
+            revision=current.revision,
+            manual_paused=bool(current.manual_paused),
+            snooze_until_utc=str(current.snooze_until_utc or ""),
+            guard_reasons=guard_reasons,
+            prompt_active=bool(current.prompt_active),
+            intervention_active=bool(current.intervention_active),
+            shutdown_requested=bool(current.shutdown_requested),
+            effective_pause=bool(current.manual_paused or snooze_active or guard_reasons),
+            effective_pause_reason=reason,
+        )
 
     def set_manual_paused(self, value: bool) -> bool:
         value = bool(value)
@@ -139,6 +184,7 @@ class RuntimeStateCoordinator:
         else:
             self.snapshot.guard_reasons.discard(reason)
         if was_active != bool(active):
+            self.snapshot.revision += 1
             self._record("guard", "committed")
 
     def begin_prompt(self) -> bool:
@@ -151,28 +197,33 @@ class RuntimeStateCoordinator:
             self._record("prompt", "denied")
             return False
         self.snapshot.prompt_active = True
+        self.snapshot.revision += 1
         self._record("prompt", "begun")
         return True
 
     def end_prompt(self) -> None:
         self.snapshot.prompt_active = False
+        self.snapshot.revision += 1
         self._record("prompt", "ended")
 
     def begin_intervention(self) -> bool:
         if self.snapshot.shutdown_requested or self.snapshot.intervention_active or self.snapshot.prompt_active:
             return False
         self.snapshot.intervention_active = True
+        self.snapshot.revision += 1
         self._record("intervention", "begun")
         return True
 
     def end_intervention(self) -> None:
         self.snapshot.intervention_active = False
+        self.snapshot.revision += 1
         self._record("intervention", "ended")
 
     def request_shutdown(self) -> bool:
         if self.snapshot.shutdown_requested:
             return False
         self.snapshot.shutdown_requested = True
+        self.snapshot.revision += 1
         self._record("shutdown", "requested")
         return True
 
