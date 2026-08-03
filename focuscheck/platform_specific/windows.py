@@ -557,18 +557,23 @@ class WinClickThroughOverlay:
     def destroy(self):
         brush = self._brush
         hwnd = self.hwnd
-        self._brush = None
+        if hwnd:
+            try:
+                result = _user32().DestroyWindow(hwnd)
+                # ctypes returns a BOOL; None is retained as compatibility for
+                # lightweight test doubles that do not model return values.
+                if result is not None and not bool(result):
+                    return False
+            except Exception:
+                return False
         self.hwnd = None
+        self._brush = None
         try:
             if brush:
                 _gdi32().DeleteObject(brush)
         except Exception:
             pass
-        try:
-            if hwnd:
-                _user32().DestroyWindow(hwnd)
-        except Exception:
-            pass
+        return True
 
 
 class _GdiplusStartupInput(ctypes.Structure):

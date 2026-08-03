@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `509` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `510` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
 The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage. Manual Windows, browser, power/session, installer/signing, target-user migration, and production-release evidence remain pending.
 
@@ -33,6 +33,8 @@ The latest signing checkpoint validates source executable signatures before prom
 The latest settings checkpoint routes tray reloads through the App composition boundary and refreshes coordinator-owned runtime truth, preserving the prior snapshot on load failure; focused lifecycle coverage passes, while interactive tray/settings evidence remains pending.
 
 The latest prompt-regeneration checkpoint rejects scheduling after the composed timer registry closes, preventing raw Tk callbacks during shutdown; focused lifecycle coverage passes, while interactive settings/shutdown evidence remains pending.
+
+The latest overlay checkpoint retains native handles after a failed `DestroyWindow` for retry and releases the brush once destruction succeeds; focused cleanup coverage passes, while live overlay evidence remains pending.
 
 - The current verifier has `19` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.

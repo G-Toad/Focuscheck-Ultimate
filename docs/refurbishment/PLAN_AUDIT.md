@@ -375,6 +375,8 @@ Settings reload correction: tray click, tray menu, and tray Settings entry now u
 
 Prompt regeneration shutdown correction: settings-driven prompt regeneration now rejects a closed composed `TimerRegistry` instead of falling back to raw `root.after()`. Focused lifecycle coverage proves no late Tk callback is queued during shutdown; the full verifier target is now `509` unittest cases, while interactive settings/shutdown evidence remains pending.
 
+Overlay destruction correction: `WinClickThroughOverlay.destroy()` now retains the HWND and brush after an explicit `DestroyWindow` failure for a safe retry, and releases the brush only after successful destruction. Focused native cleanup coverage verifies retry and exactly-once release; the full verifier target is now `510` unittest cases, while live overlay evidence remains pending.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.

@@ -993,6 +993,36 @@ class ImportHardeningTests(unittest.TestCase):
             overlay.destroy()
         self.assertEqual({"brush": 1, "window": 1}, calls)
 
+    def test_native_overlay_destroy_retains_handles_after_native_failure(self):
+        from focuscheck.platform_specific import windows
+
+        calls = {"brush": 0, "window": 0}
+
+        class FakeGdi:
+            def DeleteObject(self, _handle):
+                calls["brush"] += 1
+
+        class FakeUser:
+            def __init__(self):
+                self.results = [False, True]
+
+            def DestroyWindow(self, _handle):
+                calls["window"] += 1
+                return self.results.pop(0)
+
+        user32 = FakeUser()
+        overlay = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+        overlay._brush = 11
+        overlay.hwnd = 22
+        with mock.patch.object(windows, "_gdi32", return_value=FakeGdi()), mock.patch.object(
+            windows, "_user32", return_value=user32
+        ):
+            self.assertFalse(overlay.destroy())
+            self.assertEqual(22, overlay.hwnd)
+            self.assertEqual(11, overlay._brush)
+            self.assertTrue(overlay.destroy())
+        self.assertEqual({"brush": 1, "window": 2}, calls)
+
     def test_native_overlay_declares_lifecycle_signatures(self):
         import ctypes
         from ctypes import wintypes
