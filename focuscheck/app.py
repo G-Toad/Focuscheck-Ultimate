@@ -256,16 +256,19 @@ class App:
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths(filesystem=getattr(self._dependencies, "filesystem", None))
         self._startup_stage("paths_composed")
-        self._runtime_clock = self._clock_override or SystemClock()
+        clock_factory = self._dependencies.clock_factory or SystemClock
+        self._runtime_clock = self._clock_override or clock_factory()
         self._startup_stage("clock_composed")
         configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
-        self._event_ledger = StructuredEventLedger(
+        event_ledger_factory = self._dependencies.event_ledger_factory or StructuredEventLedger
+        self._event_ledger = event_ledger_factory(
             self.paths.structured_events,
             clock=self._runtime_clock,
             monotonic_clock=self._runtime_clock.monotonic,
         )
-        self.lifecycle = LifecycleCoordinator(
+        lifecycle_factory = self._dependencies.lifecycle_factory or LifecycleCoordinator
+        self.lifecycle = lifecycle_factory(
             _sink=lambda event: self._event_ledger.append("lifecycle", event)
         )
         self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
@@ -287,7 +290,8 @@ class App:
         except Exception:
             pass
         self.root.withdraw()
-        self._timers = TimerRegistry(
+        timer_registry_factory = self._dependencies.timer_registry_factory or TimerRegistry
+        self._timers = timer_registry_factory(
             self.root,
             event_sink=lambda event: self._event_ledger.append("timer", event),
         )
@@ -317,7 +321,8 @@ class App:
             get_logger().exception("legacy data migration failed", exc_info=True)
             raise
         self._startup_stage("migration_completed")
-        self._runtime_journal = RuntimeTransitionJournal(
+        journal_factory = self._dependencies.runtime_journal_factory or RuntimeTransitionJournal
+        self._runtime_journal = journal_factory(
             self.paths.runtime_state,
             clock=self._runtime_clock,
         )
@@ -327,7 +332,8 @@ class App:
             self._event_ledger.append("runtime", event)
             return journal_ok
 
-        self._runtime_state = RuntimeStateCoordinator(
+        state_factory = self._dependencies.runtime_state_factory or RuntimeStateCoordinator
+        self._runtime_state = state_factory(
             self.settings,
             persist=self._persist_settings_draft,
             clock=self._runtime_clock,

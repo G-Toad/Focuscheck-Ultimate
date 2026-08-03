@@ -24,6 +24,8 @@ Latest native self-test timer correction: the standalone `--tray-test` timeout n
 
 Latest health-snapshot correction: the status model now exposes bounded supervisor mode/generation, heartbeat age, Windows watcher, TaskDB, and activity-provider health metadata, with whitelist rendering and length-bound regression coverage.
 
+Latest composition-root correction: core runtime services now have explicit injectable factories for the clock, event ledger, lifecycle coordinator, timer registry, runtime journal, and runtime-state coordinator; the constructor failure matrix and dependency seam contract cover these boundaries without global patching. Manual Windows and release evidence remain pending.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
 Current checkpoint: the current source/evidence checkpoint is `6edcefd`; the post-push verifier records `521` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.

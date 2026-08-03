@@ -23,6 +23,12 @@ class AppDependencies:
     watcher_factory: Callable[..., Any] | None = None
     heartbeat_writer: Callable[[Any, dict[str, Any]], Any] | None = None
     camera_capture_factory: Callable[[int], Any] | None = None
+    clock_factory: Callable[[], Any] | None = None
+    event_ledger_factory: Callable[..., Any] | None = None
+    lifecycle_factory: Callable[..., Any] | None = None
+    timer_registry_factory: Callable[..., Any] | None = None
+    runtime_journal_factory: Callable[..., Any] | None = None
+    runtime_state_factory: Callable[..., Any] | None = None
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None

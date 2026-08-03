@@ -4,6 +4,8 @@ The current automated baseline is `521` tests across 19 bounded stages; the deta
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
+The latest composition-root checkpoint adds injectable factories for the core clock, event ledger, lifecycle, timer, runtime journal, and runtime-state services, with constructor failure-injection coverage across all startup checkpoints. Manual Windows and release evidence remains pending.
+
 The latest native self-test checkpoint routes the standalone `--tray-test` timeout through a named timer registry and cleans up the registry/root when watcher construction fails; broader native/manual evidence remains pending.
 
 The latest timer-ownership checkpoint routes CLI run-limit and tray-simulation scheduling through the App-owned named registry and removes direct entrypoint `root.after()` calls; interactive/manual Windows evidence remains pending.

@@ -13,6 +13,26 @@ from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    @staticmethod
+    def _reset_application_logger():
+        # App construction tests use temporary data roots, so release the
+        # process-global file handler before TemporaryDirectory cleanup.
+        import focuscheck.utils.logging_utils as logging_utils
+        import logging
+
+        logger = logging.getLogger("focuscheck")
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            try:
+                handler.close()
+            except Exception:
+                pass
+        logging_utils._logger = None
+        logging_utils._configured_log_path = None
+
+    def tearDown(self):
+        self._reset_application_logger()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -167,7 +187,9 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
-                "heartbeat_writer", "camera_capture_factory", "filesystem", "startup_stage_hook", "shutdown_stage_hook", "tk_root_factory",
+                "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
+                "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "filesystem", "startup_stage_hook",
+                "shutdown_stage_hook", "tk_root_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -323,6 +345,8 @@ class AppLifecycleTests(unittest.TestCase):
 
                     with self.assertRaisesRegex(RuntimeError, f"startup stage failed: {failed_stage}"):
                         App(dependencies=dependencies)
+
+                self._reset_application_logger()
 
                 self.assertEqual(failed_stage, observed[-1])
                 if failed_stage not in {"paths_composed", "clock_composed", "lifecycle_starting"}:
