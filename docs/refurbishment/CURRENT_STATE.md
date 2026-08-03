@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `343` unittest cases passing.
+- Current automated baseline after hardening: `342` unittest cases passing.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
 - The verifier now has `18` passing bounded stages, including test-category inventory and real-entrypoint pause/snooze restart integration.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.

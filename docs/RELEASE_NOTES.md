@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 343 unittest cases.
+- Automated test baseline: 342 unittest cases.
 - Task deadline UI and database overdue transitions now preserve `failed`/`timed_out` semantics instead of allowing overdue completion to be recorded as success.
 - Runtime pause persistence now stores manual intent separately from derived effective pause, preserving legacy snooze and manual-pause semantics across restart and expiry.
 - Verification runner: all 18 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
