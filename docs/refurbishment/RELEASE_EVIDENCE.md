@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `518` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `519` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest timer-ownership checkpoint routes CLI run-limit and tray-simulation scheduling through the App-owned named registry and removes direct entrypoint `root.after()` calls; interactive/manual Windows evidence remains pending.
 
 The latest startup-security checkpoint hardens both generated Startup-folder batch launchers and registry startup commands against path metacharacter, percent-expansion, delayed-expansion, and line-break injection, with focused hostile-path coverage. Real startup-shell and target-machine evidence remain pending.
 

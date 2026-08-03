@@ -18,9 +18,11 @@ Latest application-log correction: rendered diagnostic labels such as `returned:
 
 Latest tray-log privacy correction: `RETURNING (via ...)` and `Found in config file:` fallback diagnostics now redact arbitrary setting values, closing the remaining unstructured tray lookup path.
 
+Latest entrypoint timer correction: CLI run-limit and tray-simulation callbacks now use the App-owned named `TimerRegistry`; direct `main.py` `root.after()` scheduling has been removed and shutdown rejection is regression-tested.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `31b0292`; the post-push verifier records `518` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `84ddc4c`; the post-push verifier records `519` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
