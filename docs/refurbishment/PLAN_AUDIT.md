@@ -241,6 +241,8 @@ Audit correction: The automated test expansion is not missing property or mutati
 
 Native verification correction: The bounded Windows overlay stage now runs `20` real create/update/destroy cycles with `100/100` region updates by default, while retaining environment overrides for longer target-specific runs. This strengthens automated native stress evidence but does not replace live multi-monitor, DPI, lock, sleep, or hardware evidence.
 
+Supervisor verification correction: The stop protocol now has an explicit rejection matrix for unsupported protocol versions, missing/non-matching identity, PID, generation, process-start, malformed-time, stale, and future-skew requests, plus a valid-request case.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -262,6 +264,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `440` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `de997d1`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `441` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `58bbaae`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
