@@ -157,7 +157,7 @@ Current checkpoint addition: The latest `7aa8c96` code checkpoint also closes an
 
 Current checkpoint addition: The latest `681a85a` test checkpoint corrects and verifies the diagnostic status-window shutdown regression; the full verifier records `392` unittest cases and all 18 bounded stages passed.
 
-Current checkpoint addition: The current V1 flow checkpoint adds withdrawn-root end-to-end coverage for valid Focus and Waste detail submissions through the owning `PromptDialog`; the interactive/manual V1 rows remain explicitly pending.
+Current checkpoint addition: The latest `c11865a` V1 flow checkpoint adds withdrawn-root end-to-end coverage for valid Focus and Waste detail submissions through the owning `PromptDialog`; the full verifier records `393` unittest cases and all 18 bounded stages passed, while interactive/manual V1 rows remain explicitly pending.
 
 ## Final Acceptance Gates
 
@@ -180,6 +180,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `392` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `681a85a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `393` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `c11865a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
