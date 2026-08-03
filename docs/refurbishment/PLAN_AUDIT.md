@@ -42,9 +42,11 @@ Latest tray-composition correction: an injected tray adapter is now honored even
 
 Latest watcher-composition correction: an explicit injected watcher adapter is now honored on non-Windows hosts for deterministic composition tests, while the production default remains Windows-only. Live session/power/display watcher evidence remains manual.
 
+Latest fault-injection correction: the real 13-checkpoint constructor failure matrix now injects the App-owned `TimerRegistry` factory instead of patching the timer module global, strengthening composition and partial-cleanup evidence without changing the automated baseline.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `3913604`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `5853ec0`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
