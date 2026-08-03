@@ -402,40 +402,13 @@ class SystemTray:
         else:
             logger.info("      External setter not available")
 
-        # Try app.settings dict + app.save_settings/app._save_settings or module save_settings
-        logger.info("    - Trying app.settings dict...")
-        saved = False
-        with contextlib.suppress(Exception):
-            s = getattr(self.app, "settings", None)
-            logger.info("      app.settings: %s", type(s))
-            if isinstance(s, dict):
-                logger.info("      app.settings is a dict, setting key '%s' = %s", key, value)
-                s[key] = value
-                logger.info("      Value set in dictionary")
-                logger.info("      Searching for save_settings function...")
-
-                for m in (self.app, sys.modules.get(self.app.__class__.__module__)):
-                    logger.info("        Checking module: %s", m)
-                    fn = getattr(m, "save_settings", None)
-                    logger.info("          save_settings: %s", fn)
-                    if callable(fn):
-                        logger.info("          Found callable save_settings, attempting to call it...")
-                        try:
-                            fn(s)
-                            logger.info("          save_settings() SUCCESS")
-                            saved = True
-                            break
-                        except Exception as e:
-                            logger.exception("          save_settings() FAILED: %s", e)
-                if saved:
-                    logger.info("      Settings saved successfully via app.settings")
-                else:
-                    logger.info("      No working save_settings function found")
-
-        logger.info("    - saved flag: %s", saved)
-
+        # Persistence belongs to the App composition root. The adapter may
+        # request a fallback write, but never mutates settings or imports the
+        # settings repository itself.
+        saved = bool(self._call_app("_set_tray_setting", key, value))
+        logger.info("    - App-owned fallback result: %s", saved)
         if not saved:
-            logger.error("SystemTray: setting '%s' was not persisted; no repository accessor is available", key)
+            logger.error("SystemTray: setting '%s' was not persisted; App command unavailable or failed", key)
             logger.info("<<< _set_setting() FAILED")
             return
         logger.info("<<< _set_setting() COMPLETED")

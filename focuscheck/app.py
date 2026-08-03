@@ -376,8 +376,7 @@ class App:
                         return d
                 def _set(k, v):
                     try:
-                        self.settings[k] = v
-                        save_settings(self.settings)
+                        self._set_tray_setting(k, v)
                     except Exception:
                         pass
                 # Hooks to track pystray status
@@ -1542,6 +1541,28 @@ class App:
         if bool(self.settings.get("paused", False)):
             return self._tray_resume()
         return self._tray_pause()
+
+    def _set_tray_setting(self, key: str, value) -> bool:
+        """Persist tray fallback writes through App-owned state/repository APIs."""
+        key = str(key)
+
+        def _apply():
+            if key == "paused":
+                return self._set_paused(bool(value), source="tray_fallback")
+            if key == "snooze_until_utc":
+                state = getattr(self, "_runtime_state", None)
+                if state is not None:
+                    return state.set_snooze_until(value)
+            self.settings[key] = value
+            result = save_settings(self.settings)
+            durable = getattr(result, "durable_write", result)
+            if durable:
+                committed = getattr(result, "committed_settings", None)
+                if isinstance(committed, dict):
+                    self.settings.update(committed)
+            return bool(durable)
+
+        return bool(self._call_on_ui_thread(_apply))
 
     def _tray_pause(self):
         def _do_pause():

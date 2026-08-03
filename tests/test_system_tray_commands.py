@@ -96,6 +96,11 @@ class FakeTrayApp:
         self.calls.append("exit")
         return True
 
+    def _set_tray_setting(self, key, value):
+        self.calls.append(("set", key, value))
+        self.settings[key] = value
+        return True
+
 
 class SystemTrayCommandTests(unittest.TestCase):
     def test_command_handlers_delegate_to_fake_app_without_starting_tray(self):
@@ -170,6 +175,18 @@ class SystemTrayCommandTests(unittest.TestCase):
         self.assertEqual(["exit"], app.calls)
         self.assertTrue(tray._icon.stopped)
         exit_mock.assert_not_called()
+
+    def test_setting_fallback_delegates_to_app_without_module_persistence(self):
+        from focuscheck.system_tray import SystemTray
+
+        app = FakeTrayApp()
+        tray = SystemTray(app=app, name="FocusCheckTest")
+        with mock.patch("focuscheck.system_tray.save_settings", create=True) as save_mock:
+            tray._external_set = None
+            tray._set_setting("custom_setting", True)
+
+        self.assertIn(("set", "custom_setting", True), app.calls)
+        save_mock.assert_not_called()
 
 
 if __name__ == "__main__":
