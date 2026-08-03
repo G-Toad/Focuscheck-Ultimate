@@ -14,6 +14,7 @@ _MAX_PROCESS_LENGTH = 512
 _MAX_APP_LENGTH = 256
 _MAX_SOURCE_LENGTH = 128
 _MAX_URL_LENGTH = 4096
+_PROVIDER_CALL_LOCK = threading.Lock()
 
 
 def _utc_now(clock=None) -> datetime:
@@ -136,6 +137,12 @@ def safe_activity_snapshot(
     clock=None,
 ) -> ActivitySnapshot:
     """Run an external activity provider without blocking the Tk owner thread."""
+    now = _utc_now(clock)
+    # A timed-out provider thread cannot be forcefully cancelled. Keep one
+    # in-flight call at most so repeated polling cannot accumulate stuck
+    # daemon workers and consume unbounded resources.
+    if not _PROVIDER_CALL_LOCK.acquire(blocking=False):
+        return ActivitySnapshot(captured_utc=now.isoformat(), errors=("provider busy",))
     result: dict[str, Any] = {}
 
     def invoke() -> None:
@@ -143,11 +150,12 @@ def safe_activity_snapshot(
             result["value"] = provider()
         except Exception as exc:
             result["error"] = exc
+        finally:
+            _PROVIDER_CALL_LOCK.release()
 
     worker = threading.Thread(target=invoke, name="focuscheck-activity-provider", daemon=True)
     worker.start()
     worker.join(max(0.0, float(timeout_seconds)))
-    now = _utc_now(clock)
     if worker.is_alive():
         return ActivitySnapshot(captured_utc=now.isoformat(), errors=("provider timeout",))
     if "error" in result:
