@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest guard-lifecycle evidence: source checkpoint `0f12197` forwards effective guard activation and clearing to the monitoring engine, with regression coverage for both transitions. The full verifier passed all 19 stages with 551 tests; release status remains partial because manual Windows and packaging gates are not run.
+
 Latest engine-state evidence: source checkpoint `0648136` adds the pause-transition hook to the monitoring interface and proves V2 website polling is cancelled while effectively paused and resumed after eligibility returns. The full verifier passed all 19 stages with 550 tests; release status remains partial because manual Windows and packaging gates are not run.
 
 Latest timer-registry evidence: source checkpoint `c4b73a3` removes phantom timer ownership after one-shot or recurring Tk scheduler failure. The full verifier passed all 19 stages with 548 tests; release status remains partial because manual Windows and packaging gates are not run.
