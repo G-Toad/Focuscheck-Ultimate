@@ -48,9 +48,11 @@ Latest fault-injection extension: the same constructor matrix now injects tray a
 
 Latest lifecycle cleanup correction: partial construction cleanup no longer assumes an injected lifecycle adapter exposes `phase`, `begin_shutdown`, or `mark_stopped`; capability checks preserve the original startup error and continue owned-resource cleanup. Minimal-adapter regression coverage passes.
 
+Latest TaskDB concurrency correction: pre-migration safety backups now reserve final names atomically and use unique temporary paths, preventing concurrent first opens from colliding on Windows while schema migration retains its writer lock. The concurrency regression passed 20 consecutive runs and the full verifier passed.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `c4b59dc`; the post-push verifier records `528` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `b9793e4`; the post-push verifier records `529` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
