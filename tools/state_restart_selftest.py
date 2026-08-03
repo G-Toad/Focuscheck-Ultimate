@@ -77,7 +77,9 @@ def main() -> int:
                 _save(root, paused=True, snooze_until_utc="2000-01-01T00:00:00+00:00")
                 _run_entrypoint(root, "expired snooze restart")
                 expired_after_restart = _load(root)
-                assert expired_after_restart["paused"] is True
+                # An expired legacy snooze is not durable manual intent.
+                assert expired_after_restart["paused"] is False
+                assert expired_after_restart["manual_paused"] is False
                 assert expired_after_restart["snooze_until_utc"] == ""
                 assert (root / "runtime_state.jsonl").exists()
                 print("state restart pause/snooze integration passed")
