@@ -122,6 +122,19 @@ This demonstrates graceful no-data behavior for unavailable browser metadata.
 It does not prove URL extraction, exact/subdomain matching, cooldown/severity
 behavior, or the supported-browser intervention matrix.
 
+Latest disposable live CDP success probe on 2026-08-03:
+
+- A headless Chrome instance with a unique temporary profile exposed CDP only
+  on late candidate port `9229`.
+- The real provider discovered the page target, returned the bounded title
+  `FocusCheck CDP Probe`, returned its data URL, and listed the tab title.
+- The Chrome process tree and temporary profile were removed after the probe;
+  no user browser profile was used.
+
+This proves bounded CDP discovery and title/URL extraction for a disposable
+Chromium target. It does not prove real user-browser coverage, Firefox/UIA
+extraction, or the website-flag intervention matrix.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
