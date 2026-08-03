@@ -1,10 +1,12 @@
 # Release Evidence
 
-The current automated baseline is `521` tests across 19 bounded stages at source checkpoint `a89985a`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `522` tests across 19 bounded stages at source checkpoint `df2713a`; the detailed older bullets are retained as historical baseline context.
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
 The latest composition-root checkpoint adds injectable factories for the core clock, event ledger, lifecycle, timer, runtime journal, and runtime-state services, with constructor failure-injection coverage across all startup checkpoints. Manual Windows and release evidence remains pending.
+
+The latest composition-root extension adds injectable PauseGuard and PromptCoordinator factories, including coordinator recovery-path coverage, while preserving standalone fixture defaults. Full composition extraction and manual Windows/release evidence remain pending.
 
 The latest native self-test checkpoint routes the standalone `--tray-test` timeout through a named timer registry and cleans up the registry/root when watcher construction fails; broader native/manual evidence remains pending.
 
