@@ -193,6 +193,8 @@ Current checkpoint addition: The latest `e4157b4` checkpoint removes four orphan
 
 Current checkpoint addition: The current `c8c8f2d` tree was rebuilt with PyInstaller `6.16.0`; promotion, manifest validation, frozen child self-test, and packaged supervisor READY/stop-acknowledgement/reaping self-test passed. Signing, installer shell, production-duration, and target-machine evidence remain open.
 
+Current checkpoint addition: The latest `74566bd` activity-provider slice changes CDP target-cache expiry to monotonic elapsed time and adds regression coverage for cache reuse; the full verifier records `406` unittest cases and all 18 bounded stages passed. Live supported-browser and sleep/resume freshness evidence remains manual_pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -214,6 +216,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `405` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `e4157b4`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `406` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `74566bd`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
