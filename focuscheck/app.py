@@ -247,7 +247,11 @@ class App:
         self.paths = get_app_paths()
         configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
-        self._event_ledger = StructuredEventLedger(self.paths.structured_events)
+        self._event_ledger = StructuredEventLedger(
+            self.paths.structured_events,
+            clock=self._runtime_clock,
+            monotonic_clock=self._runtime_clock.monotonic,
+        )
         self.lifecycle = LifecycleCoordinator(
             _sink=lambda event: self._event_ledger.append("lifecycle", event)
         )

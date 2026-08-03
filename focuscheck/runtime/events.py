@@ -43,15 +43,28 @@ class StructuredEventLedger:
         max_events_per_window: int = 600,
         window_seconds: float = 60.0,
         monotonic_clock=None,
+        clock=None,
     ) -> None:
         self.path = Path(path)
         self.max_bytes = max(4096, int(max_bytes))
         self.max_events_per_window = max(1, int(max_events_per_window))
         self.window_seconds = max(0.1, float(window_seconds))
         self._monotonic_clock = monotonic_clock or time.monotonic
+        self._clock = clock
         self._event_times = deque()
         self._dropped_events = 0
         self._lock = threading.Lock()
+
+    def _now_utc(self) -> datetime:
+        try:
+            value = self._clock() if callable(self._clock) else self._clock.now_utc()
+            if isinstance(value, datetime):
+                if value.tzinfo is None:
+                    value = value.replace(tzinfo=timezone.utc)
+                return value.astimezone(timezone.utc)
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            pass
+        return datetime.now(timezone.utc)
 
     @property
     def dropped_events(self) -> int:
@@ -71,7 +84,7 @@ class StructuredEventLedger:
         return True
 
     def append(self, category: str, event: dict[str, Any] | None = None, **fields: Any) -> None:
-        payload: dict[str, Any] = {"utc": datetime.now(timezone.utc).isoformat(), "category": str(category)[:80]}
+        payload: dict[str, Any] = {"utc": self._now_utc().isoformat(), "category": str(category)[:80]}
         merged = dict(event or {})
         merged.update(fields)
         for key, value in merged.items():

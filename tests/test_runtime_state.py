@@ -285,3 +285,20 @@ class StructuredEventLedgerTests(unittest.TestCase):
             now[0] = 11.0
             ledger.append("test", {"event": "after_window"})
             self.assertEqual(3, len(path.read_text(encoding="utf-8").splitlines()))
+
+    def test_event_ledger_uses_injected_wall_clock_for_timestamps(self):
+        import tempfile
+        from pathlib import Path
+
+        clock = FakeClock(datetime(2030, 1, 1, 12, 34, tzinfo=timezone.utc))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "structured_events.jsonl"
+            ledger = StructuredEventLedger(
+                path,
+                clock=clock,
+                monotonic_clock=clock.monotonic,
+            )
+            ledger.append("test", {"event": "clocked"})
+            payload = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(clock.now_utc().isoformat(), payload["utc"])
