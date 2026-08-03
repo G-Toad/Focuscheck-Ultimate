@@ -1786,7 +1786,10 @@ class App:
             if key == "snooze_until_utc":
                 state = getattr(self, "_runtime_state", None)
                 if state is not None:
-                    return state.set_snooze_until(value)
+                    changed = state.set_snooze_until(value)
+                    if changed:
+                        self._notify_engine_pause_state(source="tray_snooze_setting")
+                    return changed
             self.settings[key] = value
             result = self._persist_settings_draft(self.settings)
             durable = getattr(result, "durable_write", result)
