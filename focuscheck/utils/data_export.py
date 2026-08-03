@@ -89,10 +89,15 @@ def _files_for_categories(root: Path, categories: set[str]) -> list[tuple[Path, 
 def export_data(source_root, destination, *, categories=("logs", "metadata"), overwrite=False) -> dict:
     """Create an atomic ZIP export; sensitive categories are never implicit."""
     root = _data_root(source_root)
-    output = Path(destination).resolve()
+    output = Path(destination)
+    if not output.is_absolute():
+        output = Path.cwd() / output
+    output = output.absolute()
     selected = _selected_categories(categories)
     if not root.is_dir():
         raise NotADirectoryError(root)
+    if output.is_symlink():
+        raise ValueError("export destination collides with an input or is a symlink")
     if output.exists() and not overwrite:
         raise FileExistsError(output)
     output.parent.mkdir(parents=True, exist_ok=True)
