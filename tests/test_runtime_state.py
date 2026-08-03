@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from itertools import product
 from datetime import datetime, timezone, timedelta
 
 from focuscheck.runtime.state import RuntimeStateCoordinator
@@ -95,6 +96,39 @@ class RuntimeStateTests(unittest.TestCase):
         clock.advance(10)
         self.assertFalse(state.is_effectively_paused())
         self.assertTrue(state.can_start_prompt())
+
+    def test_prompt_eligibility_exhaustive_runtime_truth_table(self):
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        for manual, snoozed, guarded, prompt_active, intervention_active, shutting_down in product(
+            (False, True), repeat=6
+        ):
+            state = RuntimeStateCoordinator(
+                {"paused": manual, "snooze_until_utc": ""}, clock=clock
+            )
+            state.snapshot.manual_paused = manual
+            state.snapshot.snooze_until_utc = (
+                (clock.now_utc() + timedelta(minutes=5)).isoformat() if snoozed else ""
+            )
+            state.snapshot.guard_reasons = {"lock"} if guarded else set()
+            state.snapshot.prompt_active = prompt_active
+            state.snapshot.intervention_active = intervention_active
+            state.snapshot.shutdown_requested = shutting_down
+
+            effectively_paused = manual or snoozed or guarded
+            expected_eligible = not (
+                effectively_paused
+                or prompt_active
+                or intervention_active
+                or shutting_down
+            )
+            self.assertEqual(effectively_paused, state.is_effectively_paused())
+            self.assertEqual(expected_eligible, state.can_start_prompt())
+
+            if expected_eligible:
+                self.assertTrue(state.begin_prompt())
+                state.end_prompt()
+            else:
+                self.assertFalse(state.begin_prompt())
 
 
 class LifecycleCoordinatorTests(unittest.TestCase):
