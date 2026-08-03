@@ -197,6 +197,30 @@ class PackagingContractTests(unittest.TestCase):
             self.assertEqual("old", (install / "FocusCheck.exe").read_text(encoding="ascii"))
             self.assertEqual(1, len(list(temp.glob(".FocusCheck.failed.*"))))
 
+    def test_rollback_rejects_unrelated_backup_without_moving_install(self):
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if not powershell:
+            self.skipTest("PowerShell is required for rollback verification")
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            install = temp / "install"
+            unrelated = temp / "unrelated"
+            install.mkdir()
+            unrelated.mkdir()
+            (install / "FocusCheck.exe").write_text("current", encoding="ascii")
+            (unrelated / "FocusCheck.exe").write_text("unrelated", encoding="ascii")
+
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                 str(root / "tools/rollback_package.ps1"), "-InstallDir", str(install),
+                 "-BackupDir", str(unrelated)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("generated backup", result.stdout.lower() + result.stderr.lower())
+            self.assertEqual("current", (install / "FocusCheck.exe").read_text(encoding="ascii"))
+
     def test_disposable_install_upgrade_uninstall_transaction(self):
         powershell = shutil.which("powershell") or shutil.which("pwsh")
         if not powershell:
