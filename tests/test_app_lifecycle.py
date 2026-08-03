@@ -263,6 +263,17 @@ class AppLifecycleTests(unittest.TestCase):
         with mock.patch("focuscheck.app.SystemTray", None):
             self.assertIs(tray_factory, app._tray_factory())
 
+    def test_injected_watcher_factory_is_available_off_windows(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        watcher_factory = mock.Mock()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(watcher_factory=watcher_factory)
+
+        with mock.patch("focuscheck.app.platform.system", return_value="Linux"):
+            self.assertIs(watcher_factory, app._watcher_factory())
+
     def test_app_paths_factory_is_used_before_startup_side_effects(self):
         from focuscheck.app import App
         from focuscheck.runtime.dependencies import AppDependencies

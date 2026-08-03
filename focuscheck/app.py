@@ -505,11 +505,11 @@ class App:
 
         # Windows: listen for power/session/display and enable native tray only if pystray failed.
         self._winwatch = None
-        if platform.system().lower() == "windows":
+        watcher_factory = self._watcher_factory()
+        if watcher_factory is not None:
             try:
                 # Only enable native tray if pystray didn't start successfully
                 enable_native_tray = not self._pystray_started
-                watcher_factory = self._dependencies.watcher_factory or WindowsWakeWatcher
                 self._winwatch = watcher_factory(
                     self.root,
                     on_resume_callable=self._on_resume_event,
@@ -541,6 +541,15 @@ class App:
     def _tray_factory(self):
         """Prefer an injected adapter even when optional tray imports are absent."""
         return getattr(getattr(self, "_dependencies", None), "tray_factory", None) or SystemTray
+
+    def _watcher_factory(self):
+        """Use explicit watcher injection on any host; default only on Windows."""
+        injected = getattr(getattr(self, "_dependencies", None), "watcher_factory", None)
+        if injected is not None:
+            return injected
+        if platform.system().lower() == "windows":
+            return WindowsWakeWatcher
+        return None
 
     def _startup_stage(self, name):
         """Expose deterministic startup checkpoints without changing defaults."""
