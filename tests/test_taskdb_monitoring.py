@@ -609,6 +609,22 @@ class EngineV2MatchingTests(unittest.TestCase):
 
         self.assertFalse(engine._should_check_subpopup())
 
+    def test_standalone_subpopup_suppresses_app_shutdown(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        app = type("App", (), {})()
+        app.settings = {"paused": False, "pause_when_inactive_or_lid_closed": False}
+        app._current_prompt = None
+        app._intervention_active = False
+        app._shutdown_requested = True
+
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = app
+        engine._settings = app.settings
+        engine._subpopup_active = False
+
+        self.assertFalse(engine._should_check_subpopup())
+
     def test_domain_matching_exact_subdomain_and_disabled_flags(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 

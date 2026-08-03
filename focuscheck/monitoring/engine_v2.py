@@ -155,6 +155,8 @@ class EngineV2(BaseEngine):
             return False
         if bool(getattr(self.app, "_intervention_active", False)):
             return False
+        if getattr(self.app, "_shutdown_requested", False) is True:
+            return False
         settings = self._settings or getattr(self.app, "settings", {})
         runtime_state = getattr(self.app, "_runtime_state", None)
         if runtime_state is not None:
