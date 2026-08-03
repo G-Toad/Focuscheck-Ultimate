@@ -2475,6 +2475,11 @@ class App:
             state = getattr(self, "_runtime_state", None)
             if state is not None:
                 state.refresh_from_settings(loaded)
+            # Tray reloads can change the monitoring mode or V2 website flags.
+            # Reconfigure an already-running engine without creating one during
+            # startup-only reads.
+            if getattr(self, "_engine", None) is not None:
+                self._ensure_engine()
             return True
         except Exception:
             try:

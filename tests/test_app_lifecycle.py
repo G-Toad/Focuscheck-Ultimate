@@ -1402,6 +1402,21 @@ class AppLifecycleTests(unittest.TestCase):
         app._dependencies.settings_loader.assert_called_once_with()
         app._runtime_state.refresh_from_settings.assert_called_once_with(loaded)
 
+    def test_reload_settings_snapshot_reconfigures_running_engine(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        app = App.__new__(App)
+        app.settings = {"monitoring_mode": "v1"}
+        app._runtime_state = mock.Mock()
+        app._engine = mock.Mock()
+        app._ensure_engine = mock.Mock()
+        loaded = {"monitoring_mode": "v2", "website_flags": [{"domain": "example.com"}]}
+        app._dependencies = AppDependencies(settings_loader=mock.Mock(return_value=loaded))
+
+        self.assertTrue(App._reload_settings_snapshot(app))
+        app._ensure_engine.assert_called_once_with()
+
     def test_reload_settings_snapshot_preserves_current_state_on_loader_failure(self):
         from focuscheck.app import App
 
