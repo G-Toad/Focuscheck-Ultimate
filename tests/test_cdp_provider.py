@@ -65,3 +65,15 @@ class CdpProviderTests(unittest.TestCase):
             titles = cdp_browser.list_tab_titles()
 
         self.assertEqual(["A" * cdp_browser._MAX_TITLE_LENGTH, "B"], titles)
+
+    def test_target_cache_uses_monotonic_age(self):
+        from focuscheck.platform_specific import cdp_browser
+
+        with mock.patch.object(cdp_browser, "_discover_targets", return_value=[{"title": "cached"}]) as discover, \
+                mock.patch.object(cdp_browser.time, "monotonic", side_effect=[100.0, 100.5]):
+            cdp_browser._CACHE["timestamp"] = 0.0
+            cdp_browser._CACHE["targets"] = []
+            self.assertEqual([{"title": "cached"}], cdp_browser.get_cdp_targets(max_age=2.0))
+            self.assertEqual([{"title": "cached"}], cdp_browser.get_cdp_targets(max_age=2.0))
+
+        discover.assert_called_once_with(timeout=1.0)

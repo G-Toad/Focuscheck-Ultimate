@@ -60,7 +60,9 @@ def _discover_targets(timeout=1.0):
 
 
 def get_cdp_targets(max_age=2.0, timeout=1.0):
-    now = time.time()
+    # Cache expiry must not depend on wall-clock adjustments while the app
+    # is running (sleep/resume and time synchronization can move it backward).
+    now = time.monotonic()
     if now - _CACHE["timestamp"] > max_age:
         _CACHE["targets"] = _discover_targets(timeout=timeout)
         _CACHE["timestamp"] = now
