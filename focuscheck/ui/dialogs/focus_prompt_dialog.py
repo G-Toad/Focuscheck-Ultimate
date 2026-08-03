@@ -24,7 +24,7 @@ class FocusPromptDialog(tk.Toplevel):
     Requires at least one field by default, with an option to require every prompt.
     """
 
-    def __init__(self, master, ask_doing=True, ask_benefits=True, on_submit=None, on_cancel=None, auto_focus=True, require_all_fields=False, settings=None):
+    def __init__(self, master, ask_doing=True, ask_benefits=True, on_submit=None, on_cancel=None, auto_focus=True, require_all_fields=False, settings=None, monotonic_clock=None):
         super().__init__(master)
         self.title("Before you continue")
         self.configure(bg="#111")
@@ -37,7 +37,8 @@ class FocusPromptDialog(tk.Toplevel):
         self.require_all_fields = bool(require_all_fields)
         self._focus_order = []
         self._field_controls = []
-        self._dialog_shown_at = time.time()
+        self._monotonic_clock = monotonic_clock if callable(monotonic_clock) else time.monotonic
+        self._dialog_shown_at = self._monotonic_clock()
 
         # Initialize spam detector with settings
         self.settings = settings or {}
@@ -229,7 +230,7 @@ class FocusPromptDialog(tk.Toplevel):
 
                 # Spam detection for each field
                 if self.spam_detector:
-                    time_elapsed = time.time() - self._dialog_shown_at
+                    time_elapsed = self._monotonic_clock() - self._dialog_shown_at
                     is_valid, error_msg = self.spam_detector.is_valid_response(value, time_elapsed)
                     if not is_valid:
                         get_logger().warning("spam_check: rejected | reason=%s", error_msg)

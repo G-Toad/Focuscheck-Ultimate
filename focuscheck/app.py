@@ -1746,6 +1746,7 @@ class App:
                         settings=self.settings,
                         on_submit=_on_submit,
                         on_cancel=_on_cancel,
+                        monotonic_clock=self._monotonic,
                     )
                     self._snooze_confirm_dialog = dlg
                 except Exception:

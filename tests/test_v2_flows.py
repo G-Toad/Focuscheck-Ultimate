@@ -68,6 +68,19 @@ class V2FlowTests(unittest.TestCase):
 
         prompt._trigger_studying_choice.assert_called_once_with()
 
+    def test_child_response_dialogs_accept_injected_monotonic_clock(self):
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+        from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+        from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        for dialog_type in (FocusPromptDialog, WastePromptDialog, SnoozePromptDialog):
+            dialog = dialog_type.__new__(dialog_type)
+            dialog._monotonic_clock = clock.monotonic
+            dialog._dialog_shown_at = dialog._monotonic_clock()
+            clock.advance(1.25)
+            self.assertEqual(1.25, dialog._monotonic_clock() - dialog._dialog_shown_at)
+
     def _dialog(self, answer="doing work", decision="yes"):
         from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
 

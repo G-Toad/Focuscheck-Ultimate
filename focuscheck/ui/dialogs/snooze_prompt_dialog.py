@@ -37,7 +37,7 @@ except ImportError:
 class SnoozePromptDialog(tk.Toplevel):
     """Single snooze confirmation dialog with two required inputs."""
 
-    def __init__(self, master, settings, on_submit=None, on_cancel=None):
+    def __init__(self, master, settings, on_submit=None, on_cancel=None, monotonic_clock=None):
         super().__init__(master)
         self.title("Confirm Snooze")
         self.configure(bg="#111")
@@ -54,7 +54,8 @@ class SnoozePromptDialog(tk.Toplevel):
             self._logger = None
 
         # Track timing
-        self._dialog_shown_at = time.time()
+        self._monotonic_clock = monotonic_clock if callable(monotonic_clock) else time.monotonic
+        self._dialog_shown_at = self._monotonic_clock()
         self._focus_order = []
         self._prevent_paste = bool(self.settings.get("snooze_exact_prevent_paste", True))
         self._case_sensitive = bool(self.settings.get("snooze_sentence_case_sensitive", True))
@@ -209,7 +210,7 @@ class SnoozePromptDialog(tk.Toplevel):
             # Typing event tracking for heuristics
             def _on_focus_in(_e=None):
                 if self._exact_started_at is None:
-                    self._exact_started_at = time.time()
+                    self._exact_started_at = self._monotonic_clock()
                 self._typed_had_focus = True
             def _on_keypress(e=None):
                 # Count only real key presses
@@ -426,7 +427,7 @@ class SnoozePromptDialog(tk.Toplevel):
                 pass
             return False
         if self.spam_detector and self.settings.get("snooze_prompt_validation_enabled", True):
-            elapsed = time.time() - self._dialog_shown_at
+            elapsed = self._monotonic_clock() - self._dialog_shown_at
             ok, msg = self.spam_detector.is_valid_response(reason, elapsed)
             if not ok:
                 self._log(f"validate_reason: spam detector rejection -> {privacy_summary(msg)}")
@@ -479,7 +480,7 @@ class SnoozePromptDialog(tk.Toplevel):
 
             # Heuristic checks: time, keypresses, jump size, focus
             try:
-                elapsed = (time.time() - (self._exact_started_at or self._dialog_shown_at))
+                elapsed = (self._monotonic_clock() - (self._exact_started_at or self._dialog_shown_at))
             except Exception:
                 elapsed = 0.0
             # thresholds (hidden settings with sensible defaults)

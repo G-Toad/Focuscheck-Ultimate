@@ -148,6 +148,7 @@ class AntiHabitMixin:
             auto_focus=self._modal_auto_focus_enabled(),
             require_all_fields=bool(self.settings.get("prompt_require_all_fields", False)),
             settings=self.settings,
+            monotonic_clock=getattr(self, "_monotonic_now", None),
         )
 
     def _waste_hold_start(self, _evt):
@@ -267,6 +268,7 @@ class AntiHabitMixin:
             auto_focus=self._modal_auto_focus_enabled(),
             require_all_fields=bool(self.settings.get("prompt_require_all_fields", False)),
             settings=self.settings,
+            monotonic_clock=getattr(self, "_monotonic_now", None),
         )
 
     def _show_acronym_challenge(self, button_type):
