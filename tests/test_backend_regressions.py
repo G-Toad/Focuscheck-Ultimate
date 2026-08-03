@@ -800,6 +800,29 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HICON], user32.DestroyIcon.argtypes)
         self.assertEqual([wintypes.HINSTANCE, ctypes.c_void_p], user32.LoadIconW.argtypes)
 
+    def test_prompt_windows_integration_declares_focus_and_style_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import windows_integration
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "GetWindowLongW", "SetWindowLongW", "SetWindowPos", "FlashWindowEx",
+                "GetForegroundWindow", "GetWindowThreadProcessId", "AttachThreadInput",
+                "ShowWindow", "SetForegroundWindow",
+            )
+        })()
+        kernel32 = type("Kernel32", (), {"GetCurrentThreadId": Api()})()
+        windows_integration._configure_windows_integration_api(user32, kernel32)
+        self.assertEqual([wintypes.HWND, ctypes.c_int], user32.GetWindowLongW.argtypes)
+        self.assertEqual([wintypes.DWORD, wintypes.DWORD, wintypes.BOOL], user32.AttachThreadInput.argtypes)
+        self.assertEqual([], kernel32.GetCurrentThreadId.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

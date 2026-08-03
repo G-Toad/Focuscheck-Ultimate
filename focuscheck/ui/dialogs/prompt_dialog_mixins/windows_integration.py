@@ -17,6 +17,34 @@ except ImportError:
         return logging.getLogger(__name__)
 
 
+def _configure_windows_integration_api(user32, kernel32=None):
+    """Declare signatures for prompt window style, focus, and flash calls."""
+    user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.GetWindowLongW.restype = ctypes.c_long
+    user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_long]
+    user32.SetWindowLongW.restype = ctypes.c_long
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+        ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    user32.FlashWindowEx.argtypes = [ctypes.c_void_p]
+    user32.FlashWindowEx.restype = wintypes.BOOL
+    user32.GetForegroundWindow.argtypes = []
+    user32.GetForegroundWindow.restype = wintypes.HWND
+    user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wintypes.DWORD
+    user32.AttachThreadInput.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.BOOL]
+    user32.AttachThreadInput.restype = wintypes.BOOL
+    user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.ShowWindow.restype = wintypes.BOOL
+    user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+    user32.SetForegroundWindow.restype = wintypes.BOOL
+    if kernel32 is not None:
+        kernel32.GetCurrentThreadId.argtypes = []
+        kernel32.GetCurrentThreadId.restype = wintypes.DWORD
+
+
 class WindowsIntegrationMixin:
     """Mixin for Windows-specific functionality in PromptDialog."""
 
@@ -30,18 +58,20 @@ class WindowsIntegrationMixin:
         if platform.system().lower() != "windows":
             return
         hwnd = self.winfo_id()
+        user32 = ctypes.windll.user32
+        _configure_windows_integration_api(user32)
         GWL_STYLE = -16
         WS_MINIMIZEBOX = 0x00020000
-        style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_STYLE)
+        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
         if style:
             style &= ~WS_MINIMIZEBOX
-            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_STYLE, style)
+            user32.SetWindowLongW(hwnd, GWL_STYLE, style)
             SWP_NOSIZE = 0x0001
             SWP_NOMOVE = 0x0002
             SWP_NOZORDER = 0x0004
             SWP_FRAMECHANGED = 0x0020
-            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
-                                              SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED)
+            user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+                                SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED)
 
     def _flash_taskbar_begin(self):
         """
@@ -51,6 +81,8 @@ class WindowsIntegrationMixin:
         """
         if platform.system().lower() != "windows":
             return
+        user32 = ctypes.windll.user32
+        _configure_windows_integration_api(user32)
         hwnd = wintypes.HWND(self.winfo_id())
         class FLASHWINFO(ctypes.Structure):
             _fields_ = [
@@ -63,7 +95,7 @@ class WindowsIntegrationMixin:
         FLASHW_ALL = 0x0003
         FLASHW_TIMERNOFG = 0x000C
         info = FLASHWINFO(ctypes.sizeof(FLASHWINFO), hwnd, FLASHW_ALL | FLASHW_TIMERNOFG, 0, 0)
-        ctypes.windll.user32.FlashWindowEx(ctypes.byref(info))
+        user32.FlashWindowEx(ctypes.byref(info))
 
     def _flash_taskbar_stop(self):
         """
@@ -73,6 +105,8 @@ class WindowsIntegrationMixin:
         """
         if platform.system().lower() != "windows":
             return
+        user32 = ctypes.windll.user32
+        _configure_windows_integration_api(user32)
         hwnd = wintypes.HWND(self.winfo_id())
         class FLASHWINFO(ctypes.Structure):
             _fields_ = [
@@ -84,7 +118,7 @@ class WindowsIntegrationMixin:
             ]
         FLASHW_STOP = 0x0000
         info = FLASHWINFO(ctypes.sizeof(FLASHWINFO), hwnd, FLASHW_STOP, 0, 0)
-        ctypes.windll.user32.FlashWindowEx(ctypes.byref(info))
+        user32.FlashWindowEx(ctypes.byref(info))
 
     def _modal_auto_focus_enabled(self):
         """
@@ -118,6 +152,7 @@ class WindowsIntegrationMixin:
             hwnd = self.winfo_id()
             user32 = ctypes.windll.user32
             kernel32 = ctypes.windll.kernel32
+            _configure_windows_integration_api(user32, kernel32)
 
             # Fast, single-use thread attach to allow SetForegroundWindow
             fg_thread = None
