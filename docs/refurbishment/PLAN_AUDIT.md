@@ -231,7 +231,7 @@ Current checkpoint addition: The latest App-control slice propagates non-durable
 
 Current checkpoint addition: The latest migration-lifecycle slice fails startup before READY when legacy data migration or migration-journal outcomes are fatal, while preserving safe symlink rejection and conflict events. The focused backend/lifecycle suite records `91` passing tests with environment-dependent symlink cases skipped; the full verifier records `432` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
-Current checkpoint addition: The latest V2 activity slice suppresses standalone website checks during active fallback snooze and permits them after expiry, with explicit clock-driven coverage. The focused V2 suite records `11` passing tests; full verification remains pending for this slice.
+Current checkpoint addition: The latest V2 activity slice suppresses standalone website checks during active fallback snooze and permits them after expiry, with explicit clock-driven coverage. The focused V2 suite records `11` passing tests; the full verifier records `433` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
 ## Final Acceptance Gates
 
@@ -254,6 +254,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `432` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `cdb90e7`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `433` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `1d4906f`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
