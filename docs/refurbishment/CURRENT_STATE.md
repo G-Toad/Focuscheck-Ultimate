@@ -12,6 +12,7 @@
 - Compile/self-tests: passing.
 - Isolated native overlay self-test: passing with explicit native signatures, repeated `3/3` create/update/destroy cycles, and virtual-screen region updates.
 - Safe QA runner: passing with `qa_failures=0`; verification asserts the live profile is unchanged.
+- Full QA harness run with Tk scenarios enabled also passed with `qa_failures=0`; human-observed Windows evidence remains separate and unrun.
 - Release decision: `NOT_READY`.
 - Manual blocker: live Tk/tray, Windows supervisor/startup, browser/window APIs, native lock/sleep/resume, overlays, and packaging require target Windows evidence.
 - Supervisor stop requests now have an atomic generation-bound acknowledgement; cancellation-aware restart waits avoid delaying explicit supervisor shutdown.

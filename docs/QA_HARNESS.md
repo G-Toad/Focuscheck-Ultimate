@@ -36,3 +36,7 @@ Do not use the normal app launch for systematic QA unless a manual smoke step ex
 - `csv_logger.*`
 - `monitoring.*`
 - `gui.*`
+
+Latest full harness run on 2026-08-03 completed with `qa_failures=0`, including
+the withdrawn-root Tk dialog scenarios. This is automated GUI evidence only and
+does not populate the manual Windows evidence matrix.

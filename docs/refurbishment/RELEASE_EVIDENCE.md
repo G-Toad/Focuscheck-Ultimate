@@ -11,6 +11,7 @@ The current automated baseline is `315` tests; the detailed older bullets are re
 - Runtime transition journal is App-wired and covered by metadata-only transition tests.
 - Prompt acquisition is coordinator-denied during effective pause/snooze, with regression coverage.
 - Compileall, application self-test, tray self-test, QA scenario runner, and settings inventory pass.
+- The full QA harness, including withdrawn-root Tk scenarios, most recently passed with `qa_failures=0`; this remains automated evidence and does not satisfy the manual Windows matrix.
 - Isolated native overlay self-test passes explicit region signatures and repeated bounded `3/3` create/update/destroy cycles without live-profile logging contention.
 - Core-service performance soak passes its timer, state, SQLite growth, memory, and elapsed-time budgets.
 - Release decision: `NOT_READY`.
