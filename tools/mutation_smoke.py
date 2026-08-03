@@ -63,8 +63,8 @@ from focuscheck.settings.migrations import migrate_settings
     Mutation(
         "task_completion_requires_active_transition",
         "focuscheck/database/task_db.py",
-        "WHERE id=? AND status='active'",
-        "WHERE id=? AND status='completed'",
+        "UPDATE tasks SET status='completed', completed_utc=? WHERE id=? AND status='active'",
+        "UPDATE tasks SET status='completed', completed_utc=? WHERE id=? AND status='completed'",
         """
 import tempfile
 from pathlib import Path
