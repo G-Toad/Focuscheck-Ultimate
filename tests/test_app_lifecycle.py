@@ -454,6 +454,19 @@ class AppLifecycleTests(unittest.TestCase):
         engine.shutdown.assert_called_once_with()
         self.assertIsNone(app._engine)
 
+    def test_operational_event_recording_is_failure_isolated(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._event_ledger = mock.Mock()
+        App._record_operational_event(app, "prompt", event="opened", outcome="started")
+        app._event_ledger.append.assert_called_once_with(
+            "prompt", {"event": "opened", "outcome": "started"}
+        )
+
+        app._event_ledger.append.side_effect = RuntimeError("ledger unavailable")
+        App._record_operational_event(app, "prompt", event="closed", outcome="failed")
+
     def test_mainloop_failure_runs_full_cleanup_without_supervisor_stop(self):
         from focuscheck.app import App
         from focuscheck.runtime.lifecycle import LifecycleCoordinator, LifecyclePhase

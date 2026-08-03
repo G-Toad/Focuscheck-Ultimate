@@ -662,6 +662,18 @@ class App:
                 pass
         return datetime.now(timezone.utc)
 
+    def _record_operational_event(self, category: str, **fields) -> None:
+        """Persist bounded lifecycle metadata without affecting application flow."""
+        ledger = getattr(self, "_event_ledger", None)
+        append = getattr(ledger, "append", None)
+        if not callable(append):
+            return
+        try:
+            append(category, fields)
+        except Exception:
+            # Diagnostics must never turn a lifecycle operation into a failure.
+            pass
+
     def _monotonic(self):
         """Return the App-owned monotonic clock with legacy fallback."""
         runtime_clock = getattr(self, "_runtime_clock", None)
@@ -953,6 +965,7 @@ class App:
                 runtime_state.end_prompt()
             self._schedule_next(1500)
             return
+        self._record_operational_event("prompt", event="opened", outcome="started")
         try:
             dlg.update_idletasks()
             dlg.deiconify()
@@ -1098,6 +1111,7 @@ class App:
             coordinator = PromptCoordinator()
             self._prompt_coordinator = coordinator
         coordinator.complete(prompt)
+        self._record_operational_event("prompt", event="completed", outcome="completed")
         self._current_prompt = None
         state = getattr(self, "_runtime_state", None)
         if state is not None:
@@ -1133,11 +1147,14 @@ class App:
         """Run one intervention under the application-owned lease."""
         state = getattr(self, "_runtime_state", None)
         if state is not None and not state.begin_intervention():
+            self._record_operational_event("intervention", event="rejected", outcome="lease_unavailable")
             return False
         self._intervention_active = True
         intervention_id = uuid.uuid4().hex
         self._active_intervention_id = intervention_id
         hidden = False
+        outcome = "failed"
+        self._record_operational_event("intervention", event="started", outcome="started")
         try:
             from .ui.dialogs.intervention_wizard import InterventionWizard
             if hide_prompt and prompt_ref is not None:
@@ -1147,13 +1164,15 @@ class App:
                 except Exception:
                     get_logger().exception("intervention prompt hide failed", exc_info=True)
             wizard = InterventionWizard(self.root, settings)
-            return bool(wizard.run(
+            completed = bool(wizard.run(
                 preselect_hwnd=preselect_hwnd,
                 preselect_title=preselect_title,
                 prompt_ref=prompt_ref,
                 hide_prompt=hide_prompt,
                 intervention_id=intervention_id,
             ))
+            outcome = "completed" if completed else "cancelled"
+            return completed
         except Exception:
             try:
                 get_logger().exception("intervention coordinator failed", exc_info=True)
@@ -1172,6 +1191,7 @@ class App:
             self._active_intervention_id = None
             if state is not None:
                 state.end_intervention()
+            self._record_operational_event("intervention", event="ended", outcome=outcome)
 
     # Display/DPI change: keep dialogs on-screen
     def _on_display_change(self):
@@ -1273,6 +1293,7 @@ class App:
         try:
             watcher._tray_add("Focus Check")
             self._native_tray_fallback_active = True
+            self._record_operational_event("tray", event="backend", outcome="native_fallback")
             get_logger().info("fallback: enabled native tray after pystray failure")
             return True
         except Exception:
@@ -1588,6 +1609,7 @@ class App:
             coordinator = PromptCoordinator()
             self._prompt_coordinator = coordinator
         coordinator.close(prompt)
+        self._record_operational_event("prompt", event="closed", outcome=f"interrupted_{source}")
         self._current_prompt = None
         state = getattr(self, "_runtime_state", None)
         if state is not None:
@@ -2370,6 +2392,7 @@ class App:
         if getattr(self, "_shutdown_cleanup_complete", False):
             return
         self._shutdown_cleanup_complete = True
+        self._record_operational_event("shutdown", event="started", outcome=reason)
         lifecycle = getattr(self, "lifecycle", None)
         if lifecycle is not None and lifecycle.phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED):
             lifecycle.begin_shutdown(reason=reason)
