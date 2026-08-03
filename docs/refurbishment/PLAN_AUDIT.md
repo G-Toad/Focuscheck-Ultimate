@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest engine-state correction: the App now forwards coordinator-owned effective-pause transitions to the selected engine; V2 immediately cancels or resumes website-flag polling on pause, snooze, and expiry. The full verifier passed at source checkpoint `0648136` with 550 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest timer-registry correction: `TimerRegistry` now rolls back ownership when initial Tk registration fails and releases recurring ownership when re-registration fails; failure-path regressions cover both cases. The full verifier passed at source checkpoint `c4b73a3` with 548 tests across 19 stages; manual Windows and release evidence remains pending.
 
 Latest engine-switch correction: `_ensure_engine()` now constructs a selected replacement before shutting down the current monitoring engine, so a factory failure preserves the running engine and active prompt. The full verifier passed at source checkpoint `7013367` with 546 tests across 19 stages; manual Windows and release evidence remains pending.
