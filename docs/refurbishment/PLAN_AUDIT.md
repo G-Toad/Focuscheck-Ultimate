@@ -131,7 +131,7 @@ Current checkpoint addition: The latest `9e58762` run verifies legacy settings s
 
 Current checkpoint addition: The latest `b00ea7d` run verifies canonical settings symlinks are quarantined without reading their targets and backup symlinks are excluded from recovery; the full verifier records `381` unittest cases and all 18 bounded stages passed.
 
-Current checkpoint addition: The latest response-dialog logging checkpoint verifies explicit CSV durability failure is observable without preventing prompt cleanup or owner notification; focused dialog coverage passes.
+Current checkpoint addition: The latest `77761fa` run verifies explicit CSV durability failure is observable without preventing prompt cleanup or owner notification; the full verifier records `381` unittest cases and all 18 bounded stages passed.
 
 ## Final Acceptance Gates
 
@@ -154,6 +154,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint before the current unverified run: `381` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `b00ea7d`. The current response-log durability change has only focused-test evidence until the full verifier completes. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `381` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `77761fa`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
