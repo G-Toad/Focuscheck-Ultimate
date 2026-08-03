@@ -70,6 +70,32 @@ class V2FlowTests(unittest.TestCase):
         engine._settings["snooze_until_utc"] = "2029-12-31T23:55:00+00:00"
         self.assertTrue(engine._should_check_subpopup())
 
+    def test_disabled_website_flags_do_not_query_activity_provider(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = AppRef()
+        engine._settings = {
+            "website_flags": [{"domain": "example.com", "enabled": False}],
+        }
+        engine._get_activity_info = mock.Mock()
+
+        engine._maybe_show_subpopup()
+
+        engine._get_activity_info.assert_not_called()
+
+    def test_settings_disable_website_polling_cancels_existing_timer(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine._settings = {}
+        engine._timers = mock.Mock()
+        engine.on_settings_updated({
+            "website_flags": [{"domain": "example.com", "enabled": False}],
+        })
+
+        engine._timers.cancel.assert_called_once_with("website-subpopup")
+
     def test_v1_anti_habit_hold_uses_composed_monotonic_clock(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
 

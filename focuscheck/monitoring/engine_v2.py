@@ -91,7 +91,12 @@ class EngineV2(BaseEngine):
 
     def on_settings_updated(self, settings):
         self._settings = settings
-        self._schedule_subpopup_check()
+        if self._has_enabled_website_flags(settings):
+            self._schedule_subpopup_check()
+        elif self._timers is not None:
+            # Do not retain a three-second provider poll when the feature is
+            # disabled; settings changes must also cancel an existing poll.
+            self._timers.cancel("website-subpopup")
 
     def shutdown(self):
         self._subpopup_generation += 1
@@ -144,8 +149,19 @@ class EngineV2(BaseEngine):
             interval_ms=3000,
         )
 
+    @staticmethod
+    def _has_enabled_website_flags(settings):
+        """Return whether website polling has any enabled work to perform."""
+        try:
+            flags = settings.get("website_flags", []) or []
+        except AttributeError:
+            return False
+        if not isinstance(flags, (list, tuple)):
+            return False
+        return any(isinstance(entry, dict) and bool(entry.get("enabled", True)) for entry in flags)
+
     def _subpopup_tick(self):
-        if self._should_check_subpopup():
+        if self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})) and self._should_check_subpopup():
             self._maybe_show_subpopup()
 
     def _should_check_subpopup(self):
@@ -198,6 +214,8 @@ class EngineV2(BaseEngine):
 
     def _maybe_show_subpopup(self):
         settings = self._settings or getattr(self.app, "settings", {})
+        if not self._has_enabled_website_flags(settings):
+            return
         flags = settings.get("website_flags", []) or []
         if not flags:
             return
