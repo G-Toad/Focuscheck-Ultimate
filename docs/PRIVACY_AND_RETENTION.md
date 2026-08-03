@@ -22,4 +22,4 @@ Use `tools/export_data.py` with an explicit source and destination. The default 
 
 ## User controls
 
-The tray provides a metadata-only data inventory, export, clear logs, clear personal data, and old-log retention actions. Clear logs removes only known log files. Clear personal data removes only settings, task database, and camera categories after confirmation, rechecks each candidate before deletion, leaves operational logs intact, and records versioned filename/size/outcome metadata in `data_clear_audit.jsonl`; it does not record file contents.
+The tray provides a metadata-only data inventory, export, clear logs, clear personal data, and old-log retention actions. Export refuses to overwrite an allowlisted source file. Clear logs removes only known log files. Clear personal data removes only settings, task database, and camera categories after confirmation, rechecks each candidate before deletion, leaves operational logs intact, and records versioned filename/size/outcome metadata in `data_clear_audit.jsonl`; it does not record file contents.
