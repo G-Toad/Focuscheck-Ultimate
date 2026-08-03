@@ -173,3 +173,29 @@ class DataExportTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 export_data(root, source, overwrite=True)
             self.assertEqual("safe", source.read_text(encoding="utf-8"))
+
+    def test_data_operations_reject_symlinked_root(self):
+        from focuscheck.utils.data_export import clear_data, export_data, inventory_data
+        from focuscheck.utils.data_retention import apply_retention, retention_plan
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            real_root = base / "real"
+            real_root.mkdir()
+            (real_root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            linked_root = base / "linked"
+            try:
+                linked_root.symlink_to(real_root, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                export_data(linked_root, base / "export.zip")
+            with self.assertRaises(ValueError):
+                inventory_data(linked_root)
+            with self.assertRaises(ValueError):
+                clear_data(linked_root, categories=("logs",), confirmed=True)
+            with self.assertRaises(ValueError):
+                retention_plan(linked_root, max_age_days=1)
+            with self.assertRaises(ValueError):
+                apply_retention(linked_root, max_age_days=1, apply=True)

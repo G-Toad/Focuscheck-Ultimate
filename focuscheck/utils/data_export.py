@@ -31,6 +31,14 @@ EXPORT_FORMAT_VERSION = 1
 DATA_CLEAR_AUDIT_FORMAT_VERSION = 1
 
 
+def _data_root(source_root) -> Path:
+    """Keep data operations scoped to the explicitly supplied directory."""
+    supplied = Path(source_root)
+    if supplied.is_symlink():
+        raise ValueError("refusing symlink data root")
+    return supplied.resolve()
+
+
 def _selected_categories(categories) -> set[str]:
     selected = {str(category).strip().lower() for category in categories}
     unknown = selected - set(CATEGORIES)
@@ -62,7 +70,7 @@ def _files_for_categories(root: Path, categories: set[str]) -> list[tuple[Path, 
 
 def export_data(source_root, destination, *, categories=("logs", "metadata"), overwrite=False) -> dict:
     """Create an atomic ZIP export; sensitive categories are never implicit."""
-    root = Path(source_root).resolve()
+    root = _data_root(source_root)
     output = Path(destination).resolve()
     selected = _selected_categories(categories)
     if not root.is_dir():
@@ -170,7 +178,7 @@ def validate_export(archive_path) -> dict:
 
 def inventory_data(source_root, *, categories=CATEGORIES) -> dict:
     """Return a metadata-only inventory suitable for a user preview."""
-    root = Path(source_root).resolve()
+    root = _data_root(source_root)
     selected = _selected_categories(categories)
     if not root.is_dir():
         raise NotADirectoryError(root)
@@ -190,7 +198,7 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     """Delete only allowlisted files after an explicit confirmation."""
     if not confirmed:
         raise PermissionError("clear_data requires explicit confirmation")
-    root = Path(source_root).resolve()
+    root = _data_root(source_root)
     selected = _selected_categories(categories)
     if not root.is_dir():
         raise NotADirectoryError(root)

@@ -20,9 +20,16 @@ RETENTION_PATTERNS = (
 RETENTION_AUDIT_FORMAT_VERSION = 1
 
 
+def _retention_root(root: Path) -> Path:
+    supplied = Path(root)
+    if supplied.is_symlink():
+        raise ValueError("refusing symlink retention root")
+    return supplied.resolve()
+
+
 def retention_plan(root: Path, *, max_age_days: int, now: float | None = None) -> list[dict]:
     """Return old, non-symlink log candidates without changing the root."""
-    root = Path(root).resolve()
+    root = _retention_root(root)
     if not root.is_dir():
         return []
     cutoff = (now if now is not None else time.time()) - max(1, int(max_age_days)) * 86400
@@ -52,7 +59,7 @@ def apply_retention(
     now: float | None = None,
 ) -> list[dict]:
     """Plan or apply retention; applied deletions record metadata only."""
-    root = Path(root).resolve()
+    root = _retention_root(root)
     candidates = retention_plan(root, max_age_days=max_age_days, now=now)
     if apply:
         audit_path = root / "retention_audit.jsonl"
