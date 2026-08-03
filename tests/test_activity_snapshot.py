@@ -254,3 +254,23 @@ class WindowsActivityProbeTests(unittest.TestCase):
              window_enumeration.wintypes.LPWSTR, window_enumeration.wintypes.DWORD],
             psapi.GetModuleBaseNameW.argtypes,
         )
+
+    def test_window_close_reports_post_message_result(self):
+        from focuscheck.platform_specific import window_enumeration
+
+        class Api:
+            def __init__(self, result):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, *_args):
+                return self.result
+
+        for result in (True, False):
+            with self.subTest(result=result):
+                user32 = type("User32", (), {"PostMessageW": Api(result)})()
+                with mock.patch.object(window_enumeration, "_configure_user32"), mock.patch.object(
+                    window_enumeration.ctypes, "windll", type("Dlls", (), {"user32": user32})()
+                ):
+                    self.assertEqual(result, window_enumeration.close_window(123))

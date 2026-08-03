@@ -361,6 +361,8 @@ Prompt dialog outcome correction: V1 and V2 prompt instances now expose a shared
 
 Camera lifecycle correction: prompt and standalone camera preview initialization now releases allocated capture handles when a device is closed or initialization fails, and close paths clear the released reference. Deterministic camera regressions cover closed-device, property-initialization failure, stale-callback, read-failure, encoder-failure, and cleanup paths; live hardware/frame-lifetime evidence remains pending. The full verifier target is now `501` unittest cases across all 19 stages.
 
+Native window-wrapper correction: top-level window enumeration now uses the platform-safe callback factory, and `close_window()` reports the observed `PostMessageW` result instead of claiming success when Windows rejects the close request. Focused wrapper/provider tests cover the result contract and the full verifier target is now `502` unittest cases; live window-control evidence remains pending.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.

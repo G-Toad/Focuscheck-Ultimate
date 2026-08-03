@@ -95,7 +95,9 @@ def list_top_level_windows():
     _configure_user32(user32)
     windows = []
 
-    @ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+    callback_type = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)
+
+    @callback_type(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
     def enum_proc(hwnd, lparam):
         try:
             if not user32.IsWindowVisible(hwnd):
@@ -128,8 +130,7 @@ def close_window(hwnd):
         user32 = ctypes.windll.user32
         _configure_user32(user32)
         WM_CLOSE = 0x0010
-        user32.PostMessageW(wintypes.HWND(hwnd), WM_CLOSE, 0, 0)
-        return True
+        return bool(user32.PostMessageW(wintypes.HWND(hwnd), WM_CLOSE, 0, 0))
     except Exception:
         return False
 
