@@ -427,7 +427,8 @@ class App:
         self._native_tray_fallback_active = False
         self._tray = None
         try:
-            if SystemTray is not None:
+            tray_factory = self._tray_factory()
+            if tray_factory is not None:
                 try:
                     get_logger().info("startup: pystray system tray available; attempting start")
                 except Exception:
@@ -459,7 +460,6 @@ class App:
                         pass
                     self._call_on_ui_thread(self._activate_native_tray_fallback)
 
-                tray_factory = self._dependencies.tray_factory or SystemTray
                 self._tray = tray_factory(
                     app=self,
                     name=APP_NAME,
@@ -537,6 +537,10 @@ class App:
         # supervisor does not mistake the normal file-heartbeat cadence for a
         # hung startup.
         self._write_heartbeat()
+
+    def _tray_factory(self):
+        """Prefer an injected adapter even when optional tray imports are absent."""
+        return getattr(getattr(self, "_dependencies", None), "tray_factory", None) or SystemTray
 
     def _startup_stage(self, name):
         """Expose deterministic startup checkpoints without changing defaults."""

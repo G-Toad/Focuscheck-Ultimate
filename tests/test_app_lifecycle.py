@@ -252,6 +252,17 @@ class AppLifecycleTests(unittest.TestCase):
         app._dependencies = dependencies
         self.assertIs(root_factory, app._dependencies.tk_root_factory)
 
+    def test_injected_tray_factory_is_available_without_optional_tray_import(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        tray_factory = mock.Mock()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(tray_factory=tray_factory)
+
+        with mock.patch("focuscheck.app.SystemTray", None):
+            self.assertIs(tray_factory, app._tray_factory())
+
     def test_app_paths_factory_is_used_before_startup_side_effects(self):
         from focuscheck.app import App
         from focuscheck.runtime.dependencies import AppDependencies
