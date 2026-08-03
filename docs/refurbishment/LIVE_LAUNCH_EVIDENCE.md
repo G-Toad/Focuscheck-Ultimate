@@ -257,6 +257,16 @@ Observed on 2026-08-03:
 This is extended direct-entrypoint duration evidence, not production-duration
 supervisor or interactive Windows acceptance evidence.
 
+Post-fix direct shutdown probe on 2026-08-03:
+
+- A disposable `python main.py --run-seconds=20` session exited with code `0`.
+- The isolated log contained zero `Traceback`, `ERROR`, or `Exception` matches
+  and zero `supervisor stop request durability is not confirmed` warnings.
+- The disposable data root was removed after inspection.
+
+This confirms direct shutdown no longer reports a missing-supervisor false
+positive; supervised shutdown still uses the explicit stop-request protocol.
+
 ## Current runtime probes
 
 On 2026-08-03, an isolated `python main.py --run-seconds=20` process exited

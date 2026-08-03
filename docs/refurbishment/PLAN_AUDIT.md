@@ -333,4 +333,6 @@ Extended direct-launch evidence correction: an isolated real `main.py --run-seco
 
 TaskDB concurrency correction: concurrent first opens now serialize schema migration with SQLite `BEGIN IMMEDIATE`, preventing duplicate-column races during `timed_out` migration. The targeted concurrent-writer regression passed `20/20` consecutive runs, and the latest full verifier records `466` passing unittest cases across all 19 stages.
 
+Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.
+
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
