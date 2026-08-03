@@ -274,6 +274,7 @@ class App:
             pass
         self.root.withdraw()
         self._timers = TimerRegistry(self.root)
+        self._ui_dispatch_sequence = 0
         # Ensure window handle is realized before using it for shell hooks
         try:
             self.root.update_idletasks()
@@ -1198,7 +1199,16 @@ class App:
                 except Exception:
                     pass
         try:
-            root.after(0, _wrapped)
+            timers = getattr(self, "_timers", None)
+            if timers is not None and not timers.closed:
+                self._ui_dispatch_sequence = getattr(self, "_ui_dispatch_sequence", 0) + 1
+                timers.schedule(
+                    f"ui-dispatch-{self._ui_dispatch_sequence}",
+                    0,
+                    _wrapped,
+                )
+            else:
+                root.after(0, _wrapped)
             return True
         except Exception:
             try:

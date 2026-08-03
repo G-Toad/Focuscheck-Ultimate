@@ -16,6 +16,29 @@ class UiContractTests(unittest.TestCase):
             self.assertTrue(App._call_on_ui_thread(app, lambda: None))
         app.root.after.assert_called_once()
 
+    def test_composed_dispatch_uses_timer_registry_and_shutdown_cancels_it(self):
+        from focuscheck.app import App
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Root:
+            def after(self, _delay, callback):
+                self.callback = callback
+                return "dispatch-1"
+
+            def after_cancel(self, _timer_id):
+                self.cancelled = True
+
+        app = App.__new__(App)
+        app._tk_thread_id = 123
+        app.root = Root()
+        app._timers = TimerRegistry(app.root)
+        with mock.patch("focuscheck.app.threading.get_ident", return_value=456):
+            self.assertTrue(App._call_on_ui_thread(app, lambda: None))
+
+        app._timers.close()
+        app.root.callback()
+        self.assertTrue(app.root.cancelled)
+
     def test_tray_without_repository_does_not_write_config_fallback(self):
         from focuscheck.system_tray import SystemTray
 
