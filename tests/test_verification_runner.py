@@ -138,6 +138,16 @@ class VerificationRunnerTests(unittest.TestCase):
             self.assertTrue(item["expected"])
             self.assertTrue(item["evidence"])
 
+    def test_repository_inventory_covers_required_static_risk_surfaces(self):
+        from tools.repository_inventory import REQUIRED_CATEGORIES, build_inventory
+
+        inventory = build_inventory()
+        self.assertEqual(1, inventory["schema_version"])
+        self.assertTrue(inventory["files"])
+        self.assertTrue(inventory["entry_points"])
+        self.assertEqual(REQUIRED_CATEGORIES, set(inventory["categories"]))
+        self.assertTrue(all(name in inventory["counts"] for name in REQUIRED_CATEGORIES))
+
 
 if __name__ == "__main__":
     unittest.main()
