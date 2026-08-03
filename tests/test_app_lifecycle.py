@@ -154,6 +154,30 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertIs(provider, received["provider"])
         self.assertIs(clock, received["clock"])
 
+    def test_engine_factory_receives_selected_class_and_app_context(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        class Engine:
+            name = "injected"
+
+            def on_settings_updated(self, _settings):
+                return None
+
+        factory = mock.Mock(return_value=Engine())
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(engine_factory=factory)
+        app.settings = {"monitoring_mode": "v1"}
+        app._engine = None
+        app._engine_shutdown = False
+        app._current_prompt = None
+
+        with mock.patch.object(App, "_get_engine_class", return_value=Engine):
+            App._ensure_engine(app)
+
+        factory.assert_called_once_with(Engine, app)
+        self.assertEqual("injected", app._engine.name)
+
     def test_app_constructor_retains_injected_composition_dependencies(self):
         from focuscheck.app import App
         from focuscheck.utils.clock import FakeClock
@@ -186,7 +210,7 @@ class AppLifecycleTests(unittest.TestCase):
         deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
         self.assertEqual(
             {
-                "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
+                "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",

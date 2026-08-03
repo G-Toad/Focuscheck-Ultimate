@@ -738,6 +738,19 @@ class App:
             mode = "v1"
         return EngineV2 if mode == "v2" else EngineV1
 
+    def _new_engine(self, cls):
+        """Compose the selected monitoring engine through the App boundary."""
+        factory = getattr(getattr(self, "_dependencies", None), "engine_factory", None)
+        if callable(factory):
+            return factory(cls, self)
+        if cls is EngineV2:
+            return cls(
+                self,
+                activity_provider=getattr(self, "_activity_provider", None),
+                clock=getattr(self, "_runtime_clock", None),
+            )
+        return cls(self)
+
     def _ensure_engine(self):
         cls = self._get_engine_class(self.settings)
         if self._engine is None or not isinstance(self._engine, cls):
@@ -752,14 +765,7 @@ class App:
                     old_engine.shutdown()
                 except Exception:
                     pass
-            if cls is EngineV2:
-                self._engine = cls(
-                    self,
-                    activity_provider=getattr(self, "_activity_provider", None),
-                    clock=getattr(self, "_runtime_clock", None),
-                )
-            else:
-                self._engine = cls(self)
+            self._engine = self._new_engine(cls)
             try:
                 get_logger().info("monitoring engine set to %s", getattr(self._engine, "name", cls.__name__))
             except Exception:
