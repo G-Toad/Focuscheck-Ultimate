@@ -275,6 +275,8 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     }
     audit_path = root / "data_clear_audit.jsonl"
     try:
+        if audit_path.is_symlink():
+            raise OSError("audit path symlink rejected")
         persisted_audit = dict(audit)
         persisted_audit["audit_written"] = True
         with audit_path.open("a", encoding="utf-8") as handle:

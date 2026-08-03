@@ -95,3 +95,23 @@ class RetentionTests(unittest.TestCase):
             self.assertTrue(result[0]["deleted"])
             self.assertFalse(result[0]["audit_written"])
             self.assertEqual("OSError", result[0]["audit_error"])
+
+    def test_apply_retention_rejects_symlinked_audit_destination(self):
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            old = root / "focus_log.csv.1"
+            old.write_text("old", encoding="utf-8")
+            outside = root / "outside-audit.jsonl"
+            outside.write_text("outside", encoding="utf-8")
+            import os
+            old_time = time.time() - 10 * 86400
+            os.utime(old, (old_time, old_time))
+            try:
+                (root / "retention_audit.jsonl").symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+            result = apply_retention(root, max_age_days=1, apply=True)
+            self.assertTrue(result[0]["deleted"])
+            self.assertFalse(result[0]["audit_written"])
+            self.assertEqual("OSError", result[0]["audit_error"])
+            self.assertEqual("outside", outside.read_text(encoding="utf-8"))

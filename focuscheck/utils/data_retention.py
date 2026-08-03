@@ -82,6 +82,8 @@ def apply_retention(
                 item["error"] = error
             item["audit_written"] = False
             try:
+                if audit_path.is_symlink():
+                    raise OSError("audit path symlink rejected")
                 audit = {
                     "format_version": RETENTION_AUDIT_FORMAT_VERSION,
                     "utc": datetime.now(timezone.utc).isoformat(),

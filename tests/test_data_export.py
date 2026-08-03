@@ -48,6 +48,24 @@ class DataExportTests(unittest.TestCase):
             self.assertFalse(report["audit_written"])
             self.assertEqual("OSError", report["audit_error"])
 
+    def test_clear_data_rejects_symlinked_audit_destination(self):
+        from focuscheck.utils.data_export import clear_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir) / "data"
+            root.mkdir()
+            outside = Path(temp_dir) / "outside-audit.jsonl"
+            outside.write_text("outside", encoding="utf-8")
+            (root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            try:
+                (root / "data_clear_audit.jsonl").symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+            report = clear_data(root, categories=("logs",), confirmed=True)
+            self.assertFalse(report["audit_written"])
+            self.assertEqual("OSError", report["audit_error"])
+            self.assertEqual("outside", outside.read_text(encoding="utf-8"))
+
     def test_default_export_excludes_sensitive_categories_and_writes_manifest(self):
         from tools.export_data import export_data
 
