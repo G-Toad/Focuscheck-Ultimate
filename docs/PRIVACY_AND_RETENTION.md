@@ -20,6 +20,20 @@ Automated verification never runs with `--apply` and uses `_verify_runtime/data`
 
 Use `tools/export_data.py` with an explicit source and destination. The default export includes only logs and operational metadata; settings, tasks, and camera files require explicit `--include` selection. Archives contain an `EXPORT_MANIFEST.json` with relative paths, sizes, sensitivity labels, and SHA-256 hashes. Symlink sources and existing destinations without `--overwrite` are rejected.
 
+Validated user-data recovery is explicit and never restores runtime control
+metadata such as `hb.txt` or supervisor stop markers. Restore settings/tasks
+from an archive with an explicit confirmation and a separate destination root:
+
+```powershell
+py -3 tools\export_data.py --import-archive .\user-data.zip --destination "$env:APPDATA\FocusCheck" --include settings tasks --confirm-sensitive
+```
+
+The importer revalidates the embedded manifest and member hashes, rejects
+archive traversal or non-allowlisted members, checks settings/schema and SQLite
+integrity compatibility, and refuses to overwrite existing files unless
+`--overwrite` is supplied. It stages the complete selection before promotion
+and restores prior files if promotion fails.
+
 ## User controls
 
 The tray provides a metadata-only data inventory, export, clear logs, clear personal data, and old-log retention actions. Export refuses to overwrite an allowlisted source file. Clear logs removes only known log files. Clear personal data removes only settings, task database, and camera categories after confirmation, rechecks each candidate before deletion, leaves operational logs intact, and records versioned filename/size/outcome metadata in `data_clear_audit.jsonl`; it does not record file contents.

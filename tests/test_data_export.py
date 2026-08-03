@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import tempfile
 import unittest
 import zipfile
@@ -347,6 +348,59 @@ class DataExportTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     export_data(root, output)
             self.assertFalse(output.exists())
+
+    def test_import_requires_confirmation_and_restores_validated_user_data(self):
+        from focuscheck.utils.data_export import export_data, import_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            source = base / "source"
+            destination = base / "destination"
+            source.mkdir()
+            (source / "focus_settings.json").write_text('{"interval_seconds": 42}', encoding="utf-8")
+            connection = sqlite3.connect(source / "focus_tasks.sqlite3")
+            try:
+                connection.execute("CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT)")
+                connection.commit()
+            finally:
+                connection.close()
+            archive = base / "user-data.zip"
+            export_data(source, archive, categories=("settings", "tasks"))
+
+            with self.assertRaises(PermissionError):
+                import_data(archive, destination)
+            self.assertFalse(destination.exists())
+
+            result = import_data(archive, destination, confirmed=True)
+            self.assertEqual({"settings", "tasks"}, set(result["categories"]))
+            self.assertEqual('{"interval_seconds": 42}', (destination / "focus_settings.json").read_text(encoding="utf-8"))
+            connection = sqlite3.connect(destination / "focus_tasks.sqlite3")
+            try:
+                self.assertEqual("ok", connection.execute("PRAGMA integrity_check").fetchone()[0])
+            finally:
+                connection.close()
+
+    def test_import_rejects_runtime_metadata_and_existing_targets_without_overwrite(self):
+        from focuscheck.utils.data_export import export_data, import_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            source = base / "source"
+            destination = base / "destination"
+            source.mkdir()
+            destination.mkdir()
+            (source / "focus_log.csv").write_text("safe", encoding="utf-8")
+            (source / "hb.txt").write_text("runtime", encoding="utf-8")
+            archive = base / "export.zip"
+            export_data(source, archive, categories=("logs", "metadata"))
+
+            with self.assertRaises(ValueError):
+                import_data(archive, destination, categories=("metadata",))
+
+            (destination / "focus_log.csv").write_text("existing", encoding="utf-8")
+            with self.assertRaises(FileExistsError):
+                import_data(archive, destination, categories=("logs",))
+            self.assertEqual("existing", (destination / "focus_log.csv").read_text(encoding="utf-8"))
 
     def test_data_operations_reject_symlinked_root(self):
         from focuscheck.utils.data_export import clear_data, export_data, inventory_data

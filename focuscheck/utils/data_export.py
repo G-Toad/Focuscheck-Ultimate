@@ -5,7 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
+import sqlite3
 import tempfile
+import uuid
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +31,7 @@ _CATEGORY_PATTERNS = {
     "camera": ("camera_*.png", "camera_*.jpg", "camera_*.jpeg"),
 }
 _SENSITIVE_CATEGORIES = {"settings", "tasks", "camera"}
+_IMPORTABLE_CATEGORIES = {"logs", "settings", "tasks", "camera"}
 EXPORT_FORMAT_VERSION = 1
 DATA_CLEAR_AUDIT_FORMAT_VERSION = 1
 DATA_CLEAR_AUDIT_MAX_BYTES = 512 * 1024
@@ -237,7 +241,120 @@ def validate_export(archive_path) -> dict:
                 raise ValueError("export archive contains unexpected members")
             return manifest
     except zipfile.BadZipFile as exc:
-        raise ValueError("export archive is not a valid ZIP") from exc
+            raise ValueError("export archive is not a valid ZIP") from exc
+
+
+def _validate_import_member(relative: str, category: str) -> None:
+    """Keep restore paths tied to the same allowlist used for export."""
+    if category not in _IMPORTABLE_CATEGORIES:
+        raise ValueError(f"category cannot be imported: {category}")
+    if Path(relative).name != relative or not any(Path(relative).match(pattern) for pattern in _CATEGORY_PATTERNS[category]):
+        raise ValueError(f"import member is not allowlisted for {category}: {relative}")
+
+
+def _validate_import_payload(path: Path, category: str) -> None:
+    if category == "settings":
+        from focuscheck.settings.manager import validate_settings
+        from focuscheck.settings.migrations import migrate_settings
+
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            raise ValueError("imported settings must be a JSON object")
+        validate_settings(migrate_settings(raw))
+    elif category == "tasks":
+        connection = sqlite3.connect(path)
+        try:
+            integrity = str(connection.execute("PRAGMA integrity_check").fetchone()[0] or "")
+            version = int(connection.execute("PRAGMA user_version").fetchone()[0] or 0)
+        finally:
+            connection.close()
+        if integrity.lower() != "ok":
+            raise ValueError("imported task database failed integrity check")
+        from focuscheck.database.task_db import CURRENT_TASK_SCHEMA_VERSION
+        if version > CURRENT_TASK_SCHEMA_VERSION:
+            raise ValueError(f"imported task database schema {version} is newer than supported")
+
+
+def import_data(archive_path, destination_root, *, categories=("settings", "tasks"), overwrite=False, confirmed=False) -> dict:
+    """Restore selected user data from a validated export without runtime files."""
+    archive = Path(archive_path).absolute()
+    root = Path(destination_root).absolute()
+    selected = _selected_categories(categories)
+    if not selected <= _IMPORTABLE_CATEGORIES:
+        blocked = sorted(selected - _IMPORTABLE_CATEGORIES)
+        raise ValueError(f"categories cannot be imported: {', '.join(blocked)}")
+    if selected & _SENSITIVE_CATEGORIES and not confirmed:
+        raise PermissionError("importing sensitive categories requires explicit confirmation")
+    if _contains_symlink_component(root) or archive.is_symlink() or _contains_symlink_component(archive.parent):
+        raise ValueError("refusing import through a symlinked path")
+
+    manifest = validate_export(archive)
+    manifest_categories = set(manifest["categories"])
+    if not selected <= manifest_categories:
+        missing = sorted(selected - manifest_categories)
+        raise ValueError(f"requested categories are absent from export: {', '.join(missing)}")
+    entries = [entry for entry in manifest["files"] if entry["category"] in selected]
+    for entry in entries:
+        _validate_import_member(entry["path"], entry["category"])
+
+    root.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(prefix=".focuscheck-import-", dir=root))
+    backup = root / f".focuscheck-import-backup-{uuid.uuid4().hex}"
+    promoted: list[Path] = []
+    backups: list[tuple[Path, Path]] = []
+    try:
+        with zipfile.ZipFile(archive, "r") as source:
+            for entry in entries:
+                relative = entry["path"]
+                target = staging / relative
+                with source.open(relative, "r") as input_file, target.open("wb") as output_file:
+                    shutil.copyfileobj(input_file, output_file, length=1024 * 1024)
+                if target.stat().st_size != entry["size"] or _sha256(target) != entry["sha256"]:
+                    raise ValueError(f"import member changed during extraction: {relative}")
+                _validate_import_payload(target, entry["category"])
+
+        for entry in entries:
+            relative = entry["path"]
+            target = root / relative
+            staged = staging / relative
+            if target.exists() or target.is_symlink():
+                if not overwrite:
+                    raise FileExistsError(target)
+                if _contains_symlink_component(target):
+                    raise ValueError(f"refusing to overwrite symlinked import target: {relative}")
+                backup_target = backup / relative
+                backup_target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(target), str(backup_target))
+                backups.append((target, backup_target))
+            os.replace(staged, target)
+            promoted.append(target)
+        if backup.exists():
+            shutil.rmtree(backup)
+        return {
+            "format_version": EXPORT_FORMAT_VERSION,
+            "archive": str(archive),
+            "destination_root": str(root),
+            "categories": sorted(selected),
+            "files": [entry["path"] for entry in entries],
+            "overwrote": bool(backups),
+        }
+    except Exception:
+        for target in reversed(promoted):
+            try:
+                if target.exists() or target.is_symlink():
+                    target.unlink()
+            except OSError:
+                pass
+        for target, backup_target in reversed(backups):
+            try:
+                if backup_target.exists():
+                    os.replace(backup_target, target)
+            except OSError:
+                pass
+        raise
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+        shutil.rmtree(backup, ignore_errors=True)
 
 
 def inventory_data(source_root, *, categories=CATEGORIES) -> dict:
@@ -336,6 +453,7 @@ __all__ = [
     "DATA_CLEAR_AUDIT_FORMAT_VERSION",
     "clear_data",
     "export_data",
+    "import_data",
     "inventory_data",
     "validate_export",
 ]
