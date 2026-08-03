@@ -376,7 +376,8 @@ class App:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")
         self._startup_stage("repositories_initialized")
-        ensure_log_header(self.paths.focus_log)
+        log_header_factory = self._dependencies.log_header_factory or ensure_log_header
+        log_header_factory(self.paths.focus_log)
         guard_factory = self._dependencies.guard_factory or PauseGuard
         self.guard = guard_factory(lambda: self.settings)
         self._ensure_engine()
