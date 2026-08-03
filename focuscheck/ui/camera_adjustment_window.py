@@ -229,6 +229,8 @@ class CameraAdjustmentWindow(tk.Toplevel):
 
             if not self._camera_capture.isOpened():
                 self._show_error("Could not open camera")
+                self._camera_capture.release()
+                self._camera_capture = None
                 return
 
             # Set resolution
@@ -239,6 +241,13 @@ class CameraAdjustmentWindow(tk.Toplevel):
             self._update_feed(self._camera_generation)
 
         except Exception as e:
+            capture = self._camera_capture
+            self._camera_capture = None
+            if capture is not None:
+                try:
+                    capture.release()
+                except Exception:
+                    pass
             self._show_error(f"Camera error: {e}")
 
     def _update_feed(self, generation=None):
@@ -388,5 +397,6 @@ class CameraAdjustmentWindow(tk.Toplevel):
                 self._camera_capture.release()
             except Exception:
                 pass
+            self._camera_capture = None
 
         self.destroy()

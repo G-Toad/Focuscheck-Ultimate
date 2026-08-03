@@ -853,12 +853,21 @@ class CropAdjustmentWindow(tk.Toplevel):
                     f"Could not open camera device {device_index}",
                     parent=self
                 )
+                self.camera.release()
+                self.camera = None
                 return
 
             # Start update loop
             self._update_camera_feed(generation)
 
         except Exception as e:
+            camera = self.camera
+            self.camera = None
+            if camera is not None:
+                try:
+                    camera.release()
+                except Exception:
+                    pass
             messagebox.showerror(
                 "Camera Error",
                 f"Failed to initialize camera: {e}",
@@ -1998,7 +2007,10 @@ class CropAdjustmentWindow(tk.Toplevel):
 
         # Release camera
         if self.camera:
-            self.camera.release()
+            try:
+                self.camera.release()
+            except Exception:
+                pass
             self.camera = None
 
     def _center_window(self):

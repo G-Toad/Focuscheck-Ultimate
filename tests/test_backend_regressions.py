@@ -50,6 +50,71 @@ class SettingsSaveTests(unittest.TestCase):
         self.assertIsInstance(prompt._camera_capture, Capture)
         self.assertEqual("available", prompt._camera_capability["device"])
 
+    def test_camera_initialization_releases_allocated_handles_on_failure(self):
+        from focuscheck.runtime.dependencies import AppDependencies
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+        import focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed as camera_feed
+        import focuscheck.ui.camera_adjustment_window as adjustment
+        import focuscheck.ui.camera_test_window as preview
+
+        class Capture:
+            def __init__(self, opened=True, fail_on_set=False):
+                self.opened = opened
+                self.fail_on_set = fail_on_set
+                self.releases = 0
+
+            def isOpened(self):
+                return self.opened
+
+            def set(self, *_args):
+                if self.fail_on_set:
+                    raise RuntimeError("camera property failure")
+                return True
+
+            def release(self):
+                self.releases += 1
+
+        closed = Capture(opened=False)
+        prompt = type("Prompt", (), {})()
+        prompt.settings = {"camera_feed_enabled": True, "camera_device_index": 0}
+        prompt._ui_scale = 1.0
+        prompt.app_ref = type(
+            "AppRef", (), {"_dependencies": AppDependencies(camera_capture_factory=lambda _index: closed)}
+        )()
+        with mock.patch.object(camera_feed, "CV2_AVAILABLE", True), mock.patch.object(
+            camera_feed, "PIL_AVAILABLE", True
+        ):
+            CameraFeedMixin._init_camera_feed(prompt)
+        self.assertEqual(1, closed.releases)
+        self.assertIsNone(prompt._camera_capture)
+
+        for module, window_class, init_name, attrs in (
+            (adjustment, adjustment.CameraAdjustmentWindow, "_init_camera", {"camera_index": 0}),
+            (preview, preview.CameraTestWindow, "_init_camera", {"camera_settings": {"camera_device_index": 0}}),
+        ):
+            with self.subTest(window=window_class.__name__):
+                capture = Capture(opened=False)
+                window = window_class.__new__(window_class)
+                for name, value in attrs.items():
+                    setattr(window, name, value)
+                window._camera_capture = None
+                window._show_error = mock.Mock()
+                with mock.patch.object(module.cv2, "VideoCapture", return_value=capture):
+                    getattr(window, init_name)()
+                self.assertEqual(1, capture.releases)
+                self.assertIsNone(window._camera_capture)
+
+        failing = Capture(fail_on_set=True)
+        prompt.app_ref = type(
+            "AppRef", (), {"_dependencies": AppDependencies(camera_capture_factory=lambda _index: failing)}
+        )()
+        with mock.patch.object(camera_feed, "CV2_AVAILABLE", True), mock.patch.object(
+            camera_feed, "PIL_AVAILABLE", True
+        ):
+            CameraFeedMixin._init_camera_feed(prompt)
+        self.assertEqual(1, failing.releases)
+        self.assertIsNone(prompt._camera_capture)
+
     def test_legacy_migration_fatal_outcomes_are_distinguished_from_safe_events(self):
         from focuscheck.utils.paths import migration_has_fatal_failure
 

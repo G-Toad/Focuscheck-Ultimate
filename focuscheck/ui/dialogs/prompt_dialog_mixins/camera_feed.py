@@ -125,6 +125,10 @@ class CameraFeedMixin:
                     get_logger().warning(f"Could not open camera at index {camera_index}")
                 except Exception:
                     pass
+                try:
+                    self._camera_capture.release()
+                except Exception:
+                    pass
                 self._camera_capture = None
                 self._camera_capability = build_camera_capability(
                     enabled=True,
@@ -195,7 +199,13 @@ class CameraFeedMixin:
                 get_logger().error(f"Failed to initialize camera: {e}")
             except Exception:
                 pass
+            capture = self._camera_capture
             self._camera_capture = None
+            if capture is not None:
+                try:
+                    capture.release()
+                except Exception:
+                    pass
             self._camera_capability = build_camera_capability(
                 enabled=True,
                 opencv_available=CV2_AVAILABLE,

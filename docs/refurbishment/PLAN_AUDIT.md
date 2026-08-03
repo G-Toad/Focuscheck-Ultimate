@@ -359,6 +359,8 @@ Tk composition correction: `AppDependencies` now exposes `tk_root_factory`, and 
 
 Prompt dialog outcome correction: V1 and V2 prompt instances now expose a shared typed outcome state, mark valid completion as `completed`, and retain the first App-owned interruption outcome through teardown. Focused close/finalization tests and the full verifier cover the contract; the full verifier records `500` unittest cases across all 19 stages.
 
+Camera lifecycle correction: prompt and standalone camera preview initialization now releases allocated capture handles when a device is closed or initialization fails, and close paths clear the released reference. Deterministic camera regressions cover closed-device, property-initialization failure, stale-callback, read-failure, encoder-failure, and cleanup paths; live hardware/frame-lifetime evidence remains pending. The full verifier target is now `501` unittest cases across all 19 stages.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.
