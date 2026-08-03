@@ -266,6 +266,7 @@ def main() -> int:
         ("data_recovery", [py, "tools/data_recovery_selftest.py"]),
         ("performance_soak", [py, "tools/performance_soak.py"]),
         ("test_category_inventory", [py, "tools/test_category_inventory.py"]),
+        ("plan_register_coverage", [py, "tools/plan_register_coverage.py"]),
     ]
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
     live_after = snapshot_tree(live_profile)
