@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `503` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `504` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
 The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage. Manual Windows, browser, power/session, installer/signing, target-user migration, and production-release evidence remain pending.
 
@@ -23,6 +23,8 @@ The latest camera checkpoint releases allocated capture handles on closed-device
 The latest native-wrapper checkpoint makes top-level window callbacks platform-safe and reports actual `PostMessageW` close results; focused provider/native tests pass, while live window-control evidence remains pending.
 
 The latest click-through checkpoint reports `SetWindowPos` failure instead of claiming input-style setup succeeded, with focused native-style coverage; live overlay/input evidence remains pending.
+
+The latest WNDPROC checkpoint reports callback-installation failure from `SetWindowLongPtrW` instead of claiming success; focused setter-result coverage passes, while live overlay/input evidence remains pending.
 
 - The current verifier has `19` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.

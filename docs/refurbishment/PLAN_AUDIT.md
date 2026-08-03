@@ -365,6 +365,8 @@ Native window-wrapper correction: top-level window enumeration now uses the plat
 
 Click-through wrapper correction: `enable_click_through_windows()` now reports failure when the final `SetWindowPos` operation is rejected, and the WNDPROC subclass helper uses the platform-safe callback factory. Focused native-style tests cover both outcomes; the full verifier target is now `503` unittest cases, while live overlay/input evidence remains pending.
 
+WNDPROC ownership correction: `install_httransparent_wndproc()` now reports failure when `SetWindowLongPtrW` does not install the callback, preventing a false click-through success state. Focused setter-result coverage passes; the full verifier target is now `504` unittest cases, while live overlay/input evidence remains pending.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.

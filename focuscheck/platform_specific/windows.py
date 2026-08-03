@@ -303,7 +303,9 @@ def install_httransparent_wndproc(hwnd, owner_widget=None):
         except Exception:
             pass
         old = GetWindowLongPtrW(hwnd, GWL_WNDPROC)
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        WNDPROC = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T
+        )
         @WNDPROC
         def proc(h, msg, wParam, lParam):
             try:
@@ -315,7 +317,9 @@ def install_httransparent_wndproc(hwnd, owner_widget=None):
                 return CallWindowProcW(ctypes.c_void_p(old), h, msg, wParam, lParam)
             except Exception:
                 return user32.DefWindowProcW(h, msg, wParam, lParam)
-        SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
+        installed = SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
+        if not installed:
+            return False
         # Keep references to avoid GC and to restore later
         if owner_widget is not None:
             try:
