@@ -30,6 +30,14 @@ class VerificationRunnerTests(unittest.TestCase):
             second = snapshot_tree(root)
             self.assertNotEqual(first, second)
 
+    def test_user_run_key_snapshot_is_read_only_and_structured(self):
+        from tools.verification_runner import snapshot_user_run_key
+
+        snapshot = snapshot_user_run_key()
+        if snapshot is not None:
+            self.assertIsInstance(snapshot, dict)
+            self.assertNotIn("__mutation__", snapshot)
+
     def test_timeout_is_reported_as_a_distinct_stage_status(self):
         from tools.verification_runner import run_stage
 

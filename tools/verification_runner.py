@@ -58,6 +58,37 @@ def snapshot_tree(root: Path) -> dict[str, str]:
     return snapshot
 
 
+def snapshot_user_run_key() -> dict[str, object] | None:
+    """Read HKCU Run without creating or changing registry state.
+
+    A ``None`` result means the current platform has no Windows registry
+    interface; non-Windows verification remains profile-isolated only.
+    """
+    if os.name != "nt":
+        return None
+    try:
+        import winreg
+    except ImportError:
+        return None
+    path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    values: dict[str, object] = {}
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_READ) as key:
+            index = 0
+            while True:
+                try:
+                    name, value, value_type = winreg.EnumValue(key, index)
+                except OSError:
+                    break
+                values[name] = {"value": value, "type": value_type}
+                index += 1
+    except FileNotFoundError:
+        return {}
+    except OSError as exc:
+        return {"__snapshot_error__": f"{type(exc).__name__}: {exc}"}
+    return values
+
+
 def _terminate_process_tree(process: subprocess.Popen) -> dict[str, object]:
     """Stop only the timed-out stage and descendants, never by image name."""
     pid = int(process.pid)
@@ -214,6 +245,7 @@ def main() -> int:
     })
     live_profile = Path(os.environ.get("APPDATA", "")) / "FocusCheck"
     live_before = snapshot_tree(live_profile)
+    registry_before = snapshot_user_run_key()
     repository_before = filtered_repository_snapshot(ROOT, snapshot_tree)
     process_before = focuscheck_process_snapshot(ROOT)
     py = sys.executable
@@ -238,14 +270,22 @@ def main() -> int:
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
     live_after = snapshot_tree(live_profile)
     isolation_ok = live_before == live_after
+    registry_after = snapshot_user_run_key()
+    registry_isolation_ok = (
+        registry_before is None
+        or registry_after is None
+        or registry_before == registry_after
+    )
     results.append({
         "name": "profile_isolation",
         "command": ["snapshot", str(live_profile)],
-        "status": "passed" if isolation_ok else "failed",
-        "exit_code": 0 if isolation_ok else 1,
+        "status": "passed" if isolation_ok and registry_isolation_ok else "failed",
+        "exit_code": 0 if isolation_ok and registry_isolation_ok else 1,
         "elapsed_ms": 0,
         "files_before": len(live_before),
         "files_after": len(live_after),
+        "registry_snapshot_supported": registry_before is not None,
+        "registry_unchanged": registry_isolation_ok,
     })
     repository_after = filtered_repository_snapshot(ROOT, snapshot_tree)
     repository_writes = sorted(set(repository_before) ^ set(repository_after))
@@ -291,6 +331,7 @@ def main() -> int:
         },
         "isolated_data_dir": str(data_dir),
         "live_profile_unchanged": isolation_ok,
+        "user_run_key_unchanged": registry_isolation_ok,
         "results": results,
         "tests": _test_summary(results),
         "test_categories": _category_summary(),
