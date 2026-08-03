@@ -153,6 +153,8 @@ Current checkpoint addition: The latest `9e26196` code checkpoint adds focused V
 
 Current checkpoint addition: The latest `8a8c4ea` code checkpoint closes an open snooze reminder during App shutdown without emitting a user-choice callback, and direct reminder destruction now releases its focus timer owner; the full verifier records `390` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `7aa8c96` code checkpoint also closes an open snooze confirmation dialog during App shutdown without applying snooze or emitting a cancellation callback; direct confirmation-dialog destruction now releases its owned timers. The full verifier records `391` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -174,6 +176,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `390` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `8a8c4ea`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `391` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `7aa8c96`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
