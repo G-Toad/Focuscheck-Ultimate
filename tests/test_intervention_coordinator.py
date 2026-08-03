@@ -120,6 +120,17 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertIsNone(dialog._front_timer_id)
         self.assertIsNone(dialog._tab_scan_timer_id)
 
+    def test_action_dialog_destroy_closes_owned_timers(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        action = object.__new__(intervention_wizard.InterventionActionDialog)
+        action._timers = mock.Mock()
+        with mock.patch.object(intervention_wizard.tk.Toplevel, "destroy") as destroy:
+            action.destroy()
+
+        action._timers.close.assert_called_once_with()
+        self.assertEqual(1, destroy.call_count)
+
     def test_selection_tab_scan_does_not_log_window_title(self):
         from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
 

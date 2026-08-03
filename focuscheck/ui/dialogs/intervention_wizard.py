@@ -660,6 +660,9 @@ class InterventionActionDialog(tk.Toplevel):
 
     def __init__(self, parent, on_verify, on_cancel):
         super().__init__(parent)
+        # The dialog owns its recurring callbacks so a window-manager close
+        # cannot leave work queued against a destroyed Toplevel.
+        self._timers = TimerRegistry(self)
         self.title("Intervention")
         self.geometry("420x200")
         self.resizable(False, False)
@@ -691,6 +694,10 @@ class InterventionActionDialog(tk.Toplevel):
             verify_btn.focus_set()
         except Exception:
             pass
+
+    def destroy(self):
+        self._timers.close()
+        return super().destroy()
 
 
 from ...settings import gates
@@ -1092,6 +1099,7 @@ class InterventionWizard:
 
         result = {"done": False, "cancel": False}
         action_timers = {"owner": None}
+        cleanup_complete = {"value": False}
 
         def _action_timers_closed():
             owner = action_timers.get("owner")
@@ -1167,10 +1175,12 @@ class InterventionWizard:
             _cleanup()
 
         def _cleanup():
-            owner = action_timers.get("owner")
-            if owner is None or owner.closed:
+            if cleanup_complete["value"]:
                 return
-            owner.close()
+            cleanup_complete["value"] = True
+            owner = action_timers.get("owner")
+            if owner is not None and not owner.closed:
+                owner.close()
             try:
                 if overlay is not None:
                     overlay.close()
@@ -1195,7 +1205,7 @@ class InterventionWizard:
                     logger.exception("intervention: auto-check schedule failed", exc_info=True)
 
         action = InterventionActionDialog(self.parent, on_verify=_verify, on_cancel=_cancel)
-        action_timers["owner"] = TimerRegistry(action)
+        action_timers["owner"] = action._timers
         try:
             if logger:
                 logger.info("intervention: action dialog shown | %s", _window_state_snapshot(action))
@@ -1234,6 +1244,10 @@ class InterventionWizard:
         except Exception:
             if logger:
                 logger.exception("intervention: wait_window action failed", exc_info=True)
+        finally:
+            # WM_DELETE_WINDOW and unexpected wait failures must use the same
+            # cleanup contract as Verify and Cancel.
+            _cleanup()
         if bool(result.get("done")) and not bool(result.get("cancel")):
             try:
                 if InterventionReflectionDialog is not None and intervention_id:
