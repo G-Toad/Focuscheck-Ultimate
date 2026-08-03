@@ -90,7 +90,7 @@ from .utils.paths import (
 FILE_HEARTBEAT_INTERVAL_SECONDS = 60_000
 
 
-def _configure_native_tray_api(user32):
+def _configure_native_tray_api(user32, kernel32=None):
     """Declare pointer-safe signatures for the native tray menu calls."""
     user32.CreatePopupMenu.argtypes = []
     user32.CreatePopupMenu.restype = wintypes.HMENU
@@ -117,6 +117,9 @@ def _configure_native_tray_api(user32):
         ctypes.c_void_p,
     ]
     user32.TrackPopupMenu.restype = ctypes.c_int
+    if kernel32 is not None:
+        kernel32.SetLastError.argtypes = [wintypes.DWORD]
+        kernel32.SetLastError.restype = None
 
 
 def resolve_initial_monitoring_state(settings, *, force_start=False):
@@ -1441,7 +1444,8 @@ class App:
             native_used = False
             try:
                 user32 = ctypes.windll.user32
-                _configure_native_tray_api(user32)
+                kernel32 = ctypes.windll.kernel32
+                _configure_native_tray_api(user32, kernel32)
                 TrackPopupMenu = user32.TrackPopupMenu
 
                 MF_STRING = 0x00000000
@@ -1535,7 +1539,7 @@ class App:
                             ctypes.set_last_error(0)
                         except AttributeError:
                             try:
-                                ctypes.windll.kernel32.SetLastError(0)
+                                kernel32.SetLastError(0)
                             except Exception:
                                 pass
                         hwnd = self._winwatch.hwnd if self._winwatch else self.root.winfo_id()

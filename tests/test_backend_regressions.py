@@ -1472,6 +1472,27 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HWND], user32.SetForegroundWindow.argtypes)
         self.assertEqual(ctypes.c_int, user32.TrackPopupMenu.restype)
 
+    def test_native_tray_declares_last_error_reset_signature(self):
+        import ctypes
+        from ctypes import wintypes
+        import focuscheck.app as app
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "CreatePopupMenu", "AppendMenuW", "DestroyMenu", "GetCursorPos",
+                "SetForegroundWindow", "TrackPopupMenu",
+            )
+        })()
+        kernel32 = type("Kernel32", (), {"SetLastError": Api()})()
+        app._configure_native_tray_api(user32, kernel32)
+        self.assertEqual([wintypes.DWORD], kernel32.SetLastError.argtypes)
+        self.assertIsNone(kernel32.SetLastError.restype)
+
     def test_entrypoints_declare_process_wide_native_signatures(self):
         import ctypes
         from ctypes import wintypes
