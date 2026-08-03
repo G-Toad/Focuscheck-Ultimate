@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest browser-boundary correction: source checkpoint `4dd8484` normalizes case-insensitive Windows executable paths to browser basenames for URL detection and session recovery, with focused regressions. The full verifier passed all 20 stages with 566 tests and zero process leaks; live browser/UIA behavior remains manual.
+
 Latest browser-matrix correction: source checkpoint `117b6d9` adds deterministic session-fallback coverage for Chrome, Edge, Brave, Opera, Opera GX, and Firefox, including titleless URL recovery. The full verifier passed all 20 stages with 564 tests and zero process leaks; live browser/UIA and website-intervention evidence remain manual.
 
 Latest plan-traceability correction: source checkpoint `8055695` adds explicit accepted alias rows for every one of the 84 defect identifiers named by the controlling V1 plan, plus `tools/plan_register_coverage.py` as a dedicated verifier stage. The full verifier passed all 20 stages with 562 tests and zero process leaks; manual and product-decision gates remain explicitly open.

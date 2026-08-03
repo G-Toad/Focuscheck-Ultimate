@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest browser-boundary correction: source checkpoint `4dd8484` normalizes case-insensitive Windows executable paths to browser basenames across URL detection and session recovery. Focused browser tests and the full verifier passed with 566 tests across all 20 stages and zero process leaks; real browser/UIA behavior remains manual.
+
 Latest browser-matrix correction: source checkpoint `117b6d9` covers the read-only session fallback for Chrome, Edge, Brave, Opera, Opera GX, and Firefox, including titleless URL recovery. The full verifier passed all 20 stages with 564 tests and zero process leaks; live browser/UIA extraction and website-flag intervention remain manual gates.
 
 Latest plan-traceability correction: source checkpoint `8055695` adds explicit accepted alias rows for every one of the 84 defect identifiers named by the controlling V1 plan, plus a dedicated `plan_register_coverage` verifier stage. The full verifier passed all 20 stages with 562 tests and zero process leaks; the register contains 148 defect rows and 6 contradiction rows with no untriaged severity-0/1 entries. Manual/release gates remain pending.
