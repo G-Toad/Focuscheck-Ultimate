@@ -4,6 +4,7 @@ import sqlite3
 import os
 import shutil
 import tempfile
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -330,20 +331,37 @@ class TaskDB:
                 if version >= CURRENT_TASK_SCHEMA_VERSION:
                     return
 
-                candidate = f"{self.path}.pre-migration-v{version}.bak"
-                suffix = 1
-                while os.path.exists(candidate):
-                    candidate = f"{self.path}.pre-migration-v{version}.{suffix}.bak"
-                    suffix += 1
-                temporary = f"{candidate}.{os.getpid()}.tmp"
-                backup = self._connection_factory(temporary)
+                # Reserve the final name atomically so concurrent first opens
+                # cannot both replace the same Windows backup path.
+                candidate = None
+                suffix = 0
+                while candidate is None:
+                    stem = f"{self.path}.pre-migration-v{version}"
+                    if suffix:
+                        stem += f".{suffix}"
+                    proposed = f"{stem}.bak"
+                    try:
+                        fd = os.open(proposed, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                        os.close(fd)
+                        candidate = proposed
+                    except FileExistsError:
+                        suffix += 1
+                temporary = f"{candidate}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
                 try:
-                    source.backup(backup)
-                    backup.commit()
-                finally:
-                    backup.close()
-                os.replace(temporary, candidate)
-                self.pre_migration_backup = candidate
+                    backup = self._connection_factory(temporary)
+                    try:
+                        source.backup(backup)
+                        backup.commit()
+                    finally:
+                        backup.close()
+                    os.replace(temporary, candidate)
+                    self.pre_migration_backup = candidate
+                except Exception:
+                    try:
+                        os.unlink(candidate)
+                    except OSError:
+                        pass
+                    raise
         except RuntimeError:
             raise
         except Exception as exc:
