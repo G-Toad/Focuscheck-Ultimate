@@ -207,6 +207,10 @@ def main() -> int:
         "FOCUS_DATA_DIR": str(data_dir),
         "FOCUSCHECK_SUPERVISOR_LOCK_FILE": str(RUNTIME / "supervisor.lock"),
         "FOCUSCHECK_SUPERVISOR_STOP_FILE": str(RUNTIME / "supervisor.stop"),
+        # Exercise repeated native overlay ownership in the bounded Windows
+        # stage without making the operator's environment part of the test.
+        "FOCUSCHECK_NATIVE_OVERLAY_CYCLES": os.environ.get("FOCUSCHECK_NATIVE_OVERLAY_CYCLES", "20"),
+        "FOCUSCHECK_NATIVE_OVERLAY_SECONDS": os.environ.get("FOCUSCHECK_NATIVE_OVERLAY_SECONDS", "0.25"),
     })
     live_profile = Path(os.environ.get("APPDATA", "")) / "FocusCheck"
     live_before = snapshot_tree(live_profile)
