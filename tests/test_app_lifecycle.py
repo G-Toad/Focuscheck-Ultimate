@@ -674,6 +674,32 @@ class AppLifecycleTests(unittest.TestCase):
         )
         app.root.destroy.assert_called_once_with()
 
+    def test_direct_cleanup_does_not_warn_about_missing_supervisor(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._shutdown_cleanup_complete = False
+        app.lifecycle = None
+        app._runtime_state = None
+        app._close_current_prompt_for_shutdown = mock.Mock()
+        app._close_snooze_confirmation = mock.Mock()
+        app._close_snooze_reminder = mock.Mock()
+        app._close_gentle_reminder = mock.Mock()
+        app._close_diagnostic_status_window = mock.Mock()
+        app._shutdown_engine = mock.Mock()
+        app._timers = mock.Mock()
+        app._tray = None
+        app._winwatch = None
+        app.root = mock.Mock()
+
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch(
+            "focuscheck.app.get_logger"
+        ) as logger:
+            App._cleanup_runtime(app, reason="direct_exit", request_supervisor=True)
+
+        logger.return_value.warning.assert_not_called()
+        app.root.destroy.assert_called_once_with()
+
     def test_diagnostic_status_close_clears_reference(self):
         from focuscheck.app import App
 

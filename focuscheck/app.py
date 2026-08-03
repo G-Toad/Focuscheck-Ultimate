@@ -2368,7 +2368,10 @@ class App:
         lifecycle = getattr(self, "lifecycle", None)
         if lifecycle is not None and lifecycle.phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED):
             lifecycle.begin_shutdown(reason=reason)
-        if request_supervisor:
+        # Direct launches do not have a supervisor to notify. Only enter the
+        # stop-request path when the supervised composition injected its marker
+        # file; otherwise a normal direct exit must not emit a false warning.
+        if request_supervisor and os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE"):
             try:
                 if self._request_supervisor_stop(reason=reason) is False:
                     get_logger().warning("supervisor stop request durability is not confirmed")
