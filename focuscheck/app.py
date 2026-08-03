@@ -1266,7 +1266,7 @@ class App:
                 self.settings = load_settings()
             except Exception:
                 pass
-            paused = bool(self.settings.get("paused", False))
+            paused = self._manual_pause_intent()
             start_stop_enabled = bool(self.settings.get("tray_start_stop_enabled", True))
             settings_enabled = bool(self.settings.get("tray_settings_button_enabled", True))
             exit_enabled = bool(self.settings.get("tray_exit_button_enabled", True))
@@ -1582,17 +1582,20 @@ class App:
     def _tray_toggle_pause(self):
         if not bool(self.settings.get("tray_start_stop_enabled", True)):
             return False
+        if self._manual_pause_intent():
+            return self._tray_resume()
+        return self._tray_pause()
+
+    def _manual_pause_intent(self) -> bool:
+        """Return durable user pause intent, not snooze or guard pause state."""
         runtime_state = getattr(self, "_runtime_state", None)
         if runtime_state is not None:
             try:
-                manually_paused = bool(runtime_state.snapshot.manual_paused)
+                return bool(runtime_state.snapshot.manual_paused)
             except Exception:
-                manually_paused = bool(self.settings.get("manual_paused", self.settings.get("paused", False)))
-        else:
-            manually_paused = bool(self.settings.get("manual_paused", self.settings.get("paused", False)))
-        if manually_paused:
-            return self._tray_resume()
-        return self._tray_pause()
+                pass
+        settings = getattr(self, "settings", {}) or {}
+        return bool(settings.get("manual_paused", settings.get("paused", False)))
 
     def _set_tray_setting(self, key: str, value) -> bool:
         """Persist tray fallback writes through App-owned state/repository APIs."""

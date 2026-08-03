@@ -166,6 +166,25 @@ class AppLifecycleTests(unittest.TestCase):
         app._tray_pause.assert_called_once_with()
         app._tray_resume.assert_not_called()
 
+    def test_manual_pause_intent_uses_coordinator_before_compatibility_settings(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"manual_paused": True, "paused": True}
+        app._runtime_state = mock.Mock()
+        app._runtime_state.snapshot.manual_paused = False
+
+        self.assertFalse(App._manual_pause_intent(app))
+
+    def test_manual_pause_intent_falls_back_to_compatibility_settings(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"manual_paused": True, "paused": False}
+        app._runtime_state = None
+
+        self.assertTrue(App._manual_pause_intent(app))
+
     def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
         from focuscheck.app import App
 
