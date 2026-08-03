@@ -9,6 +9,7 @@ import uuid
 import ctypes
 from ctypes import wintypes
 from typing import Optional
+from ..utils.timers import TimerRegistry
 
 # Pointer-sized result type for window procedures on 32/64-bit
 LRESULT = getattr(wintypes, 'LRESULT', ctypes.c_ssize_t)
@@ -644,6 +645,8 @@ class WindowsWakeWatcher:
         self._tray_id = 1
         self._hicon = None
         self._tray_icon_path = tray_icon_path
+        self._closed = False
+        self._timers = TimerRegistry(root)
 
         # API handles
         user32 = ctypes.windll.user32
@@ -731,40 +734,40 @@ class WindowsWakeWatcher:
                 if msg == WM_WTSSESSION_CHANGE:
                     if wParam == WTS_SESSION_UNLOCK:
                         # Resume immediately on unlock
-                        self.root.after(0, self.on_resume)
+                        self._schedule_ui("session-resume", 0, self.on_resume)
                     elif wParam == WTS_SESSION_LOCK:
                         # Pause immediately on lock
                         if self.on_pause:
-                            self.root.after(0, lambda: self.on_pause("lock"))
+                            self._schedule_ui("session-lock", 0, lambda: self.on_pause("lock"))
                 elif msg == WM_POWERBROADCAST:
                     if wParam in (PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMRESUMESTANDBY):
                         # Resume immediately on wake
-                        self.root.after(0, self.on_resume)
+                        self._schedule_ui("power-resume", 0, self.on_resume)
                     elif wParam == PBT_APMSUSPEND:
                         # Pause immediately on suspend
                         if self.on_pause:
-                            self.root.after(0, lambda: self.on_pause("sleep"))
+                            self._schedule_ui("power-sleep", 0, lambda: self.on_pause("sleep"))
                 elif msg in (WM_DISPLAYCHANGE, WM_DPICHANGED):
                     if self.on_display_change:
-                        self.root.after(50, self.on_display_change)
+                        self._schedule_ui("display-change", 50, self.on_display_change)
                 elif msg == self._TRAY_MSG:
                     if self.on_tray_click:
                         msg_code = int(lParam)
                         if msg_code in (WM_RBUTTONUP, WM_LBUTTONUP, WM_CONTEXTMENU):
-                            self.root.after(0, lambda m=msg_code: self.on_tray_click(m))
+                            self._schedule_ui("tray-click", 0, lambda m=msg_code: self.on_tray_click(m))
                 elif msg == WM_QUERYENDSESSION:
                     if self.on_shutdown:
-                        self.root.after(0, lambda: self.on_shutdown("query_end_session"))
+                        self._schedule_ui("query-end-session", 0, lambda: self.on_shutdown("query_end_session"))
                     return LRESULT(1)
                 elif msg == WM_ENDSESSION:
                     if bool(wParam) and self.on_shutdown:
-                        self.root.after(0, lambda: self.on_shutdown("end_session"))
+                        self._schedule_ui("end-session", 0, lambda: self.on_shutdown("end_session"))
                 elif self._TaskbarCreated and msg == self._TaskbarCreated:
                     # Explorer restarted; re-add tray icon
                     try:
                         self._tray_added = False
                         if self._tray_enabled:
-                            self.root.after(200, lambda: self._tray_add("Focus Check"))
+                            self._schedule_ui("taskbar-created", 200, lambda: self._tray_add("Focus Check"))
                     except Exception:
                         pass
             except Exception:
@@ -798,6 +801,12 @@ class WindowsWakeWatcher:
                 self._tray_add(tray_tooltip)
             except Exception:
                 pass
+
+    def _schedule_ui(self, name, delay_ms, callback):
+        """Post a generation-aware callback while the watcher is live."""
+        if self._closed:
+            return False
+        return self._timers.schedule(name, delay_ms, callback)
 
     def _tray_add(self, tooltip_text):
         from focuscheck.utils import get_logger, resource_path
@@ -1029,6 +1038,13 @@ class WindowsWakeWatcher:
             self._Shell_NotifyIconW(NIM_MODIFY, ctypes.byref(data))
 
     def close(self):
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            self._timers.close()
+        except Exception:
+            pass
         try:
             self._tray_remove()
         except Exception:

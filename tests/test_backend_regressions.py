@@ -948,6 +948,30 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HICON], user32.DestroyIcon.argtypes)
         self.assertEqual([wintypes.HINSTANCE, ctypes.c_void_p], user32.LoadIconW.argtypes)
 
+    def test_watcher_ui_callbacks_are_cancelled_when_closed(self):
+        from focuscheck.platform_specific import windows
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Root:
+            def after(self, _delay, callback):
+                self.callback = callback
+                return "timer-1"
+
+            def after_cancel(self, _timer_id):
+                self.cancelled = True
+
+        watcher = object.__new__(windows.WindowsWakeWatcher)
+        watcher._closed = False
+        watcher._timers = TimerRegistry(Root())
+        callback = mock.Mock()
+
+        self.assertTrue(watcher._schedule_ui("session-resume", 0, callback))
+        watcher.close = lambda: None
+        watcher._closed = True
+        watcher._timers.close()
+        watcher._timers._scheduler.callback()
+        callback.assert_not_called()
+
     def test_app_declares_native_tray_menu_signatures(self):
         import ctypes
         from ctypes import wintypes
