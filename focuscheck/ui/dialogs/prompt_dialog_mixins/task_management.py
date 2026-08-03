@@ -410,23 +410,32 @@ class TaskManagementMixin:
             if not reason:
                 messagebox.showerror("Required", "Please provide a reason for changing the task.")
                 return
-            try:
-                self.taskdb.mark_changed(task_id, reason)
-            except Exception:
-                pass
             # Optional new task
+            new_task = None
             nt = new_title.get().strip()
             if nt:
                 new_task = build_task_payload(nt, new_why.get(), new_cons.get(), new_due.get())
-                try:
-                    self.taskdb.start_task(
-                        title=new_task["title"],
-                        due_utc=new_task["due_utc"],
-                        why=new_task["why"],
-                        consequences=new_task["consequences"],
-                    )
-                except Exception:
-                    pass
+            try:
+                atomic_change = getattr(self.taskdb, "change_task", None)
+                if callable(atomic_change):
+                    saved = atomic_change(task_id, reason, new_task=new_task)
+                else:
+                    # Compatibility for older task-store adapters.
+                    saved = self.taskdb.mark_changed(task_id, reason)
+                    if saved and new_task is not None:
+                        saved = self.taskdb.start_task(
+                            title=new_task["title"],
+                            due_utc=new_task["due_utc"],
+                            why=new_task["why"],
+                            consequences=new_task["consequences"],
+                        )
+                if not saved:
+                    messagebox.showerror("Task Error", "The task change could not be saved.")
+                    return
+            except Exception:
+                log_exception("Task UI: failed to change task")
+                messagebox.showerror("Task Error", "The task change could not be saved.")
+                return
             try:
                 form.destroy()
             except Exception:

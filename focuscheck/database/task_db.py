@@ -435,6 +435,51 @@ class TaskDB:
             con.commit()
             return cur.lastrowid
 
+    def change_task(self, task_id, reason, *, new_task=None, when_utc=None):
+        """Atomically close an active task and optionally create its replacement."""
+        reason = _bounded_text(reason, "change_reason", required=True, limit=MAX_TASK_REASON_LENGTH)
+        if when_utc is None:
+            when_utc = self._now_utc().isoformat()
+        else:
+            when_utc = _normalize_utc(when_utc)
+
+        normalized = None
+        if new_task is not None:
+            if not isinstance(new_task, dict):
+                raise TypeError("new_task must be a mapping")
+            normalized = {
+                "title": _bounded_text(new_task.get("title"), "title", required=True),
+                "why": _bounded_text(new_task.get("why", ""), "why"),
+                "consequences": _bounded_text(new_task.get("consequences", ""), "consequences"),
+                "due_utc": _normalize_utc(new_task.get("due_utc"), allow_none=True),
+            }
+
+        with self._conn() as con:
+            cur = con.cursor()
+            cur.execute(
+                "UPDATE tasks SET status='changed', completed_utc=?, change_reason=? "
+                "WHERE id=? AND status='active'",
+                (when_utc, reason, task_id),
+            )
+            if cur.rowcount != 1:
+                return False
+            if normalized is None:
+                con.commit()
+                return True
+            cur.execute(
+                "INSERT INTO tasks(created_utc, title, why, consequences, due_utc, status) "
+                "VALUES (?,?,?,?,?, 'active')",
+                (
+                    when_utc,
+                    normalized["title"],
+                    normalized["why"],
+                    normalized["consequences"],
+                    normalized["due_utc"],
+                ),
+            )
+            con.commit()
+            return cur.lastrowid
+
     def mark_completed(self, task_id, when_utc=None):
         if when_utc is None:
             when_utc = self._now_utc().isoformat()

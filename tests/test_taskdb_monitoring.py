@@ -167,6 +167,44 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertEqual([second_id], [row["id"] for row in active])
             self.assertIn(first_id, [row["id"] for row in changed])
 
+    def test_change_task_atomically_replaces_active_task_with_reason(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"))
+            old_id = db.start_task(title="Old", due_utc=None, why="", consequences="")
+            new_id = db.change_task(
+                old_id,
+                "scope changed",
+                new_task={
+                    "title": "New",
+                    "why": "priority",
+                    "consequences": "delay",
+                    "due_utc": None,
+                },
+            )
+
+            self.assertIsInstance(new_id, int)
+            self.assertEqual(new_id, db.get_active()["id"])
+            history = {row["id"]: row for row in db.list_history(limit=10, include_active=True)}
+            self.assertEqual("changed", history[old_id]["status"])
+            self.assertEqual("scope changed", history[old_id]["change_reason"])
+            self.assertEqual("New", history[new_id]["title"])
+
+    def test_change_task_validates_replacement_before_closing_old_task(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"))
+            old_id = db.start_task(title="Old", due_utc=None, why="", consequences="")
+            with self.assertRaises(ValueError):
+                db.change_task(
+                    old_id,
+                    "scope changed",
+                    new_task={"title": "New", "due_utc": "not-a-date"},
+                )
+            self.assertEqual(old_id, db.get_active()["id"])
+
     def test_prompt_task_done_marks_overdue_task_as_timed_out(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
 

@@ -201,7 +201,7 @@ Current checkpoint addition: The latest `4ec9f75` settings slice executes the re
 
 Current checkpoint addition: The latest `480d491` V2 lifecycle checkpoint removes stale `_start_intervention_stub` naming from the implemented App-owned intervention path, updates the isolated QA runner, and records `qa_failures=0`. The full verifier records `411` unittest cases, all 18 bounded stages passed, and zero failed stages. Interactive overlay and target-Windows evidence remains manual_pending.
 
-Current checkpoint addition: The latest `9fa301b` task-UI durability slice requires successful `TaskDB` results before refresh/state clearing and reports creation/completion persistence failures; the focused task/monitoring suite records `57` passing tests. The full verifier records `415` unittest cases, all 18 bounded stages passed, and zero failed stages. Full UI task flow and live persistence-error evidence remain manual_pending.
+Current checkpoint addition: The latest `9fa301b` task-UI durability slice requires successful `TaskDB` results before refresh/state clearing and reports creation/completion persistence failures; the focused task/monitoring suite records `57` passing tests. The current follow-up adds transactional task replacement through `TaskDB.change_task()` and covers validation-before-close; the focused suite records `59` passing tests. Full UI task flow and live persistence-error evidence remain manual_pending.
 
 ## Final Acceptance Gates
 
