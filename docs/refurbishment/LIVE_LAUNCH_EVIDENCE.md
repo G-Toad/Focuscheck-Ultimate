@@ -54,6 +54,23 @@ This is direct source-supervisor/duplicate-launch evidence. It does not prove
 Run-key startup, lock/sleep/resume, interactive tray behavior, browser activity,
 or production-duration supervision.
 
+Latest extended supervised-duration probe on 2026-08-03:
+
+- The actual supervisor launched the actual `main.py` child in a unique
+  disposable data root and observed a ready heartbeat sequence advancing from
+  `2` to `4` over approximately `213` seconds with one stable child PID.
+- A generation/PID/process-start-bound stop request was accepted after the
+  probe preserved the heartbeat's raw ISO `process_start_utc` value.
+- The supervisor wrote a durable acknowledgement with
+  `status=acknowledged`, `termination=graceful`, and exited; the child also
+  exited and the disposable root was removed.
+- An earlier probe attempt using a locale-converted process-start timestamp was
+  rejected as expected; no forced termination was used.
+
+This strengthens supervised-duration and stop-protocol evidence. It does not
+prove production-duration supervision, sleep/resume, Explorer sign-in, or
+target-machine lifecycle behavior.
+
 Latest isolated live child-crash/restart probe on 2026-08-03:
 
 - A real `focuscheck_supervisor.py --run` launched `main.py` under a unique

@@ -291,6 +291,8 @@ Supervisor evidence correction: The real disposable source-supervisor self-test 
 
 Live supervisor evidence correction: an isolated Windows probe launched the actual `main.py` child through `focuscheck_supervisor.py`, rejected a second supervisor on the same marker paths, and completed a generation-bound graceful stop with both supervisor processes exiting cleanly. Run-key startup, lock/sleep/resume, interactive tray, and production-duration evidence remain open.
 
+Extended supervisor evidence correction: an actual supervisor/child pair ran for approximately `213` seconds in a disposable root with heartbeat sequence advancement `2 -> 4` and one stable child PID, then accepted a raw-ISO generation/PID/process-start-bound stop request, wrote a durable graceful acknowledgement, and exited with the child. A prior locale-converted timestamp was correctly rejected by the protocol. Production-duration, sleep/resume, Explorer sign-in, and target-machine evidence remain open.
+
 Live restart evidence correction: a disposable real supervisor launched child PID `19832`; terminating only that heartbeat-reported child produced a replacement child PID `26880`, with exit and second-start records in the supervisor log. The isolated tree and data root were removed afterward. Intentional tray exit, lock/sleep/resume, production-duration, and target-machine evidence remain open.
 
 Startup-launcher evidence correction: with `APPDATA` redirected to a disposable Windows profile, the real `--install-startup` path generated the expected `RunFocusCheckSupervisor.cmd` with supervisor, `--run`, base-directory, and timing arguments; `--uninstall-startup` removed it. Real shell/Run-key execution remains unverified.
