@@ -61,6 +61,7 @@ class RetentionTests(unittest.TestCase):
             self.assertNotIn("private response", audit)
             self.assertIn('"operation":"retention_delete"', audit)
             self.assertIn('"format_version":1', audit)
+            self.assertIn('"audit_written":true', audit)
 
     def test_apply_retention_does_not_delete_file_changed_after_planning(self):
         with tempfile.TemporaryDirectory() as temp_dir:

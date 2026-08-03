@@ -90,6 +90,7 @@ def apply_retention(
                     "size": int(item["size"]),
                     "deleted": deleted,
                     "error": error,
+                    "audit_written": True,
                 }
                 with audit_path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(audit, separators=(",", ":")) + "\n")

@@ -275,8 +275,10 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     }
     audit_path = root / "data_clear_audit.jsonl"
     try:
+        persisted_audit = dict(audit)
+        persisted_audit["audit_written"] = True
         with audit_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(audit, separators=(",", ":")) + "\n")
+            handle.write(json.dumps(persisted_audit, separators=(",", ":")) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
         audit["audit_written"] = True
