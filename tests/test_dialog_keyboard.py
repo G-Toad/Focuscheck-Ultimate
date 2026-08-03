@@ -140,6 +140,32 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_prompt_settings_entry_uses_app_persistence_boundary(self):
+        from datetime import datetime
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        class App:
+            root = mock.Mock()
+            _persist_settings_draft = mock.Mock()
+            _schedule_next = mock.Mock()
+
+        root = _make_root()
+        try:
+            for dialog_type, kwargs in (
+                (PromptDialog, {"slot_start_dt": datetime.now()}),
+                (V2PromptDialog, {"slot_start_dt": datetime.now(), "activity_info": {}}),
+            ):
+                dialog = dialog_type.__new__(dialog_type)
+                dialog.settings = dict(DEFAULT_SETTINGS)
+                dialog.app_ref = App()
+                with mock.patch("focuscheck.ui.windows.SettingsWindow") as settings_window:
+                    dialog_type._open_settings(dialog)
+                self.assertIs(settings_window.call_args.kwargs["persist_settings"], dialog.app_ref._persist_settings_draft)
+        finally:
+            root.destroy()
+
     def test_snooze_prompt_can_disable_reason_and_exact_fields(self):
         from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
 

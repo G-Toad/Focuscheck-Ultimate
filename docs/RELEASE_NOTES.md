@@ -3,7 +3,7 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 331 unittest cases.
+- Automated test baseline: 332 unittest cases.
 - Verification runner: all 17 bounded stages pass, including compile, tests, mutation smoke, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
 - The verifier also runs disposable real-process supervisor scenarios covering crash/restart, generation-bound stop acknowledgement, hang recovery, circuit-breaker entry, and child reaping; production-duration and target-machine supervision remain pending.
 - The composed Advanced Settings window now delegates durable writes through the App-owned persistence callback and applies the normalized committed settings snapshot after success; standalone construction retains its compatibility fallback.
@@ -15,6 +15,7 @@
 - Status snapshots and heartbeats now consume that view and publish the runtime revision and effective pause reason with scalar-safe compatibility fallback.
 - The pystray adapter now owns and cancels its post-start health-check timer during reschedule and shutdown.
 - The bounded mutation-smoke stage now kills five selected mutants, including isolated TaskDB active-to-completed and supervisor stable-ready backoff mutants.
+- V1 and V2 prompt settings entry points now pass the App-owned persistence callback into their Settings window.
 - Fatal mainloop cleanup now uses the same idempotent reverse-order runtime coordinator as intentional exit, preserves the original lifecycle error type, and avoids writing an intentional supervisor-stop request after a crash.
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
 - Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.

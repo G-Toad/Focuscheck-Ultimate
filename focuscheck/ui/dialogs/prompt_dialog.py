@@ -582,7 +582,12 @@ class PromptDialog(
                     pass
 
         from ..windows import SettingsWindow
-        SettingsWindow(self, self.settings, on_save=apply_and_refresh)
+        SettingsWindow(
+            self,
+            self.settings,
+            on_save=apply_and_refresh,
+            persist_settings=getattr(self.app_ref, "_persist_settings_draft", None),
+        )
 
     def _ignore_close(self):
         """

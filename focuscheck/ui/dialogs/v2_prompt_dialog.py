@@ -392,7 +392,12 @@ class V2PromptDialog(
                     self.app_ref.root.after(100, lambda: self.app_ref._schedule_next(0))
                 except Exception:
                     pass
-        SettingsWindow(self, self.settings, on_save=apply_and_refresh)
+        SettingsWindow(
+            self,
+            self.settings,
+            on_save=apply_and_refresh,
+            persist_settings=getattr(self.app_ref, "_persist_settings_draft", None),
+        )
 
     def _save(self):
         answer = (self.answer_var.get() or "").strip()
