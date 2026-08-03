@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest status-window composition correction: source checkpoint `fa8c96c` routes the App-owned diagnostic status window through an injectable factory. The machine-readable verifier report completed all 19 stages with 561 tests and zero process leaks; the outer wrapper timed out after report generation, and full composition extraction plus manual Windows/release evidence remain pending.
+
 Latest composition-root UI correction: source checkpoint `5035440` adds injectable App-owned factories for the intervention wizard, Settings window, task dialog, snooze prompt, snooze reminder, and gentle reminder, with compatibility-safe fallback for partial fixtures. The full verifier passed all 19 stages with 561 tests and zero process leaks; full composition extraction and manual Windows/release evidence remain pending.
 
 Latest V2 polling correction: settings, pause, prompt, intervention, and guard lifecycle hooks now resume website polling only when `_should_check_subpopup()` confirms no competing prompt, intervention, pause, shutdown, or guard state. The full verifier passed cleanly at source checkpoint `711de87` with 558 tests across 19 stages; manual Windows and release evidence remains pending.

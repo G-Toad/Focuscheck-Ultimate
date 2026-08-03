@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest status-window composition correction: source checkpoint `fa8c96c` routes the App-owned diagnostic status `Toplevel` through an injectable factory. The verifier report completed with all 19 stages passed, 561 tests, and zero process leaks; the outer command wrapper timed out after report generation, so the report is the authoritative result. Release status remains partial because manual Windows and packaging gates are not run.
+
 Latest composition-root UI correction: source checkpoint `5035440` routes App-owned intervention, Settings, task, snooze, and reminder dialog construction through injectable `AppDependencies` factories while preserving production defaults and standalone fixture compatibility. Focused lifecycle regressions and the full verifier passed with 561 tests across all 19 stages and zero process leaks; release status remains partial because manual Windows and packaging gates are not run.
 
 Latest V2 polling evidence: source checkpoint `711de87` prevents website polling from restarting after a lease ends while another prompt, intervention, pause, shutdown, or guard condition remains active. The full verifier passed all 19 stages with 558 tests and zero process leaks; release status remains partial because manual Windows and packaging gates are not run.
