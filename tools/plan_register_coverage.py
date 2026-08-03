@@ -34,7 +34,7 @@ def register_ids(path: Path = DEFECT_REGISTER) -> set[str]:
     """Return all data-row IDs from the eight-column defect table."""
     ids: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():
-        match = re.match(r"^\|\s*([A-Z]+-\d+)\s*\|", line)
+        match = re.match(r"^\|\s*([A-Z][A-Z0-9-]*-\d+)\s*\|", line)
         if match:
             ids.add(match.group(1))
     return ids
