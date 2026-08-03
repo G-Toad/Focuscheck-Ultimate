@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest timer-registry correction: `TimerRegistry` now rolls back ownership when initial Tk registration fails and releases recurring ownership when re-registration fails; failure-path regressions cover both cases. The full verifier passed at source checkpoint `c4b73a3` with 548 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest engine-switch correction: `_ensure_engine()` now constructs a selected replacement before shutting down the current monitoring engine, so a factory failure preserves the running engine and active prompt. The full verifier passed at source checkpoint `7013367` with 546 tests across 19 stages; manual Windows and release evidence remains pending.
 
 Latest lifecycle correction: `App.run()` no longer duplicates the lifecycle completion transition after `_cleanup_runtime`; cleanup owns the transition and preserves the original mainloop failure even when an injected lifecycle adapter is minimal or transition reporting fails. The full verifier passed at source checkpoint `2e721b8` with 529 tests across 19 stages; manual evidence remains pending.

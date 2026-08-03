@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest timer-registry evidence: source checkpoint `c4b73a3` removes phantom timer ownership after one-shot or recurring Tk scheduler failure. The full verifier passed all 19 stages with 548 tests; release status remains partial because manual Windows and packaging gates are not run.
+
 Latest engine-switch evidence: source checkpoint `7013367` constructs the replacement monitoring engine before tearing down the existing engine, and regression coverage proves factory failure preserves the active engine and prompt. The full verifier passed all 19 stages with 546 tests; release status remains partial because manual Windows and packaging gates are not run.
 
 The current automated baseline is `544` tests across 19 bounded stages at source checkpoint `809696e`; the detailed older bullets are retained as historical baseline context.
