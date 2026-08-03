@@ -1,10 +1,12 @@
 # Release Evidence
 
-The current automated baseline is `492` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `493` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
 The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage. Manual Windows, browser, power/session, installer/signing, target-user migration, and production-release evidence remain pending.
 
 The latest lifecycle checkpoint adds injectable startup and shutdown stage hooks plus a real constructor failure matrix covering all 13 startup checkpoints; manual and release gates remain pending.
+
+The latest prompt checkpoint adds typed prompt outcomes and App source-to-outcome mapping for completion, cancellation, pause, settings, and shutdown interruption; the complete interactive close matrix remains pending.
 
 - The current verifier has `19` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.

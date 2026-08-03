@@ -66,7 +66,7 @@ class RuntimeFoundationTests(unittest.TestCase):
         self.assertEqual(0, dialog.settings["study_phrase_index"])
 
     def test_prompt_coordinator_ignores_duplicate_and_stale_completion(self):
-        from focuscheck.ui.prompt_coordinator import PromptCoordinator
+        from focuscheck.ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 
         coordinator = PromptCoordinator()
         first = object()
@@ -75,8 +75,21 @@ class RuntimeFoundationTests(unittest.TestCase):
         self.assertIsNone(coordinator.open(second))
         self.assertFalse(coordinator.complete(second))
         self.assertTrue(coordinator.complete(first, generation))
+        self.assertEqual(PromptOutcome.COMPLETED, coordinator.last_outcome)
         self.assertFalse(coordinator.complete(first, generation))
         self.assertEqual(2, coordinator.open(second))
+        self.assertTrue(coordinator.close(second, outcome=PromptOutcome.INTERRUPTED_BY_SHUTDOWN))
+        self.assertEqual(PromptOutcome.INTERRUPTED_BY_SHUTDOWN, coordinator.last_outcome)
+
+    def test_app_prompt_interruption_sources_map_to_typed_outcomes(self):
+        from focuscheck.app import App
+        from focuscheck.ui.prompt_coordinator import PromptOutcome
+
+        self.assertEqual(PromptOutcome.INTERRUPTED_BY_PAUSE, App._prompt_interruption_outcome("pause"))
+        self.assertEqual(PromptOutcome.INTERRUPTED_BY_PAUSE, App._prompt_interruption_outcome("snooze"))
+        self.assertEqual(PromptOutcome.INTERRUPTED_BY_SETTINGS, App._prompt_interruption_outcome("settings"))
+        self.assertEqual(PromptOutcome.INTERRUPTED_BY_SHUTDOWN, App._prompt_interruption_outcome("windows_end_session"))
+        self.assertEqual(PromptOutcome.CANCELLED, App._prompt_interruption_outcome("unknown"))
 
     def test_app_paths_are_complete_and_rooted(self):
         with tempfile.TemporaryDirectory() as temp_dir:

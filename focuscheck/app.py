@@ -46,7 +46,7 @@ from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.events import StructuredEventLedger
 from .runtime.dependencies import AppDependencies
 from .utils.clock import SystemClock
-from .ui.prompt_coordinator import PromptCoordinator
+from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
 
@@ -1648,7 +1648,7 @@ class App:
         if coordinator is None:
             coordinator = PromptCoordinator()
             self._prompt_coordinator = coordinator
-        coordinator.close(prompt)
+        coordinator.close(prompt, outcome=self._prompt_interruption_outcome(source))
         self._record_operational_event("prompt", event="closed", outcome=f"interrupted_{source}")
         self._current_prompt = None
         state = getattr(self, "_runtime_state", None)
@@ -1659,6 +1659,18 @@ class App:
         except Exception:
             pass
         return True
+
+    @staticmethod
+    def _prompt_interruption_outcome(source):
+        """Normalize lifecycle sources into the shared prompt outcome contract."""
+        source = str(source or "").lower()
+        if "shutdown" in source or source.startswith("windows_"):
+            return PromptOutcome.INTERRUPTED_BY_SHUTDOWN
+        if "setting" in source:
+            return PromptOutcome.INTERRUPTED_BY_SETTINGS
+        if "pause" in source or "snooze" in source:
+            return PromptOutcome.INTERRUPTED_BY_PAUSE
+        return PromptOutcome.CANCELLED
 
     def _tray_toggle_pause(self):
         if not bool(self.settings.get("tray_start_stop_enabled", True)):
