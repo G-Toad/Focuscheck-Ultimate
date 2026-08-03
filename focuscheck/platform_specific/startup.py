@@ -64,6 +64,7 @@ def install_startup(name: str = "FocusCheck"):
         return False
     
     cmd = compose_startup_command()
+    key = None
     try:
         from ..utils.logging_utils import get_logger
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -72,7 +73,6 @@ def install_startup(name: str = "FocusCheck"):
         except FileNotFoundError:
             key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path)
         winreg.SetValueEx(key, name, 0, winreg.REG_SZ, cmd)
-        winreg.CloseKey(key)
         try:
             get_logger().info("installed startup: %s -> %s", name, cmd)
         except Exception:
@@ -87,6 +87,12 @@ def install_startup(name: str = "FocusCheck"):
             pass
         print(f"Failed to install startup entry: {e}")
         return False
+    finally:
+        if key is not None:
+            try:
+                winreg.CloseKey(key)
+            except Exception:
+                pass
 
 
 def uninstall_startup(name: str = "FocusCheck"):

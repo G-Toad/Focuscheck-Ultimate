@@ -479,6 +479,30 @@ class StartupCommandTests(unittest.TestCase):
         self.assertEqual("FocusCheckTest", calls["name"])
         self.assertIn("focuscheck_supervisor.py", calls["value"])
 
+    def test_install_startup_closes_registry_handle_when_write_fails(self):
+        from focuscheck.platform_specific import startup
+
+        calls = {"closed": 0}
+
+        def close_key(_key):
+            calls["closed"] += 1
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_SET_VALUE=1,
+            REG_SZ=1,
+            OpenKey=lambda *_args: "key",
+            SetValueEx=lambda *_args: (_ for _ in ()).throw(OSError("registry write failed")),
+            CloseKey=close_key,
+        )
+
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), mock.patch.object(
+            startup._platform, "system", return_value="Windows"
+        ):
+            self.assertFalse(startup.install_startup("FocusCheckTest"))
+
+        self.assertEqual(1, calls["closed"])
+
     def test_uninstall_startup_removes_same_registry_name(self):
         from focuscheck.platform_specific import startup
 
