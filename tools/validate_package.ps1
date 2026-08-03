@@ -14,6 +14,14 @@ if (-not (Test-Path -LiteralPath $package -PathType Container)) {
     throw "Package directory does not exist: $package"
 }
 
+# A release package must be a self-contained directory tree. Reparse points
+# could redirect validation or installation outside the package root.
+$reparsePoints = Get-ChildItem -LiteralPath $package -Recurse -Force -ErrorAction Stop |
+    Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 }
+if ($reparsePoints) {
+    throw "Package contains reparse points: $($reparsePoints.FullName -join ', ')"
+}
+
 $required = @("FocusCheck.exe", "FocusCheckSupervisor.exe", "package-manifest.json")
 foreach ($name in $required) {
     $path = Join-Path $package $name
@@ -40,12 +48,29 @@ if ($RequireSigned) {
 }
 
 $manifest = Get-Content -LiteralPath (Join-Path $package "package-manifest.json") -Raw | ConvertFrom-Json
-if ($manifest.version -eq $null -or $manifest.files -eq $null) {
+if ([string]::IsNullOrWhiteSpace([string]$manifest.version) -or $manifest.files -eq $null) {
     throw "Package manifest must contain version and files"
 }
 $manifestByPath = @{}
 foreach ($entry in $manifest.files) {
-    $manifestByPath[[string]$entry.path] = [string]$entry.sha256
+    $relative = ([string]$entry.path).Replace('\', '/')
+    if ([string]::IsNullOrWhiteSpace($relative) -or [IO.Path]::IsPathRooted($relative) -or
+        $relative -eq '..' -or $relative.StartsWith('../', [StringComparison]::Ordinal)) {
+        throw "Package manifest contains an unsafe path: $relative"
+    }
+    if ($manifestByPath.ContainsKey($relative)) {
+        throw "Package manifest contains a duplicate path: $relative"
+    }
+    $candidate = [IO.Path]::GetFullPath((Join-Path $package $relative))
+    $packagePrefix = $package.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if (-not $candidate.StartsWith($packagePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Package manifest path escapes package root: $relative"
+    }
+    $digest = [string]$entry.sha256
+    if ($digest -notmatch '^[0-9a-fA-F]{64}$') {
+        throw "Package manifest contains an invalid SHA-256 digest: $relative"
+    }
+    $manifestByPath[$relative] = $digest
 }
 $actualFiles = Get-ChildItem -LiteralPath $package -Recurse -File | Where-Object { $_.Name -ne "package-manifest.json" }
 foreach ($file in $actualFiles) {

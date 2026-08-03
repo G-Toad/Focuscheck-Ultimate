@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import json
 import shutil
 import subprocess
 import tempfile
@@ -91,6 +92,41 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Get-AuthenticodeSignature", validator)
         self.assertIn("RequireSigned", validator)
         self.assertIn(".py", validator)
+
+    def test_package_validation_rejects_reparse_points_and_manifest_traversal(self):
+        root = Path(__file__).resolve().parents[1]
+        validator = (root / "tools/validate_package.ps1").read_text(encoding="utf-8")
+        self.assertIn("ReparsePoint", validator)
+        self.assertIn("IsPathRooted", validator)
+        self.assertIn("StartsWith('../'", validator)
+        self.assertIn("duplicate path", validator)
+        self.assertIn("invalid SHA-256 digest", validator)
+
+    def test_validator_rejects_unsafe_manifest_path(self):
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if not powershell:
+            self.skipTest("PowerShell is required for package validation verification")
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package = Path(temp_dir) / "package"
+            package.mkdir()
+            (package / "FocusCheck.exe").write_text("child", encoding="ascii")
+            (package / "FocusCheckSupervisor.exe").write_text("supervisor", encoding="ascii")
+            (package / "package-manifest.json").write_text(
+                json.dumps({
+                    "version": "test",
+                    "files": [{"path": "../outside.exe", "sha256": "0" * 64}],
+                }),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(root / "tools/validate_package.ps1"), "-PackageDir", str(package)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("unsafe path", result.stdout + result.stderr)
 
     def test_packaged_supervisor_selftest_is_bounded_and_pid_bound(self):
         root = Path(__file__).resolve().parents[1]
