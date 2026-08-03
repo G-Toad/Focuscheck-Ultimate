@@ -4,6 +4,8 @@ Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspe
 
 Latest lifecycle correction: `App.run()` no longer duplicates the lifecycle completion transition after `_cleanup_runtime`; cleanup owns the transition and preserves the original mainloop failure even when an injected lifecycle adapter is minimal or transition reporting fails. The full verifier passed at source checkpoint `2e721b8` with 529 tests across 19 stages; manual evidence remains pending.
 
+Latest browser-session correction: tab enumeration now has a bounded, read-only fallback for Firefox `recovery.jsonlz4` selected entries and conservative Chromium HTTP(S) session strings after UI Automation and CDP. Recovered tabs are limited to selection UI because they cannot prove foreground identity; the full verifier passed at source checkpoint `dcc6f14` with 533 tests across 19 stages. Live browser evidence remains pending.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.

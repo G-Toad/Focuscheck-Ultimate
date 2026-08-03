@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `529` tests across 19 bounded stages at source checkpoint `2e721b8`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `533` tests across 19 bounded stages at source checkpoint `dcc6f14`; the detailed older bullets are retained as historical baseline context.
+
+The latest browser-session checkpoint adds bounded read-only Firefox recovery parsing and conservative Chromium session URL extraction as a final tab-listing fallback after UI Automation and CDP. Focused browser tests and the full verifier passed; recovered session data is not treated as foreground identity and live browser evidence remains pending.
 
 The latest lifecycle correction removes the duplicate lifecycle completion transition from `App.run()` so `_cleanup_runtime` is the single cleanup owner. Focused lifecycle regressions and the full verifier passed; manual Windows, hardware, packaging, and release evidence remain pending.
 
