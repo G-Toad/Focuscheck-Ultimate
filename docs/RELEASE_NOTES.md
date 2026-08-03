@@ -27,6 +27,8 @@
 - App-owned interventions now generate one identity at the coordinator boundary and pass it through the wizard to reflection logging; standalone wizard callers retain compatibility-generated IDs.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
+- Package promotion now restores the retained previous install after post-promotion validation failure and keeps the failed package for diagnosis.
+- Package validation rejects reparse points, rooted or traversal manifest paths, duplicate manifest entries, and invalid SHA-256 digests before install.
 - Release status: `NOT_READY`.
 
 ## Known limitations
