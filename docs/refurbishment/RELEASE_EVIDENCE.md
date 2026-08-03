@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `533` tests across 19 bounded stages at source checkpoint `1c63aa0`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `534` tests across 19 bounded stages at source checkpoint `eb61736`; the detailed older bullets are retained as historical baseline context.
+
+The latest lifecycle observability checkpoint makes heartbeat readiness capability-safe for injected lifecycle adapters and adds regression coverage for enum, string, and missing phase values. Focused lifecycle tests and the full verifier passed; manual Windows and release evidence remains pending.
 
 The latest browser-session checkpoint adds bounded read-only Firefox recovery parsing and conservative Chromium session URL extraction as a final tab-listing fallback after UI Automation and CDP, with query/fragment redaction. Focused browser tests and the full verifier passed; recovered session data is not treated as foreground identity and live browser evidence remains pending.
 

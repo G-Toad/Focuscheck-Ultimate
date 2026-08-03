@@ -6,6 +6,8 @@ Latest lifecycle correction: `App.run()` no longer duplicates the lifecycle comp
 
 Latest browser-session correction: tab enumeration now has a bounded, read-only fallback for Firefox `recovery.jsonlz4` selected entries and conservative Chromium HTTP(S) session strings after UI Automation and CDP. Recovered URLs strip query and fragment components, and recovered tabs are limited to selection UI because they cannot prove foreground identity; the full verifier passed at source checkpoint `1c63aa0` with 533 tests across 19 stages. Live browser evidence remains pending.
 
+Latest lifecycle observability correction: heartbeat readiness now accepts enum, string, or missing lifecycle phase values from injected adapters instead of assuming `.value`, preserving heartbeat publication for partial-composition tests and custom adapters. The full verifier passed at source checkpoint `eb61736` with 534 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.
