@@ -66,6 +66,19 @@ class BrowserSessionTests(unittest.TestCase):
             tabs = collect_browser_tabs("chrome.exe", roots=[path])
         self.assertEqual(["https://session.example"], [tab.url for tab in tabs])
 
+    def test_candidate_paths_normalize_executable_paths(self):
+        from focuscheck.platform_specific.browser_sessions import _candidate_paths
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "Google" / "Chrome" / "User Data"
+            (root / "Default" / "Sessions").mkdir(parents=True)
+            candidates = _candidate_paths(
+                r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+                {"LOCALAPPDATA": temp_dir},
+            )
+        self.assertTrue(candidates)
+        self.assertTrue(any(str(path).endswith("Current Tabs") for path, _kind, _root in candidates))
+
     def test_collection_rejects_oversized_session_file(self):
         from focuscheck.platform_specific import browser_sessions
 

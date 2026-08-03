@@ -1,6 +1,7 @@
 """Best-effort browser URL extraction for Windows."""
 
 import platform
+import ntpath
 
 
 _CHROMIUM_PROCESSES = {
@@ -13,18 +14,25 @@ _CHROMIUM_PROCESSES = {
 _FIREFOX_PROCESSES = {"firefox.exe"}
 
 
+def normalize_browser_process(process_name):
+    """Normalize a process name or Windows executable path to its basename."""
+    if not process_name:
+        return ""
+    return ntpath.basename(str(process_name).strip().replace("/", "\\")).lower()
+
+
 def try_get_browser_url(hwnd, process_name):
     """Return a best-effort URL for supported browsers, otherwise None."""
     if platform.system().lower() != "windows":
         return None
-    proc = (process_name or "").lower()
+    proc = normalize_browser_process(process_name)
     if proc in _CHROMIUM_PROCESSES or proc in _FIREFOX_PROCESSES:
         return _try_uia_address_bar(hwnd)
     return None
 
 
 def is_supported_browser(process_name):
-    proc = (process_name or "").lower()
+    proc = normalize_browser_process(process_name)
     return proc in _CHROMIUM_PROCESSES or proc in _FIREFOX_PROCESSES
 
 
@@ -81,4 +89,4 @@ def _get_value_pattern(el, UIA):
     return None
 
 
-__all__ = ["try_get_browser_url", "is_supported_browser"]
+__all__ = ["try_get_browser_url", "is_supported_browser", "normalize_browser_process"]

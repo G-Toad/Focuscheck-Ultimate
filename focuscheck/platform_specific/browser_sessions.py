@@ -15,6 +15,8 @@ import re
 from typing import Iterable, Mapping
 from urllib.parse import urlsplit, urlunsplit
 
+from .browser_info import normalize_browser_process
+
 
 _MAX_FILE_BYTES = 16 * 1024 * 1024
 _MAX_TABS = 256
@@ -199,7 +201,7 @@ def _has_symlink_component(path: Path, root: Path) -> bool:
 
 
 def _candidate_paths(process_name: str, env: Mapping[str, str]) -> list[tuple[Path, str, Path]]:
-    process = (process_name or "").lower()
+    process = normalize_browser_process(process_name)
     candidates: list[tuple[Path, str, Path]] = []
     if process == "firefox.exe":
         appdata = env.get("APPDATA")
@@ -224,7 +226,7 @@ def collect_browser_tabs(process_name: str, *, env: Mapping[str, str] | None = N
     """Collect bounded session tabs for a browser process without mutation."""
     environment = dict(os.environ if env is None else env)
     if roots is not None:
-        candidates = [(Path(root), "firefox" if (process_name or "").lower() == "firefox.exe" else "chromium", Path(root).parent)
+        candidates = [(Path(root), "firefox" if normalize_browser_process(process_name) == "firefox.exe" else "chromium", Path(root).parent)
                       for root in roots]
     else:
         candidates = _candidate_paths(process_name, environment)

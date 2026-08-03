@@ -21,6 +21,13 @@ class BrowserInfoTests(unittest.TestCase):
                 self.assertTrue(is_supported_browser(process_name))
                 self.assertTrue(is_supported_browser(process_name.upper()))
 
+    def test_supported_process_matrix_accepts_windows_executable_paths(self):
+        from focuscheck.platform_specific.browser_info import is_supported_browser
+
+        self.assertTrue(is_supported_browser(r"C:\\Program Files\\Google\\Chrome\\chrome.exe"))
+        self.assertTrue(is_supported_browser(r"C:/Program Files/Mozilla Firefox/firefox.exe"))
+        self.assertFalse(is_supported_browser(r"C:\\Windows\\notepad.exe"))
+
     def test_unsupported_or_missing_processes_are_rejected(self):
         from focuscheck.platform_specific.browser_info import is_supported_browser
 
