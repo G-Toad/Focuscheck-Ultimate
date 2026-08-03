@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import unittest
+import json
+import tempfile
+from pathlib import Path
 from dataclasses import FrozenInstanceError
 from itertools import product
 from datetime import datetime, timezone, timedelta
@@ -55,6 +58,17 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertTrue(events)
         self.assertEqual("manual_pause", events[0]["event"])
         self.assertNotIn("snooze_until_utc", events[0])
+
+    def test_runtime_journal_uses_injected_clock(self):
+        from focuscheck.runtime.journal import RuntimeTransitionJournal
+
+        clock = FakeClock(datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            journal = RuntimeTransitionJournal(Path(temp_dir) / "runtime.jsonl", clock=clock)
+            journal.append({"event": "pause", "outcome": "committed"})
+            record = json.loads((Path(temp_dir) / "runtime.jsonl").read_text(encoding="utf-8"))
+
+        self.assertEqual(clock.now_utc().isoformat(), record["utc"])
 
     def test_pause_save_failure_rolls_back_settings_and_state(self):
         settings = {"paused": False, "snooze_until_utc": ""}

@@ -12,14 +12,31 @@ from pathlib import Path
 class RuntimeTransitionJournal:
     """Append safe lifecycle metadata without recording user prompt content."""
 
-    def __init__(self, path: str | os.PathLike[str], max_bytes: int = 512 * 1024) -> None:
+    def __init__(
+        self,
+        path: str | os.PathLike[str],
+        max_bytes: int = 512 * 1024,
+        clock=None,
+    ) -> None:
         self.path = Path(path)
         self.max_bytes = max(4096, int(max_bytes))
+        self.clock = clock
         self._lock = threading.Lock()
+
+    def _now_utc(self) -> datetime:
+        try:
+            value = self.clock() if callable(self.clock) else self.clock.now_utc()
+            if isinstance(value, datetime):
+                if value.tzinfo is None:
+                    value = value.replace(tzinfo=timezone.utc)
+                return value.astimezone(timezone.utc)
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            pass
+        return datetime.now(timezone.utc)
 
     def append(self, event: dict) -> None:
         payload = {
-            "utc": datetime.now(timezone.utc).isoformat(),
+            "utc": self._now_utc().isoformat(),
             "event": str(event.get("event", "transition")),
             "outcome": str(event.get("outcome", "committed")),
             "manual_paused": bool(event.get("manual_paused", False)),

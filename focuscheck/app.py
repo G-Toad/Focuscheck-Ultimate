@@ -44,6 +44,7 @@ from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.events import StructuredEventLedger
+from .utils.clock import SystemClock
 from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -286,7 +287,11 @@ class App:
                 get_logger().info("legacy data migration completed | events=%d", len(migration_events))
         except Exception:
             get_logger().exception("legacy data migration failed", exc_info=True)
-        self._runtime_journal = RuntimeTransitionJournal(self.paths.runtime_state)
+        self._runtime_clock = SystemClock()
+        self._runtime_journal = RuntimeTransitionJournal(
+            self.paths.runtime_state,
+            clock=self._runtime_clock,
+        )
 
         def record_runtime_event(event):
             self._runtime_journal.append(event)
@@ -295,6 +300,7 @@ class App:
         self._runtime_state = RuntimeStateCoordinator(
             self.settings,
             persist=self._persist_settings_draft,
+            clock=self._runtime_clock,
             transition_sink=record_runtime_event,
         )
         self._snooze_unpause_timer_id = None
@@ -317,7 +323,7 @@ class App:
             pass
         # Init task DB
         try:
-            self.taskdb = TaskDB(self.paths.task_db)
+            self.taskdb = TaskDB(self.paths.task_db, clock=self._runtime_clock)
         except Exception:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")
