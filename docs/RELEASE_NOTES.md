@@ -3,8 +3,8 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 242 unittest cases.
-- Verification runner: compile, tests, QA, application self-test, tray self-test, settings inventory, and diagnostic bundle stages pass.
+- Automated test baseline: 310 unittest cases.
+- Verification runner: all 15 bounded stages pass, including compile, tests, mutation smoke, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
 - Release status: `NOT_READY`.

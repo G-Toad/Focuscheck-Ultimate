@@ -152,6 +152,41 @@ class InterventionCoordinatorTests(unittest.TestCase):
             self.assertFalse(app._intervention_active)
         app._runtime_state.end_intervention.assert_called_once()
 
+    def test_app_intervention_runner_owns_prompt_visibility_and_context(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.root = mock.Mock()
+        app._runtime_state = mock.Mock()
+        app._runtime_state.begin_intervention.return_value = True
+        app._intervention_active = False
+        prompt = mock.Mock()
+        wizard = mock.Mock()
+        wizard.run.return_value = True
+
+        with mock.patch(
+            "focuscheck.ui.dialogs.intervention_wizard.InterventionWizard",
+            return_value=wizard,
+        ):
+            self.assertTrue(App.run_intervention(
+                app,
+                {"example": True},
+                preselect_hwnd=123,
+                preselect_title="summary only",
+                prompt_ref=prompt,
+                hide_prompt=True,
+            ))
+
+        prompt.withdraw.assert_called_once_with()
+        prompt.deiconify.assert_called_once_with()
+        wizard.run.assert_called_once_with(
+            preselect_hwnd=123,
+            preselect_title="summary only",
+            prompt_ref=prompt,
+            hide_prompt=True,
+        )
+        app._runtime_state.end_intervention.assert_called_once_with()
+
     def test_off_thread_intervention_timeout_invalidates_queued_tk_callback(self):
         from focuscheck.ui.dialogs import intervention_wizard
 

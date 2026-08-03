@@ -751,8 +751,10 @@ class App:
         # not on every scheduler tick.
         if getattr(self, "_runtime_state", None) is not None:
             self._runtime_state.refresh_from_settings(self.settings)
-            guard_paused = self._refresh_guard_state()
-            if self._runtime_state.snapshot.effectively_paused:
+            self._refresh_guard_state()
+            # Route eligibility through the coordinator so injected clocks and
+            # all pause sources remain authoritative at the scheduler boundary.
+            if self._runtime_state.is_effectively_paused():
                 poll_ms = int(self.settings.get("pause_poll_interval_seconds", 5)) * 1000
                 self._schedule_next(poll_ms)
                 return
@@ -1055,16 +1057,36 @@ class App:
                 pass
             setattr(self, attribute, None)
 
-    def run_intervention(self, settings, *, preselect_hwnd=None, preselect_title=None) -> bool:
+    def run_intervention(
+        self,
+        settings,
+        *,
+        preselect_hwnd=None,
+        preselect_title=None,
+        prompt_ref=None,
+        hide_prompt=False,
+    ) -> bool:
         """Run one intervention under the application-owned lease."""
         state = getattr(self, "_runtime_state", None)
         if state is not None and not state.begin_intervention():
             return False
         self._intervention_active = True
+        hidden = False
         try:
             from .ui.dialogs.intervention_wizard import InterventionWizard
+            if hide_prompt and prompt_ref is not None:
+                try:
+                    prompt_ref.withdraw()
+                    hidden = True
+                except Exception:
+                    get_logger().exception("intervention prompt hide failed", exc_info=True)
             wizard = InterventionWizard(self.root, settings)
-            return bool(wizard.run(preselect_hwnd=preselect_hwnd, preselect_title=preselect_title))
+            return bool(wizard.run(
+                preselect_hwnd=preselect_hwnd,
+                preselect_title=preselect_title,
+                prompt_ref=prompt_ref,
+                hide_prompt=hide_prompt,
+            ))
         except Exception:
             try:
                 get_logger().exception("intervention coordinator failed", exc_info=True)
@@ -1072,6 +1094,13 @@ class App:
                 pass
             return False
         finally:
+            if hidden:
+                try:
+                    prompt_ref.deiconify()
+                    prompt_ref.lift()
+                    prompt_ref.focus_force()
+                except Exception:
+                    get_logger().exception("intervention prompt restore failed", exc_info=True)
             self._intervention_active = False
             if state is not None:
                 state.end_intervention()

@@ -68,6 +68,21 @@ class V2FlowTests(unittest.TestCase):
 
         self.assertFalse(dialog.app_ref._intervention_active)
 
+    def test_app_owned_intervention_runner_receives_prompt_context(self):
+        dialog = self._dialog()
+        dialog.app_ref.run_intervention = mock.Mock(return_value=True)
+        dialog.winfo_viewable = lambda: True
+        dialog._force_window_to_front = lambda: None
+
+        self.assertTrue(dialog._start_intervention_stub())
+        dialog.app_ref.run_intervention.assert_called_once_with(
+            dialog.settings,
+            preselect_hwnd=None,
+            preselect_title=None,
+            prompt_ref=dialog,
+            hide_prompt=True,
+        )
+
     def test_intervention_log_summarizes_active_window_title(self):
         dialog = self._dialog()
         dialog.activity_info = {"hwnd": 123, "title": "private.example/secret-token"}

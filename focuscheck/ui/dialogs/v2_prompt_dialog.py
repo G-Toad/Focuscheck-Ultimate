@@ -438,31 +438,8 @@ class V2PromptDialog(
                     logger.info("V2 intervention requested | thread=%s", threading.current_thread().name)
             except Exception:
                 pass
-            try:
-                if self.app_ref is not None:
-                    try:
-                        self.app_ref._intervention_active = True
-                        try:
-                            if logger:
-                                logger.info("intervention_active set True")
-                        except Exception:
-                            pass
-                    except Exception:
-                        if logger:
-                            logger.exception("intervention_active set True failed", exc_info=True)
-            except Exception:
-                if logger:
-                    logger.exception("intervention: app_ref state update failed", exc_info=True)
             parent = self.app_ref.root if self.app_ref is not None else self
             hide_prompt = bool(self.settings.get("v2_hide_prompt_during_intervention", True))
-            try:
-                wizard = InterventionWizard(parent, self.settings)
-            except TypeError:
-                wizard = InterventionWizard(parent)
-                try:
-                    wizard.settings = self.settings
-                except Exception:
-                    pass
             preselect = self.activity_info.get("hwnd")
             title = self.activity_info.get("title")
             try:
@@ -476,13 +453,36 @@ class V2PromptDialog(
             except Exception:
                 pass
             result = False
+            wizard = None
+            app_runner = getattr(self.app_ref, "run_intervention", None) if self.app_ref is not None else None
             try:
-                result = bool(wizard.run(
-                    preselect_hwnd=preselect,
-                    preselect_title=title,
-                    prompt_ref=self,
-                    hide_prompt=hide_prompt,
-                ))
+                if callable(app_runner):
+                    # The App owns the intervention lease and lifecycle. V2
+                    # supplies context but does not mutate global state.
+                    result = bool(app_runner(
+                        self.settings,
+                        preselect_hwnd=preselect,
+                        preselect_title=title,
+                        prompt_ref=self,
+                        hide_prompt=hide_prompt,
+                    ))
+                else:
+                    # Preserve standalone dialog compatibility for isolated
+                    # consumers that do not provide the App composition root.
+                    try:
+                        wizard = InterventionWizard(parent, self.settings)
+                    except TypeError:
+                        wizard = InterventionWizard(parent)
+                        try:
+                            wizard.settings = self.settings
+                        except Exception:
+                            pass
+                    result = bool(wizard.run(
+                        preselect_hwnd=preselect,
+                        preselect_title=title,
+                        prompt_ref=self,
+                        hide_prompt=hide_prompt,
+                    ))
             except Exception:
                 if logger:
                     logger.exception("intervention wizard run failed", exc_info=True)
@@ -506,20 +506,9 @@ class V2PromptDialog(
                 except Exception:
                     if logger:
                         logger.exception("intervention: failed to show cancellation info", exc_info=True)
-            try:
-                if self.app_ref is not None:
-                    try:
-                        self.app_ref._intervention_active = False
-                        try:
-                            if logger:
-                                logger.info("intervention_active set False")
-                        except Exception:
-                            pass
-                    except Exception:
-                        if logger:
-                            logger.exception("intervention_active set False failed", exc_info=True)
-            finally:
-                # Always ensure the prompt returns if it was hidden
+            # Standalone dialogs have no App coordinator; restore their
+            # prompt locally. App-owned runs restore through run_intervention.
+            if not callable(app_runner):
                 try:
                     if not self.winfo_viewable():
                         self.deiconify()

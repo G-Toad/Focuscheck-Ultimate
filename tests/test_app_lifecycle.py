@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
-from types import SimpleNamespace
 from pathlib import Path
 from unittest import mock
 
@@ -401,7 +400,7 @@ class AppLifecycleTests(unittest.TestCase):
         app = App.__new__(App)
         app.settings = {"paused": True, "pause_poll_interval_seconds": 5}
         app._runtime_state = mock.Mock()
-        app._runtime_state.snapshot = SimpleNamespace(effectively_paused=True)
+        app._runtime_state.is_effectively_paused.return_value = True
         app._refresh_guard_state = mock.Mock(return_value=False)
         app._schedule_next = mock.Mock()
 
@@ -409,6 +408,7 @@ class AppLifecycleTests(unittest.TestCase):
             App._maybe_show_prompt(app)
 
         app._runtime_state.refresh_from_settings.assert_called_once_with(app.settings)
+        app._runtime_state.is_effectively_paused.assert_called_once_with()
         app._schedule_next.assert_called_once_with(5000)
 
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
