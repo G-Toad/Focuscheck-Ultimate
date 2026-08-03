@@ -90,10 +90,50 @@ class SupervisorEntrypointTests(unittest.TestCase):
             }
             stop_file.write_text(json.dumps(request), encoding="ascii")
             self.assertFalse(supervisor._intentional_stop_requested())
-            request["supervisor_id"] = "current"
-            request["utc"] = "2000-01-01T00:00:00+00:00"
-            stop_file.write_text(json.dumps(request), encoding="ascii")
-            self.assertFalse(supervisor._intentional_stop_requested())
+
+    def test_stop_handshake_rejection_matrix(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stop_file = Path(temp_dir) / "supervisor.stop"
+            supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+            supervisor.stop_file = stop_file
+            supervisor.child = type("Child", (), {"pid": 111})()
+            supervisor._last_heartbeat_pid = 111
+            supervisor._last_heartbeat_process_start_utc = "2030-01-01T00:00:00+00:00"
+            supervisor.supervisor_id = "current"
+            supervisor.child_generation = "generation-current"
+            valid = {
+                "protocol_version": 1,
+                "request_id": "nonce",
+                "supervisor_id": "current",
+                "generation": "generation-current",
+                "pid": 111,
+                "process_start_utc": supervisor._last_heartbeat_process_start_utc,
+                "utc": datetime.now(timezone.utc).isoformat(),
+            }
+            invalid_cases = (
+                {"protocol_version": 2},
+                {"request_id": ""},
+                {"supervisor_id": "foreign"},
+                {"generation": "generation-old"},
+                {"pid": 999},
+                {"process_start_utc": "2031-01-01T00:00:00+00:00"},
+                {"utc": "not-a-time"},
+                {"utc": "2099-01-01T00:00:00+00:00"},
+                {"utc": "2000-01-01T00:00:00+00:00"},
+            )
+            for overrides in invalid_cases:
+                request = dict(valid)
+                request.update(overrides)
+                stop_file.write_text(json.dumps(request), encoding="ascii")
+                self.assertFalse(
+                    supervisor._intentional_stop_requested(),
+                    overrides,
+                )
+
+            stop_file.write_text(json.dumps(valid), encoding="ascii")
+            self.assertTrue(supervisor._intentional_stop_requested())
 
 
 class FakeEvent:
