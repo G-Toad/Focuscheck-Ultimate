@@ -606,11 +606,20 @@ class V2PromptDialog(
             self._flash_taskbar_stop()
         except Exception:
             pass
-        self._cleanup_timers()
+        try:
+            self._cleanup_timers()
+        except Exception:
+            try:
+                get_logger().exception("V2 prompt timer cleanup failed", exc_info=True)
+            except Exception:
+                pass
         try:
             self.destroy()
         except Exception:
-            pass
+            try:
+                get_logger().exception("V2 prompt destruction failed", exc_info=True)
+            except Exception:
+                pass
         self._notify_submit()
 
     def _notify_submit(self):

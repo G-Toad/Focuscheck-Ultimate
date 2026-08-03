@@ -718,9 +718,22 @@ class PromptDialog(
         # Reset overdrive flags on completion
         self._overdrive_stage4 = False
         self._closed = True
-        # Clean up all timers before destroying
-        self._cleanup_all_timers()
-        self.destroy()
+        # Finalization must continue if one cleanup owner fails; otherwise a
+        # timer exception can leave the prompt visible and the App uninformed.
+        try:
+            self._cleanup_all_timers()
+        except Exception:
+            try:
+                get_logger().exception("V1 prompt timer cleanup failed", exc_info=True)
+            except Exception:
+                pass
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                get_logger().exception("V1 prompt destruction failed", exc_info=True)
+            except Exception:
+                pass
         self._notify_submit()
 
     def _notify_submit(self):

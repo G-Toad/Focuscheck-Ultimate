@@ -166,6 +166,61 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_v1_prompt_finishes_when_timer_cleanup_raises(self):
+        from datetime import datetime
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+
+        submitted = []
+        prompt = PromptDialog.__new__(PromptDialog)
+        prompt._closed = False
+        prompt._submit_notified = False
+        prompt._overdrive_stage4 = True
+        prompt._task_decision_required = False
+        prompt._task_decision_task_id = None
+        prompt._task_decision_can_fail = False
+        prompt.taskdb = None
+        prompt.settings = {"overdrive_after_seconds": 60}
+        prompt.start_monotonic = 0.0
+        prompt.intensity_level = 0
+        prompt._overdrive = False
+        prompt.slot_start_dt = datetime.now()
+        prompt.on_submit = lambda: submitted.append(True)
+        prompt._capture_photo_for_logs = lambda _choice: None
+        prompt._flash_taskbar_stop = mock.Mock()
+        prompt._destroy_stage5_overlays = mock.Mock()
+        prompt._cleanup_camera_feed = mock.Mock()
+        prompt._cleanup_all_timers = mock.Mock(side_effect=RuntimeError("timer cleanup"))
+        prompt.destroy = mock.Mock()
+
+        with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"), mock.patch(
+            "focuscheck.ui.dialogs.prompt_dialog.get_logger"
+        ):
+            prompt._finish("Studying")
+
+        self.assertTrue(prompt._closed)
+        prompt.destroy.assert_called_once_with()
+        self.assertEqual([True], submitted)
+
+    def test_v2_prompt_closes_when_timer_cleanup_raises(self):
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        submitted = []
+        prompt = V2PromptDialog.__new__(V2PromptDialog)
+        prompt._closed = False
+        prompt._submit_notified = False
+        prompt._cleanup_camera_feed = mock.Mock()
+        prompt._flash_taskbar_stop = mock.Mock()
+        prompt._cleanup_timers = mock.Mock(side_effect=RuntimeError("timer cleanup"))
+        prompt.destroy = mock.Mock()
+        prompt.on_submit = lambda: submitted.append(True)
+
+        with mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.get_logger"):
+            prompt._close()
+
+        self.assertTrue(prompt._closed)
+        prompt.destroy.assert_called_once_with()
+        self.assertEqual([True], submitted)
+
     def test_snooze_prompt_can_disable_reason_and_exact_fields(self):
         from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
 
