@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest resource-soak correction: source checkpoint `2b46a2c` extends the bounded performance stage to 500 activity-provider calls and asserts zero non-daemon thread leaks, alongside existing timer/state/SQLite budgets. The stage passed in 5.023 seconds and the full verifier passed all 19 stages with 561 tests and zero process leaks; long-duration UI/native/browser and production-session evidence remain pending.
+
 Latest status-window composition correction: source checkpoint `fa8c96c` routes the App-owned diagnostic status window through an injectable factory. The machine-readable verifier report completed all 19 stages with 561 tests and zero process leaks; the outer wrapper timed out after report generation, and full composition extraction plus manual Windows/release evidence remain pending.
 
 Latest composition-root UI correction: source checkpoint `5035440` adds injectable App-owned factories for the intervention wizard, Settings window, task dialog, snooze prompt, snooze reminder, and gentle reminder, with compatibility-safe fallback for partial fixtures. The full verifier passed all 19 stages with 561 tests and zero process leaks; full composition extraction and manual Windows/release evidence remain pending.
