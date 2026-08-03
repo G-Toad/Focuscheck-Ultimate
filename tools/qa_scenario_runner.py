@@ -269,6 +269,77 @@ def run_state_scenarios(log: QaLog):
         assert all(checks.values())
         state.end_prompt()
 
+    with scenario(log, "runtime.truth_table.exhaustive"):
+        from datetime import timedelta
+        from itertools import product
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        guard_names = ("idle", "lock", "sleep")
+        cases = 0
+        failures = []
+        for manual, snoozed, prompt_active, intervention_active, shutting_down in product(
+            (False, True), repeat=5
+        ):
+            for guard_mask in range(1 << len(guard_names)):
+                state = RuntimeStateCoordinator(
+                    {"paused": False, "snooze_until_utc": ""}, clock=clock
+                )
+                state.snapshot.manual_paused = manual
+                state.snapshot.snooze_until_utc = (
+                    (clock.now_utc() + timedelta(minutes=5)).isoformat() if snoozed else ""
+                )
+                state.snapshot.guard_reasons = {
+                    name for index, name in enumerate(guard_names) if guard_mask & (1 << index)
+                }
+                state.snapshot.prompt_active = prompt_active
+                state.snapshot.intervention_active = intervention_active
+                state.snapshot.shutdown_requested = shutting_down
+
+                expected_paused = manual or snoozed or bool(state.snapshot.guard_reasons)
+                expected_eligible = not (
+                    expected_paused or prompt_active or intervention_active or shutting_down
+                )
+                if manual:
+                    expected_reason = "manual_pause"
+                elif snoozed:
+                    expected_reason = "snooze"
+                elif state.snapshot.guard_reasons:
+                    expected_reason = sorted(state.snapshot.guard_reasons)[0]
+                else:
+                    expected_reason = None
+                view = state.snapshot_view()
+                checks = (
+                    view.effective_pause == expected_paused
+                    and state.is_effectively_paused() == expected_paused
+                    and view.effective_pause_reason == expected_reason
+                    and state.can_start_prompt() == expected_eligible
+                )
+                if expected_eligible:
+                    checks = checks and state.begin_prompt()
+                    state.end_prompt()
+                else:
+                    checks = checks and not state.begin_prompt()
+                if not checks:
+                    failures.append({
+                        "manual": manual,
+                        "snoozed": snoozed,
+                        "guards": sorted(state.snapshot.guard_reasons),
+                        "prompt_active": prompt_active,
+                        "intervention_active": intervention_active,
+                        "shutdown_requested": shutting_down,
+                    })
+                cases += 1
+        log.event(
+            "runtime.truth_table.exhaustive",
+            "assert_all_combinations",
+            not failures,
+            cases=cases,
+            failures=failures[:3],
+        )
+        assert not failures
+
 
 def run_tray_scenarios(log: QaLog):
     from focuscheck.system_tray import SystemTray
