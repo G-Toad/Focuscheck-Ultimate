@@ -105,19 +105,36 @@ class AppLifecycleTests(unittest.TestCase):
     def test_app_constructor_retains_injected_composition_dependencies(self):
         from focuscheck.app import App
         from focuscheck.utils.clock import FakeClock
+        from focuscheck.runtime.dependencies import AppDependencies
 
         clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
         provider = lambda: None
+        dependencies = AppDependencies(settings_loader=lambda: {})
         captured = {}
 
         def initialize(instance, *, force_start=False):
             captured["app"] = instance
 
         with mock.patch.object(App, "_initialize", initialize):
-            App(clock=clock, activity_provider=provider)
+            App(clock=clock, activity_provider=provider, dependencies=dependencies)
 
         self.assertIs(clock, captured["app"]._clock_override)
         self.assertIs(provider, captured["app"]._activity_provider)
+        self.assertIs(dependencies, captured["app"]._dependencies)
+
+    def test_app_dependencies_are_failure_injection_seams_without_global_patching(self):
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        def settings_loader():
+            return {"monitoring_mode": "v1"}
+
+        def task_db_factory(*_args, **_kwargs):
+            return object()
+
+        deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
+        self.assertEqual({"settings_loader", "task_db_factory", "tray_factory", "watcher_factory"}, set(deps.__dataclass_fields__))
+        self.assertIs(settings_loader, deps.settings_loader)
+        self.assertIs(task_db_factory, deps.task_db_factory)
 
     def test_single_instance_mutex_handle_is_released(self):
         import focuscheck.utils.file_ops as file_ops

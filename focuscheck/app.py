@@ -44,6 +44,7 @@ from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.events import StructuredEventLedger
+from .runtime.dependencies import AppDependencies
 from .utils.clock import SystemClock
 from .ui.prompt_coordinator import PromptCoordinator
 from .utils.timers import TimerRegistry
@@ -232,13 +233,14 @@ if platform.system().lower() == "windows":
 
 
 class App:
-    def __init__(self, *, force_start=False, clock=None, activity_provider=None):
+    def __init__(self, *, force_start=False, clock=None, activity_provider=None, dependencies=None):
         # Keep construction failures inside the same lifecycle contract as
         # mainloop failures. The initializer may have acquired partial
         # resources before a critical dependency or repository raises.
         self._shutdown_requested = False
         self._clock_override = clock
         self._activity_provider = activity_provider
+        self._dependencies = dependencies or AppDependencies()
         self._shutdown_cleanup_complete = False
         try:
             self._initialize(force_start=force_start)
@@ -297,7 +299,8 @@ class App:
             self.root.bind_all('<Alt-q>', lambda e: self._quit())
         except Exception:
             pass
-        self.settings = load_settings()
+        settings_loader = self._dependencies.settings_loader or load_settings
+        self.settings = settings_loader()
         try:
             migration_events = migrate_legacy_data(self.paths)
             if migration_events:
@@ -346,7 +349,8 @@ class App:
             pass
         # Init task DB
         try:
-            self.taskdb = TaskDB(
+                task_db_factory = self._dependencies.task_db_factory or TaskDB
+                self.taskdb = task_db_factory(
                 self.paths.task_db,
                 clock=self._runtime_clock,
                 event_sink=lambda event: self._event_ledger.append("task", event),
@@ -430,7 +434,8 @@ class App:
                         pass
                     self._call_on_ui_thread(self._activate_native_tray_fallback)
 
-                self._tray = SystemTray(
+                tray_factory = self._dependencies.tray_factory or SystemTray
+                self._tray = tray_factory(
                     app=self,
                     name=APP_NAME,
                     tooltip=f"{APP_NAME} running",
@@ -478,7 +483,8 @@ class App:
             try:
                 # Only enable native tray if pystray didn't start successfully
                 enable_native_tray = not self._pystray_started
-                self._winwatch = WindowsWakeWatcher(
+                watcher_factory = self._dependencies.watcher_factory or WindowsWakeWatcher
+                self._winwatch = watcher_factory(
                     self.root,
                     on_resume_callable=self._on_resume_event,
                     on_pause_callable=self._on_pause_event,
