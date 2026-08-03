@@ -143,7 +143,7 @@ Current checkpoint addition: The latest `d162449` run routes wizard off-thread T
 
 Current checkpoint addition: The latest `5793ecc` run routes delayed prompt-focus recovery through the prompt's timer owner, with a standalone wizard-registry fallback; the full verifier records `385` unittest cases and all 18 bounded stages passed.
 
-Current checkpoint addition: The current prompt Windows-integration checkpoint routes minimize recovery through the prompt timer owner instead of direct Tk scheduling; focused regression coverage passes pending the full verifier.
+Current checkpoint addition: The latest `c775b4a` run routes prompt minimize recovery through the prompt timer owner instead of direct Tk scheduling; the full verifier records `386` unittest cases and all 18 bounded stages passed.
 
 ## Final Acceptance Gates
 
@@ -166,6 +166,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `385` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `5793ecc`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `386` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `c775b4a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
