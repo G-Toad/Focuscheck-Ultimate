@@ -195,6 +195,8 @@ Current checkpoint addition: The current `c8c8f2d` tree was rebuilt with PyInsta
 
 Current checkpoint addition: The latest `74566bd` activity-provider slice changes CDP target-cache expiry to monotonic elapsed time and adds regression coverage for cache reuse; the full verifier records `406` unittest cases and all 18 bounded stages passed. Live supported-browser and sleep/resume freshness evidence remains manual_pending.
 
+Current checkpoint addition: The latest `f18bd56` provider-matrix slice adds direct coverage for all six supported browser process families, case normalization, unsupported process rejection, Windows URL-extraction gating, and the supported-process UIA boundary. The full verifier records `410` unittest cases and all 18 bounded stages passed. Live supported-browser, sleep/resume, and UI Automation evidence remains manual_pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -216,6 +218,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `406` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `74566bd`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+Latest verification checkpoint: `410` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `f18bd56`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
