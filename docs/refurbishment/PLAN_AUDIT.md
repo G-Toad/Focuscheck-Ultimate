@@ -117,6 +117,8 @@ Current checkpoint addition: The latest `6d24b63` run verifies diagnostic bundle
 
 Current checkpoint addition: The latest `e1f3462` run verifies retention refuses a candidate that changes after planning and records a versioned metadata-only audit outcome; the full verifier records `377` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `bf64bdc` run verifies the Tk status formatter exposes transition-journal failure health through its privacy whitelist; the full verifier records `377` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -138,6 +140,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `377` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `e1f3462`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `377` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `bf64bdc`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
