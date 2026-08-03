@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `518` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `519` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest application-log checkpoint redacts unstructured tray diagnostic labels and adds regression coverage for returned values and settings values.
 
 The latest ledger privacy checkpoint bounds free-form `reason` and `target` fields to structural metadata, with regression coverage for private text and path leakage.
 

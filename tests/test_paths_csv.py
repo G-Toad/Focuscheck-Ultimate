@@ -169,6 +169,15 @@ class CsvLoggerTests(unittest.TestCase):
         PrivacyLogFilter().filter(config_record)
         self.assertNotIn("private word", config_record.getMessage())
 
+        labelled = logging.LogRecord(
+            "focuscheck", logging.INFO, __file__, 1,
+            "returned: private response value: private setting (type: str) Found in app.settings: private setting",
+            (), None,
+        )
+        PrivacyLogFilter().filter(labelled)
+        self.assertNotIn("private response", labelled.getMessage())
+        self.assertNotIn("private setting", labelled.getMessage())
+
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):
         from focuscheck.database.csv_logger import _excel_safe
 

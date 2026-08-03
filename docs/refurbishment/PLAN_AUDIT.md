@@ -14,6 +14,8 @@ Latest observability correction: the Tk status formatter now replaces the absolu
 
 Latest ledger privacy correction: free-form `reason` and `target` event fields are now retained only as bounded structural metadata unless they match the safe enum-like contract; regression coverage rejects private text and paths.
 
+Latest application-log correction: rendered diagnostic labels such as `returned:`, `value:`, and `Found in app.settings:` now redact their payloads, covering tray fallback logs that do not use explicit private field names.
+
 Status meanings:
 
 - **Implemented**: the plan requirement has a direct implementation and matching evidence.
