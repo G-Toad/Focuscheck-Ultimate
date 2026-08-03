@@ -620,6 +620,83 @@ class TaskDbLifecycleTests(unittest.TestCase):
 
 
 class EngineV2MatchingTests(unittest.TestCase):
+    def test_subpopup_gate_covers_runtime_pause_and_lifecycle_matrix(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        class Snapshot:
+            def __init__(self, shutdown_requested=False):
+                self.shutdown_requested = shutdown_requested
+
+        class RuntimeState:
+            def __init__(self, effectively_paused=False, shutdown_requested=False):
+                self._effectively_paused = effectively_paused
+                self.snapshot = Snapshot(shutdown_requested)
+
+            def is_effectively_paused(self):
+                return self._effectively_paused
+
+        matrix = (
+            ("eligible", False, False, False, False, True),
+            ("manual_pause", True, False, False, False, False),
+            ("active_snooze", True, False, False, False, False),
+            ("guard_pause", True, False, False, False, False),
+            ("shutdown", False, True, False, False, False),
+            ("prompt_visible", False, False, True, False, False),
+            ("intervention_active", False, False, False, True, False),
+        )
+        for name, effectively_paused, shutdown, prompt, intervention, expected in matrix:
+            with self.subTest(name=name):
+                app = type("App", (), {})()
+                app.settings = {"paused": False, "pause_when_inactive_or_lid_closed": False}
+                app._current_prompt = object() if prompt else None
+                app._intervention_active = intervention
+                app._shutdown_requested = False
+                app._runtime_state = RuntimeState(effectively_paused, shutdown)
+                engine = EngineV2.__new__(EngineV2)
+                engine.app = app
+                engine._settings = app.settings
+                engine._subpopup_active = False
+                self.assertEqual(expected, engine._should_check_subpopup())
+
+    def test_standalone_subpopup_gate_covers_pause_snooze_guard_shutdown_matrix(self):
+        from datetime import datetime, timezone
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        class Guard:
+            def __init__(self, paused):
+                self.paused = paused
+
+            def should_pause(self):
+                return self.paused
+
+        cases = (
+            ("eligible", {}, False, True),
+            ("manual_pause", {"paused": True}, False, False),
+            ("active_snooze", {"snooze_until_utc": "2030-01-01T00:05:00+00:00"}, False, False),
+            ("expired_snooze", {"snooze_until_utc": "2029-12-31T23:55:00+00:00"}, False, True),
+            ("guard_pause", {"pause_when_inactive_or_lid_closed": True}, True, False),
+            ("shutdown", {}, False, False),
+        )
+        for name, updates, guard_paused, expected in cases:
+            with self.subTest(name=name):
+                app = type("App", (), {})()
+                app.settings = {
+                    "paused": False,
+                    "snooze_until_utc": "",
+                    "pause_when_inactive_or_lid_closed": False,
+                }
+                app.settings.update(updates)
+                app._current_prompt = None
+                app._intervention_active = False
+                app._shutdown_requested = name == "shutdown"
+                app.guard = Guard(guard_paused)
+                engine = EngineV2.__new__(EngineV2)
+                engine.app = app
+                engine._settings = app.settings
+                engine._subpopup_active = False
+                engine._activity_clock = lambda: datetime(2030, 1, 1, tzinfo=timezone.utc)
+                self.assertEqual(expected, engine._should_check_subpopup())
+
     def test_subpopup_uses_runtime_coordinator_effective_pause(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 
