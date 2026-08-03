@@ -6,7 +6,7 @@ import ast
 from pathlib import Path
 import unittest
 
-from focuscheck.settings.schema import get_settings_schema, schema_manifest
+from focuscheck.settings.schema import SENSITIVE_SETTING_KEYS, get_settings_schema, schema_manifest
 from focuscheck.ui.schema_controls import (
     EXISTING_DYNAMIC_KEYS,
     NON_VISIBLE_SETTING_CLASSIFICATIONS,
@@ -38,6 +38,14 @@ class SettingsSchemaContractTests(unittest.TestCase):
         manifest = schema_manifest()
         self.assertEqual(sorted(item["key"] for item in manifest), [item["key"] for item in manifest])
         self.assertTrue(all({"key", "canonical_type", "default", "ui_section"}.issubset(item) for item in manifest))
+
+    def test_sensitive_setting_registry_is_explicit_and_schema_backed(self):
+        schema = get_settings_schema()
+        self.assertTrue(SENSITIVE_SETTING_KEYS)
+        self.assertTrue(SENSITIVE_SETTING_KEYS <= set(schema))
+        self.assertTrue(all(schema[key].sensitivity == "sensitive" for key in SENSITIVE_SETTING_KEYS))
+        self.assertEqual("sensitive", schema["webhook_url"].sensitivity)
+        self.assertEqual("sensitive", schema["website_flags"].sensitivity)
 
     def test_generated_controls_are_schema_keys_and_exclude_runtime_state(self):
         schema = get_settings_schema()

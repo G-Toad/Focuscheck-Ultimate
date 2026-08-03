@@ -9,6 +9,36 @@ from .defaults import DEFAULT_SETTINGS
 from .registry import SETTINGS_REGISTRY
 
 
+# User-authored text, destinations, and identity fields must never be treated
+# as ordinary diagnostic configuration.
+SENSITIVE_SETTING_KEYS = frozenset({
+    "webhook_url",
+    "spam_banned_words",
+    "spam_vague_words",
+    "study_phrase_list",
+    "study_phrase_override",
+    "waste_phrase_list",
+    "waste_phrase_override",
+    "website_flags",
+    "biodata_enabled",
+    "biodata_title",
+    "biodata_first_name",
+    "biodata_last_name",
+    "biodata_show_full_name",
+    "biodata_birthdate",
+    "biodata_age_format",
+    "biodata_show_days_lived",
+    "biodata_show_lineage",
+    "biodata_lineage_text",
+    "biodata_show_role",
+    "biodata_role_text",
+    "biodata_custom_text",
+    "biodata_style",
+    "biodata_pulse_animation",
+    "biodata_font_size",
+})
+
+
 @dataclass(frozen=True)
 class SettingDescriptor:
     key: str
@@ -39,7 +69,7 @@ def _section(key: str) -> str:
 
 
 def _sensitivity(key: str) -> str:
-    if any(token in key for token in ("password", "token", "secret", "biodata", "purpose")):
+    if key in SENSITIVE_SETTING_KEYS or any(token in key for token in ("password", "token", "secret", "purpose")):
         return "sensitive"
     return "normal"
 
