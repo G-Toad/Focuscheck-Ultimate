@@ -16,6 +16,17 @@ def _make_root():
     return root
 
 
+class Var:
+    def __init__(self, value=""):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+    def set(self, value):
+        self.value = value
+
+
 class DialogKeyboardTests(unittest.TestCase):
     def test_snooze_reminder_yes_and_no_close_cleanly(self):
         from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
@@ -271,6 +282,64 @@ class DialogKeyboardTests(unittest.TestCase):
                 self.assertTrue(timers.closed)
         finally:
             root.destroy()
+
+    def test_focus_detail_rejects_failed_challenge_without_submitting(self):
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+
+        dialog = FocusPromptDialog.__new__(FocusPromptDialog)
+        dialog.ask_doing = True
+        dialog.ask_benefits = False
+        dialog.doing_var = Var("wrong answer")
+        dialog.benefits_var = Var("")
+        dialog.require_all_fields = False
+        dialog._field_controls = [{
+            "label": "challenge",
+            "var": dialog.doing_var,
+            "entry": object(),
+            "challenge": {"question": "repeat"},
+        }]
+        dialog.challenge_system = mock.Mock()
+        dialog.challenge_system.validate_challenge_response.return_value = (False, "try again")
+        dialog.spam_detector = None
+        dialog._focus_widget = mock.Mock()
+        dialog.grab_release = mock.Mock()
+        dialog.destroy = mock.Mock()
+        dialog.on_submit = mock.Mock()
+
+        with mock.patch("focuscheck.ui.dialogs.focus_prompt_dialog.messagebox.showerror") as showerror:
+            dialog._save()
+
+        showerror.assert_called_once_with("Challenge Requirement Not Met", "try again")
+        dialog._focus_widget.assert_called_once()
+        dialog.destroy.assert_not_called()
+        dialog.on_submit.assert_not_called()
+
+    def test_focus_detail_rejects_failed_spam_validation_without_submitting(self):
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+
+        dialog = FocusPromptDialog.__new__(FocusPromptDialog)
+        dialog.ask_doing = True
+        dialog.ask_benefits = False
+        dialog.doing_var = Var("quick response")
+        dialog.benefits_var = Var("")
+        dialog.require_all_fields = False
+        dialog._field_controls = [{"label": "doing", "var": dialog.doing_var, "entry": object()}]
+        dialog.challenge_system = None
+        dialog.spam_detector = mock.Mock()
+        dialog.spam_detector.is_valid_response.return_value = (False, "too fast")
+        dialog._monotonic_clock = lambda: 2.0
+        dialog._dialog_shown_at = 0.0
+        dialog._focus_widget = mock.Mock()
+        dialog.grab_release = mock.Mock()
+        dialog.destroy = mock.Mock()
+        dialog.on_submit = mock.Mock()
+
+        with mock.patch("focuscheck.ui.dialogs.focus_prompt_dialog.messagebox.showerror") as showerror:
+            dialog._save()
+
+        showerror.assert_called_once_with("Invalid Response", "too fast")
+        dialog.destroy.assert_not_called()
+        dialog.on_submit.assert_not_called()
 
     def test_snooze_prompt_can_disable_reason_and_exact_fields(self):
         from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
