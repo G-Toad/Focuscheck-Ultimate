@@ -8,7 +8,7 @@ Latest correction: all active native callback factories in the primary Windows a
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.
 
-Current checkpoint: the current source/evidence checkpoint is `ed5f5a0`; the post-push verifier records `516` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Historical checkpoint: source/evidence checkpoint `ed5f5a0`; the post-push verifier at that time recorded `516` tests across 19 passing stages, while the five manual evidence groups remained explicitly pending.
 
 Latest browser-provider correction: UI Automation tab enumeration now runs behind a bounded single-flight worker and falls back to CDP on timeout, preventing COM stalls from blocking Tk or accumulating workers; live browser evidence remains pending.
 
@@ -54,7 +54,7 @@ Latest TaskDB concurrency correction: pre-migration safety backups now reserve f
 
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `b9793e4`; the post-push verifier records `529` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Historical checkpoint: source/evidence checkpoint `b9793e4`; the post-push verifier at that time recorded `529` tests across 19 passing stages, while the five manual evidence groups remained explicitly pending.
 
 Status meanings:
 
