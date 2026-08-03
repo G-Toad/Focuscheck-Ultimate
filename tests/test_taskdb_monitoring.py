@@ -552,6 +552,19 @@ class EngineV2MatchingTests(unittest.TestCase):
         self.assertEqual(0.0, first["active_duration_s"])
         self.assertEqual(7.0, second["active_duration_s"])
 
+    def test_activity_capture_uses_injected_clock(self):
+        from datetime import datetime, timezone
+        from focuscheck.monitoring.engine_v2 import EngineV2
+        from focuscheck.utils.clock import FakeClock
+
+        captured = datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc)
+        clock = FakeClock(captured)
+        engine = EngineV2(mock.Mock(), activity_provider=lambda: {"title": "Example"}, clock=clock)
+
+        info = engine._get_activity_info()
+
+        self.assertEqual(captured.isoformat(), info["captured_utc"])
+
 
 class StartupCommandTests(unittest.TestCase):
     def test_frozen_startup_command_targets_packaged_supervisor(self):

@@ -3,6 +3,7 @@
 import copy
 import time
 import re
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 from ..settings.website_flags import normalize_website_domain
 
@@ -36,6 +37,19 @@ class EngineV2(BaseEngine):
         self._activity_provider = activity_provider or get_active_window_info
         runtime_clock = getattr(getattr(app, "_runtime_state", None), "clock", None)
         clock_source = clock if clock is not None else runtime_clock
+        if clock_source is None:
+            self._activity_clock = None
+        else:
+            def _activity_now():
+                try:
+                    value = clock_source() if callable(clock_source) else clock_source.now_utc()
+                    if isinstance(value, datetime):
+                        return value
+                except (AttributeError, TypeError, ValueError, OverflowError):
+                    pass
+                return datetime.now(timezone.utc)
+
+            self._activity_clock = _activity_now
         monotonic = getattr(clock_source, "monotonic", None)
 
         def _safe_monotonic():
@@ -82,7 +96,10 @@ class EngineV2(BaseEngine):
             self._timers.close()
 
     def _get_activity_info(self):
-        info = safe_activity_snapshot(self._activity_provider).as_mapping()
+        info = safe_activity_snapshot(
+            self._activity_provider,
+            clock=getattr(self, "_activity_clock", None),
+        ).as_mapping()
         hwnd = info.get("hwnd")
         now = getattr(self, "_monotonic", time.monotonic)()
         if hwnd and hwnd == self._last_hwnd:
