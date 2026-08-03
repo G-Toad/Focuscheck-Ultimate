@@ -80,6 +80,8 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
     temporary = None
     try:
         sources = _files_for_categories(root, selected)
+        if output.is_symlink() or any(path.resolve() == output for path, _category in sources):
+            raise ValueError("export destination collides with an input or is a symlink")
         with tempfile.NamedTemporaryFile(
             mode="wb", prefix=f".{output.name}.", suffix=".tmp", dir=output.parent, delete=False
         ) as handle:

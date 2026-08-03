@@ -161,3 +161,15 @@ class DataExportTests(unittest.TestCase):
                 self.skipTest("symlinks unavailable")
             with self.assertRaises(ValueError):
                 export_data(root, Path(temp_dir) / "symlink.zip")
+
+    def test_export_rejects_destination_that_is_an_input_file(self):
+        from focuscheck.utils.data_export import export_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "data"
+            root.mkdir()
+            source = root / "focus_log.csv"
+            source.write_text("safe", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                export_data(root, source, overwrite=True)
+            self.assertEqual("safe", source.read_text(encoding="utf-8"))
