@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `525` tests across 19 bounded stages at source checkpoint `4d66b26`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `526` tests across 19 bounded stages at source checkpoint `925a451`; the detailed older bullets are retained as historical baseline context.
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
@@ -17,6 +17,8 @@ The latest startup composition extension routes log-header creation through an i
 The latest path-composition extension routes canonical `AppPaths` selection through an injectable factory before later startup side effects, with a regression covering the frozen path boundary. Production defaults remain unchanged; target-user migration and manual release evidence remain pending.
 
 The latest path-binding extension routes CSV and application-log path configuration through injectable App dependencies receiving the frozen `AppPaths` snapshot. Production defaults remain unchanged; target-user and manual release evidence remain pending.
+
+The latest tray-composition correction honors an injected tray adapter even when the optional tray import is unavailable, preserving headless composition and production fallback behavior. Native tray evidence remains pending.
 
 The latest native self-test checkpoint routes the standalone `--tray-test` timeout through a named timer registry and cleans up the registry/root when watcher construction fails; broader native/manual evidence remains pending.
 
