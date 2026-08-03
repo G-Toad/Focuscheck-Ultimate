@@ -1251,6 +1251,7 @@ class App:
         self._intervention_active = True
         intervention_id = uuid.uuid4().hex
         self._active_intervention_id = intervention_id
+        self._notify_engine_intervention_state(active=True, source="intervention_started")
         hidden = False
         outcome = "failed"
         self._record_operational_event("intervention", event="started", outcome="started")
@@ -1288,9 +1289,26 @@ class App:
                     get_logger().exception("intervention prompt restore failed", exc_info=True)
             self._intervention_active = False
             self._active_intervention_id = None
-            if state is not None:
-                state.end_intervention()
-            self._record_operational_event("intervention", event="ended", outcome=outcome)
+            try:
+                if state is not None:
+                    state.end_intervention()
+            finally:
+                self._notify_engine_intervention_state(active=False, source="intervention_ended")
+                self._record_operational_event("intervention", event="ended", outcome=outcome)
+
+    def _notify_engine_intervention_state(self, *, active: bool, source: str) -> None:
+        """Forward intervention lease changes without coupling App to an engine type."""
+        engine = getattr(self, "_engine", None)
+        handler = getattr(type(engine), "on_intervention_changed", None) if engine is not None else None
+        if not callable(handler):
+            return
+        try:
+            handler(engine, bool(active), source=source)
+        except Exception:
+            try:
+                get_logger().exception("monitoring engine intervention notification failed", exc_info=True)
+            except Exception:
+                pass
 
     # Display/DPI change: keep dialogs on-screen
     def _on_display_change(self):

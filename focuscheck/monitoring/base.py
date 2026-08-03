@@ -17,6 +17,10 @@ class BaseEngine:
         """Hook for coordinator-owned effective pause transitions."""
         return None
 
+    def on_intervention_changed(self, active: bool, *, source: str = "unknown"):
+        """Hook for coordinator-owned intervention lease transitions."""
+        return None
+
     def create_prompt(self, settings, slot_info):
         """Create and return the prompt dialog for this engine."""
         raise NotImplementedError

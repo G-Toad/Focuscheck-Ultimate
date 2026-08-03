@@ -111,6 +111,21 @@ class V2FlowTests(unittest.TestCase):
             "website-subpopup", 3000, engine._subpopup_tick, interval_ms=3000
         )
 
+    def test_intervention_transition_cancels_and_resumes_website_polling(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine._settings = {"website_flags": [{"domain": "example.com", "enabled": True}]}
+        engine._timers = mock.Mock(closed=False)
+
+        engine.on_intervention_changed(True, source="intervention_started")
+        engine._timers.cancel.assert_called_once_with("website-subpopup")
+
+        engine.on_intervention_changed(False, source="intervention_ended")
+        engine._timers.schedule.assert_called_once_with(
+            "website-subpopup", 3000, engine._subpopup_tick, interval_ms=3000
+        )
+
     def test_v1_anti_habit_hold_uses_composed_monotonic_clock(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
 
