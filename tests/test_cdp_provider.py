@@ -35,6 +35,32 @@ class CdpProviderTests(unittest.TestCase):
         self.assertEqual(9222, targets[0]["cdp_port"])
         self.assertLessEqual(max(timeout for _url, timeout in calls), 0.2)
 
+    def test_discovery_shares_deadline_with_later_candidate_ports(self):
+        from focuscheck.platform_specific import cdp_browser
+
+        ports = [*range(9222, 9228), 9229]
+        clock = [0.0]
+
+        def monotonic():
+            return clock[0]
+
+        def fetch(url, timeout):
+            clock[0] += timeout
+            port = int(url.split(":")[2].split("/")[0])
+            if port != 9229:
+                return None
+            if url.endswith("/json/version"):
+                return {"Browser": "Chrome"}
+            return [{"type": "page", "title": "Late", "url": "https://example.com"}]
+
+        with mock.patch.object(cdp_browser, "_CANDIDATE_PORTS", ports), \
+                mock.patch.object(cdp_browser.time, "monotonic", side_effect=monotonic), \
+                mock.patch.object(cdp_browser, "_fetch_json", side_effect=fetch):
+            targets = cdp_browser._discover_targets(timeout=1.0)
+
+        self.assertEqual(1, len(targets))
+        self.assertEqual(9229, targets[0]["cdp_port"])
+
     def test_discovery_bounds_targets_and_text_fields(self):
         from focuscheck.platform_specific import cdp_browser
 

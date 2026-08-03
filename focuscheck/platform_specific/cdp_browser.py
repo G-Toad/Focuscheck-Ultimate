@@ -28,17 +28,21 @@ def _fetch_json(url, timeout=0.2):
 def _discover_targets(timeout=1.0):
     targets = []
     deadline = time.monotonic() + max(0.0, float(timeout))
-    for port in _CANDIDATE_PORTS:
+    for index, port in enumerate(_CANDIDATE_PORTS):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
-        version = _fetch_json(f"http://127.0.0.1:{port}/json/version", timeout=min(0.2, remaining))
+        ports_remaining = max(1, len(_CANDIDATE_PORTS) - index)
+        # Share the overall deadline across every candidate so a healthy
+        # browser on a later port is not starved by earlier closed ports.
+        request_budget = min(0.2, max(0.01, remaining / (ports_remaining * 2)))
+        version = _fetch_json(f"http://127.0.0.1:{port}/json/version", timeout=request_budget)
         if not isinstance(version, dict):
             continue
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             break
-        listing = _fetch_json(f"http://127.0.0.1:{port}/json/list", timeout=min(0.2, remaining))
+        listing = _fetch_json(f"http://127.0.0.1:{port}/json/list", timeout=min(request_budget, remaining))
         if not isinstance(listing, list):
             continue
         for entry in listing[:_MAX_TARGETS]:
