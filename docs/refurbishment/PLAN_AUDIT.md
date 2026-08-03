@@ -155,6 +155,8 @@ Current checkpoint addition: The latest `8a8c4ea` code checkpoint closes an open
 
 Current checkpoint addition: The latest `7aa8c96` code checkpoint also closes an open snooze confirmation dialog during App shutdown without applying snooze or emitting a cancellation callback; direct confirmation-dialog destruction now releases its owned timers. The full verifier records `391` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `681a85a` test checkpoint corrects and verifies the diagnostic status-window shutdown regression; the full verifier records `392` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -176,6 +178,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `391` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `7aa8c96`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `392` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `681a85a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
