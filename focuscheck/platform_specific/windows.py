@@ -124,6 +124,33 @@ def _configure_overlay_api(user32, gdi32, kernel32):
     kernel32.GetModuleHandleW.restype = wintypes.HINSTANCE
 
 
+def _configure_window_style_api(user32):
+    """Declare signatures shared by click-through and WNDPROC helpers."""
+    for name, restype, argtypes in (
+        ("GetWindowLongPtrW", LONG_PTR, [wintypes.HWND, ctypes.c_int]),
+        ("SetWindowLongPtrW", LONG_PTR, [wintypes.HWND, ctypes.c_int, LONG_PTR]),
+        ("GetWindowLongW", ctypes.c_long, [wintypes.HWND, ctypes.c_int]),
+        ("SetWindowLongW", ctypes.c_long, [wintypes.HWND, ctypes.c_int, ctypes.c_long]),
+    ):
+        try:
+            function = getattr(user32, name)
+            function.argtypes = argtypes
+            function.restype = restype
+        except AttributeError:
+            pass
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+        ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+    user32.CallWindowProcW.argtypes = [
+        ctypes.c_void_p, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T,
+    ]
+    user32.CallWindowProcW.restype = LRESULT
+    user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
+    user32.DefWindowProcW.restype = LRESULT
+
+
 def _get_last_error_info():
     try:
         code = ctypes.get_last_error()
@@ -169,6 +196,7 @@ def enable_click_through_windows(hwnd):
     """Helper: reliably enable click-through on Windows (64-bit safe)."""
     try:
         user32 = _user32()
+        _configure_window_style_api(user32)
         # Prefer 64-bit aware APIs when available
         try:
             GetWindowLongPtrW = user32.GetWindowLongPtrW
@@ -206,6 +234,7 @@ def install_httransparent_wndproc(hwnd, owner_widget=None):
     """
     try:
         user32 = _user32()
+        _configure_window_style_api(user32)
         CallWindowProcW = user32.CallWindowProcW
         try:
             CallWindowProcW.argtypes = [ctypes.c_void_p, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
@@ -233,7 +262,7 @@ def install_httransparent_wndproc(hwnd, owner_widget=None):
             try:
                 return CallWindowProcW(ctypes.c_void_p(old), h, msg, wParam, lParam)
             except Exception:
-                return ctypes.windll.user32.DefWindowProcW(h, msg, wParam, lParam)
+                return user32.DefWindowProcW(h, msg, wParam, lParam)
         SetWindowLongPtrW(hwnd, GWL_WNDPROC, proc)
         # Keep references to avoid GC and to restore later
         if owner_widget is not None:

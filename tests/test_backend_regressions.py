@@ -726,6 +726,58 @@ class ImportHardeningTests(unittest.TestCase):
         intervention_wizard._release_spotlight_regions(gdi, 4, 5, 6, False)
         self.assertEqual([1, 2, 4, 5, 6], gdi.deleted)
 
+    def test_window_style_helpers_declare_shared_native_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "GetWindowLongPtrW", "SetWindowLongPtrW", "GetWindowLongW",
+                "SetWindowLongW", "SetWindowPos", "CallWindowProcW", "DefWindowProcW",
+            )
+        })()
+        windows._configure_window_style_api(user32)
+
+        self.assertEqual([wintypes.HWND, ctypes.c_int], user32.GetWindowLongPtrW.argtypes)
+        self.assertEqual(
+            [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+             ctypes.c_int, ctypes.c_int, wintypes.UINT],
+            user32.SetWindowPos.argtypes,
+        )
+        self.assertEqual(
+            [ctypes.c_void_p, wintypes.HWND, wintypes.UINT,
+             windows.WPARAM_T, windows.LPARAM_T],
+            user32.CallWindowProcW.argtypes,
+        )
+
+    def test_dialog_window_style_helpers_declare_shared_native_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs import windows_utils
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "GetWindowLongPtrW", "SetWindowLongPtrW", "GetWindowLongW",
+                "SetWindowLongW", "SetWindowPos", "CallWindowProcW", "DefWindowProcW",
+            )
+        })()
+        windows_utils._configure_window_style_api(user32)
+        self.assertEqual([wintypes.HWND, ctypes.c_int], user32.GetWindowLongPtrW.argtypes)
+        self.assertEqual([wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+                          ctypes.c_int, ctypes.c_int, wintypes.UINT],
+                         user32.SetWindowPos.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes
