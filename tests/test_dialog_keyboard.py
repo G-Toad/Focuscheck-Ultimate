@@ -111,6 +111,69 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_v1_focus_and_waste_detail_flows_complete_through_parent(self):
+        from datetime import datetime
+
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+
+        root = _make_root()
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update({
+            "always_on_top": False,
+            "anti_habit_enabled": False,
+            "camera_feed_enabled": False,
+            "encouragement_enabled": False,
+            "challenge_system_enabled": False,
+            "spam_detection_enabled": False,
+            "focus_prompt_ask_doing": True,
+            "focus_prompt_ask_benefits": True,
+            "wasting_prompt_ask_what": True,
+            "wasting_prompt_ask_consequences": True,
+            "show_task_analytics": False,
+        })
+        try:
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"), mock.patch(
+                "focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit.append_focus_log"
+            ), mock.patch("focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit.append_waste_log"):
+                for action, child_type in (
+                    ("study", FocusPromptDialog),
+                    ("waste", WastePromptDialog),
+                ):
+                    submitted = []
+                    dialog = PromptDialog(
+                        root,
+                        settings,
+                        lambda: submitted.append(True),
+                        datetime.now(),
+                        taskdb=None,
+                        app_ref=None,
+                    )
+                    dialog.withdraw()
+                    if action == "study":
+                        dialog._trigger_studying_choice()
+                    else:
+                        dialog._on_wasting_clicked()
+                    root.update()
+
+                    children = [child for child in dialog.winfo_children() if isinstance(child, child_type)]
+                    self.assertEqual(1, len(children))
+                    child = children[0]
+                    if action == "study":
+                        child.doing_var.set("write the implementation")
+                        child.benefits_var.set("finish the next slice")
+                    else:
+                        child.what_var.set("scrolling unrelated feeds")
+                        child.cons_var.set("lose the next focus block")
+                    child._save()
+                    root.update()
+                    self.assertEqual([True], submitted)
+                    self.assertFalse(dialog.winfo_exists())
+        finally:
+            root.destroy()
+
     def test_task_entry_enter_submits(self):
         from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
 

@@ -157,6 +157,8 @@ Current checkpoint addition: The latest `7aa8c96` code checkpoint also closes an
 
 Current checkpoint addition: The latest `681a85a` test checkpoint corrects and verifies the diagnostic status-window shutdown regression; the full verifier records `392` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The current V1 flow checkpoint adds withdrawn-root end-to-end coverage for valid Focus and Waste detail submissions through the owning `PromptDialog`; the interactive/manual V1 rows remain explicitly pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
