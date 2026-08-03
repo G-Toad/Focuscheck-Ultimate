@@ -66,6 +66,20 @@ class DataExportTests(unittest.TestCase):
             self.assertEqual("OSError", report["audit_error"])
             self.assertEqual("outside", outside.read_text(encoding="utf-8"))
 
+    def test_clear_data_rotates_bounded_audit_history(self):
+        from focuscheck.utils.data_export import clear_data
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            (root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            audit_path = root / "data_clear_audit.jsonl"
+            audit_path.write_text("previous", encoding="utf-8")
+            with mock.patch("focuscheck.utils.data_export.DATA_CLEAR_AUDIT_MAX_BYTES", 1):
+                report = clear_data(root, categories=("logs",), confirmed=True)
+            self.assertTrue(report["audit_written"])
+            self.assertEqual("previous", (root / "data_clear_audit.jsonl.1").read_text(encoding="utf-8"))
+            self.assertIn('"audit_written":true', audit_path.read_text(encoding="utf-8"))
+
     def test_default_export_excludes_sensitive_categories_and_writes_manifest(self):
         from tools.export_data import export_data
 

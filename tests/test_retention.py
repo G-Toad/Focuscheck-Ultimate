@@ -115,3 +115,19 @@ class RetentionTests(unittest.TestCase):
             self.assertFalse(result[0]["audit_written"])
             self.assertEqual("OSError", result[0]["audit_error"])
             self.assertEqual("outside", outside.read_text(encoding="utf-8"))
+
+    def test_apply_retention_rotates_bounded_audit_history(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            old = root / "focus_log.csv.1"
+            old.write_text("old", encoding="utf-8")
+            audit_path = root / "retention_audit.jsonl"
+            audit_path.write_text("previous", encoding="utf-8")
+            import os
+            old_time = time.time() - 10 * 86400
+            os.utime(old, (old_time, old_time))
+            with mock.patch("focuscheck.utils.data_retention.RETENTION_AUDIT_MAX_BYTES", 1):
+                result = apply_retention(root, max_age_days=1, apply=True)
+            self.assertTrue(result[0]["audit_written"])
+            self.assertEqual("previous", (root / "retention_audit.jsonl.1").read_text(encoding="utf-8"))
+            self.assertIn('"audit_written":true', audit_path.read_text(encoding="utf-8"))

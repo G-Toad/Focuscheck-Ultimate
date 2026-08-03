@@ -19,7 +19,8 @@ _CATEGORY_PATTERNS = {
              "focuscheck_supervisor.log", "focuscheck_supervisor.log.*"),
     "metadata": ("structured_events.jsonl", "structured_events.jsonl.*", "runtime_state.jsonl",
                  "runtime_state.jsonl.*", "data_migration.jsonl", "retention_audit.jsonl",
-                 "data_clear_audit.jsonl", "hb.txt", "supervisor.stop", "supervisor.stop.ack",
+                 "retention_audit.jsonl.*", "data_clear_audit.jsonl", "data_clear_audit.jsonl.*",
+                 "hb.txt", "supervisor.stop", "supervisor.stop.ack",
                  "diagnostic_bundle.zip", "diagnostic_bundle.zip.*"),
     "settings": ("focus_settings.json", "focus_settings.json.bak", "focus_settings.json.bak.*",
                  "focus_settings.json.corrupt-*", "focus_settings.json.migration.jsonl"),
@@ -29,6 +30,8 @@ _CATEGORY_PATTERNS = {
 _SENSITIVE_CATEGORIES = {"settings", "tasks", "camera"}
 EXPORT_FORMAT_VERSION = 1
 DATA_CLEAR_AUDIT_FORMAT_VERSION = 1
+DATA_CLEAR_AUDIT_MAX_BYTES = 512 * 1024
+DATA_CLEAR_AUDIT_BACKUP_COUNT = 2
 
 
 def _data_root(source_root) -> Path:
@@ -53,6 +56,21 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _rotate_audit_if_needed(path: Path, *, max_bytes: int, backup_count: int) -> None:
+    if path.is_symlink():
+        raise OSError("audit path symlink rejected")
+    if not path.exists() or path.stat().st_size < max_bytes:
+        return
+    for index in range(backup_count - 1, 0, -1):
+        source = path.with_name(f"{path.name}.{index}")
+        destination = path.with_name(f"{path.name}.{index + 1}")
+        if source.is_symlink() or destination.is_symlink():
+            raise OSError("audit backup symlink rejected")
+        if source.exists():
+            os.replace(source, destination)
+    os.replace(path, path.with_name(f"{path.name}.1"))
 
 
 def _files_for_categories(root: Path, categories: set[str]) -> list[tuple[Path, str]]:
@@ -275,8 +293,11 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     }
     audit_path = root / "data_clear_audit.jsonl"
     try:
-        if audit_path.is_symlink():
-            raise OSError("audit path symlink rejected")
+        _rotate_audit_if_needed(
+            audit_path,
+            max_bytes=DATA_CLEAR_AUDIT_MAX_BYTES,
+            backup_count=DATA_CLEAR_AUDIT_BACKUP_COUNT,
+        )
         persisted_audit = dict(audit)
         persisted_audit["audit_written"] = True
         with audit_path.open("a", encoding="utf-8") as handle:

@@ -226,7 +226,7 @@ def main() -> int:
         ("resource_leak_selftest", [py, "tools/resource_leak_selftest.py"]),
         ("settings_inventory", [py, "tools/settings_inventory.py"]),
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
-        ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip")]),
+        ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip"), "--overwrite"]),
         ("performance_soak", [py, "tools/performance_soak.py"]),
         ("test_category_inventory", [py, "tools/test_category_inventory.py"]),
     ]

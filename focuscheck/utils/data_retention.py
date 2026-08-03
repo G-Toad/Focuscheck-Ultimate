@@ -18,6 +18,23 @@ RETENTION_PATTERNS = (
     "focuscheck_supervisor.log*",
 )
 RETENTION_AUDIT_FORMAT_VERSION = 1
+RETENTION_AUDIT_MAX_BYTES = 512 * 1024
+RETENTION_AUDIT_BACKUP_COUNT = 2
+
+
+def _rotate_audit_if_needed(path: Path) -> None:
+    if path.is_symlink():
+        raise OSError("audit path symlink rejected")
+    if not path.exists() or path.stat().st_size < RETENTION_AUDIT_MAX_BYTES:
+        return
+    for index in range(RETENTION_AUDIT_BACKUP_COUNT - 1, 0, -1):
+        source = path.with_name(f"{path.name}.{index}")
+        destination = path.with_name(f"{path.name}.{index + 1}")
+        if source.is_symlink() or destination.is_symlink():
+            raise OSError("audit backup symlink rejected")
+        if source.exists():
+            os.replace(source, destination)
+    os.replace(path, path.with_name(f"{path.name}.1"))
 
 
 def _retention_root(root: Path) -> Path:
@@ -82,8 +99,7 @@ def apply_retention(
                 item["error"] = error
             item["audit_written"] = False
             try:
-                if audit_path.is_symlink():
-                    raise OSError("audit path symlink rejected")
+                _rotate_audit_if_needed(audit_path)
                 audit = {
                     "format_version": RETENTION_AUDIT_FORMAT_VERSION,
                     "utc": datetime.now(timezone.utc).isoformat(),
