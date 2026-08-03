@@ -96,6 +96,20 @@ This is direct per-user registry install/inspection/removal evidence. It does
 not prove that Explorer launches the value at sign-in, nor lock/sleep/resume,
 interactive tray behavior, or target-machine startup behavior.
 
+Latest isolated real package-lifecycle startup probe on 2026-08-03:
+
+- Using the current frozen package and disposable install/data roots, real
+  `package_lifecycle.ps1` `Install` and `Upgrade` operations registered a
+  unique HKCU Run value targeting the installed
+  `FocusCheckSupervisor.exe --run --base-dir` command.
+- Real `Uninstall` removed that value and archived the package; the temporary
+  transaction root was removed and the production `FocusCheck` value was not
+  touched.
+
+This proves package-script registration/removal and target-path composition. It
+does not prove Explorer sign-in execution, signing, or target-machine install
+behavior.
+
 Latest bounded live browser-provider probe on 2026-08-03:
 
 - The native window enumerator found two visible supported-browser windows on

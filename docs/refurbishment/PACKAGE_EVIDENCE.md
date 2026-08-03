@@ -5,6 +5,7 @@
 - Python: `3.11.9`
 - Target: Windows 10/11 x64 environment
 - Latest disposable rebuild from source commit `5002cf2` on 2026-08-03: `FocusCheck.exe` (SHA-256 `6142897E296778ABE70C2F6EF566ECF513D8E198B95D47FCBB3A54E3AD8E88EE`) and `FocusCheckSupervisor.exe` (SHA-256 `280C7DEE49D4742081D535C24E1DEC62574A29D811F5FF208A93C76CA01AFE3A`). Promotion generated the manifest, validation passed, and the packaged supervisor reached READY and completed a generation-bound stop acknowledgement/reaping self-test with no package-owned process remaining.
+- Latest isolated real package-lifecycle startup probe: `Install` and `Upgrade` registered a unique HKCU Run value targeting the installed `FocusCheckSupervisor.exe --run --base-dir`; `Uninstall` removed that value and archived the package. The disposable install/data parent was removed afterward; the production `FocusCheck` value was not touched.
 - Historical artifacts from commit `f48fb5b`: `FocusCheck.exe` (SHA-256 `27066AC2DE1F77D63B1D1C2B5BECB311FE340817821CC96F46C6505C83DDFEC7`) and `FocusCheckSupervisor.exe` (SHA-256 `0737E135526CC714E4628738A14511C9E6FE9A233B2A6C4BC31B7749444A69AA`).
 - Packaged child `--selftest`: exited `0` with `FOCUS_DATA_DIR` set to disposable `_package_frozen_probe_runtime`.
 - Frozen supervisor `--help`: exited `0`; frozen supervisor target resolution points at sibling `FocusCheck.exe`.
