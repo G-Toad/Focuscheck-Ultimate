@@ -312,7 +312,8 @@ class App:
         self.settings = settings_loader()
         self._startup_stage("settings_loaded")
         try:
-            migration_events = migrate_legacy_data(self.paths)
+            migration_factory = self._dependencies.legacy_migration_factory or migrate_legacy_data
+            migration_events = migration_factory(self.paths)
             if migration_events:
                 if migration_has_fatal_failure(migration_events):
                     raise RuntimeError("legacy data migration did not complete safely")

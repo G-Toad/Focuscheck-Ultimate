@@ -210,7 +210,7 @@ class AppLifecycleTests(unittest.TestCase):
         deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
         self.assertEqual(
             {
-                "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
+                "settings_loader", "settings_saver", "legacy_migration_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
@@ -368,6 +368,7 @@ class AppLifecycleTests(unittest.TestCase):
 
                 dependencies = AppDependencies(
                     settings_loader=lambda: {"monitoring_mode": "v1"},
+                    legacy_migration_factory=lambda _paths: [],
                     task_db_factory=lambda *_args, **_kwargs: object(),
                     startup_stage_hook=inject,
                     tk_root_factory=lambda: root,
@@ -375,7 +376,6 @@ class AppLifecycleTests(unittest.TestCase):
                 with ExitStack() as stack:
                     stack.enter_context(mock.patch.dict(os.environ, {"FOCUS_DATA_DIR": temp_dir}, clear=False))
                     stack.enter_context(mock.patch("focuscheck.app.TimerRegistry", return_value=mock.Mock()))
-                    stack.enter_context(mock.patch("focuscheck.app.migrate_legacy_data", return_value=[]))
                     stack.enter_context(mock.patch("focuscheck.app.ensure_log_header"))
                     stack.enter_context(mock.patch.object(App, "_apply_initial_monitoring_state"))
                     stack.enter_context(mock.patch.object(App, "_ensure_engine"))
