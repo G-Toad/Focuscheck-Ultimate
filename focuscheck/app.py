@@ -376,12 +376,13 @@ class App:
             log_exception("TaskDB unavailable; continuing without tasks feature")
         self._startup_stage("repositories_initialized")
         ensure_log_header(self.paths.focus_log)
-        self.guard = PauseGuard(lambda: self.settings)
+        guard_factory = self._dependencies.guard_factory or PauseGuard
+        self.guard = guard_factory(lambda: self.settings)
         self._ensure_engine()
         self._startup_stage("engine_initialized")
         self._scheduled = None
         self._current_prompt = None
-        self._prompt_coordinator = PromptCoordinator()
+        self._prompt_coordinator = self._new_prompt_coordinator()
         self._intervention_active = False
         self._active_intervention_id = None
         self._last_resume_mono = 0.0
@@ -537,6 +538,11 @@ class App:
         hook = getattr(getattr(self, "_dependencies", None), "startup_stage_hook", None)
         if callable(hook):
             hook(name)
+
+    def _new_prompt_coordinator(self):
+        """Compose a prompt coordinator without bypassing App dependencies."""
+        factory = getattr(getattr(self, "_dependencies", None), "prompt_coordinator_factory", None)
+        return (factory or PromptCoordinator)()
 
     def _apply_initial_monitoring_state(self):
         # Reconcile snooze first so an expired effective pause cannot be
@@ -1156,7 +1162,7 @@ class App:
             return
         coordinator = getattr(self, "_prompt_coordinator", None)
         if coordinator is None:
-            coordinator = PromptCoordinator()
+            coordinator = self._new_prompt_coordinator()
             self._prompt_coordinator = coordinator
         coordinator.complete(prompt)
         self._record_operational_event("prompt", event="completed", outcome="completed")
@@ -1652,7 +1658,7 @@ class App:
             pass
         coordinator = getattr(self, "_prompt_coordinator", None)
         if coordinator is None:
-            coordinator = PromptCoordinator()
+            coordinator = self._new_prompt_coordinator()
             self._prompt_coordinator = coordinator
         coordinator.close(prompt, outcome=self._prompt_interruption_outcome(source))
         self._record_operational_event("prompt", event="closed", outcome=f"interrupted_{source}")

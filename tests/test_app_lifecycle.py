@@ -188,7 +188,8 @@ class AppLifecycleTests(unittest.TestCase):
             {
                 "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
-                "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "filesystem", "startup_stage_hook",
+                "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
+                "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
                 "shutdown_stage_hook", "tk_root_factory",
             },
             set(deps.__dataclass_fields__),
@@ -226,6 +227,28 @@ class AppLifecycleTests(unittest.TestCase):
         app = App.__new__(App)
         app._dependencies = dependencies
         self.assertIs(root_factory, app._dependencies.tk_root_factory)
+
+    def test_prompt_coordinator_recovery_uses_composed_factory(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        prompt = mock.Mock()
+        coordinator = mock.Mock()
+        factory = mock.Mock(return_value=coordinator)
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(prompt_coordinator_factory=factory)
+        app._prompt_coordinator = None
+        app._current_prompt = prompt
+        app._cancel_prompt_observers = mock.Mock()
+        app._record_operational_event = mock.Mock()
+        app._runtime_state = None
+        app._schedule_next = mock.Mock()
+
+        App._on_prompt_done(app)
+
+        factory.assert_called_once_with()
+        coordinator.complete.assert_called_once_with(prompt)
+        self.assertIs(coordinator, app._prompt_coordinator)
 
     def test_initialize_declares_all_startup_failure_injection_checkpoints(self):
         from focuscheck.app import App

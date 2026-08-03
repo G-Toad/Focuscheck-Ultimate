@@ -29,6 +29,8 @@ class AppDependencies:
     timer_registry_factory: Callable[..., Any] | None = None
     runtime_journal_factory: Callable[..., Any] | None = None
     runtime_state_factory: Callable[..., Any] | None = None
+    guard_factory: Callable[[Callable[[], Any]], Any] | None = None
+    prompt_coordinator_factory: Callable[[], Any] | None = None
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None
