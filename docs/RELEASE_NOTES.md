@@ -29,6 +29,7 @@
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
 - Package promotion now restores the retained previous install after post-promotion validation failure and keeps the failed package for diagnosis.
 - Package validation rejects reparse points, rooted or traversal manifest paths, duplicate manifest entries, and invalid SHA-256 digests before install.
+- TaskDB schema version 4 preserves legacy rows while reconciling unknown statuses and enforcing bounded status/text policies for future task and event writes.
 - Release status: `NOT_READY`.
 
 ## Known limitations
