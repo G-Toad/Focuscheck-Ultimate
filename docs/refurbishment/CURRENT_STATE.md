@@ -48,6 +48,7 @@
 - The withdrawn-root resource-leak self-test constructs and cleans up representative V1 and V2 prompts in addition to reminder dialogs.
 - Settings UI tests now enumerate every schema-generated Advanced control and verify its default reaches the save payload.
 - TaskDB transition, overdue, and event timestamps accept an optional injected UTC clock for deterministic persistence tests.
+- TaskDB restores reject symlink sources and corrupt backups before replacing a destination, with explicit atomic integrity validation.
 - Activity snapshots now bound provider text/URLs, record truncation errors, and accept deterministic capture clocks across success, error, and timeout paths.
 - Icon extraction declares shell32, user32, and GDI handle/function signatures before native icon and bitmap operations.
 - Spotlight region and cursor operations declare their user32/GDI signatures before native updates.

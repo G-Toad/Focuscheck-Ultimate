@@ -260,10 +260,24 @@ class TaskDB:
         """Restore a previously created backup without mutating the source."""
         source = os.fspath(source)
         destination = os.fspath(destination)
+        source_path = os.path.abspath(source)
+        if os.path.islink(source_path):
+            raise ValueError("refusing to restore from a symlink")
+        if not os.path.isfile(source_path):
+            raise FileNotFoundError(source_path)
         os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
         temp = f"{destination}.{os.getpid()}.restore.tmp"
         try:
-            shutil.copy2(source, temp)
+            shutil.copy2(source_path, temp)
+            restored = sqlite3.connect(temp, timeout=30)
+            try:
+                integrity = str(restored.execute("PRAGMA integrity_check").fetchone()[0] or "")
+            except sqlite3.DatabaseError as exc:
+                raise RuntimeError(f"SQLite restore integrity check failed: {exc}") from exc
+            finally:
+                restored.close()
+            if integrity.lower() != "ok":
+                raise RuntimeError(f"SQLite restore integrity check failed: {integrity[:120]}")
             os.replace(temp, destination)
         finally:
             try:

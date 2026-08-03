@@ -82,3 +82,34 @@ class TaskDbRecoveryTests(unittest.TestCase):
                 TaskDB(str(path))
             self.assertEqual(original, path.read_bytes())
             self.assertEqual([], list(path.parent.glob("corrupt.sqlite3.pre-migration-*.bak")))
+
+    def test_restore_rejects_corrupt_backup_without_replacing_destination(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            source = root / "backup.sqlite3"
+            destination = root / "restored.sqlite3"
+            source.write_bytes(b"not sqlite")
+            destination.write_bytes(b"keep existing")
+
+            with self.assertRaises(RuntimeError):
+                TaskDB.restore_from(source, destination)
+
+            self.assertEqual(b"keep existing", destination.read_bytes())
+
+    def test_restore_rejects_symlink_source(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            source = root / "backup.sqlite3"
+            target = root / "target.sqlite3"
+            target.write_bytes(b"not sqlite")
+            try:
+                source.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                TaskDB.restore_from(source, root / "restored.sqlite3")
