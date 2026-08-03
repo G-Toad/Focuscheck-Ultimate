@@ -115,7 +115,11 @@ class RuntimeStateCoordinator:
         payload = self._safe_snapshot(snapshot)
         payload.update({"event": event, "outcome": outcome})
         try:
-            self._transition_sink(payload)
+            result = self._transition_sink(payload)
+            # Legacy sinks return None; only an explicit False means that the
+            # sink observed a durable write failure.
+            if result is False:
+                raise OSError("transition sink rejected event")
         except Exception as exc:
             # A journal failure must not break the user-facing state transition,
             # but it must remain visible to status/heartbeat diagnostics.

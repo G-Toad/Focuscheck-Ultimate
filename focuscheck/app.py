@@ -299,8 +299,9 @@ class App:
         )
 
         def record_runtime_event(event):
-            self._runtime_journal.append(event)
+            journal_ok = self._runtime_journal.append(event)
             self._event_ledger.append("runtime", event)
+            return journal_ok
 
         self._runtime_state = RuntimeStateCoordinator(
             self.settings,

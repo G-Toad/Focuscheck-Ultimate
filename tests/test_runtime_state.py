@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 import json
 import tempfile
+from unittest import mock
 from pathlib import Path
 from dataclasses import FrozenInstanceError
 from itertools import product
@@ -87,6 +88,14 @@ class RuntimeStateTests(unittest.TestCase):
             record = json.loads((Path(temp_dir) / "runtime.jsonl").read_text(encoding="utf-8"))
 
         self.assertEqual(clock.now_utc().isoformat(), record["utc"])
+
+    def test_runtime_journal_reports_filesystem_failure_without_raising(self):
+        from focuscheck.runtime.journal import RuntimeTransitionJournal
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            journal = RuntimeTransitionJournal(Path(temp_dir) / "runtime.jsonl")
+            with mock.patch.object(Path, "open", side_effect=OSError("read-only")):
+                self.assertFalse(journal.append({"event": "pause"}))
 
     def test_pause_save_failure_rolls_back_settings_and_state(self):
         settings = {"paused": False, "snooze_until_utc": ""}

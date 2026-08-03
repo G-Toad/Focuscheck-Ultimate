@@ -34,7 +34,7 @@ class RuntimeTransitionJournal:
             pass
         return datetime.now(timezone.utc)
 
-    def append(self, event: dict) -> None:
+    def append(self, event: dict) -> bool:
         payload = {
             "utc": self._now_utc().isoformat(),
             "event": str(event.get("event", "transition")),
@@ -63,4 +63,5 @@ class RuntimeTransitionJournal:
                     os.fsync(handle.fileno())
             except OSError:
                 # Runtime journaling must never make the application fail.
-                return
+                return False
+        return True
