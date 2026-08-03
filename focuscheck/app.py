@@ -350,11 +350,13 @@ class App:
         # Init task DB
         try:
                 task_db_factory = self._dependencies.task_db_factory or TaskDB
-                self.taskdb = task_db_factory(
-                self.paths.task_db,
-                clock=self._runtime_clock,
-                event_sink=lambda event: self._event_ledger.append("task", event),
-            )
+                task_db_kwargs = {
+                    "clock": self._runtime_clock,
+                    "event_sink": lambda event: self._event_ledger.append("task", event),
+                }
+                if callable(self._dependencies.sqlite_connection_factory):
+                    task_db_kwargs["connection_factory"] = self._dependencies.sqlite_connection_factory
+                self.taskdb = task_db_factory(self.paths.task_db, **task_db_kwargs)
         except Exception:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")

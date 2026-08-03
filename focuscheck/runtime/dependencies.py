@@ -17,6 +17,7 @@ class AppDependencies:
 
     settings_loader: Callable[[], dict[str, Any]] | None = None
     settings_saver: Callable[[dict[str, Any]], Any] | None = None
+    sqlite_connection_factory: Callable[..., Any] | None = None
     task_db_factory: Callable[..., Any] | None = None
     tray_factory: Callable[..., Any] | None = None
     watcher_factory: Callable[..., Any] | None = None

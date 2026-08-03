@@ -56,6 +56,25 @@ class DueTimeTests(unittest.TestCase):
 
 
 class TaskDbLifecycleTests(unittest.TestCase):
+    def test_connection_factory_is_used_for_schema_and_crud(self):
+        from focuscheck.database.task_db import TaskDB
+
+        calls = []
+
+        def connect(path, **kwargs):
+            calls.append((path, kwargs))
+            return sqlite3.connect(path, **kwargs)
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = str(Path(temp_dir) / "tasks.sqlite3")
+            db = TaskDB(path, connection_factory=connect)
+            task_id = db.start_task(title="Injected connection", due_utc=None, why="", consequences="")
+            self.assertTrue(db.mark_completed(task_id))
+
+        self.assertGreaterEqual(len(calls), 3)
+        self.assertTrue(all(call[1]["timeout"] == 30 for call in calls))
+        self.assertTrue(all(Path(call[0]).parent.name for call in calls))
+
     def test_task_transition_events_are_bounded_and_failure_isolated(self):
         from focuscheck.database.task_db import TaskDB
 

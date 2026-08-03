@@ -64,10 +64,11 @@ def _bounded_text(value, field, *, required=False, limit=MAX_TASK_TEXT_LENGTH):
 class TaskDB:
     """Manages tasks and sessions in SQLite database."""
     
-    def __init__(self, path, clock=None, event_sink=None):
+    def __init__(self, path, clock=None, event_sink=None, connection_factory=None):
         self.path = path
         self._clock = clock
         self._event_sink = event_sink
+        self._connection_factory = connection_factory or sqlite3.connect
         self.pre_migration_backup = None
         self._ensure_schema()
 
@@ -103,7 +104,7 @@ class TaskDB:
 
     @contextmanager
     def _conn(self):
-        con = sqlite3.connect(self.path, timeout=30)
+        con = self._connection_factory(self.path, timeout=30)
         try:
             con.execute("PRAGMA journal_mode=WAL")
             con.execute("PRAGMA synchronous=FULL")
@@ -321,7 +322,7 @@ class TaskDB:
         if not os.path.isfile(self.path) or os.path.getsize(self.path) == 0:
             return
         try:
-            with sqlite3.connect(self.path, timeout=30) as source:
+            with self._connection_factory(self.path, timeout=30) as source:
                 version = int(source.execute("PRAGMA user_version").fetchone()[0] or 0)
                 integrity = str(source.execute("PRAGMA integrity_check").fetchone()[0] or "")
                 if integrity.lower() != "ok":
@@ -335,7 +336,7 @@ class TaskDB:
                     candidate = f"{self.path}.pre-migration-v{version}.{suffix}.bak"
                     suffix += 1
                 temporary = f"{candidate}.{os.getpid()}.tmp"
-                backup = sqlite3.connect(temporary)
+                backup = self._connection_factory(temporary)
                 try:
                     source.backup(backup)
                     backup.commit()
@@ -373,7 +374,7 @@ class TaskDB:
             ) as handle:
                 temporary = handle.name
             with self._conn() as con:
-                backup_con = sqlite3.connect(temporary)
+                backup_con = self._connection_factory(temporary)
                 try:
                     con.backup(backup_con)
                     backup_con.commit()
