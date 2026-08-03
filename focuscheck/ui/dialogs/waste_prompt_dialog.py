@@ -134,6 +134,14 @@ class WastePromptDialog(tk.Toplevel):
             timers.close()
         return super().destroy()
 
+    def close(self):
+        """Close from an owning prompt interruption without notifying it."""
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+
     def _init_spam_detector(self):
         """Initialize spam detector with settings configuration."""
         logger = get_logger()

@@ -100,6 +100,7 @@ class AntiHabitMixin:
 
         def _on_submit(payload):
             self._focus_prompt_open = False
+            self._follow_up_dialog = None
             try:
                 doing = (payload or {}).get("doing", "").strip()
                 benefits = (payload or {}).get("benefits", "").strip()
@@ -135,11 +136,12 @@ class AntiHabitMixin:
 
         def _on_cancel():
             self._focus_prompt_open = False
+            self._follow_up_dialog = None
 
         self._focus_prompt_open = True
         # Import FocusPromptDialog locally to avoid circular imports
         from ..focus_prompt_dialog import FocusPromptDialog
-        FocusPromptDialog(
+        self._follow_up_dialog = FocusPromptDialog(
             self,
             ask_doing=ask_doing,
             ask_benefits=ask_benefits,
@@ -223,6 +225,7 @@ class AntiHabitMixin:
             self._finish("Wasting time")
             return
         def _cb(payload):
+            self._follow_up_dialog = None
             try:
                 what = (payload or {}).get("what", "").strip()
                 cons = (payload or {}).get("consequences", "").strip()
@@ -256,10 +259,10 @@ class AntiHabitMixin:
         def _on_cancel():
             # Cancel just closes the waste prompt, returns to main dialog
             # Don't call _finish() - let user choose again
-            pass
+            self._follow_up_dialog = None
         # Import WastePromptDialog locally to avoid circular imports
         from ..waste_prompt_dialog import WastePromptDialog
-        WastePromptDialog(
+        self._follow_up_dialog = WastePromptDialog(
             self,
             ask_what=ask_what,
             ask_consequences=ask_cons,

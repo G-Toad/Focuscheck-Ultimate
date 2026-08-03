@@ -159,6 +159,8 @@ Current checkpoint addition: The latest `681a85a` test checkpoint corrects and v
 
 Current checkpoint addition: The latest `c11865a` V1 flow checkpoint adds withdrawn-root end-to-end coverage for valid Focus and Waste detail submissions through the owning `PromptDialog`; the full verifier records `393` unittest cases and all 18 bounded stages passed, while interactive/manual V1 rows remain explicitly pending.
 
+Current checkpoint addition: The current V1 lifecycle slice adds explicit parent ownership and callback-free interruption cleanup for Focus/Waste detail dialogs, including grab/timer release and `_focus_prompt_open` reset.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

@@ -117,6 +117,7 @@ class PromptDialog(
         self._task_decision_task_id = None
         self._task_decision_can_fail = False
         self._focus_prompt_open = False
+        self._follow_up_dialog = None
 
         # Button phrase tracking for sequential mode
         self._study_phrase_index = 0
@@ -824,6 +825,30 @@ class PromptDialog(
         self._active_timers.add(timer_id)
         return timer_id
 
+    def _close_follow_up_dialog(self):
+        """Close an owned Focus/Waste detail dialog without a user callback."""
+        dialog = getattr(self, "_follow_up_dialog", None)
+        self._follow_up_dialog = None
+        if dialog is not None:
+            self._focus_prompt_open = False
+        if dialog is None:
+            return
+        try:
+            close = getattr(dialog, "close", None)
+            if callable(close):
+                close()
+            else:
+                try:
+                    dialog.grab_release()
+                except Exception:
+                    pass
+                dialog.destroy()
+        except Exception:
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
+
     def _cancel_timer(self, timer_id):
         """
         Cancel a specific timer and remove from tracking.
@@ -849,6 +874,7 @@ class PromptDialog(
 
         Called before destroying the dialog to ensure clean shutdown.
         """
+        self._close_follow_up_dialog()
         timers = getattr(self, "_timers", None)
         if timers is not None:
             timers.close()
@@ -860,3 +886,7 @@ class PromptDialog(
                 except Exception:
                     pass
         self._active_timers.clear()
+
+    def destroy(self):
+        self._close_follow_up_dialog()
+        return super().destroy()
