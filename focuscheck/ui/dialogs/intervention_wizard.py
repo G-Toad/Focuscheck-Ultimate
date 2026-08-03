@@ -749,8 +749,10 @@ class InterventionWizard:
                 finally:
                     done.set()
 
+            dispatch_name = "off-thread-dispatch"
             try:
-                self.parent.after(0, _run_on_ui)
+                if not self._timers.schedule(dispatch_name, 0, _run_on_ui):
+                    raise RuntimeError("intervention timer registry is closed")
             except Exception:
                 if logger:
                     logger.exception("intervention: failed to marshal to Tk thread", exc_info=True)
@@ -760,6 +762,7 @@ class InterventionWizard:
                 # bounded wait. Invalidate it so a late Tk dispatch cannot
                 # open an intervention invisibly.
                 cancelled.set()
+                self._timers.cancel(dispatch_name)
                 return False
             return bool(result_holder.get("value"))
         return self._run_internal(

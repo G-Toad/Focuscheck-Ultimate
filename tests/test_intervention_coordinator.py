@@ -231,6 +231,7 @@ class InterventionCoordinatorTests(unittest.TestCase):
         cancelled.is_set.return_value = True
         parent.callbacks[0]()
         wizard._run_internal.assert_not_called()
+        self.assertIsNone(wizard._timers.callback_id("off-thread-dispatch"))
 
     def test_intervention_wizard_owns_parent_fail_safe_timer_registry(self):
         from focuscheck.ui.dialogs import intervention_wizard
