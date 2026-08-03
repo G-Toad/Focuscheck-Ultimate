@@ -1,0 +1,2 @@
+# FocusCheck core uses the Python standard library only.
+# Keep this group explicit so optional integrations cannot become implicit core dependencies.

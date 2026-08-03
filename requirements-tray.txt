@@ -1,0 +1,3 @@
+# Optional tray backend and icon rendering.
+Pillow==11.3.0
+pystray==0.19.5

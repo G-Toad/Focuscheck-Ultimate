@@ -1,0 +1,4 @@
+# Optional camera capture and image processing.
+Pillow==11.3.0
+numpy==2.3.5
+opencv-python==4.13.0.90

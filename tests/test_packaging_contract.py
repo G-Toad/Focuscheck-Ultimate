@@ -9,6 +9,40 @@ from pathlib import Path
 
 
 class PackagingContractTests(unittest.TestCase):
+    def test_dependency_groups_are_explicit_and_pinned(self):
+        root = Path(__file__).resolve().parents[1]
+        groups = {
+            "core": root / "requirements-core.txt",
+            "tray": root / "requirements-tray.txt",
+            "camera": root / "requirements-camera.txt",
+            "packaging": root / "requirements-packaging.txt",
+        }
+        expected = {
+            "tray": {"Pillow==11.3.0", "pystray==0.19.5"},
+            "camera": {"Pillow==11.3.0", "numpy==2.3.5", "opencv-python==4.13.0.90"},
+            "packaging": {"pyinstaller==6.16.0"},
+        }
+        for name, path in groups.items():
+            self.assertTrue(path.is_file(), name)
+            requirements = {
+                line.strip()
+                for line in path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.lstrip().startswith("#")
+            }
+            self.assertTrue(all("==" in line for line in requirements), name)
+            self.assertEqual(expected.get(name, set()), requirements, name)
+
+        dev = (root / "requirements-dev.txt").read_text(encoding="utf-8")
+        self.assertEqual(
+            {
+                "-r requirements-core.txt",
+                "-r requirements-tray.txt",
+                "-r requirements-camera.txt",
+                "-r requirements-packaging.txt",
+            },
+            {line.strip() for line in dev.splitlines() if line.strip() and not line.startswith("#")},
+        )
+
     def test_runtime_dependencies_are_pinned(self):
         root = Path(__file__).resolve().parents[1]
         lines = [line.strip() for line in (root / "requirements.txt").read_text(encoding="utf-8").splitlines() if line.strip()]

@@ -1,2 +1,4 @@
--r requirements.txt
-pyinstaller==6.16.0
+-r requirements-core.txt
+-r requirements-tray.txt
+-r requirements-camera.txt
+-r requirements-packaging.txt

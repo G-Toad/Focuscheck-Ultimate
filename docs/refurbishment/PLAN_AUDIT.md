@@ -337,6 +337,10 @@ TaskDB concurrency correction: concurrent first opens now serialize schema migra
 
 Registry-isolation correction: the bounded verifier now captures a read-only snapshot of `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` before and after all stages. The latest run reports `registry_snapshot_supported=true`, `registry_unchanged=true`, and `user_run_key_unchanged=true`; this proves non-mutation during verification, not Explorer sign-in behavior.
 
+Dependency-group correction: exact runtime pins remain in `requirements.txt`, while explicit `requirements-core.txt`, `requirements-tray.txt`, `requirements-camera.txt`, and `requirements-packaging.txt` groups are now composed by `requirements-dev.txt`. A packaging regression validates every direct group requirement is pinned and that the development aggregate references only those groups; clean-VM installation and signing remain release gates.
+
+Current checkpoint update: the dependency-group regression brings the full verifier to `479` unittest cases; all 19 bounded stages pass, while the report remains `partial` solely because the documented manual/release requirements are still pending.
+
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.
 
 UI dispatch correction: composed App callbacks now reject dispatch after `TimerRegistry.close()` instead of falling back to raw `root.after()`, report registry rejection truthfully, and prevent late tray/Tk work from entering shutdown. The focused UI/lifecycle/tray suite passed `57` tests and the full verifier passed `468` tests across all 19 stages.
