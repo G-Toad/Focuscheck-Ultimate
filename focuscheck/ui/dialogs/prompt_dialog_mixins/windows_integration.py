@@ -226,7 +226,12 @@ class WindowsIntegrationMixin:
             return
         try:
             if self.state() == 'iconic':
-                self.after(0, self.deiconify)
+                schedule = getattr(self, "_schedule_timer", None)
+                if callable(schedule):
+                    schedule(0, self.deiconify)
+                else:
+                    # Compatibility for standalone mixin fixtures.
+                    self.after(0, self.deiconify)
                 try: self.lift()
                 except Exception: pass
         except Exception:

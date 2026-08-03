@@ -443,6 +443,21 @@ class ImportHardeningTests(unittest.TestCase):
         dialog._closed = True
         self.assertIsNone(dialog._schedule_timer(300, lambda: callbacks.append("closed")))
 
+    def test_prompt_minimize_recovery_uses_prompt_timer_owner(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.windows_integration import WindowsIntegrationMixin
+
+        prompt = WindowsIntegrationMixin.__new__(WindowsIntegrationMixin)
+        prompt._closed = False
+        prompt.state = mock.Mock(return_value="iconic")
+        prompt._schedule_timer = mock.Mock()
+        prompt.deiconify = mock.Mock()
+        prompt.lift = mock.Mock()
+
+        prompt._prevent_minimize()
+
+        prompt._schedule_timer.assert_called_once_with(0, prompt.deiconify)
+        prompt.deiconify.assert_not_called()
+
     def test_gentle_reminder_registry_invalidates_dequeued_callbacks(self):
         from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
         from focuscheck.utils.timers import TimerRegistry
