@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-03T09:58:27.828819+00:00",
-  "commit": "480d491ac104c0949a8590172d75b238edf4b4e5",
+  "generated_utc": "2026-08-03T10:02:39.231117+00:00",
+  "commit": "9fa301b6240b346385fdda7b98fff953ffc272c4",
   "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
   "environment": {
     "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
@@ -24,7 +24,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 234,
+      "elapsed_ms": 218,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\compileall.log"
     },
     {
@@ -41,7 +41,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 27842,
+      "elapsed_ms": 27797,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
     },
     {
@@ -52,7 +52,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5766,
+      "elapsed_ms": 5764,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\mutation_smoke.log"
     },
     {
@@ -63,7 +63,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 12875,
+      "elapsed_ms": 12922,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\source_supervisor_selftest.log"
     },
     {
@@ -74,7 +74,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 7281,
+      "elapsed_ms": 7296,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\state_restart_selftest.log"
     },
     {
@@ -111,7 +111,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 703,
+      "elapsed_ms": 641,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\tray_selftest.log"
     },
     {
@@ -122,7 +122,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 3250,
+      "elapsed_ms": 3125,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\native_overlay_selftest.log"
     },
     {
@@ -144,7 +144,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 11187,
+      "elapsed_ms": 11000,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
     },
     {
@@ -170,7 +170,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 703,
+      "elapsed_ms": 687,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data_export.log"
     },
     {
@@ -181,7 +181,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5764,
+      "elapsed_ms": 5828,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\performance_soak.log"
     },
     {
@@ -233,7 +233,7 @@
   ],
   "tests": {
     "status": "passed",
-    "count": 411,
+    "count": 415,
     "failure_summary": null
   },
   "test_categories": {
