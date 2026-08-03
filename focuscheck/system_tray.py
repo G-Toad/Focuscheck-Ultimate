@@ -501,7 +501,11 @@ class SystemTray:
                         logger.info("        Dialog shown")
                     except Exception as e:
                         logger.exception("        Dialog failed: %s", e)
-                root.after(0, _msg)
+                dispatch = getattr(self.app, "_call_on_ui_thread", None)
+                if callable(dispatch):
+                    dispatch(_msg)
+                else:
+                    root.after(0, _msg)
                 logger.info("MENU ACTION: _open_settings() COMPLETED (via dialog)")
                 logger.info("=" * 80)
                 return

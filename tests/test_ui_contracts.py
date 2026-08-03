@@ -48,6 +48,27 @@ class UiContractTests(unittest.TestCase):
             tray._set_setting("interval_seconds", 30)
         open_mock.assert_not_called()
 
+    def test_tray_settings_fallback_uses_app_ui_dispatcher(self):
+        from focuscheck.system_tray import SystemTray
+
+        class App:
+            settings = {}
+
+            def __init__(self):
+                self.root = mock.Mock()
+                self.dispatches = []
+
+            def _call_on_ui_thread(self, callback):
+                self.dispatches.append(callback)
+                return True
+
+        app = App()
+        tray = SystemTray(app=app, name="TestTray", config_path="missing-settings.json")
+        with mock.patch("tkinter.messagebox.showinfo"):
+            tray._open_settings()
+            self.assertEqual(1, len(app.dispatches))
+            app.dispatches[0]()
+
     def test_tray_task_dialog_is_created_only_on_tk_owner_thread(self):
         from focuscheck.app import App
 
