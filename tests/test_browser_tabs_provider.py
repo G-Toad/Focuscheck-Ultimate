@@ -79,7 +79,8 @@ class BrowserTabsProviderTests(unittest.TestCase):
                     "comtypes.gen": modules[2],
                     "comtypes.gen.UIAutomationClient": modules[3],
                 }), \
-                mock.patch.object(browser_tabs, "list_tab_titles", return_value=["CDP tab"]):
+                mock.patch.object(browser_tabs, "list_tab_titles", return_value=["CDP tab"]), \
+                mock.patch.object(browser_tabs, "collect_browser_tabs", return_value=[]):
             self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(42, "chrome.exe"))
 
         with mock.patch.object(browser_tabs.platform, "system", return_value="Windows"), \
@@ -90,7 +91,8 @@ class BrowserTabsProviderTests(unittest.TestCase):
                     "comtypes.gen": modules[2],
                     "comtypes.gen.UIAutomationClient": modules[3],
                 }), \
-                mock.patch.object(browser_tabs, "list_tab_titles", side_effect=RuntimeError("cdp unavailable")):
+                mock.patch.object(browser_tabs, "list_tab_titles", side_effect=RuntimeError("cdp unavailable")), \
+                mock.patch.object(browser_tabs, "collect_browser_tabs", return_value=[]):
             self.assertEqual([], browser_tabs.try_list_browser_tabs(42, "chrome.exe"))
 
     def test_hung_uia_falls_back_without_blocking_or_starting_another_worker(self):

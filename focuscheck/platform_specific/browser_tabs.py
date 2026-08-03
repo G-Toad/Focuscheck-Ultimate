@@ -4,6 +4,7 @@ import platform
 import threading
 
 from .browser_info import is_supported_browser
+from .browser_sessions import collect_browser_tabs
 from .cdp_browser import list_tab_titles
 
 _MAX_UIA_ITEMS = 256
@@ -80,6 +81,14 @@ def try_list_browser_tabs(hwnd, process_name, *, timeout=_DEFAULT_UIA_TIMEOUT):
         titles = list_tab_titles()
         if titles:
             return titles
+    except Exception:
+        pass
+    # Session files are a read-only last resort. They do not identify the
+    # foreground window, so expose titles only to the selection wizard.
+    try:
+        recovered = collect_browser_tabs(process_name)
+        if recovered:
+            return [tab.title or tab.url for tab in recovered if tab.title or tab.url]
     except Exception:
         pass
     return []
