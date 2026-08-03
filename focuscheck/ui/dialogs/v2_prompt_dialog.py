@@ -127,7 +127,7 @@ class V2PromptDialog(
 
     def _monotonic_now(self):
         """Use the composed runtime clock for prompt duration decisions."""
-        monotonic = getattr(self._task_clock, "monotonic", None)
+        monotonic = getattr(getattr(self, "_task_clock", None), "monotonic", None)
         if callable(monotonic):
             try:
                 return float(monotonic())
