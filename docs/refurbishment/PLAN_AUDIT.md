@@ -249,6 +249,8 @@ V2 suppression correction: Website subpopup eligibility now rejects coordinator-
 
 Compatibility correction: Standalone V2 adapters now apply the same shutdown suppression through the app-level `_shutdown_requested` flag, while explicit-boolean checking preserves legacy fixtures that do not define that field.
 
+Guard safety correction: Standalone V2 website checks now fail closed when native guard sampling raises, rather than treating an unknown lock/idle state as permission to intervene.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -270,6 +272,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `443` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `7a027df`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `444` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `13c190b`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
