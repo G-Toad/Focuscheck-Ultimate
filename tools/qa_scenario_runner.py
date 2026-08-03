@@ -743,12 +743,18 @@ def run_monitoring_scenarios(log: QaLog):
 
 
 def run_gui_scenarios(log: QaLog):
+    from datetime import datetime
     import tkinter as tk
+    from unittest import mock
     from focuscheck.ui.dialogs.task_change_dialog import TaskChangeDialog
     from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
+    from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
     from focuscheck.ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
+    from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
     from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
     from focuscheck.ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
+    from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+    from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
     with scenario(log, "gui.task_entry.enter_submit"):
         root = tk.Tk()
@@ -847,6 +853,91 @@ def run_gui_scenarios(log: QaLog):
             checks = {"callback": events == ["dismissed"], "destroyed": not bool(dialog.winfo_exists())}
             log.event("gui.gentle_reminder.dismiss_close", "assert_dismiss_close", all(checks.values()), checks=checks)
             assert all(checks.values())
+        finally:
+            root.destroy()
+
+    with scenario(log, "gui.v1.detail_completion_and_interruption"):
+        root = tk.Tk()
+        root.withdraw()
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update({
+            "always_on_top": False,
+            "anti_habit_enabled": False,
+            "camera_feed_enabled": False,
+            "encouragement_enabled": False,
+            "challenge_system_enabled": False,
+            "spam_detection_enabled": False,
+            "focus_prompt_ask_doing": True,
+            "focus_prompt_ask_benefits": True,
+            "wasting_prompt_ask_what": True,
+            "wasting_prompt_ask_consequences": True,
+            "show_task_analytics": False,
+        })
+        events = []
+        try:
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"), mock.patch(
+                "focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit.append_focus_log"
+            ), mock.patch("focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit.append_waste_log"):
+                for action, child_type in (
+                    ("study", FocusPromptDialog),
+                    ("waste", WastePromptDialog),
+                ):
+                    submitted = []
+                    dialog = PromptDialog(
+                        root,
+                        settings,
+                        lambda submitted=submitted: submitted.append(True),
+                        datetime.now(),
+                        taskdb=None,
+                        app_ref=None,
+                    )
+                    dialog.withdraw()
+                    if action == "study":
+                        dialog._trigger_studying_choice()
+                    else:
+                        dialog._on_wasting_clicked()
+                    root.update()
+                    child = next(
+                        child for child in dialog.winfo_children() if isinstance(child, child_type)
+                    )
+                    if action == "study":
+                        child.doing_var.set("write the implementation")
+                        child.benefits_var.set("finish the next slice")
+                    else:
+                        child.what_var.set("scrolling unrelated feeds")
+                        child.cons_var.set("lose the next focus block")
+                    child._save()
+                    root.update()
+                    events.append({"action": action, "completed": submitted == [True], "destroyed": not dialog.winfo_exists()})
+
+                interrupted = PromptDialog(
+                    root,
+                    settings,
+                    lambda: events.append({"action": "interrupted-submit"}),
+                    datetime.now(),
+                    taskdb=None,
+                    app_ref=None,
+                )
+                interrupted.withdraw()
+                interrupted._trigger_studying_choice()
+                root.update()
+                child = next(child for child in interrupted.winfo_children() if isinstance(child, FocusPromptDialog))
+                interrupted._cleanup_all_timers()
+                root.update()
+                events.append({
+                    "action": "interruption",
+                    "child_destroyed": not child.winfo_exists(),
+                    "parent_submit_notified": not any(item.get("action") == "interrupted-submit" for item in events),
+                })
+                interrupted.destroy()
+
+            checks = all(
+                item.get("completed", item.get("child_destroyed", False))
+                and item.get("destroyed", item.get("parent_submit_notified", False))
+                for item in events
+            )
+            log.event("gui.v1.detail_completion_and_interruption", "assert_v1_flow", checks, events=events)
+            assert checks
         finally:
             root.destroy()
 
