@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest native-overlay correction: source checkpoints `d605f65` and `8814d0f` close two active stage-5 native call paths by declaring `SetWindowPos` before intensification updates and reusing configured overlay handles for alpha/destruction. The full verifier passed all 20 stages with 568 tests and zero process leaks; live Windows/native evidence remains pending.
+
 Latest browser-boundary correction: source checkpoint `4dd8484` normalizes case-insensitive Windows executable paths to browser basenames for URL detection and session recovery, with focused regressions. The full verifier passed all 20 stages with 566 tests and zero process leaks; live browser/UIA behavior remains manual.
 
 Latest browser-matrix correction: source checkpoint `117b6d9` adds deterministic session-fallback coverage for Chrome, Edge, Brave, Opera, Opera GX, and Firefox, including titleless URL recovery. The full verifier passed all 20 stages with 564 tests and zero process leaks; live browser/UIA and website-intervention evidence remain manual.

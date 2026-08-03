@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest native-overlay correction: source checkpoints `d605f65` and `8814d0f` declare the intensification stage-5 `SetWindowPos` contract and keep configured User32/GDI handles for later overlay alpha/destruction calls, with compatibility-safe partial-fixture fallbacks. The full verifier passed all 20 stages with 568 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
+
 Latest native-boundary correction: source checkpoint `cd42777` declares the `SetWindowPos` ctypes signature before intensification child-window updates and adds regression coverage. The full verifier passed all 20 stages with 567 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
 
 Latest browser-boundary correction: source checkpoint `4dd8484` normalizes case-insensitive Windows executable paths to browser basenames across URL detection and session recovery. Focused browser tests and the full verifier passed with 566 tests across all 20 stages and zero process leaks; real browser/UIA behavior remains manual.
