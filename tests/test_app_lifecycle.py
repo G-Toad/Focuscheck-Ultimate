@@ -1368,6 +1368,47 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["camera", "timers", "overlays", "destroy"], events)
         self.assertIsNone(app._current_prompt)
 
+    def test_shared_prompt_close_releases_runtime_lease_for_settings_refresh(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        class Prompt:
+            _closed = False
+
+            def winfo_exists(self):
+                return True
+
+            def _cleanup_camera_feed(self):
+                return None
+
+            def _cleanup_all_timers(self):
+                return None
+
+            def _destroy_stage5_overlays(self):
+                return None
+
+            def destroy(self):
+                return None
+
+        class Engine:
+            def __init__(self):
+                self.events = []
+
+            def on_prompt_changed(self, active, *, source="unknown"):
+                self.events.append((active, source))
+
+        settings = {"manual_paused": False, "paused": False, "snooze_until_utc": ""}
+        app = App.__new__(App)
+        app.settings = settings
+        app._runtime_state = RuntimeStateCoordinator(settings)
+        app._runtime_state.begin_prompt()
+        app._engine = Engine()
+        app._current_prompt = Prompt()
+
+        self.assertTrue(App._close_current_prompt(app, source="settings"))
+        self.assertFalse(app._runtime_state.snapshot.prompt_active)
+        self.assertEqual([(False, "prompt_interrupted_settings")], app._engine.events)
+
     def test_prompt_completion_cancels_owned_observer_timers(self):
         from focuscheck.app import App
 

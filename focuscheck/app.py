@@ -2483,53 +2483,13 @@ class App:
                 self.settings.update(new_settings)
                 self._ensure_engine()
 
-                # If there's an open prompt, close it and reopen with new settings
+                # Reuse the coordinator-owned close path so prompt leases,
+                # timers, and engine polling are released consistently.
                 if self._current_prompt is not None:
                     try:
-                        # Check if prompt still exists and is not closed
-                        if not getattr(self._current_prompt, "_closed", False) and self._current_prompt.winfo_exists():
-                            try:
-                                get_logger().info("Settings changed - closing current prompt to regenerate with new settings")
-                            except Exception:
-                                pass
-
-                            # Mark as closed
-                            try:
-                                self._mark_prompt_interruption(
-                                    self._current_prompt,
-                                    PromptOutcome.INTERRUPTED_BY_SETTINGS,
-                                )
-                                self._current_prompt._closed = True
-                            except Exception:
-                                pass
-
-                            # Clean up and destroy
-                            try:
-                                self._current_prompt._cleanup_camera_feed()
-                            except Exception:
-                                pass
-
-                            try:
-                                self._current_prompt._cleanup_all_timers()
-                            except Exception:
-                                pass
-
-                            try:
-                                self._current_prompt._destroy_stage5_overlays()
-                            except Exception:
-                                pass
-
-                            try:
-                                self._current_prompt.destroy()
-                            except Exception:
-                                pass
-
-                            # Clear reference
-                            self._current_prompt = None
-
-                            # Schedule immediate new prompt with updated settings
+                        self._close_current_prompt(source="settings")
+                        if self._current_prompt is None:
                             self._schedule_prompt_regeneration()
-
                     except Exception as e:
                         try:
                             get_logger().error(f"Failed to regenerate prompt after settings change: {e}")
