@@ -114,6 +114,35 @@ class DataExportTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_export(future)
 
+    def test_validate_export_rejects_malformed_manifest_types(self):
+        from focuscheck.utils.data_export import validate_export
+
+        cases = (
+            {"format_version": 1, "categories": [{}], "files": []},
+            {"format_version": True, "categories": [], "files": []},
+            {"format_version": 1, "categories": ["logs"], "files": [
+                {"path": "log.txt", "category": "logs", "size": True,
+                 "sha256": "0" * 64, "sensitive": False}
+            ]},
+            {"format_version": 1, "categories": ["logs"], "files": [
+                {"path": "log.txt", "category": "logs", "size": 0,
+                 "sha256": "bad", "sensitive": False}
+            ]},
+            {"format_version": 1, "categories": ["logs"], "files": [
+                {"path": "log.txt", "category": "logs", "size": 0,
+                 "sha256": "0" * 64, "sensitive": "false"}
+            ]},
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for index, manifest in enumerate(cases):
+                archive_path = Path(temp_dir) / f"malformed-{index}.zip"
+                with zipfile.ZipFile(archive_path, "w") as archive:
+                    archive.writestr("EXPORT_MANIFEST.json", json.dumps(manifest))
+                    if manifest.get("files"):
+                        archive.writestr("log.txt", b"")
+                with self.subTest(index=index), self.assertRaises(ValueError):
+                    validate_export(archive_path)
+
     def test_inventory_covers_known_operational_and_recovery_artifacts_without_contents(self):
         from focuscheck.utils.data_export import inventory_data
 

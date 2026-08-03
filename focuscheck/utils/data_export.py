@@ -134,12 +134,20 @@ def validate_export(archive_path) -> dict:
                 manifest = json.loads(archive.read("EXPORT_MANIFEST.json"))
             except (KeyError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
                 raise ValueError("export manifest is invalid") from exc
-            if not isinstance(manifest, dict) or manifest.get("format_version") != EXPORT_FORMAT_VERSION:
+            if (
+                not isinstance(manifest, dict)
+                or type(manifest.get("format_version")) is not int
+                or manifest.get("format_version") != EXPORT_FORMAT_VERSION
+            ):
                 raise ValueError("unsupported export manifest version")
             categories = manifest.get("categories")
             files = manifest.get("files")
-            if not isinstance(categories, list) or set(categories) - set(CATEGORIES):
+            if not isinstance(categories, list) or not all(
+                isinstance(item, str) and item in CATEGORIES for item in categories
+            ):
                 raise ValueError("export manifest categories are invalid")
+            if len(categories) != len(set(categories)):
+                raise ValueError("export manifest categories are duplicated")
             if not isinstance(files, list):
                 raise ValueError("export manifest files are invalid")
 
@@ -150,14 +158,27 @@ def validate_export(archive_path) -> dict:
                     raise ValueError("export manifest file entry is invalid")
                 relative = entry.get("path")
                 category = entry.get("category")
+                size = entry.get("size")
+                digest_value = entry.get("sha256")
+                sensitive = entry.get("sensitive")
                 if not isinstance(relative, str) or not relative or "\\" in relative:
                     raise ValueError("export manifest path is invalid")
+                if not isinstance(category, str) or category not in categories:
+                    raise ValueError("export manifest entry is duplicated or uncategorized")
+                if type(size) is not int or size < 0:
+                    raise ValueError(f"export member size is invalid: {relative}")
+                if not isinstance(digest_value, str) or len(digest_value) != 64 or any(
+                    character not in "0123456789abcdefABCDEF" for character in digest_value
+                ):
+                    raise ValueError(f"export member hash is invalid: {relative}")
+                if type(sensitive) is not bool:
+                    raise ValueError("export manifest sensitivity label is invalid")
                 path = Path(relative)
                 if path.is_absolute() or ".." in path.parts or relative == "EXPORT_MANIFEST.json":
                     raise ValueError("export manifest path escapes archive root")
-                if relative in listed or category not in categories:
+                if relative in listed:
                     raise ValueError("export manifest entry is duplicated or uncategorized")
-                if bool(entry.get("sensitive")) != (category in _SENSITIVE_CATEGORIES):
+                if sensitive != (category in _SENSITIVE_CATEGORIES):
                     raise ValueError("export manifest sensitivity label is invalid")
                 listed.add(relative)
                 expected.add(relative)
@@ -165,13 +186,13 @@ def validate_export(archive_path) -> dict:
                     info = archive.getinfo(relative)
                 except KeyError as exc:
                     raise ValueError(f"export member is missing: {relative}") from exc
-                if info.is_dir() or int(entry.get("size", -1)) != info.file_size:
+                if info.is_dir() or size != info.file_size:
                     raise ValueError(f"export member size is invalid: {relative}")
                 digest = hashlib.sha256()
                 with archive.open(info, "r") as handle:
                     for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                         digest.update(chunk)
-                if digest.hexdigest() != entry.get("sha256"):
+                if digest.hexdigest() != digest_value:
                     raise ValueError(f"export member hash is invalid: {relative}")
             if set(names) != expected:
                 raise ValueError("export archive contains unexpected members")
