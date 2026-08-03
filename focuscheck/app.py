@@ -1219,11 +1219,11 @@ class App:
                 if timers.closed:
                     return False
                 self._ui_dispatch_sequence = getattr(self, "_ui_dispatch_sequence", 0) + 1
-                timers.schedule(
+                return bool(timers.schedule(
                     f"ui-dispatch-{self._ui_dispatch_sequence}",
                     0,
                     _wrapped,
-                )
+                ))
             else:
                 root.after(0, _wrapped)
             return True

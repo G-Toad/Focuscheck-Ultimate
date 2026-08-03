@@ -56,6 +56,20 @@ class UiContractTests(unittest.TestCase):
         with mock.patch("focuscheck.app.threading.get_ident", return_value=456):
             self.assertFalse(App._call_on_ui_thread(app, lambda: None))
 
+    def test_dispatch_reports_timer_registry_rejection(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._tk_thread_id = 123
+        app.root = mock.Mock()
+        app._timers = mock.Mock(closed=False)
+        app._timers.schedule.return_value = False
+
+        with mock.patch("focuscheck.app.threading.get_ident", return_value=456):
+            self.assertFalse(App._call_on_ui_thread(app, lambda: None))
+
+        app.root.after.assert_not_called()
+
     def test_tray_without_repository_does_not_write_config_fallback(self):
         from focuscheck.system_tray import SystemTray
 
