@@ -186,3 +186,58 @@ class TaskDbRecoveryTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 TaskDB.restore_from(source, root / "restored.sqlite3")
+
+    def test_restore_rejects_symlinked_source_parent(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            real_source = root / "real-source"
+            real_source.mkdir()
+            (real_source / "backup.sqlite3").write_bytes(b"not sqlite")
+            linked_source = root / "linked-source"
+            try:
+                linked_source.symlink_to(real_source, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                TaskDB.restore_from(linked_source / "backup.sqlite3", root / "restored.sqlite3")
+
+    def test_restore_rejects_symlinked_destination_without_touching_target(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            source = root / "backup.sqlite3"
+            source.write_bytes(b"not sqlite")
+            external = root / "external.sqlite3"
+            external.write_bytes(b"keep")
+            destination = root / "restored.sqlite3"
+            try:
+                destination.symlink_to(external)
+            except (OSError, NotImplementedError):
+                self.skipTest("file symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                TaskDB.restore_from(source, destination)
+            self.assertEqual(b"keep", external.read_bytes())
+
+    def test_restore_rejects_symlinked_destination_parent(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            source = root / "backup.sqlite3"
+            source.write_bytes(b"not sqlite")
+            external = root / "external"
+            external.mkdir()
+            linked_destination = root / "linked-destination"
+            try:
+                linked_destination.symlink_to(external, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                TaskDB.restore_from(source, linked_destination / "restored.sqlite3")
+            self.assertEqual([], list(external.iterdir()))

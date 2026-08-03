@@ -15,6 +15,17 @@ MAX_TASK_TEXT_LENGTH = 8192
 MAX_TASK_REASON_LENGTH = 2048
 
 
+def _contains_symlink_component(path) -> bool:
+    current = os.path.abspath(os.fspath(path))
+    while True:
+        if os.path.islink(current):
+            return True
+        parent = os.path.dirname(current)
+        if parent == current:
+            return False
+        current = parent
+
+
 def _normalize_utc(value, *, allow_none=False):
     """Normalize external timestamps to an explicit UTC ISO-8601 value."""
     if value is None and allow_none:
@@ -369,18 +380,21 @@ class TaskDB:
         source = os.fspath(source)
         destination = os.fspath(destination)
         source_path = os.path.abspath(source)
-        if os.path.islink(source_path):
-            raise ValueError("refusing to restore from a symlink")
+        destination_path = os.path.abspath(destination)
+        if _contains_symlink_component(source_path):
+            raise ValueError("refusing to restore through a symlinked source path")
+        if _contains_symlink_component(destination_path):
+            raise ValueError("refusing to restore through a symlinked destination path")
         if not os.path.isfile(source_path):
             raise FileNotFoundError(source_path)
-        os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
+        os.makedirs(os.path.dirname(destination_path) or ".", exist_ok=True)
         temp = None
         try:
             with tempfile.NamedTemporaryFile(
                 mode="wb",
-                prefix=f".{os.path.basename(destination)}.",
+                prefix=f".{os.path.basename(destination_path)}.",
                 suffix=".restore.tmp",
-                dir=os.path.dirname(os.path.abspath(destination)) or ".",
+                dir=os.path.dirname(destination_path) or ".",
                 delete=False,
             ) as handle:
                 temp = handle.name
@@ -400,7 +414,7 @@ class TaskDB:
                     f"SQLite restore schema version {schema_version} is newer than supported "
                     f"version {CURRENT_TASK_SCHEMA_VERSION}"
                 )
-            os.replace(temp, destination)
+            os.replace(temp, destination_path)
             temp = None
         finally:
             if temp is not None:
