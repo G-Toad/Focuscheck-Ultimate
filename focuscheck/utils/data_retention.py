@@ -17,6 +17,7 @@ RETENTION_PATTERNS = (
     "focus_app.log*",
     "focuscheck_supervisor.log*",
 )
+RETENTION_AUDIT_FORMAT_VERSION = 1
 
 
 def retention_plan(root: Path, *, max_age_days: int, now: float | None = None) -> list[dict]:
@@ -34,7 +35,12 @@ def retention_plan(root: Path, *, max_age_days: int, now: float | None = None) -
             seen.add(path)
             stat = path.stat()
             if stat.st_mtime < cutoff:
-                candidates.append({"path": str(path), "size": stat.st_size, "mtime": stat.st_mtime})
+                candidates.append({
+                    "path": str(path),
+                    "size": stat.st_size,
+                    "mtime": stat.st_mtime,
+                    "mtime_ns": stat.st_mtime_ns,
+                })
     return sorted(candidates, key=lambda item: item["path"])
 
 
@@ -51,20 +57,31 @@ def apply_retention(
     if apply:
         audit_path = root / "retention_audit.jsonl"
         for item in candidates:
+            candidate = Path(item["path"])
+            deleted = False
+            error = None
             try:
-                Path(item["path"]).unlink()
-                item["deleted"] = True
+                current = candidate.stat()
+                if candidate.is_symlink():
+                    raise OSError("symlink candidate rejected")
+                if current.st_size != int(item["size"]) or current.st_mtime_ns != int(item["mtime_ns"]):
+                    raise OSError("candidate changed since retention plan")
+                candidate.unlink()
+                deleted = True
             except OSError as exc:
-                item["deleted"] = False
-                item["error"] = type(exc).__name__
+                error = "changed_since_plan" if "changed since" in str(exc) else type(exc).__name__
+            item["deleted"] = deleted
+            if error:
+                item["error"] = error
             try:
                 audit = {
+                    "format_version": RETENTION_AUDIT_FORMAT_VERSION,
                     "utc": datetime.now(timezone.utc).isoformat(),
                     "operation": "retention_delete",
-                    "path_name": Path(item["path"]).name,
+                    "path_name": candidate.name,
                     "size": int(item["size"]),
-                    "deleted": bool(item.get("deleted", False)),
-                    "error": item.get("error"),
+                    "deleted": deleted,
+                    "error": error,
                 }
                 with audit_path.open("a", encoding="utf-8") as handle:
                     handle.write(json.dumps(audit, separators=(",", ":")) + "\n")
@@ -73,4 +90,9 @@ def apply_retention(
     return candidates
 
 
-__all__ = ["RETENTION_PATTERNS", "apply_retention", "retention_plan"]
+__all__ = [
+    "RETENTION_AUDIT_FORMAT_VERSION",
+    "RETENTION_PATTERNS",
+    "apply_retention",
+    "retention_plan",
+]

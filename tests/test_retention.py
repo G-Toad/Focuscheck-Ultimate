@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import time
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from tools.retention import apply_retention, retention_plan
@@ -59,3 +60,23 @@ class RetentionTests(unittest.TestCase):
             audit = (root / "retention_audit.jsonl").read_text(encoding="utf-8")
             self.assertNotIn("private response", audit)
             self.assertIn('"operation":"retention_delete"', audit)
+            self.assertIn('"format_version":1', audit)
+
+    def test_apply_retention_does_not_delete_file_changed_after_planning(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            old = root / "focus_log.csv.1"
+            old.write_text("old", encoding="utf-8")
+            import os
+            old_time = time.time() - 10 * 86400
+            os.utime(old, (old_time, old_time))
+
+            plan = retention_plan(root, max_age_days=1, now=time.time())
+            old.write_text("replacement", encoding="utf-8")
+            with mock.patch("focuscheck.utils.data_retention.retention_plan", return_value=plan):
+                result = apply_retention(root, max_age_days=1, now=time.time(), apply=True)
+
+            self.assertFalse(result[0]["deleted"])
+            self.assertEqual("changed_since_plan", result[0]["error"])
+            self.assertTrue(old.exists())
+            self.assertEqual(plan[0]["size"], 3)
