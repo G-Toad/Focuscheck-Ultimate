@@ -226,6 +226,21 @@ if platform.system().lower() == "windows":
 
 class App:
     def __init__(self, *, force_start=False):
+        # Keep construction failures inside the same lifecycle contract as
+        # mainloop failures. The initializer may have acquired partial
+        # resources before a critical dependency or repository raises.
+        self._shutdown_requested = False
+        self._shutdown_cleanup_complete = False
+        try:
+            self._initialize(force_start=force_start)
+        except BaseException as exc:
+            lifecycle = getattr(self, "lifecycle", None)
+            if lifecycle is not None:
+                lifecycle.fail(exc, reason="startup_exception")
+            self._cleanup_runtime(reason="startup_failure", request_supervisor=False)
+            raise
+
+    def _initialize(self, *, force_start=False):
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()

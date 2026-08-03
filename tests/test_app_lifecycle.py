@@ -350,6 +350,47 @@ class AppLifecycleTests(unittest.TestCase):
                 app._winwatch.close.assert_called_once_with()
                 app.root.destroy.assert_called_once_with()
 
+    def test_constructor_failure_cleans_partial_resources_and_reraises(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
+
+        partial = {}
+
+        def fail_after_partial_setup(instance, *, force_start=False):
+            instance.lifecycle = LifecycleCoordinator()
+            instance.lifecycle.transition(LifecyclePhase.STARTING, reason="test")
+            instance.root = mock.Mock()
+            instance._timers = mock.Mock()
+            instance._runtime_state = mock.Mock()
+            instance._engine = mock.Mock()
+            instance._engine_shutdown = False
+            instance._current_prompt = None
+            instance._gentle_reminder_dialog = None
+            instance._tray = mock.Mock()
+            instance._winwatch = mock.Mock()
+            instance._request_supervisor_stop = mock.Mock()
+            partial["app"] = instance
+            partial["engine"] = instance._engine
+            raise RuntimeError("startup dependency failed")
+
+        with mock.patch.object(App, "_initialize", fail_after_partial_setup):
+            with self.assertRaisesRegex(RuntimeError, "startup dependency failed"):
+                App()
+
+        partial["engine"].shutdown.assert_called_once_with()
+        # The remaining owned services are cleaned despite the constructor
+        # raising, and startup failure is not reported as intentional exit.
+        app = partial["app"]
+        app._runtime_state.request_shutdown.assert_called_once_with()
+        app._timers.close.assert_called_once_with()
+        app._tray.stop.assert_called_once_with()
+        app._winwatch.close.assert_called_once_with()
+        app.root.destroy.assert_called_once_with()
+        app._request_supervisor_stop.assert_not_called()
+        snapshot = app.lifecycle.snapshot()
+        self.assertEqual("stopped", snapshot["phase"])
+        self.assertEqual("RuntimeError", snapshot["error_type"])
+
     def test_engine_switch_closes_prompt_before_old_engine_shutdown(self):
         from focuscheck.app import App
 
