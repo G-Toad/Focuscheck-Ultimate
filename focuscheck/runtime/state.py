@@ -18,10 +18,12 @@ class RuntimeSnapshot:
     prompt_active: bool = False
     intervention_active: bool = False
     shutdown_requested: bool = False
+    _now_provider: Callable[[], datetime] | None = field(default=None, repr=False, compare=False)
 
     @property
     def effectively_paused(self) -> bool:
-        return self.manual_paused or self.snooze_active() or bool(self.guard_reasons)
+        now = self._now_provider() if self._now_provider is not None else None
+        return self.manual_paused or self.snooze_active(now) or bool(self.guard_reasons)
 
     def snooze_active(self, now: datetime | None = None) -> bool:
         if not self.snooze_until_utc:
@@ -69,6 +71,7 @@ class RuntimeStateCoordinator:
         self.snapshot = RuntimeSnapshot(
             manual_paused=self._manual_pause_from_settings(settings, self.clock.now_utc()),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
+            _now_provider=self.clock.now_utc,
         )
 
     @staticmethod
