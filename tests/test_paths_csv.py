@@ -122,6 +122,13 @@ class CsvLoggerTests(unittest.TestCase):
         self.assertNotIn("private reason", contextual.getMessage())
         self.assertNotIn("private phrase", contextual.getMessage())
 
+        config_record = logging.LogRecord(
+            "focuscheck", logging.INFO, __file__, 1,
+            "spam_check: config=%s", ({"banned_words": ["private word"]},), None,
+        )
+        PrivacyLogFilter().filter(config_record)
+        self.assertNotIn("private word", config_record.getMessage())
+
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):
         from focuscheck.database.csv_logger import _excel_safe
 

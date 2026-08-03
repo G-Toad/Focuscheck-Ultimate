@@ -19,6 +19,7 @@ _PRIVATE_LOG_FIELD_RE = re.compile(
     r"(?:\"[^\"]*\"|'[^']*'|[^\s|,}]+)"
 )
 _PRIVATE_LOG_CONTEXT_RE = re.compile(r"(?i)\b(phrase|reason|target|text)\s+(['\"])(.*?)\2")
+_PRIVATE_LOG_CONFIG_RE = re.compile(r"(?i)\bconfig\s*=.*$")
 _WINDOWS_USER_PATH_RE = re.compile(r"(?i)[A-Z]:\\Users\\[^\s|]+")
 _URL_RE = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
 
@@ -30,6 +31,7 @@ def sanitize_log_message(value):
     result = _WINDOWS_USER_PATH_RE.sub("<windows-user-path>", result)
     result = _PRIVATE_LOG_FIELD_RE.sub(lambda match: f"{match.group(1)}=<redacted>", result)
     result = _PRIVATE_LOG_CONTEXT_RE.sub(lambda match: f"{match.group(1)}=<redacted>", result)
+    result = _PRIVATE_LOG_CONFIG_RE.sub("config=<redacted>", result)
     try:
         home = os.path.expanduser("~")
         if home and home != "~":
