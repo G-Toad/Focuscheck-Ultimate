@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-03T18:25:46.082023+00:00",
-  "commit": "003db901e060ef512422ff18482eaf92e9ccb3d7",
+  "generated_utc": "2026-08-03T18:30:45.138068+00:00",
+  "commit": "2698762bddb24a71d39358190717ac992af24d7a",
   "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
   "environment": {
     "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
@@ -42,7 +42,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 26671,
+      "elapsed_ms": 26578,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
     },
     {
@@ -53,7 +53,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6453,
+      "elapsed_ms": 6391,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\mutation_smoke.log"
     },
     {
@@ -64,7 +64,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 15984,
+      "elapsed_ms": 15889,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\source_supervisor_selftest.log"
     },
     {
@@ -75,7 +75,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6671,
+      "elapsed_ms": 6687,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\state_restart_selftest.log"
     },
     {
@@ -100,7 +100,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 750,
+      "elapsed_ms": 703,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\main_selftest.log"
     },
     {
@@ -112,7 +112,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 546,
+      "elapsed_ms": 530,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\tray_selftest.log"
     },
     {
@@ -123,7 +123,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6280,
+      "elapsed_ms": 6266,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\native_overlay_selftest.log"
     },
     {
@@ -134,7 +134,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 1812,
+      "elapsed_ms": 1921,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\resource_leak_selftest.log"
     },
     {
@@ -145,7 +145,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 10687,
+      "elapsed_ms": 10641,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
     },
     {
@@ -156,7 +156,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 610,
+      "elapsed_ms": 625,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\diagnostic_bundle.log"
     },
     {
@@ -172,7 +172,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 608,
+      "elapsed_ms": 592,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data_export.log"
     },
     {
@@ -183,7 +183,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 608,
+      "elapsed_ms": 594,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\data_recovery.log"
     },
     {
@@ -194,7 +194,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5250,
+      "elapsed_ms": 5405,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\performance_soak.log"
     },
     {
@@ -248,7 +248,7 @@
   ],
   "tests": {
     "status": "passed",
-    "count": 508,
+    "count": 509,
     "failure_summary": null
   },
   "test_categories": {
