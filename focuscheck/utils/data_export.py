@@ -27,6 +27,7 @@ _CATEGORY_PATTERNS = {
     "camera": ("camera_*.png", "camera_*.jpg", "camera_*.jpeg"),
 }
 _SENSITIVE_CATEGORIES = {"settings", "tasks", "camera"}
+EXPORT_FORMAT_VERSION = 1
 
 
 def _selected_categories(categories) -> set[str]:
@@ -70,7 +71,7 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
     output.parent.mkdir(parents=True, exist_ok=True)
 
     manifest = {
-        "format_version": 1,
+        "format_version": EXPORT_FORMAT_VERSION,
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "categories": sorted(selected),
         "files": [],
@@ -102,6 +103,66 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
                 temporary.unlink()
             except OSError:
                 pass
+
+
+def validate_export(archive_path) -> dict:
+    """Validate an export archive and return its trusted embedded manifest."""
+    archive_path = Path(archive_path).resolve()
+    if not archive_path.is_file():
+        raise FileNotFoundError(archive_path)
+    try:
+        with zipfile.ZipFile(archive_path, "r") as archive:
+            names = archive.namelist()
+            if names.count("EXPORT_MANIFEST.json") != 1 or len(names) != len(set(names)):
+                raise ValueError("export archive has duplicate or missing manifest entries")
+            try:
+                manifest = json.loads(archive.read("EXPORT_MANIFEST.json"))
+            except (KeyError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+                raise ValueError("export manifest is invalid") from exc
+            if not isinstance(manifest, dict) or manifest.get("format_version") != EXPORT_FORMAT_VERSION:
+                raise ValueError("unsupported export manifest version")
+            categories = manifest.get("categories")
+            files = manifest.get("files")
+            if not isinstance(categories, list) or set(categories) - set(CATEGORIES):
+                raise ValueError("export manifest categories are invalid")
+            if not isinstance(files, list):
+                raise ValueError("export manifest files are invalid")
+
+            expected = {"EXPORT_MANIFEST.json"}
+            listed = set()
+            for entry in files:
+                if not isinstance(entry, dict):
+                    raise ValueError("export manifest file entry is invalid")
+                relative = entry.get("path")
+                category = entry.get("category")
+                if not isinstance(relative, str) or not relative or "\\" in relative:
+                    raise ValueError("export manifest path is invalid")
+                path = Path(relative)
+                if path.is_absolute() or ".." in path.parts or relative == "EXPORT_MANIFEST.json":
+                    raise ValueError("export manifest path escapes archive root")
+                if relative in listed or category not in categories:
+                    raise ValueError("export manifest entry is duplicated or uncategorized")
+                if bool(entry.get("sensitive")) != (category in _SENSITIVE_CATEGORIES):
+                    raise ValueError("export manifest sensitivity label is invalid")
+                listed.add(relative)
+                expected.add(relative)
+                try:
+                    info = archive.getinfo(relative)
+                except KeyError as exc:
+                    raise ValueError(f"export member is missing: {relative}") from exc
+                if info.is_dir() or int(entry.get("size", -1)) != info.file_size:
+                    raise ValueError(f"export member size is invalid: {relative}")
+                digest = hashlib.sha256()
+                with archive.open(info, "r") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                if digest.hexdigest() != entry.get("sha256"):
+                    raise ValueError(f"export member hash is invalid: {relative}")
+            if set(names) != expected:
+                raise ValueError("export archive contains unexpected members")
+            return manifest
+    except zipfile.BadZipFile as exc:
+        raise ValueError("export archive is not a valid ZIP") from exc
 
 
 def inventory_data(source_root, *, categories=CATEGORIES) -> dict:
@@ -163,4 +224,4 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     return audit
 
 
-__all__ = ["CATEGORIES", "clear_data", "export_data", "inventory_data"]
+__all__ = ["CATEGORIES", "clear_data", "export_data", "inventory_data", "validate_export"]

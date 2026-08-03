@@ -67,6 +67,51 @@ class DataExportTests(unittest.TestCase):
                 embedded = json.loads(archive.read("EXPORT_MANIFEST.json"))
             self.assertEqual(manifest, embedded)
 
+    def test_validate_export_checks_manifest_and_member_hashes(self):
+        from focuscheck.utils.data_export import export_data, validate_export
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "data"
+            output = Path(temp_dir) / "export.zip"
+            root.mkdir()
+            (root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            export_data(root, output)
+
+            manifest = validate_export(output)
+            self.assertEqual(1, manifest["format_version"])
+
+            tampered = Path(temp_dir) / "tampered.zip"
+            with zipfile.ZipFile(output) as source, zipfile.ZipFile(tampered, "w") as target:
+                for info in source.infolist():
+                    target.writestr(info, b"tampered" if info.filename == "focus_log.csv" else source.read(info))
+            with self.assertRaises(ValueError):
+                validate_export(tampered)
+
+    def test_validate_export_rejects_traversal_and_future_versions(self):
+        from focuscheck.utils.data_export import validate_export
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            traversal = root / "traversal.zip"
+            with zipfile.ZipFile(traversal, "w") as archive:
+                archive.writestr("../escape.txt", "bad")
+                archive.writestr("EXPORT_MANIFEST.json", json.dumps({
+                    "format_version": 1,
+                    "categories": ["logs"],
+                    "files": [{"path": "../escape.txt", "category": "logs", "size": 3,
+                               "sha256": "x", "sensitive": False}],
+                }))
+            with self.assertRaises(ValueError):
+                validate_export(traversal)
+
+            future = root / "future.zip"
+            with zipfile.ZipFile(future, "w") as archive:
+                archive.writestr("EXPORT_MANIFEST.json", json.dumps({
+                    "format_version": 99, "categories": [], "files": [],
+                }))
+            with self.assertRaises(ValueError):
+                validate_export(future)
+
     def test_inventory_covers_known_operational_and_recovery_artifacts_without_contents(self):
         from focuscheck.utils.data_export import inventory_data
 
