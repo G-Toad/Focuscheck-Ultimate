@@ -58,7 +58,8 @@ class WindowPlacementMixin:
                     monitors.append(hMonitor)
                     return True
 
-                MONITORENUMPROC = ctypes.WINFUNCTYPE(
+                callback_type = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)
+                MONITORENUMPROC = callback_type(
                     ctypes.c_int,
                     wintypes.HANDLE,
                     wintypes.HDC,

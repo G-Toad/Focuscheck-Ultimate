@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `515` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `516` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest native-boundary checkpoint normalizes supervisor console-control and prompt monitor-enumeration callback factories, with source-level coverage across all active callback wrappers; live native evidence remains pending.
 
 The latest callback-portability checkpoint normalizes the remaining primary tray-watcher and dialog-overlay WNDPROC factories to the platform-safe callback fallback, with source-level regression coverage; live native behavior remains pending.
 

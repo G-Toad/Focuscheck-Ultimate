@@ -4,6 +4,8 @@ Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspe
 
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
+Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.
+
 Status meanings:
 
 - **Implemented**: the plan requirement has a direct implementation and matching evidence.

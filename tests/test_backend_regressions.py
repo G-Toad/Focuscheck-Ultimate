@@ -568,8 +568,10 @@ class ImportHardeningTests(unittest.TestCase):
     def test_native_callback_factories_are_platform_safe(self):
         root = Path(__file__).resolve().parents[1]
         sources = (
+            root / "focuscheck_supervisor.py",
             root / "focuscheck" / "platform_specific" / "windows.py",
             root / "focuscheck" / "ui" / "dialogs" / "windows_utils.py",
+            root / "focuscheck" / "ui" / "dialogs" / "prompt_dialog_mixins" / "window_placement.py",
         )
 
         for source_path in sources:

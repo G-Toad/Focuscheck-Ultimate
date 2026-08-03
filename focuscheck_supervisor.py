@@ -430,7 +430,9 @@ class FocusCheckSupervisor:
                 kernel32 = ctypes.windll.kernel32
                 _configure_supervisor_native_api(kernel32)
 
-                @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+                control_handler_type = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)
+
+                @control_handler_type(wintypes.BOOL, wintypes.DWORD)
                 def handler(ctrl_type):  # type: ignore[misc]
                     self.logger.log(f"Windows control event {ctrl_type}, stopping")
                     self.stop_event.set()
