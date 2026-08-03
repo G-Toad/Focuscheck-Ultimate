@@ -1,5 +1,6 @@
 """Monitoring engine stub for Version 2 prompts."""
 
+import copy
 import time
 import re
 from urllib.parse import urlparse
@@ -149,14 +150,54 @@ class EngineV2(BaseEngine):
         severity = entry.get("severity", 2)
         self._subpopup_active = True
 
+        try:
+            entry_index = next(index for index, candidate in enumerate(flags) if candidate is entry)
+        except StopIteration:
+            entry_index = None
+
+        def _persist_flag_update(values):
+            """Persist one flag change through App composition when available."""
+            app_persist = getattr(type(self.app), "_persist_settings_draft", None)
+            persist = getattr(self.app, "_persist_settings_draft", None)
+            if entry_index is not None and callable(app_persist) and callable(persist):
+                candidate = copy.deepcopy(settings)
+                candidate_flags = candidate.get("website_flags", []) or []
+                if entry_index >= len(candidate_flags):
+                    return False
+                candidate_flags[entry_index].update(values)
+                candidate["website_flags"] = candidate_flags
+                try:
+                    result = persist(candidate)
+                except Exception:
+                    return False
+                committed = getattr(result, "committed_settings", None)
+                if result and isinstance(committed, dict):
+                    settings.clear()
+                    settings.update(committed)
+                return bool(result)
+
+            # Standalone engines retain compatibility with the module-level
+            # repository, but do not leave an in-memory mutation after failure.
+            previous = {key: entry.get(key) for key in values}
+            entry.update(values)
+            try:
+                result = save_settings(settings)
+            except Exception:
+                result = False
+            if not result:
+                for key, value in previous.items():
+                    if value is None:
+                        entry.pop(key, None)
+                    else:
+                        entry[key] = value
+            return bool(result)
+
         def _finish():
             self._subpopup_active = False
 
         def _update_cooldown():
             try:
-                entry["last_dismissed"] = self._now()
-                entry["allow_once"] = False
-                save_settings(settings)
+                _persist_flag_update({"last_dismissed": self._now(), "allow_once": False})
             except Exception:
                 pass
 
@@ -165,14 +206,9 @@ class EngineV2(BaseEngine):
             if not entry.get("allow_once"):
                 _update_cooldown()
                 return
-            entry["allow_once"] = False
-            try:
-                # A one-time dismissal is durable but deliberately does not
-                # set last_dismissed; the next match is the post-bypass event.
-                if not save_settings(settings):
-                    entry["allow_once"] = True
-            except Exception:
-                entry["allow_once"] = True
+            # A one-time dismissal is durable but deliberately does not set
+            # last_dismissed; a failed write leaves the bypass available.
+            _persist_flag_update({"allow_once": False})
 
         def _on_yes():
             try:

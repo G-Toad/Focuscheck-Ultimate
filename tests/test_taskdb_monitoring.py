@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import types
+import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -297,6 +298,48 @@ class EngineV2MatchingTests(unittest.TestCase):
         self.assertFalse(entry["allow_once"])
         self.assertIsNone(entry["last_dismissed"])
         save.assert_called_once_with(app.settings)
+
+    def test_allow_once_dismissal_uses_app_persistence_and_committed_state(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        class ComposedApp:
+            def __init__(self):
+                self.root = mock.Mock()
+                self.settings = {
+                    "paused": False,
+                    "pause_when_inactive_or_lid_closed": False,
+                    "website_flags": [{
+                        "domain": "reddit.com",
+                        "enabled": True,
+                        "severity": 2,
+                        "cooldown_minutes": 5,
+                        "allow_once": True,
+                        "last_dismissed": None,
+                    }],
+                }
+                self.drafts = []
+
+            def _persist_settings_draft(self, draft):
+                self.drafts.append(draft)
+                committed = copy.deepcopy(draft)
+                self.settings = committed
+                return type(
+                    "Result", (), {"durable_write": True, "committed_settings": committed}
+                )()
+
+        app = ComposedApp()
+        engine = EngineV2(app, activity_provider=lambda: {"url": "https://reddit.com", "title": "Reddit"})
+
+        with mock.patch("focuscheck.monitoring.engine_v2.V2SubPopupDialog") as dialog_cls, \
+                mock.patch("focuscheck.monitoring.engine_v2.save_settings", side_effect=AssertionError("repository bypass")):
+            engine._maybe_show_subpopup()
+            dialog_cls.call_args.kwargs["on_no"]()
+
+        entry = app.settings["website_flags"][0]
+        self.assertFalse(entry["allow_once"])
+        self.assertIsNone(entry["last_dismissed"])
+        self.assertEqual(1, len(app.drafts))
+        self.assertFalse(app.drafts[0]["website_flags"][0]["allow_once"])
 
     def test_match_flag_rejects_suffix_attack_when_host_parsed(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
