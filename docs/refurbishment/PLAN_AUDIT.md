@@ -279,6 +279,8 @@ Packaging evidence correction: A fresh dual-executable build from source checkpo
 
 Supervisor evidence correction: The real disposable source-supervisor self-test now includes a healthy-runtime scenario that observes heartbeat sequence advancement, retains one child PID, verifies the stable-ready backoff reset after an injected two-second stability window, and completes a generation-bound graceful stop; crash/restart, hang recovery, and circuit-breaker scenarios continue to pass.
 
+Live supervisor evidence correction: an isolated Windows probe launched the actual `main.py` child through `focuscheck_supervisor.py`, rejected a second supervisor on the same marker paths, and completed a generation-bound graceful stop with both supervisor processes exiting cleanly. Run-key startup, lock/sleep/resume, interactive tray, and production-duration evidence remain open.
+
 Activity-provider evidence correction: `safe_activity_snapshot()` now enforces one in-flight provider call, returning a bounded `provider busy` snapshot while a timed-out daemon worker is still running; focused coverage proves repeated polling does not accumulate concurrent stuck workers.
 
 Recovery-path correction: `TaskDB.restore_from()` rejects symlinked source and destination path components before creating restore directories or temporary files, and the export importer now adds a separate manifest/hash/settings/SQLite validation boundary with staged promotion and rollback; focused regressions preserve external targets and cover the import confirmation/restore contract.

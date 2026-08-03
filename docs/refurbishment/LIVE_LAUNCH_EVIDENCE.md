@@ -44,6 +44,16 @@ Latest isolated source-supervisor rerun on 2026-08-03:
 - A generation-bound `source_live_selftest` stop request was atomically written; the supervisor exited, published `status=acknowledged`, and reported `termination=graceful`.
 - This proves one bounded source supervisor/child handshake and intentional stop. It does not prove sleep/resume, registry startup, interactive UI, or production-duration supervision.
 
+Latest isolated real supervisor probe on 2026-08-03:
+
+- A real `focuscheck_supervisor.py --run --base-dir <repo>` launched the actual `main.py` child under a unique `%TEMP%` data root and published heartbeat child PID `27844`.
+- A second supervisor using the same isolated marker paths exited without launching a duplicate and logged the existing-lock rejection.
+- A generation-bound `real-supervisor-probe` stop request produced `status=acknowledged` and `termination=graceful`; both supervisor processes exited with code `0` and no cleanup process remained.
+
+This is direct source-supervisor/duplicate-launch evidence. It does not prove
+Run-key startup, lock/sleep/resume, interactive tray behavior, browser activity,
+or production-duration supervision.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
