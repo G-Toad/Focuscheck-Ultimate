@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `529` tests across 19 bounded stages at source checkpoint `b9793e4`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `529` tests across 19 bounded stages at source checkpoint `2e721b8`; the detailed older bullets are retained as historical baseline context.
+
+The latest lifecycle correction removes the duplicate lifecycle completion transition from `App.run()` so `_cleanup_runtime` is the single cleanup owner. Focused lifecycle regressions and the full verifier passed; manual Windows, hardware, packaging, and release evidence remain pending.
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
