@@ -17,6 +17,8 @@ from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
 from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
 from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
 from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+from focuscheck.ui.dialogs.phrase_acronym_dialog import PhraseAcronymDialog
+from focuscheck.ui.dialogs.v2_subpopup_dialog import V2SubPopupDialog
 from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
 
@@ -103,6 +105,19 @@ def main() -> int:
             )
             dialog.withdraw()
             dialog.destroy()
+
+        acronym = PhraseAcronymDialog(
+            root,
+            "Do Work",
+            lambda: None,
+            prompt_settings,
+        )
+        acronym.withdraw()
+        acronym._on_close()
+
+        subpopup = V2SubPopupDialog(root, "example.com", severity=2)
+        subpopup.withdraw()
+        subpopup._no()
 
         root.update()
 
