@@ -121,6 +121,8 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("Failed package retained", lifecycle)
         self.assertIn("function Assert-PackageSourceSafe", lifecycle)
         self.assertIn("forbiddenExtensions", lifecycle)
+        self.assertIn("function Assert-PackageSignatures", lifecycle)
+        self.assertIn("Get-AuthenticodeSignature", lifecycle)
 
     def test_lifecycle_rejects_unsafe_source_before_replacing_install(self):
         powershell = shutil.which("powershell") or shutil.which("pwsh")
@@ -147,6 +149,34 @@ class PackagingContractTests(unittest.TestCase):
             result = subprocess.run(command, capture_output=True, text=True, check=False)
             self.assertNotEqual(0, result.returncode)
             self.assertIn("source", (result.stdout + result.stderr).lower())
+            self.assertEqual("old", (install / "FocusCheck.exe").read_text(encoding="ascii"))
+
+    def test_lifecycle_rejects_unsigned_package_before_replacing_install(self):
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if not powershell:
+            self.skipTest("PowerShell is required for package lifecycle verification")
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            package = temp / "package"
+            install = temp / "install"
+            data = temp / "data"
+            package.mkdir()
+            install.mkdir()
+            data.mkdir()
+            (package / "FocusCheck.exe").write_text("new", encoding="ascii")
+            (package / "FocusCheckSupervisor.exe").write_text("supervisor", encoding="ascii")
+            (install / "FocusCheck.exe").write_text("old", encoding="ascii")
+            command = [
+                powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                str(root / "tools/package_lifecycle.ps1"), "-Action", "Upgrade",
+                "-PackageDir", str(package), "-InstallDir", str(install), "-DataDir", str(data),
+                "-RequireSigned",
+            ]
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertNotEqual(0, result.returncode)
+            output = (result.stdout + result.stderr).lower()
+            self.assertTrue("unsigned" in output or "signature validation is unavailable" in output)
             self.assertEqual("old", (install / "FocusCheck.exe").read_text(encoding="ascii"))
 
     def test_package_validation_checks_artifacts_manifest_and_optional_signing(self):

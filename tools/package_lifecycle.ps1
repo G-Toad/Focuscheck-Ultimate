@@ -64,6 +64,18 @@ function Assert-PackageSourceSafe([string]$PackagePath) {
     }
 }
 
+function Assert-PackageSignatures([string]$PackagePath) {
+    if (-not (Get-Command Get-AuthenticodeSignature -ErrorAction SilentlyContinue)) {
+        throw "Signature validation is unavailable on this PowerShell host"
+    }
+    foreach ($name in @('FocusCheck.exe', 'FocusCheckSupervisor.exe')) {
+        $signature = Get-AuthenticodeSignature -LiteralPath (Join-Path $PackagePath $name)
+        if ($signature.Status -ne 'Valid') {
+            throw "Unsigned or invalid executable: $name ($($signature.Status))"
+        }
+    }
+}
+
 function Get-ValidatedBackup([string]$InstallPath, [string]$Candidate) {
     if ([string]::IsNullOrWhiteSpace($Candidate)) { return $null }
     try {
@@ -120,6 +132,7 @@ if ($Action -ne "Uninstall" -and [string]::IsNullOrWhiteSpace($PackageDir)) {
 
 if ($Action -eq "Install" -or $Action -eq "Upgrade") {
     Assert-PackageSourceSafe $PackageDir
+    if ($RequireSigned) { Assert-PackageSignatures $PackageDir }
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\promote_package.ps1") `
         -PackageDir $PackageDir -InstallDir $install -Version $Version
     if ($LASTEXITCODE -ne 0) { throw "Package promotion failed with exit code $LASTEXITCODE" }
