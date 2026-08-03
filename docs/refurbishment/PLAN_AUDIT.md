@@ -137,7 +137,7 @@ Current checkpoint addition: The latest `c02273b` run preserves validated provid
 
 Current checkpoint addition: The latest `8d2e4ff` run makes V2 sub-popup grab release explicit on destruction and verifies it through the Escape path; the full verifier records `383` unittest cases and all 18 bounded stages passed.
 
-Current checkpoint addition: The current supervisor checkpoint makes stop-request and stop-acknowledgement durability outcomes explicit to callers and covers both success and failure paths; focused supervisor coverage passes pending the full verifier.
+Current checkpoint addition: The latest `6dda0dc` run makes stop-request and stop-acknowledgement durability outcomes explicit to callers and covers both success and failure paths; the full verifier records `384` unittest cases and all 18 bounded stages passed.
 
 ## Final Acceptance Gates
 
@@ -160,6 +160,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `383` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `8d2e4ff`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `384` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `6dda0dc`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
