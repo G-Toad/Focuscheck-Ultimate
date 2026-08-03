@@ -303,4 +303,6 @@ Settings-truth correction: the checked-in `settings-truth-table.json` now record
 
 Data-recovery correction: `import_data()` now provides an explicit-confirmation, versioned export recovery path for settings, tasks, logs, and camera files. It refuses runtime metadata, revalidates hashes, enforces category allowlists, validates settings/SQLite payloads, stages promotion, and rolls back prior targets on failure; focused export tests cover confirmation, successful restore, metadata rejection, and overwrite safety.
 
+Direct-launch evidence correction: an isolated 60-second `main.py --run-seconds=60` process exited `0`, created the canonical runtime artifacts in a disposable data root, and produced no `Traceback`, `ERROR`, or `Exception` log matches. This is stronger timed-process evidence only and does not replace interactive, supervisor-restart, browser, power/session, native, or release gates.
+
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
