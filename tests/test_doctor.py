@@ -48,3 +48,20 @@ class DoctorTests(unittest.TestCase):
             self.assertNotIn(secret, repr(details))
         finally:
             doctor.ANOMALIES[:] = original
+
+    def test_anomaly_snapshot_does_not_retain_private_message_or_details(self):
+        import focuscheck.doctor as doctor
+
+        original = list(doctor.ANOMALIES)
+        secret = "private response text and https://secret.example/path"
+        try:
+            doctor.ANOMALIES.clear()
+            with mock.patch("focuscheck.doctor.get_logger"):
+                doctor.log_anomaly("response", secret, {"raw": secret})
+            snapshot = doctor.get_anomalies()
+            self.assertEqual(1, len(snapshot))
+            self.assertNotIn(secret, repr(snapshot))
+            self.assertEqual({"type", "length", "sha256"}, set(snapshot[0]["details"]))
+            self.assertNotIn("secret.example", snapshot[0]["message"])
+        finally:
+            doctor.ANOMALIES[:] = original
