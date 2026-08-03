@@ -68,6 +68,57 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(clock.now_utc(), slot["utc_start"])
         self.assertEqual(42.0, slot["mono_start"])
 
+    def test_composed_v2_engine_receives_clock_and_activity_provider(self):
+        from focuscheck.app import App
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        provider = lambda: {"title": "test"}
+        received = {}
+
+        class Engine:
+            name = "v2"
+
+            def __init__(self, _app, activity_provider=None, clock=None):
+                received["provider"] = activity_provider
+                received["clock"] = clock
+
+            def on_settings_updated(self, _settings):
+                return None
+
+            def shutdown(self):
+                return None
+
+        app = App.__new__(App)
+        app.settings = {"monitoring_mode": "v2"}
+        app._engine = None
+        app._current_prompt = None
+        app._activity_provider = provider
+        app._runtime_clock = clock
+
+        with mock.patch("focuscheck.app.EngineV2", Engine), mock.patch.object(App, "_get_engine_class", return_value=Engine):
+            App._ensure_engine(app)
+
+        self.assertIs(provider, received["provider"])
+        self.assertIs(clock, received["clock"])
+
+    def test_app_constructor_retains_injected_composition_dependencies(self):
+        from focuscheck.app import App
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        provider = lambda: None
+        captured = {}
+
+        def initialize(instance, *, force_start=False):
+            captured["app"] = instance
+
+        with mock.patch.object(App, "_initialize", initialize):
+            App(clock=clock, activity_provider=provider)
+
+        self.assertIs(clock, captured["app"]._clock_override)
+        self.assertIs(provider, captured["app"]._activity_provider)
+
     def test_single_instance_mutex_handle_is_released(self):
         import focuscheck.utils.file_ops as file_ops
 

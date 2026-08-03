@@ -341,6 +341,8 @@ Dependency-group correction: exact runtime pins remain in `requirements.txt`, wh
 
 Current checkpoint update: the dependency-group regression brings the full verifier to `479` unittest cases; all 19 bounded stages pass, while the report remains `partial` solely because the documented manual/release requirements are still pending.
 
+Composition-root correction: `App` now accepts an optional clock and activity-provider boundary, retains them through construction, and passes both into a composed V2 engine. Focused lifecycle regressions verify object identity; default production construction still uses `SystemClock` and the existing provider behavior. The full verifier now records `481` unittest cases across all 19 stages.
+
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.
 
 UI dispatch correction: composed App callbacks now reject dispatch after `TimerRegistry.close()` instead of falling back to raw `root.after()`, report registry rejection truthfully, and prevent late tray/Tk work from entering shutdown. The focused UI/lifecycle/tray suite passed `57` tests and the full verifier passed `468` tests across all 19 stages.

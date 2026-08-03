@@ -232,11 +232,13 @@ if platform.system().lower() == "windows":
 
 
 class App:
-    def __init__(self, *, force_start=False):
+    def __init__(self, *, force_start=False, clock=None, activity_provider=None):
         # Keep construction failures inside the same lifecycle contract as
         # mainloop failures. The initializer may have acquired partial
         # resources before a critical dependency or repository raises.
         self._shutdown_requested = False
+        self._clock_override = clock
+        self._activity_provider = activity_provider
         self._shutdown_cleanup_complete = False
         try:
             self._initialize(force_start=force_start)
@@ -251,7 +253,7 @@ class App:
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()
-        self._runtime_clock = SystemClock()
+        self._runtime_clock = self._clock_override or SystemClock()
         configure_csv_paths(self.paths)
         configure_log_path(self.paths.app_log)
         self._event_ledger = StructuredEventLedger(
@@ -710,7 +712,14 @@ class App:
                     old_engine.shutdown()
                 except Exception:
                     pass
-            self._engine = cls(self)
+            if cls is EngineV2:
+                self._engine = cls(
+                    self,
+                    activity_provider=getattr(self, "_activity_provider", None),
+                    clock=getattr(self, "_runtime_clock", None),
+                )
+            else:
+                self._engine = cls(self)
             try:
                 get_logger().info("monitoring engine set to %s", getattr(self._engine, "name", cls.__name__))
             except Exception:
