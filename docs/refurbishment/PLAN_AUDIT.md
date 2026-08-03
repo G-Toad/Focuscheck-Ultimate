@@ -191,6 +191,8 @@ Current checkpoint addition: The latest `fd34706` checkpoint adds a withdrawn-Tk
 
 Current checkpoint addition: The latest `e4157b4` checkpoint removes four orphaned adaptive-brightness Settings variables and adds an exhaustive structural binding contract for remaining hand-built controls; the full verifier records `405` unittest cases and all 18 bounded stages passed. Interactive value-by-value Settings review remains manual_pending.
 
+Current checkpoint addition: The current `c8c8f2d` tree was rebuilt with PyInstaller `6.16.0`; promotion, manifest validation, frozen child self-test, and packaged supervisor READY/stop-acknowledgement/reaping self-test passed. Signing, installer shell, production-duration, and target-machine evidence remain open.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
