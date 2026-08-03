@@ -3060,6 +3060,3 @@ class App:
                     gdiplus_shutdown()
                 except Exception:
                     pass
-            lifecycle = getattr(self, "lifecycle", None)
-            if lifecycle is not None and lifecycle.phase == LifecyclePhase.STOPPING:
-                lifecycle.mark_stopped(reason="run_cleanup")
