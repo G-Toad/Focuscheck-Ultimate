@@ -68,10 +68,14 @@ class ActivitySnapshotTests(unittest.TestCase):
 
     def test_provider_timeout_does_not_accumulate_inflight_workers(self):
         release = threading.Event()
+        finished = threading.Event()
 
         def provider():
-            release.wait(1.0)
-            return {"hwnd": 1, "title": "late"}
+            try:
+                release.wait(1.0)
+                return {"hwnd": 1, "title": "late"}
+            finally:
+                finished.set()
 
         try:
             first = safe_activity_snapshot(provider, timeout_seconds=0.01)
@@ -80,6 +84,7 @@ class ActivitySnapshotTests(unittest.TestCase):
             self.assertEqual(("provider busy",), second.errors)
         finally:
             release.set()
+            self.assertTrue(finished.wait(1.0))
 
     def test_provider_error_and_timeout_share_injected_capture_clock(self):
         captured = datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)
