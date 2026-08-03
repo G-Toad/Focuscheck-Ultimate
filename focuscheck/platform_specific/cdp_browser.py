@@ -6,6 +6,9 @@ import urllib.request
 
 
 _CANDIDATE_PORTS = list(range(9222, 9231))
+_MAX_TARGETS = 256
+_MAX_TITLE_LENGTH = 2048
+_MAX_URL_LENGTH = 4096
 _CACHE = {
     "timestamp": 0.0,
     "targets": [],
@@ -38,15 +41,21 @@ def _discover_targets(timeout=1.0):
         listing = _fetch_json(f"http://127.0.0.1:{port}/json/list", timeout=min(0.2, remaining))
         if not isinstance(listing, list):
             continue
-        for entry in listing:
+        for entry in listing[:_MAX_TARGETS]:
             if not isinstance(entry, dict):
                 continue
             if entry.get("type") and entry.get("type") != "page":
                 continue
             entry = dict(entry)
+            if isinstance(entry.get("title"), str):
+                entry["title"] = entry["title"][:_MAX_TITLE_LENGTH]
+            if isinstance(entry.get("url"), str):
+                entry["url"] = entry["url"][:_MAX_URL_LENGTH]
             entry["cdp_port"] = port
             entry["cdp_browser"] = version.get("Browser", "")
             targets.append(entry)
+            if len(targets) >= _MAX_TARGETS:
+                return targets
     return targets
 
 
@@ -94,10 +103,10 @@ def get_best_url_for_window(window_title):
 def list_tab_titles():
     """Return a list of tab titles from CDP targets."""
     titles = []
-    for entry in get_cdp_targets():
+    for entry in get_cdp_targets()[:_MAX_TARGETS]:
         title = entry.get("title")
         if title:
-            titles.append(title)
+            titles.append(str(title)[:_MAX_TITLE_LENGTH])
     # De-dup
     seen = set()
     unique = []

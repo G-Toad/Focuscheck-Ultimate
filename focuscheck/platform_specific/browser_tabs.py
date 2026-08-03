@@ -5,6 +5,9 @@ import platform
 from .browser_info import is_supported_browser
 from .cdp_browser import list_tab_titles
 
+_MAX_UIA_ITEMS = 256
+_MAX_TAB_TITLE_LENGTH = 2048
+
 
 def try_list_browser_tabs(hwnd, process_name):
     """Return a list of tab titles for a browser window, best effort."""
@@ -26,9 +29,9 @@ def try_list_browser_tabs(hwnd, process_name):
         items = root.FindAll(UIA.TreeScope_Subtree, cond)
         if items is not None:
             titles = []
-            for i in range(items.Length):
+            for i in range(min(int(items.Length), _MAX_UIA_ITEMS)):
                 el = items.GetElement(i)
-                name = (el.CurrentName or "").strip()
+                name = str(el.CurrentName or "").strip()[:_MAX_TAB_TITLE_LENGTH]
                 if not name:
                     continue
                 titles.append(name)
