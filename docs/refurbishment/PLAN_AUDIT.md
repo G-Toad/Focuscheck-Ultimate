@@ -277,6 +277,8 @@ Native event evidence correction: `WindowsWakeWatcher` now routes session, power
 
 Packaging evidence correction: A fresh dual-executable build from source checkpoint `6b86d3f` was promoted into a disposable install root; manifest validation and the frozen supervisor READY/intentional-stop/reaping self-test passed. Signing, clean-VM installer shell behavior, and production-duration evidence remain manual gates.
 
+Latest packaging evidence correction: source commit `5002cf2` was rebuilt into a disposable dual-executable package; promotion generated the manifest, validation passed, and the frozen supervisor reached READY and completed generation-bound intentional-stop acknowledgement/reaping. The package remains unsigned development evidence, and clean-VM installer shell, signing, production-duration, and target-machine gates remain open.
+
 Supervisor evidence correction: The real disposable source-supervisor self-test now includes a healthy-runtime scenario that observes heartbeat sequence advancement, retains one child PID, verifies the stable-ready backoff reset after an injected two-second stability window, and completes a generation-bound graceful stop; crash/restart, hang recovery, and circuit-breaker scenarios continue to pass.
 
 Live supervisor evidence correction: an isolated Windows probe launched the actual `main.py` child through `focuscheck_supervisor.py`, rejected a second supervisor on the same marker paths, and completed a generation-bound graceful stop with both supervisor processes exiting cleanly. Run-key startup, lock/sleep/resume, interactive tray, and production-duration evidence remain open.
