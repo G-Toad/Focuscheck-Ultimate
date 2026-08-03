@@ -37,6 +37,13 @@ py -3 -c "from focuscheck.settings import load_settings; print(load_settings().g
 - With a persisted pause, the process exited `0` and the post-run settings read `paused=True`; the legacy force-start environment variable did not bypass the explicit-start contract. The command targeted only the unique temporary root; startup/profile mutation was not independently inspected by this rerun.
 - This remains direct-process evidence only, not manual UI, supervisor-restart, browser, overlay, lock/sleep/resume, or installer evidence.
 
+Latest isolated source-supervisor rerun on 2026-08-03:
+
+- Started `focuscheck_supervisor.py --run --base-dir <repo>` with `FOCUS_DATA_DIR` and supervisor marker paths under a unique temporary root.
+- The source child published a protocol-version `1` `ready` heartbeat with child PID `12404`.
+- A generation-bound `source_live_selftest` stop request was atomically written; the supervisor exited, published `status=acknowledged`, and reported `termination=graceful`.
+- This proves one bounded source supervisor/child handshake and intentional stop. It does not prove crash recovery, sleep/resume, registry startup, interactive UI, or production-duration supervision.
+
 ## Native tray smoke
 
 Command:
