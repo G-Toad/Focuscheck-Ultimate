@@ -97,6 +97,21 @@ class VerificationRunnerTests(unittest.TestCase):
         mutation_tool = Path(__file__).resolve().parents[1] / "tools" / "mutation_smoke.py"
         self.assertTrue(mutation_tool.is_file())
 
+    def test_test_category_manifest_covers_automated_and_manual_classes(self):
+        from tools.test_category_inventory import build_inventory
+
+        inventory = build_inventory()
+        self.assertEqual(
+            {"pure_unit", "persistence", "simulated_app", "withdrawn_tk"},
+            set(inventory["automated_categories"]),
+        )
+        self.assertEqual(
+            {"live_windows", "manual_only", "destructive_manual_opt_in"},
+            set(inventory["manual_categories"]),
+        )
+        for name in inventory["automated_categories"]:
+            self.assertTrue(inventory["categories"][name]["matched_files"], name)
+
     def test_manual_evidence_template_has_required_record_fields(self):
         payload = json.loads(
             (Path(__file__).resolve().parents[1] / "docs" / "refurbishment" / "manual-evidence.json").read_text(encoding="utf-8")

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "categories": {
+    "pure_unit": {
+      "status": "automated",
+      "patterns": [
+        "tests/test_validation.py",
+        "tests/test_property_invariants.py",
+        "tests/test_activity_snapshot.py"
+      ]
+    },
+    "persistence": {
+      "status": "automated",
+      "patterns": [
+        "tests/test_settings_*.py",
+        "tests/test_taskdb_*.py",
+        "tests/test_paths_csv.py",
+        "tests/test_data_export.py"
+      ]
+    },
+    "simulated_app": {
+      "status": "automated",
+      "patterns": [
+        "tests/test_app_lifecycle.py",
+        "tests/test_runtime_*.py",
+        "tests/test_supervisor_*.py",
+        "tests/test_v2_flows.py",
+        "tests/test_intervention_coordinator.py"
+      ]
+    },
+    "withdrawn_tk": {
+      "status": "automated",
+      "patterns": [
+        "tests/test_dialog_keyboard.py",
+        "tests/test_settings_window.py",
+        "tests/test_ui_contracts.py"
+      ]
+    },
+    "live_windows": {
+      "status": "manual_required",
+      "patterns": [],
+      "evidence_file": "docs/refurbishment/manual-evidence.json"
+    },
+    "manual_only": {
+      "status": "manual_required",
+      "patterns": [],
+      "evidence_file": "docs/refurbishment/manual-evidence.json"
+    },
+    "destructive_manual_opt_in": {
+      "status": "opt_in_required",
+      "patterns": [],
+      "evidence_file": "docs/refurbishment/manual-evidence.json"
+    }
+  }
+}

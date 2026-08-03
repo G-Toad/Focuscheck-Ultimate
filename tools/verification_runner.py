@@ -68,10 +68,16 @@ def _terminate_process_tree(process: subprocess.Popen) -> dict[str, object]:
             text=True,
             check=False,
         )
+        if completed.returncode != 0:
+            try:
+                process.kill()
+            except OSError:
+                pass
         return {
             "method": "taskkill_pid_tree",
             "pid": pid,
             "exit_code": completed.returncode,
+            "fallback_kill": completed.returncode != 0,
         }
 
     try:
@@ -120,6 +126,19 @@ def _test_summary(results: list[dict]) -> dict[str, object]:
             "failure_summary": failures.group(1) if failures else None,
         }
     return {"status": "not_run", "count": None}
+
+
+def _category_summary() -> dict[str, object]:
+    path = RUNTIME / "test-category-inventory.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"status": "not_run", "automated": [], "manual": []}
+    return {
+        "status": "passed",
+        "automated": payload.get("automated_categories", []),
+        "manual": payload.get("manual_categories", []),
+    }
 
 
 def run_stage(name: str, args: list[str], env: dict[str, str], timeout: int) -> dict:
@@ -209,6 +228,7 @@ def main() -> int:
         ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
         ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip")]),
         ("performance_soak", [py, "tools/performance_soak.py"]),
+        ("test_category_inventory", [py, "tools/test_category_inventory.py"]),
     ]
     results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
     live_after = snapshot_tree(live_profile)
@@ -268,6 +288,7 @@ def main() -> int:
         "live_profile_unchanged": isolation_ok,
         "results": results,
         "tests": _test_summary(results),
+        "test_categories": _category_summary(),
         "manual_required": MANUAL_GATES,
         "process_leaks": leaked_processes,
         "result": "fail" if not automated_pass else ("partial" if MANUAL_GATES else "pass"),
