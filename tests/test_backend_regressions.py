@@ -11,6 +11,18 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_legacy_migration_fatal_outcomes_are_distinguished_from_safe_events(self):
+        from focuscheck.utils.paths import migration_has_fatal_failure
+
+        self.assertFalse(migration_has_fatal_failure([
+            {"outcome": "imported"},
+            {"outcome": "duplicate_preserved"},
+            {"outcome": "conflict_preserved"},
+            {"outcome": "rejected_symlink"},
+        ]))
+        self.assertTrue(migration_has_fatal_failure([{"outcome": "failed"}]))
+        self.assertTrue(migration_has_fatal_failure([{"outcome": "journal_failed"}]))
+
     def test_settings_migration_fixture_matrix_covers_plan_inputs(self):
         from focuscheck.settings.manager import validate_settings
         from focuscheck.settings.migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings

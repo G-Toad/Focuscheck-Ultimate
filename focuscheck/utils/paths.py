@@ -130,6 +130,12 @@ _MIGRATABLE_DATA_FILES = (
     "focus_intervention_reflections.jsonl",
 )
 MIGRATION_JOURNAL_FORMAT_VERSION = 1
+MIGRATION_FATAL_OUTCOMES = frozenset({"failed", "journal_failed"})
+
+
+def migration_has_fatal_failure(events) -> bool:
+    """Return whether migration left durable state incomplete or unjournaled."""
+    return any(isinstance(event, dict) and event.get("outcome") in MIGRATION_FATAL_OUTCOMES for event in events)
 
 
 def _file_sha256(path: Path) -> str:

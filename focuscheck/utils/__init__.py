@@ -27,6 +27,7 @@ from .paths import (
     get_base_dir,
     get_data_dir,
     migrate_legacy_data,
+    migration_has_fatal_failure,
     resource_path,
 )
 from .timers import TimerRegistry
@@ -61,6 +62,7 @@ __all__ = [
     "get_base_dir",
     "get_data_dir",
     "migrate_legacy_data",
+    "migration_has_fatal_failure",
     "get_file_lock",
     "export_data",
     "clear_data",
