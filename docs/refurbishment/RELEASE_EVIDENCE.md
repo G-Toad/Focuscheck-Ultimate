@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `516` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `517` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest observability checkpoint prevents the status window from rendering the absolute data-root path and adds regression coverage; live status interaction remains pending.
 
 The latest browser-provider checkpoint bounds UI Automation COM tab enumeration with a single-flight worker and CDP fallback; focused timeout coverage passes, while live browser/provider evidence remains pending.
 

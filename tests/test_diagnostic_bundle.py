@@ -25,6 +25,8 @@ class DiagnosticBundleTests(unittest.TestCase):
         self.assertIn("Version: 1.2.3", rendered)
         self.assertIn("Lifecycle: ready", rendered)
         self.assertIn("Transition journal failures: 2", rendered)
+        self.assertIn("Data root: <runtime-root>", rendered)
+        self.assertNotIn("C:/FocusCheck", rendered)
         self.assertNotIn("should not appear", rendered)
         self.assertNotIn("private.example", rendered)
 

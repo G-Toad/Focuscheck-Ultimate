@@ -10,6 +10,8 @@ Current checkpoint: the callback portability slice is represented by source comm
 
 Latest browser-provider correction: UI Automation tab enumeration now runs behind a bounded single-flight worker and falls back to CDP on timeout, preventing COM stalls from blocking Tk or accumulating workers; live browser evidence remains pending.
 
+Latest observability correction: the Tk status formatter now replaces the absolute data-root path with `<runtime-root>`, with regression coverage for path non-disclosure; live status-window evidence remains pending.
+
 Status meanings:
 
 - **Implemented**: the plan requirement has a direct implementation and matching evidence.

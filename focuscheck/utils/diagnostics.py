@@ -59,7 +59,10 @@ def format_status_snapshot(snapshot: dict) -> str:
         ("Doctor anomalies", snapshot.get("doctor_anomalies", "unknown")),
         ("Transition journal failures", snapshot.get("transition_sink_failures", "unknown")),
         ("Process ID", snapshot.get("pid", "unknown")),
-        ("Data root", snapshot.get("data_root", "unknown")),
+        # The status window is support-facing, not a path browser. Keep the
+        # runtime location useful as a category without exposing the user's
+        # absolute filesystem path.
+        ("Data root", "<runtime-root>"),
     )
     return "\n".join(f"{label}: {value}" for label, value in rows)
 
