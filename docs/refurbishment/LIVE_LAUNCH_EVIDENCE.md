@@ -60,3 +60,21 @@ Observed on 2026-08-03:
 - The native Windows tray/session watcher test ran for its bounded 20-second window and exited with code `0`.
 - This confirms the isolated callback construction and teardown path used by `--tray-test`.
 - It does not prove interactive menu commands, pystray fallback selection, Explorer restart, or the full manual tray/Tk matrix.
+
+## Automated Tk QA rerun
+
+Command:
+
+```powershell
+python tools/qa_scenario_runner.py --reset
+```
+
+Observed on 2026-08-03 at code commit `68dd06b`:
+
+- Exit code: `0`.
+- `qa_failures=0` with withdrawn-root Tk scenarios enabled.
+- Reports were written under the disposable `_qa_runtime` root.
+
+This is automated Tk/resource evidence only. It does not replace the manual
+Windows matrix for interactive tray commands, focus/DPI behavior, browser
+providers, lock/sleep/resume, or native overlay observation.
