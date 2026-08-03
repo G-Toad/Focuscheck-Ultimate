@@ -49,6 +49,20 @@ DEGRADED_COOLDOWN_SECONDS = 300.0
 STABLE_RUNTIME_SECONDS = 30.0
 
 
+def _configure_supervisor_native_api(kernel32):
+    """Declare signatures for supervisor-wide Windows API calls."""
+    kernel32.SetErrorMode.argtypes = [wintypes.UINT]
+    kernel32.SetErrorMode.restype = wintypes.UINT
+    wer_set_flags = getattr(kernel32, "WerSetFlags", None)
+    if wer_set_flags is not None:
+        wer_set_flags.argtypes = [wintypes.DWORD]
+        wer_set_flags.restype = ctypes.c_long
+    ctrl_handler = getattr(kernel32, "SetConsoleCtrlHandler", None)
+    if ctrl_handler is not None:
+        ctrl_handler.argtypes = [ctypes.c_void_p, wintypes.BOOL]
+        ctrl_handler.restype = wintypes.BOOL
+
+
 def _resolve_focuscheck_dir() -> Path:
     override = os.environ.get("FOCUS_DATA_DIR")
     if override:
@@ -277,6 +291,7 @@ def suppress_windows_error_dialogs() -> None:
         return
     try:
         kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        _configure_supervisor_native_api(kernel32)
     except Exception:
         return
     try:
@@ -406,6 +421,7 @@ class FocusCheckSupervisor:
                 from ctypes import wintypes
 
                 kernel32 = ctypes.windll.kernel32
+                _configure_supervisor_native_api(kernel32)
 
                 @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
                 def handler(ctrl_type):  # type: ignore[misc]

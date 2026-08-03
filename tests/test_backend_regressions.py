@@ -934,6 +934,34 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HWND], user32.SetForegroundWindow.argtypes)
         self.assertEqual(ctypes.c_int, user32.TrackPopupMenu.restype)
 
+    def test_entrypoints_declare_process_wide_native_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        import focuscheck_supervisor as supervisor
+        import main
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        kernel32 = type("Kernel32", (), {
+            name: Api() for name in (
+                "SetErrorMode", "WerSetFlags", "SetConsoleCtrlHandler",
+            )
+        })()
+        supervisor._configure_supervisor_native_api(kernel32)
+        self.assertEqual([wintypes.UINT], kernel32.SetErrorMode.argtypes)
+        self.assertEqual(wintypes.UINT, kernel32.SetErrorMode.restype)
+        self.assertEqual([wintypes.DWORD], kernel32.WerSetFlags.argtypes)
+        self.assertEqual([ctypes.c_void_p, wintypes.BOOL], kernel32.SetConsoleCtrlHandler.argtypes)
+        self.assertEqual(wintypes.BOOL, kernel32.SetConsoleCtrlHandler.restype)
+
+        main_kernel32 = type("Kernel32", (), {"SetErrorMode": Api()})()
+        main._configure_windows_error_api(main_kernel32)
+        self.assertEqual([wintypes.UINT], main_kernel32.SetErrorMode.argtypes)
+        self.assertEqual(wintypes.UINT, main_kernel32.SetErrorMode.restype)
+
     def test_prompt_windows_integration_declares_focus_and_style_signatures(self):
         import ctypes
         from ctypes import wintypes

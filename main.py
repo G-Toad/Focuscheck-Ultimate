@@ -8,6 +8,7 @@ import sys
 import os
 import ctypes
 import time
+from ctypes import wintypes
 
 # Ensure the package is importable
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,9 +17,17 @@ SEM_FAILCRITICALERRORS = 0x0001
 SEM_NOGPFAULTERRORBOX  = 0x0002
 SEM_NOOPENFILEERRORBOX = 0x8000
 
+
+def _configure_windows_error_api(kernel32):
+    """Declare the process-wide Windows error-mode API before calling it."""
+    kernel32.SetErrorMode.argtypes = [wintypes.UINT]
+    kernel32.SetErrorMode.restype = wintypes.UINT
+
 if os.name == "nt":
     try:
-        ctypes.windll.kernel32.SetErrorMode(
+        kernel32 = ctypes.windll.kernel32
+        _configure_windows_error_api(kernel32)
+        kernel32.SetErrorMode(
             SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX
         )
     except Exception:

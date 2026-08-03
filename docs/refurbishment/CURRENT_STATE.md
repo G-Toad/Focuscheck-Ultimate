@@ -60,6 +60,7 @@
 - Core and dialog click-through/WNDPROC helpers now declare shared style, positioning, callback, and fallback-dispatch signatures.
 - The native tray/session watcher now declares User32 message, metrics, icon load/destroy, and fallback window-procedure signatures.
 - The App native tray menu path now declares pointer-safe signatures for menu creation, item insertion, cursor lookup, foreground activation, tracking, and destruction.
+- Main and supervisor process-wide Windows error-mode and console-control calls now declare their ctypes signatures, while optional Windows Error Reporting exports remain degradable.
 - Prompt Windows integration now declares style, positioning, taskbar flash, foreground, thread-attach, and current-thread APIs.
 - V2 subpopup metrics and phrase-acronym foreground/focus paths now use typed native API boundaries.
 - Prompt monitor placement now declares monitor/cursor/window-rect APIs and uses pointer-sized `LPARAM` in the monitor enumeration callback.

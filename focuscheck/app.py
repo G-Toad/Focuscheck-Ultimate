@@ -1371,7 +1371,9 @@ class App:
                 class POINT(ctypes.Structure):
                     _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
                 pt = POINT()
-                ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+                fallback_user32 = ctypes.windll.user32
+                _configure_native_tray_api(fallback_user32)
+                fallback_user32.GetCursorPos(ctypes.byref(pt))
                 x, y = pt.x, pt.y
             except Exception:
                 pass
