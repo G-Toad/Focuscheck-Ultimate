@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import types
+import time
 import unittest
 from unittest import mock
 
@@ -91,6 +92,27 @@ class BrowserTabsProviderTests(unittest.TestCase):
                 }), \
                 mock.patch.object(browser_tabs, "list_tab_titles", side_effect=RuntimeError("cdp unavailable")):
             self.assertEqual([], browser_tabs.try_list_browser_tabs(42, "chrome.exe"))
+
+    def test_hung_uia_falls_back_without_blocking_or_starting_another_worker(self):
+        from focuscheck.platform_specific import browser_tabs
+
+        started = __import__("threading").Event()
+        release = __import__("threading").Event()
+
+        def hung(_hwnd):
+            started.set()
+            release.wait(2)
+            return []
+
+        with mock.patch.object(browser_tabs.platform, "system", return_value="Windows"), \
+                mock.patch.object(browser_tabs, "is_supported_browser", return_value=True), \
+                mock.patch.object(browser_tabs, "_list_uia_tabs", side_effect=hung), \
+                mock.patch.object(browser_tabs, "list_tab_titles", return_value=["CDP tab"]):
+            started_at = time.monotonic()
+            self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(42, "chrome.exe", timeout=0.05))
+            self.assertLess(time.monotonic() - started_at, 0.5)
+            self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(43, "chrome.exe", timeout=0.05))
+            release.set()
 
 
 if __name__ == "__main__":

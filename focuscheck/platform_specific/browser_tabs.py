@@ -1,52 +1,80 @@
-"""Best-effort browser tab listing using UI Automation on Windows."""
+"""Best-effort browser tab listing using bounded UI Automation on Windows."""
 
 import platform
+import threading
 
 from .browser_info import is_supported_browser
 from .cdp_browser import list_tab_titles
 
 _MAX_UIA_ITEMS = 256
 _MAX_TAB_TITLE_LENGTH = 2048
+_DEFAULT_UIA_TIMEOUT = 0.5
+_UIA_STATE_LOCK = threading.Lock()
+_UIA_IN_FLIGHT = False
 
 
-def try_list_browser_tabs(hwnd, process_name):
-    """Return a list of tab titles for a browser window, best effort."""
+def _list_uia_tabs(hwnd):
+    """Read UIA tab titles; callers must bound this COM operation."""
+    import comtypes.client  # type: ignore
+
+    try:
+        from comtypes.gen import UIAutomationClient as UIA  # type: ignore
+    except Exception:
+        comtypes.client.GetModule("UIAutomationCore.dll")
+        from comtypes.gen import UIAutomationClient as UIA  # type: ignore
+    uia = comtypes.client.CreateObject("UIAutomationClient.CUIAutomation")
+    root = uia.ElementFromHandle(int(hwnd))
+    cond = uia.CreatePropertyCondition(UIA.UIA_ControlTypePropertyId, UIA.UIA_TabItemControlTypeId)
+    items = root.FindAll(UIA.TreeScope_Subtree, cond)
+    if items is None:
+        return []
+    titles = []
+    for i in range(min(int(items.Length), _MAX_UIA_ITEMS)):
+        el = items.GetElement(i)
+        name = str(el.CurrentName or "").strip()[:_MAX_TAB_TITLE_LENGTH]
+        if name:
+            titles.append(name)
+    seen = set()
+    return [title for title in titles if not (title in seen or seen.add(title))]
+
+
+def _bounded_uia_tabs(hwnd, timeout):
+    """Run one UIA call at a time so a hung COM server cannot pile up workers."""
+    global _UIA_IN_FLIGHT
+    with _UIA_STATE_LOCK:
+        if _UIA_IN_FLIGHT:
+            return None
+        _UIA_IN_FLIGHT = True
+    result = []
+    finished = threading.Event()
+
+    def worker():
+        global _UIA_IN_FLIGHT
+        try:
+            result.extend(_list_uia_tabs(hwnd))
+        except Exception:
+            pass
+        finally:
+            with _UIA_STATE_LOCK:
+                _UIA_IN_FLIGHT = False
+            finished.set()
+
+    threading.Thread(target=worker, name="FocusCheck-UIA", daemon=True).start()
+    if not finished.wait(max(0.01, float(timeout))):
+        return None
+    return result
+
+
+def try_list_browser_tabs(hwnd, process_name, *, timeout=_DEFAULT_UIA_TIMEOUT):
+    """Return browser tab titles without allowing UIA COM to block the caller."""
     if platform.system().lower() != "windows":
         return []
     if not is_supported_browser(process_name):
         return []
     # Try UIA first for per-window accuracy (includes incognito windows when accessible)
-    try:
-        import comtypes.client  # type: ignore
-        try:
-            from comtypes.gen import UIAutomationClient as UIA  # type: ignore
-        except Exception:
-            comtypes.client.GetModule("UIAutomationCore.dll")
-            from comtypes.gen import UIAutomationClient as UIA  # type: ignore
-        uia = comtypes.client.CreateObject("UIAutomationClient.CUIAutomation")
-        root = uia.ElementFromHandle(int(hwnd))
-        cond = uia.CreatePropertyCondition(UIA.UIA_ControlTypePropertyId, UIA.UIA_TabItemControlTypeId)
-        items = root.FindAll(UIA.TreeScope_Subtree, cond)
-        if items is not None:
-            titles = []
-            for i in range(min(int(items.Length), _MAX_UIA_ITEMS)):
-                el = items.GetElement(i)
-                name = str(el.CurrentName or "").strip()[:_MAX_TAB_TITLE_LENGTH]
-                if not name:
-                    continue
-                titles.append(name)
-            if titles:
-                # De-dup while preserving order
-                seen = set()
-                unique = []
-                for title in titles:
-                    if title in seen:
-                        continue
-                    seen.add(title)
-                    unique.append(title)
-                return unique
-    except Exception:
-        pass
+    uia_titles = _bounded_uia_tabs(hwnd, timeout)
+    if uia_titles:
+        return uia_titles
     # Fallback: CDP (not window-specific but can capture more tabs)
     try:
         titles = list_tab_titles()
