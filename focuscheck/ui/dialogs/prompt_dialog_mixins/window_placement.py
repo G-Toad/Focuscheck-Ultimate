@@ -9,6 +9,24 @@ import platform
 import ctypes
 from ctypes import wintypes
 
+LPARAM_T = getattr(wintypes, "LPARAM", ctypes.c_ssize_t)
+
+
+def _configure_monitor_api(user32):
+    """Declare pointer-safe signatures for monitor placement operations."""
+    user32.EnumDisplayMonitors.argtypes = [
+        wintypes.HDC, ctypes.c_void_p, ctypes.c_void_p, LPARAM_T,
+    ]
+    user32.EnumDisplayMonitors.restype = wintypes.BOOL
+    user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.c_void_p]
+    user32.GetMonitorInfoW.restype = wintypes.BOOL
+    user32.GetCursorPos.argtypes = [ctypes.c_void_p]
+    user32.GetCursorPos.restype = wintypes.BOOL
+    user32.MonitorFromPoint.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+    user32.MonitorFromPoint.restype = wintypes.HANDLE
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.c_void_p]
+    user32.GetWindowRect.restype = wintypes.BOOL
+
 
 class WindowPlacementMixin:
     """Mixin for window positioning and placement in PromptDialog."""
@@ -26,6 +44,7 @@ class WindowPlacementMixin:
         try:
             if platform.system().lower() == "windows":
                 user32 = ctypes.windll.user32
+                _configure_monitor_api(user32)
 
                 # Structures
                 class RECT(ctypes.Structure):
@@ -39,7 +58,13 @@ class WindowPlacementMixin:
                     monitors.append(hMonitor)
                     return True
 
-                MONITORENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_int, ctypes.c_ulong, ctypes.c_ulong, ctypes.POINTER(RECT), ctypes.c_double)
+                MONITORENUMPROC = ctypes.WINFUNCTYPE(
+                    ctypes.c_int,
+                    wintypes.HANDLE,
+                    wintypes.HDC,
+                    ctypes.POINTER(RECT),
+                    LPARAM_T,
+                )
                 user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(callback), 0)
 
                 # Get the requested monitor
@@ -73,6 +98,7 @@ class WindowPlacementMixin:
         try:
             if platform.system().lower() == "windows":
                 user32 = ctypes.windll.user32
+                _configure_monitor_api(user32)
                 # Structures
                 class POINT(ctypes.Structure):
                     _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
@@ -112,6 +138,7 @@ class WindowPlacementMixin:
         try:
             if platform.system().lower() == "windows":
                 user32 = ctypes.windll.user32
+                _configure_monitor_api(user32)
                 # Structures
                 class POINT(ctypes.Structure):
                     _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]

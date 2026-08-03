@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `281` unittest cases passing.
+- Current automated baseline after hardening: `282` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -57,6 +57,7 @@
 - The native tray/session watcher now declares User32 message, metrics, icon load/destroy, and fallback window-procedure signatures.
 - Prompt Windows integration now declares style, positioning, taskbar flash, foreground, thread-attach, and current-thread APIs.
 - V2 subpopup metrics and phrase-acronym foreground/focus paths now use typed native API boundaries.
+- Prompt monitor placement now declares monitor/cursor/window-rect APIs and uses pointer-sized `LPARAM` in the monitor enumeration callback.
 - Intervention reflection JSONL now rejects records over `256 KiB`, rotates bounded backups, and exposes a corruption-tolerant reader that skips malformed or oversized lines.
 - A Tk-owned FocusCheck Status window is available from both tray backends and displays only whitelisted health metadata; live UI interaction remains pending.
 - Lock and sleep events synchronously close active prompts before scheduling the pause poll, releasing camera, timer, and overlay resources.

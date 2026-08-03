@@ -837,6 +837,30 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([ctypes.c_int], user32.GetSystemMetrics.argtypes)
         self.assertEqual(ctypes.c_int, user32.GetSystemMetrics.restype)
 
+    def test_window_placement_declares_pointer_safe_monitor_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import window_placement
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "EnumDisplayMonitors", "GetMonitorInfoW", "GetCursorPos",
+                "MonitorFromPoint", "GetWindowRect",
+            )
+        })()
+        window_placement._configure_monitor_api(user32)
+        self.assertEqual(
+            [wintypes.HDC, ctypes.c_void_p, ctypes.c_void_p, window_placement.LPARAM_T],
+            user32.EnumDisplayMonitors.argtypes,
+        )
+        self.assertEqual([wintypes.HWND, ctypes.c_void_p], user32.GetWindowRect.argtypes)
+        self.assertEqual([ctypes.c_void_p, wintypes.DWORD], user32.MonitorFromPoint.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes
