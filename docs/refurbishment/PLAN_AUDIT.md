@@ -40,9 +40,11 @@ Latest path-binding extension: CSV and application-log path configuration now re
 
 Latest tray-composition correction: an injected tray adapter is now honored even when the optional `SystemTray` import is unavailable, preserving headless composition and testability while retaining the normal optional-backend fallback. Native tray evidence remains manual.
 
+Latest watcher-composition correction: an explicit injected watcher adapter is now honored on non-Windows hosts for deterministic composition tests, while the production default remains Windows-only. Live session/power/display watcher evidence remains manual.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `925a451`; the post-push verifier records `526` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `3913604`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
