@@ -2,11 +2,11 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `08e45f7`; 570 unittest cases and all 20 bounded verification stages pass with zero process leaks. Native tray menu error-reset calls now use a declared Kernel32 contract. Manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `0ec9af6`; 572 unittest cases and all 21 bounded verification stages pass with zero process leaks. The standard verifier now rebuilds current source into disposable frozen executables, validates the package, and exercises the packaged supervisor protocol. Manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Historical baseline before the current evidence chain: `476` unittest cases across 19 bounded verification stages. The authoritative current checkpoint is recorded above.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
-- The verifier now has `19` passing bounded stages, including test-category inventory, real-entrypoint pause/snooze restart integration, and end-to-end data recovery.
+- The verifier includes `21` passing bounded stages, including current-source package build/promotion/validation, packaged supervisor readiness/stop, test-category inventory, real-entrypoint pause/snooze restart integration, and end-to-end data recovery.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.
 - In the composed application path, the Advanced Settings window delegates persistence through the App boundary rather than calling the settings repository directly.
 - Camera-adjustment and crop-adjustment child windows inherit that persistence boundary and do not apply child settings until durable save succeeds.

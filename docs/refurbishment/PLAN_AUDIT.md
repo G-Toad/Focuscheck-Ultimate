@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest automated packaging correction: source checkpoint `0ec9af6` adds a bounded disposable current-source package build to the standard verifier. All 21 automated stages passed with 572 tests and zero process leaks; build, promotion, manifest validation, and packaged supervisor READY/stop/reaping passed. Installer-shell, signing, and target-machine manual gates remain open.
+
 Latest package evidence: source tree `9a7af19` (code checkpoint `08e45f7`) produced current frozen `FocusCheck.exe` and `FocusCheckSupervisor.exe` artifacts. Manifest validation, READY/stop/reaping protocol self-test, and disposable install/upgrade/uninstall with data preservation all passed; installer-shell, signing, and manual target-machine gates remain open.
 
 Latest native-tray correction: source checkpoint `08e45f7` types the Kernel32 last-error reset used by native tray-menu dispatch. The full verifier passed all 20 stages with 570 tests and zero process leaks; live Windows/native evidence remains pending.

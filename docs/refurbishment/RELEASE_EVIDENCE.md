@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest automated package-build correction: source checkpoint `0ec9af6` adds a standard disposable current-source build stage. The full verifier passed all 21 stages with 572 tests and zero process leaks; the stage built both frozen executables, promoted and validated a disposable package, and completed the packaged supervisor READY/generation-bound stop/reaping self-test. Installer-shell, signing, and target-machine manual gates remain open.
+
 Latest native-tray correction: source checkpoint `08e45f7` declares the `kernel32.SetLastError` contract used while opening the native tray menu and removes the raw untyped fallback call. The full verifier passed all 20 stages with 570 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
 
 Latest native-error correction: source checkpoint `b0d4114` centralizes pointer-safe `GetLastError` and `FormatMessageW` declarations and reuses the contract from intervention diagnostics. The full verifier passed all 20 stages with 569 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
