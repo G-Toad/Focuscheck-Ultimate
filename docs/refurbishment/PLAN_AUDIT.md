@@ -239,6 +239,8 @@ Current checkpoint addition: The latest audit-rotation slice bounds clear-data a
 
 Audit correction: The automated test expansion is not missing property or mutation evidence. The repository contains `tests/test_property_invariants.py` covering boolean coercion, domain normalization, runtime-state invariants, timer generations, UTC due-time boundaries, and migration idempotency, while `tools/mutation_smoke.py` is an active bounded verification stage. Broader integration and native live coverage remain open.
 
+Native verification correction: The bounded Windows overlay stage now runs `20` real create/update/destroy cycles with `100/100` region updates by default, while retaining environment overrides for longer target-specific runs. This strengthens automated native stress evidence but does not replace live multi-monitor, DPI, lock, sleep, or hardware evidence.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -260,6 +262,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `440` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `7813af2`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `440` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `de997d1`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
