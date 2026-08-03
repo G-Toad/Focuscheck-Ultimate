@@ -1602,6 +1602,7 @@ class App:
         changed = self._runtime_state.set_manual_paused(value)
         if not changed:
             return False
+        self._notify_engine_pause_state(source=source)
         try:
             get_logger().info("paused=%s via %s", value, source)
             if value:
@@ -1612,6 +1613,24 @@ class App:
             pass
         return True
 
+    def _notify_engine_pause_state(self, *, source: str) -> None:
+        """Forward effective-pause changes without coupling App to an engine type."""
+        engine = getattr(self, "_engine", None)
+        handler = getattr(type(engine), "on_pause_changed", None) if engine is not None else None
+        if not callable(handler):
+            return
+        runtime_state = getattr(self, "_runtime_state", None)
+        try:
+            paused = bool(runtime_state.is_effectively_paused()) if runtime_state is not None else bool(
+                getattr(self, "settings", {}).get("paused", False)
+            )
+            handler(engine, paused, source=source)
+        except Exception:
+            try:
+                get_logger().exception("monitoring engine pause notification failed", exc_info=True)
+            except Exception:
+                pass
+
     def _expire_snooze(self):
         """Clear snooze through the coordinator without changing manual pause."""
         self._snooze_unpause_timer_id = None
@@ -1621,6 +1640,7 @@ class App:
         else:
             self.settings["snooze_until_utc"] = ""
             save_settings(self.settings)
+        self._notify_engine_pause_state(source="snooze_expired")
         try:
             get_logger().info("snooze expired, resuming eligible reminders")
         except Exception:
@@ -1830,6 +1850,7 @@ class App:
             else:
                 self.settings["snooze_until_utc"] = until.isoformat()
                 save_settings(self.settings)
+            self._notify_engine_pause_state(source=f"snooze_{mins}m")
             try:
                 get_logger().info("tray: snooze for %s minute(s) - paused=True", mins)
             except Exception:

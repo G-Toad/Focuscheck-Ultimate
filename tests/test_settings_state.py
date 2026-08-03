@@ -520,6 +520,26 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertEqual("", settings["snooze_until_utc"])
         app._schedule_next.assert_called_once_with(0)
 
+    def test_manual_pause_notifies_selected_engine_of_effective_state(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        class Engine:
+            def __init__(self):
+                self.events = []
+
+            def on_pause_changed(self, paused, *, source="unknown"):
+                self.events.append((paused, source))
+
+        settings = {"manual_paused": False, "paused": False, "snooze_until_utc": ""}
+        app = App.__new__(App)
+        app.settings = settings
+        app._runtime_state = RuntimeStateCoordinator(settings)
+        app._engine = Engine()
+
+        self.assertTrue(App._set_paused(app, True, source="test"))
+        self.assertEqual([(True, "test")], app._engine.events)
+
     def test_snooze_expiry_fallback_preserves_manual_pause(self):
         from focuscheck.app import App
 

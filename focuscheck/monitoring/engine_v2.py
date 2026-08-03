@@ -98,6 +98,15 @@ class EngineV2(BaseEngine):
             # disabled; settings changes must also cancel an existing poll.
             self._timers.cancel("website-subpopup")
 
+    def on_pause_changed(self, paused: bool, *, source: str = "unknown"):
+        """Stop website polling while paused and resume it immediately after."""
+        if self._timers is None or self._timers.closed:
+            return
+        if paused:
+            self._timers.cancel("website-subpopup")
+        elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
+            self._schedule_subpopup_check()
+
     def shutdown(self):
         self._subpopup_generation += 1
         dialog = self._subpopup_dialog
