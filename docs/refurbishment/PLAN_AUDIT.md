@@ -233,7 +233,7 @@ Current checkpoint addition: The latest migration-lifecycle slice fails startup 
 
 Current checkpoint addition: The latest V2 activity slice suppresses standalone website checks during active fallback snooze and permits them after expiry, with explicit clock-driven coverage. The focused V2 suite records `11` passing tests; the full verifier records `433` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
-Current checkpoint addition: The latest audit-path slice rejects symlinked clear-data and retention audit destinations before writing, with both external-target preservation cases covered where symlink creation is available. The focused privacy suite records `20` passing tests with five environment-dependent symlink cases skipped; full verification remains pending for this slice.
+Current checkpoint addition: The latest audit-path slice rejects symlinked clear-data and retention audit destinations before writing, with both external-target preservation cases covered where symlink creation is available. The focused privacy suite records `20` passing tests with five environment-dependent symlink cases skipped; the full verifier records `435` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
 ## Final Acceptance Gates
 
@@ -256,6 +256,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `433` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `1d4906f`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `435` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `2d15741`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
