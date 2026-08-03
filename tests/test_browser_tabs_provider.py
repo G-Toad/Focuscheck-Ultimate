@@ -95,6 +95,44 @@ class BrowserTabsProviderTests(unittest.TestCase):
                 mock.patch.object(browser_tabs, "collect_browser_tabs", return_value=[]):
             self.assertEqual([], browser_tabs.try_list_browser_tabs(42, "chrome.exe"))
 
+    def test_session_fallback_is_used_for_every_supported_browser_family(self):
+        from focuscheck.platform_specific import browser_tabs
+
+        class Tab:
+            title = "Recovered tab"
+            url = "https://example.test/path"
+
+        supported = (
+            "chrome.exe", "msedge.exe", "brave.exe", "opera.exe",
+            "opera_gx.exe", "firefox.exe",
+        )
+        with mock.patch.object(browser_tabs.platform, "system", return_value="Windows"), \
+                mock.patch.object(browser_tabs, "_list_uia_tabs", return_value=[]), \
+                mock.patch.object(browser_tabs, "list_tab_titles", return_value=[]), \
+                mock.patch.object(browser_tabs, "collect_browser_tabs", return_value=[Tab()]):
+            for process_name in supported:
+                with self.subTest(process_name=process_name):
+                    self.assertEqual(
+                        ["Recovered tab"],
+                        browser_tabs.try_list_browser_tabs(42, process_name),
+                    )
+
+    def test_session_fallback_uses_url_when_recovered_tab_has_no_title(self):
+        from focuscheck.platform_specific import browser_tabs
+
+        class Tab:
+            title = ""
+            url = "https://example.test/path"
+
+        with mock.patch.object(browser_tabs.platform, "system", return_value="Windows"), \
+                mock.patch.object(browser_tabs, "_list_uia_tabs", return_value=[]), \
+                mock.patch.object(browser_tabs, "list_tab_titles", return_value=[]), \
+                mock.patch.object(browser_tabs, "collect_browser_tabs", return_value=[Tab()]):
+            self.assertEqual(
+                ["https://example.test/path"],
+                browser_tabs.try_list_browser_tabs(42, "firefox.exe"),
+            )
+
     def test_hung_uia_falls_back_without_blocking_or_starting_another_worker(self):
         from focuscheck.platform_specific import browser_tabs
 
