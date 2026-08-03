@@ -40,4 +40,8 @@ _package_frozen_probe*/
 _package_supervisor_runtime*/
 _package_latest/
 ._package_latest.pyinstaller-work/
+_package_current*/
+._package_current*.pyinstaller-work/
+_package_promoted*/
+_package_probe_data/
 dist/
