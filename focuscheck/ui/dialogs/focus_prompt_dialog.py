@@ -180,7 +180,13 @@ class FocusPromptDialog(tk.Toplevel):
             self.grab_release()
         except Exception:
             pass
-        self.destroy()
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                get_logger().exception("focus prompt destruction failed", exc_info=True)
+            except Exception:
+                pass
         try:
             if self.on_cancel:
                 self.on_cancel()
@@ -236,7 +242,13 @@ class FocusPromptDialog(tk.Toplevel):
             self.grab_release()
         except Exception:
             pass
-        self.destroy()
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                get_logger().exception("focus prompt destruction failed", exc_info=True)
+            except Exception:
+                pass
         try:
             if self.on_submit:
                 self.on_submit(payload)

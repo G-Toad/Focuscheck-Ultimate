@@ -221,6 +221,23 @@ class DialogKeyboardTests(unittest.TestCase):
         prompt.destroy.assert_called_once_with()
         self.assertEqual([True], submitted)
 
+    def test_follow_up_dialog_callbacks_survive_destroy_failures(self):
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+        from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+
+        for dialog_type, method_name, callback_name in (
+            (FocusPromptDialog, "_cancel", "on_cancel"),
+            (WastePromptDialog, "_cancel", "on_cancel"),
+        ):
+            events = []
+            dialog = dialog_type.__new__(dialog_type)
+            dialog.grab_release = mock.Mock()
+            dialog.destroy = mock.Mock(side_effect=RuntimeError("destroy"))
+            setattr(dialog, callback_name, lambda events=events: events.append(callback_name))
+            with mock.patch(f"{dialog_type.__module__}.get_logger"):
+                getattr(dialog, method_name)()
+            self.assertEqual([callback_name], events)
+
     def test_snooze_prompt_can_disable_reason_and_exact_fields(self):
         from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
 

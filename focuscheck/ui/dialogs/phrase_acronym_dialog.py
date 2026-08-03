@@ -495,7 +495,13 @@ class PhraseAcronymDialog(tk.Toplevel):
             self.grab_release()
         except Exception:
             pass
-        self.destroy()
+        try:
+            self.destroy()
+        except Exception:
+            try:
+                get_logger().exception("acronym dialog destruction failed", exc_info=True)
+            except Exception:
+                pass
         if callable(self.on_complete):
             self.on_complete()
 
