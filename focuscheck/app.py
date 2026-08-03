@@ -2362,7 +2362,8 @@ class App:
 
     def _persist_settings_draft(self, draft):
         """Persist a settings-window draft through the App composition root."""
-        result = save_settings(draft)
+        settings_saver = getattr(getattr(self, "_dependencies", None), "settings_saver", None)
+        result = (settings_saver or save_settings)(draft)
         committed = getattr(result, "committed_settings", None)
         if getattr(result, "durable_write", bool(result)) and isinstance(committed, dict):
             self.settings.update(committed)

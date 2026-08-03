@@ -320,6 +320,27 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertEqual(committed, app.settings)
         app._runtime_state.refresh_from_settings.assert_called_once_with(committed)
 
+    def test_app_persistence_boundary_uses_composed_settings_saver(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        app = App.__new__(App)
+        app.settings = {"interval_seconds": 60, "settings_revision": 1}
+        app._runtime_state = mock.Mock()
+        committed = {"interval_seconds": 120, "settings_revision": 2}
+        result = type(
+            "Result", (), {"durable_write": True, "committed_settings": committed}
+        )()
+        saver = mock.Mock(return_value=result)
+        app._dependencies = AppDependencies(settings_saver=saver)
+
+        returned = App._persist_settings_draft(app, {"interval_seconds": 999})
+
+        self.assertIs(result, returned)
+        saver.assert_called_once_with({"interval_seconds": 999})
+        self.assertEqual(committed, app.settings)
+        app._runtime_state.refresh_from_settings.assert_called_once_with(committed)
+
     def test_schedule_next_survives_expired_timer_id(self):
         from focuscheck.app import App
 
