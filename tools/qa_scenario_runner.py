@@ -589,7 +589,7 @@ def run_prompt_flow_scenarios(log: QaLog):
 
     with scenario(log, "v2.cancelled_intervention_no_success_log"):
         dialog = make_dialog(decision="yes")
-            dialog._start_intervention = lambda: False
+        dialog._start_intervention = lambda: False
         dialog._log_response = mock.Mock()
         dialog._close = mock.Mock()
 
