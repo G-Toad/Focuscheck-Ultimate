@@ -247,7 +247,15 @@ class AppPaths:
 def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
     """Return one canonical, created path set for the selected data root."""
     root = Path(data_dir) if data_dir is not None else Path(get_data_dir())
+    # Runtime composition must not silently follow an unexpected filesystem
+    # target supplied through the data-root override or a moved parent.
+    absolute_root = root.absolute()
+    for component in (absolute_root, *absolute_root.parents):
+        if component.is_symlink():
+            raise ValueError(f"refusing symlinked application data root: {root}")
     root.mkdir(parents=True, exist_ok=True)
+    if root.is_symlink():
+        raise ValueError(f"refusing symlinked application data root: {root}")
     return AppPaths(
         root=root,
         settings=root / "focus_settings.json",
