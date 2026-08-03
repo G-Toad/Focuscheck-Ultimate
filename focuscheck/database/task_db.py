@@ -107,6 +107,10 @@ class TaskDB:
         self._prepare_migration_safety_copy()
         try:
             with self._conn() as con:
+                # Schema inspection and migration are a single writer
+                # transaction. Without this lock, concurrent first opens can
+                # both observe a missing column and race into ALTER TABLE.
+                con.execute("BEGIN IMMEDIATE")
                 cur = con.cursor()
                 cur.execute(
                     """
