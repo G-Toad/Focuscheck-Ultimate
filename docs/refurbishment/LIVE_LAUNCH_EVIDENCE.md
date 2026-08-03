@@ -78,3 +78,19 @@ Observed on 2026-08-03 at code commit `68dd06b`:
 This is automated Tk/resource evidence only. It does not replace the manual
 Windows matrix for interactive tray commands, focus/DPI behavior, browser
 providers, lock/sleep/resume, or native overlay observation.
+
+## Current runtime probes
+
+On 2026-08-03, an isolated `python main.py --run-seconds=20` process exited
+with code `0`, created the canonical runtime artifacts, and produced no
+`Traceback`, `ERROR`, or exception records in `focus_app.log`. The real
+`python main.py --tray-test` Windows watcher entrypoint also ran its bounded
+20-second window and exited with code `0`.
+
+A composed isolated prompt probe then disabled optional V1 follow-up fields,
+waited for the real prompt scheduler to create a V1 prompt, invoked a valid
+studying response, and exited cleanly. The log recorded
+`choice=Studying`; no `append_log` failure, traceback, or exception was
+observed. This proves a direct automated runtime response path, not manual
+keyboard/mouse focus, tray-menu, browser, lock/sleep/resume, hardware, or
+release evidence.
