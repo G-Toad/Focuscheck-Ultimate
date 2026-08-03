@@ -367,6 +367,8 @@ Click-through wrapper correction: `enable_click_through_windows()` now reports f
 
 WNDPROC ownership correction: `install_httransparent_wndproc()` now reports failure when `SetWindowLongPtrW` does not install the callback, preventing a false click-through success state. Focused setter-result coverage passes; the full verifier target is now `504` unittest cases, while live overlay/input evidence remains pending.
 
+Packaging preflight correction: `package_lifecycle.ps1` now validates the source package boundary, required child and supervisor executables, reparse points, and forbidden source/debug/runtime-data extensions before promotion. A regression proves an unsafe package cannot replace the existing install; the full verifier target is now `505` unittest cases, while signed installer and target-machine evidence remain pending.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.

@@ -38,6 +38,32 @@ function Remove-MatchingStartup([string]$InstallPath, [string]$Name) {
     }
 }
 
+function Assert-PackageSourceSafe([string]$PackagePath) {
+    $source = [IO.Path]::GetFullPath($PackagePath)
+    $sourceItem = Get-Item -LiteralPath $source -Force
+    if (-not $sourceItem.PSIsContainer) { throw "PackageDir must be a directory: $source" }
+    if (($sourceItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "PackageDir cannot be a reparse point: $source"
+    }
+    $reparsePoints = Get-ChildItem -LiteralPath $source -Recurse -Force -ErrorAction Stop |
+        Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 }
+    if ($reparsePoints) {
+        throw "PackageDir contains reparse points: $($reparsePoints.FullName -join ', ')"
+    }
+    foreach ($name in @('FocusCheck.exe', 'FocusCheckSupervisor.exe')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $source $name) -PathType Leaf)) {
+            throw "PackageDir must contain $name"
+        }
+    }
+    $forbiddenExtensions = @('.py', '.pyc', '.pdb', '.sqlite3', '.jsonl')
+    $forbidden = Get-ChildItem -LiteralPath $source -Recurse -File | Where-Object {
+        $forbiddenExtensions -contains $_.Extension.ToLowerInvariant()
+    }
+    if ($forbidden) {
+        throw "PackageDir contains source, debug, or runtime-data files: $($forbidden.FullName -join ', ')"
+    }
+}
+
 function Get-ValidatedBackup([string]$InstallPath, [string]$Candidate) {
     if ([string]::IsNullOrWhiteSpace($Candidate)) { return $null }
     try {
@@ -93,9 +119,7 @@ if ($Action -ne "Uninstall" -and [string]::IsNullOrWhiteSpace($PackageDir)) {
 }
 
 if ($Action -eq "Install" -or $Action -eq "Upgrade") {
-    if (-not (Test-Path -LiteralPath (Join-Path $PackageDir "FocusCheckSupervisor.exe") -PathType Leaf)) {
-        throw "PackageDir must contain FocusCheckSupervisor.exe"
-    }
+    Assert-PackageSourceSafe $PackageDir
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\promote_package.ps1") `
         -PackageDir $PackageDir -InstallDir $install -Version $Version
     if ($LASTEXITCODE -ne 0) { throw "Package promotion failed with exit code $LASTEXITCODE" }
