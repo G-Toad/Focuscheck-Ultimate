@@ -70,6 +70,8 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("RegisterStartup", lifecycle)
         self.assertIn("FocusCheckSupervisor.exe", lifecycle)
         self.assertIn("validate_package.ps1", lifecycle)
+        self.assertIn("RequireSigned", lifecycle)
+        self.assertIn("-RequireSigned", lifecycle)
         self.assertIn("Get-CanonicalStartupCommand", lifecycle)
         self.assertIn("Startup entry retained", lifecycle)
 

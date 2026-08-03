@@ -5,6 +5,7 @@ param(
     [Parameter(Mandatory = $true)][string]$DataDir,
     [string]$Version = "dev",
     [switch]$RegisterStartup,
+    [switch]$RequireSigned,
     [string]$StartupName = "FocusCheck"
 )
 
@@ -48,8 +49,13 @@ if ($Action -eq "Install" -or $Action -eq "Upgrade") {
     & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\promote_package.ps1") `
         -PackageDir $PackageDir -InstallDir $install -Version $Version
     if ($LASTEXITCODE -ne 0) { throw "Package promotion failed with exit code $LASTEXITCODE" }
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
-        -PackageDir $install
+    if ($RequireSigned) {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
+            -PackageDir $install -RequireSigned
+    } else {
+        & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root "tools\validate_package.ps1") `
+            -PackageDir $install
+    }
     if ($LASTEXITCODE -ne 0) { throw "Promoted package validation failed with exit code $LASTEXITCODE" }
     if ($RegisterStartup) { Install-CanonicalStartup $install $StartupName }
     Write-Output "$Action completed; data root preserved at $data"
