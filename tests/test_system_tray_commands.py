@@ -250,12 +250,46 @@ class SystemTrayCommandTests(unittest.TestCase):
             on_alive=lambda: alive.append(True),
         )
         tray._icon = Icon()
+        tray._running = True
         with mock.patch("focuscheck.system_tray.threading.Timer", Timer):
             tray._schedule_post_start_check()
             timer = tray._post_start_timer
             timer.callback()
 
         self.assertEqual([True], alive)
+        self.assertIsNone(tray._post_start_timer)
+
+    def test_post_start_callback_is_noop_after_tray_stop(self):
+        from focuscheck.system_tray import SystemTray
+
+        class Icon:
+            title = "FocusCheck"
+
+        class Timer:
+            def __init__(self, _delay, callback):
+                self.callback = callback
+                self.daemon = False
+
+            def start(self):
+                return None
+
+            def cancel(self):
+                return None
+
+        alive = []
+        tray = SystemTray(
+            app=FakeTrayApp(),
+            name="FocusCheckTest",
+            on_alive=lambda: alive.append(True),
+        )
+        tray._icon = Icon()
+        with mock.patch("focuscheck.system_tray.threading.Timer", Timer):
+            tray._schedule_post_start_check()
+            timer = tray._post_start_timer
+            tray.stop()
+            timer.callback()
+
+        self.assertEqual([], alive)
         self.assertIsNone(tray._post_start_timer)
 
     def test_setting_fallback_delegates_to_app_without_module_persistence(self):

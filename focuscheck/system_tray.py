@@ -256,6 +256,8 @@ class SystemTray:
 
         def _check():
             try:
+                if not self._running:
+                    return
                 if self._icon is None:
                     raise RuntimeError("icon object missing in post-start check")
                 # Force a small title change to trigger an update
