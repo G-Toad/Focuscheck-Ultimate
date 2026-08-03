@@ -18,7 +18,7 @@ Latest application-log correction: rendered diagnostic labels such as `returned:
 
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `bbf109b`; the post-push verifier records `517` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `686f768`; the post-push verifier records `518` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
