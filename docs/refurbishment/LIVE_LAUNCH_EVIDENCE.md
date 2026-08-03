@@ -102,3 +102,15 @@ with code `0`; the canonical `focus_settings.json` read back
 `interval_seconds=42`, with no save error, traceback, or exception observed.
 This proves one durable Settings path, not full visual control-by-control or
 target-user migration evidence.
+
+Latest isolated 60-second direct launch on 2026-08-03:
+
+- Command: `FOCUS_DATA_DIR=<unique %TEMP% root>; FOCUSCHECK_START_STOP_MODE=paused; py -3 main.py --run-seconds=60`.
+- Application exit code: `0`; elapsed time: approximately `61.1` seconds.
+- The disposable root contained `focus_app.log`, `focus_log.csv`, `focus_settings.json`, `focus_settings.json.lock`, `focus_tasks.sqlite3`, `hb.txt`, `runtime_state.jsonl`, and `structured_events.jsonl`.
+- `focus_app.log` contained zero `Traceback`, `ERROR`, or `Exception` matches.
+
+This strengthens direct timed-launch and persistence-initialization evidence only;
+it does not prove interactive tray behavior, supervisor restart, browser
+providers, lock/sleep/resume, overlays, hardware, startup registry, or release
+installer behavior.
