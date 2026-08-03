@@ -56,6 +56,32 @@ class DueTimeTests(unittest.TestCase):
 
 
 class TaskDbLifecycleTests(unittest.TestCase):
+    def test_task_transition_events_are_bounded_and_failure_isolated(self):
+        from focuscheck.database.task_db import TaskDB
+
+        events = []
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(
+                str(Path(temp_dir) / "tasks.sqlite3"),
+                event_sink=events.append,
+            )
+            task_id = db.start_task(title="Private task", due_utc=None, why="secret", consequences="secret")
+            self.assertTrue(db.mark_completed(task_id))
+
+        self.assertEqual(["start", "complete"], [event["operation"] for event in events])
+        self.assertNotIn("Private task", str(events))
+        self.assertNotIn("secret", str(events))
+
+        def failing_sink(_event):
+            raise RuntimeError("ledger unavailable")
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"), event_sink=failing_sink)
+            self.assertIsInstance(
+                db.start_task(title="Still durable", due_utc=None, why="", consequences=""),
+                int,
+            )
+
     def test_task_timestamps_are_persisted_as_utc(self):
         from focuscheck.database.task_db import TaskDB
 

@@ -344,7 +344,11 @@ class App:
             pass
         # Init task DB
         try:
-            self.taskdb = TaskDB(self.paths.task_db, clock=self._runtime_clock)
+            self.taskdb = TaskDB(
+                self.paths.task_db,
+                clock=self._runtime_clock,
+                event_sink=lambda event: self._event_ledger.append("task", event),
+            )
         except Exception:
             self.taskdb = None
             log_exception("TaskDB unavailable; continuing without tasks feature")

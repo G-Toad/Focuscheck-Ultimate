@@ -64,11 +64,27 @@ def _bounded_text(value, field, *, required=False, limit=MAX_TASK_TEXT_LENGTH):
 class TaskDB:
     """Manages tasks and sessions in SQLite database."""
     
-    def __init__(self, path, clock=None):
+    def __init__(self, path, clock=None, event_sink=None):
         self.path = path
         self._clock = clock
+        self._event_sink = event_sink
         self.pre_migration_backup = None
         self._ensure_schema()
+
+    def _emit_transition(self, operation, outcome, **fields):
+        """Report task lifecycle metadata without affecting persistence."""
+        if not callable(self._event_sink):
+            return
+        try:
+            self._event_sink({
+                "event": "task_transition",
+                "operation": operation,
+                "outcome": outcome,
+                **fields,
+            })
+        except Exception:
+            # Diagnostics must never change the transaction result.
+            pass
 
     def _now_utc(self):
         """Return the injected UTC clock value or the system UTC time."""
@@ -451,7 +467,9 @@ class TaskDB:
                 (now, title, why, consequences, due_utc)
             )
             con.commit()
-            return cur.lastrowid
+            task_id = cur.lastrowid
+            self._emit_transition("start", "committed", task_id=task_id)
+            return task_id
 
     def change_task(self, task_id, reason, *, new_task=None, when_utc=None):
         """Atomically close an active task and optionally create its replacement."""
@@ -480,9 +498,11 @@ class TaskDB:
                 (when_utc, reason, task_id),
             )
             if cur.rowcount != 1:
+                self._emit_transition("change", "not_active", task_id=task_id)
                 return False
             if normalized is None:
                 con.commit()
+                self._emit_transition("change", "committed", task_id=task_id)
                 return True
             cur.execute(
                 "INSERT INTO tasks(created_utc, title, why, consequences, due_utc, status) "
@@ -496,7 +516,14 @@ class TaskDB:
                 ),
             )
             con.commit()
-            return cur.lastrowid
+            replacement_id = cur.lastrowid
+            self._emit_transition(
+                "change",
+                "committed",
+                task_id=task_id,
+                replacement_id=replacement_id,
+            )
+            return replacement_id
 
     def mark_completed(self, task_id, when_utc=None):
         if when_utc is None:
@@ -507,7 +534,9 @@ class TaskDB:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='completed', completed_utc=? WHERE id=? AND status='active'", (when_utc, task_id))
             con.commit()
-            return cur.rowcount == 1
+            changed = cur.rowcount == 1
+            self._emit_transition("complete", "committed" if changed else "not_active", task_id=task_id)
+            return changed
 
     def mark_failed(self, task_id, when_utc=None, timed_out=False):
         if when_utc is None:
@@ -522,7 +551,14 @@ class TaskDB:
                 # Fallback for DBs without timed_out column
                 cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status = 'active'", (when_utc, task_id))
             con.commit()
-            return cur.rowcount == 1
+            changed = cur.rowcount == 1
+            self._emit_transition(
+                "fail",
+                "committed" if changed else "not_active",
+                task_id=task_id,
+                timed_out=bool(timed_out),
+            )
+            return changed
 
     def mark_changed(self, task_id, reason):
         reason = _bounded_text(reason, "change_reason", required=True, limit=MAX_TASK_REASON_LENGTH)
@@ -530,7 +566,9 @@ class TaskDB:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='changed', change_reason=? WHERE id=? AND status='active'", (reason, task_id))
             con.commit()
-            return cur.rowcount == 1
+            changed = cur.rowcount == 1
+            self._emit_transition("mark_changed", "committed" if changed else "not_active", task_id=task_id)
+            return changed
 
     def _row_to_dict(self, row):
         if not row:
@@ -567,6 +605,7 @@ class TaskDB:
                 except (TypeError, ValueError, OverflowError):
                     continue
             con.commit()
+        self._emit_transition("overdue", "committed", count=len(affected))
         return affected
 
     def analytics_counts(
