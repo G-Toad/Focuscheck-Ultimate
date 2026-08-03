@@ -529,11 +529,12 @@ class AppLifecycleTests(unittest.TestCase):
         from focuscheck.app import App
 
         app = App.__new__(App)
-        app._diagnostic_status_window = mock.Mock()
+        window = mock.Mock()
+        app._diagnostic_status_window = window
 
         App._close_diagnostic_status_window(app)
 
-        app._diagnostic_status_window.destroy.assert_called_once_with()
+        window.destroy.assert_called_once_with()
         self.assertIsNone(app._diagnostic_status_window)
 
     def test_prompt_visibility_recovery_close_uses_full_cleanup_contract(self):
