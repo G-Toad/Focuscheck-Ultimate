@@ -141,6 +141,8 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertTrue(list(canonical.root.glob("focus_log.csv.legacy-conflict-*")))
             self.assertEqual({"imported", "conflict_preserved"}, {event["outcome"] for event in events})
             self.assertTrue((canonical.root / "data_migration.jsonl").exists())
+            journal_event = json.loads((canonical.root / "data_migration.jsonl").read_text(encoding="utf-8").splitlines()[0])
+            self.assertEqual(1, journal_event["format_version"])
 
     def test_legacy_data_manifest_covers_every_durable_task_and_log_artifact(self):
         from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
@@ -213,6 +215,24 @@ class SettingsSaveTests(unittest.TestCase):
 
             self.assertEqual("rejected_symlink", events[0]["outcome"])
             self.assertFalse(canonical.focus_log.exists())
+
+    def test_legacy_data_migration_rejects_symlink_to_canonical_target(self):
+        from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            canonical = get_app_paths(root / "canonical")
+            legacy = root / "legacy"
+            legacy.mkdir()
+            source = legacy / "focus_log.csv"
+            try:
+                source.symlink_to(canonical.focus_log)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            events = migrate_legacy_data(canonical, legacy_root=legacy)
+
+            self.assertEqual("rejected_symlink", events[0]["outcome"])
 
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager

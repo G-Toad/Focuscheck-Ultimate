@@ -129,6 +129,7 @@ _MIGRATABLE_DATA_FILES = (
     "focus_study_log.csv",
     "focus_intervention_reflections.jsonl",
 )
+MIGRATION_JOURNAL_FORMAT_VERSION = 1
 
 
 def _file_sha256(path: Path) -> str:
@@ -151,10 +152,10 @@ def migrate_legacy_data(app_paths: "AppPaths | None" = None, *, legacy_root: str
     for name in _MIGRATABLE_DATA_FILES:
         source = source_root / name
         target = paths.root / name
-        if source.resolve() == target.resolve() or not source.is_file():
-            continue
         if source.is_symlink():
             events.append({"file": name, "outcome": "rejected_symlink"})
+            continue
+        if source.resolve() == target.resolve() or not source.is_file():
             continue
         try:
             source_hash = _file_sha256(source)
@@ -191,12 +192,17 @@ def migrate_legacy_data(app_paths: "AppPaths | None" = None, *, legacy_root: str
         try:
             with journal.open("a", encoding="utf-8") as handle:
                 for event in events:
+                    event["format_version"] = MIGRATION_JOURNAL_FORMAT_VERSION
                     event["utc"] = datetime.now(timezone.utc).isoformat()
                     handle.write(json.dumps(event, separators=(",", ":")) + "\n")
                 handle.flush()
                 os.fsync(handle.fileno())
-        except OSError:
-            pass
+        except OSError as exc:
+            events.append({
+                "file": journal.name,
+                "outcome": "journal_failed",
+                "error_type": type(exc).__name__,
+            })
     return events
 
 
