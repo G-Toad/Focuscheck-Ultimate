@@ -826,6 +826,23 @@ def get_startup_dir() -> Path:
     return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
 
 
+def _quote_batch_argument(value: str | os.PathLike[str]) -> str:
+    """Quote a path for a generated batch file without enabling command syntax."""
+    text = os.fspath(value)
+    if "\r" in text or "\n" in text:
+        raise ValueError("batch arguments cannot contain line breaks")
+    # Percent expansion happens before command execution in batch files. A
+    # doubled percent survives that pass as a literal percent character.
+    text = text.replace("%", "%%")
+    # Escape command metacharacters even inside quotes so generated launchers
+    # remain data-only when installed below a specially named directory.
+    text = text.replace("^", "^^")
+    for character in "&|<>()":
+        text = text.replace(character, "^" + character)
+    text = text.replace('"', '""')
+    return f'"{text}"'
+
+
 def install_startup_launcher(
     base_dir: Path,
     python_executable: str,
@@ -838,17 +855,17 @@ def install_startup_launcher(
     supervisor_script = resolve_supervisor_entrypoint()
     launcher_path = startup_dir / STARTUP_SCRIPT_NAME
     if getattr(sys, "frozen", False):
-        cmd = f"\"{supervisor_script}\" --run "
+        cmd = f"{_quote_batch_argument(supervisor_script)} --run "
     else:
-        cmd = f"\"{python_executable}\" \"{supervisor_script}\" --run "
+        cmd = f"{_quote_batch_argument(python_executable)} {_quote_batch_argument(supervisor_script)} --run "
     cmd += (
-        f"--base-dir \"{base_dir}\" --check-interval {check_interval} "
+        f"--base-dir {_quote_batch_argument(base_dir)} --check-interval {check_interval} "
         f"--resume-gap {resume_gap} --restart-delay {restart_delay}"
     )
     content = (
         "@echo off\r\n"
-        "setlocal\r\n"
-        f"cd /d \"{base_dir}\"\r\n"
+        "setlocal DisableDelayedExpansion\r\n"
+        f"cd /d {_quote_batch_argument(base_dir)}\r\n"
         f"start \"FocusCheck Supervisor\" {cmd}\r\n"
         "endlocal\r\n"
     )

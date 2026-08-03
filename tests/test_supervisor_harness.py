@@ -43,6 +43,30 @@ class SupervisorEntrypointTests(unittest.TestCase):
             self.assertIn("FocusCheckSupervisor.exe", content)
             self.assertNotIn("focuscheck_supervisor.py", content)
 
+    def test_startup_launcher_escapes_batch_path_metacharacters(self):
+        import focuscheck_supervisor as supervisor
+
+        base_dir = Path(r"C:\Focus & Check (dev)%token!")
+        python_executable = r"C:\Python & Tools\python.exe"
+        supervisor_script = Path(r"C:\Focus & Check (dev)%token!\focuscheck_supervisor.py")
+        with tempfile.TemporaryDirectory() as temp_dir, \
+                mock.patch.object(supervisor.sys, "frozen", False, create=True), \
+                mock.patch.object(supervisor, "resolve_supervisor_entrypoint", return_value=supervisor_script), \
+                mock.patch.object(supervisor, "get_startup_dir", return_value=Path(temp_dir)):
+            launcher = supervisor.install_startup_launcher(
+                base_dir,
+                python_executable,
+                10,
+                90,
+                5,
+            )
+            content = launcher.read_text(encoding="ascii")
+
+        self.assertIn("setlocal DisableDelayedExpansion", content)
+        self.assertIn(r'"C:\Python ^& Tools\python.exe"', content)
+        self.assertIn(r'"C:\Focus ^& Check ^(dev^)%%token!"', content)
+        self.assertNotIn(r'--base-dir "C:\Focus & Check (dev)%token!"', content)
+
     def test_frozen_inner_heartbeat_pid_is_accepted_for_stop_handshake(self):
         from focuscheck_supervisor import FocusCheckSupervisor
 
