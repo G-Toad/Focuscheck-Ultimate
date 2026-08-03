@@ -151,6 +151,21 @@ class AppLifecycleTests(unittest.TestCase):
         app._runtime_state.is_effectively_paused.assert_called_once_with()
         dialog.assert_not_called()
 
+    def test_tray_toggle_uses_manual_pause_not_effective_guard_pause(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"tray_start_stop_enabled": True, "paused": True}
+        app._runtime_state = mock.Mock()
+        app._runtime_state.snapshot.manual_paused = False
+        app._tray_pause = mock.Mock(return_value=True)
+        app._tray_resume = mock.Mock(return_value=True)
+
+        self.assertTrue(App._tray_toggle_pause(app))
+
+        app._tray_pause.assert_called_once_with()
+        app._tray_resume.assert_not_called()
+
     def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
         from focuscheck.app import App
 

@@ -1582,7 +1582,15 @@ class App:
     def _tray_toggle_pause(self):
         if not bool(self.settings.get("tray_start_stop_enabled", True)):
             return False
-        if bool(self.settings.get("paused", False)):
+        runtime_state = getattr(self, "_runtime_state", None)
+        if runtime_state is not None:
+            try:
+                manually_paused = bool(runtime_state.snapshot.manual_paused)
+            except Exception:
+                manually_paused = bool(self.settings.get("manual_paused", self.settings.get("paused", False)))
+        else:
+            manually_paused = bool(self.settings.get("manual_paused", self.settings.get("paused", False)))
+        if manually_paused:
             return self._tray_resume()
         return self._tray_pause()
 

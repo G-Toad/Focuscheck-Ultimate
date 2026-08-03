@@ -171,6 +171,8 @@ Current checkpoint addition: The current runtime-state slice routes gentle-remin
 
 Current checkpoint addition: The latest `e0c6642` runtime-state checkpoint passes the full verifier with `396` unittest cases and all 18 bounded stages; the report remains partial because native/manual evidence is not run.
 
+Current checkpoint addition: The current tray-state slice selects Pause/Resume from coordinator-owned manual intent rather than compatibility effective-pause state; live tray guard/snooze evidence remains pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
