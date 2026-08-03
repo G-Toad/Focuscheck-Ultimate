@@ -3,6 +3,7 @@
 import sys
 import os
 import platform as _platform
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,19 +36,32 @@ def _startup_launcher_path() -> Path | None:
     return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "RunFocusCheckSupervisor.cmd"
 
 
+def _quote_startup_argument(value: str | os.PathLike[str]) -> str:
+    """Quote one executable/path argument for the registry startup command."""
+    text = os.fspath(value)
+    if "\r" in text or "\n" in text:
+        raise ValueError("startup arguments cannot contain line breaks")
+    quoted = subprocess.list2cmdline([text])
+    if not (quoted.startswith('"') and quoted.endswith('"')):
+        quoted = f'"{quoted}"'
+    return quoted
+
+
 def compose_startup_command(entrypoint=None):
     """Generate command for Windows startup."""
     try:
         if getattr(sys, 'frozen', False):
             child = Path(sys.executable).resolve()
             supervisor = child.with_name("FocusCheckSupervisor.exe")
-            return f'"{supervisor}" --run --base-dir "{child.parent}"'
+            return f'{_quote_startup_argument(supervisor)} --run --base-dir {_quote_startup_argument(child.parent)}'
         if entrypoint is None:
             root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             entrypoint = os.path.join(root, "focuscheck_supervisor.py")
         supervisor = os.path.abspath(entrypoint)
         root = os.path.dirname(supervisor)
-        return f'"{sys.executable}" "{supervisor}" --run --base-dir "{root}"'
+        return f'{_quote_startup_argument(sys.executable)} {_quote_startup_argument(supervisor)} --run --base-dir {_quote_startup_argument(root)}'
+    except ValueError:
+        raise
     except Exception:
         return os.path.abspath(entrypoint or sys.argv[0] or __file__)
 

@@ -1191,6 +1191,21 @@ class StartupCommandTests(unittest.TestCase):
         self.assertIn('"C:\\FocusCheck\\focuscheck_supervisor.py"', command)
         self.assertIn('--run --base-dir "C:\\FocusCheck"', command)
 
+    def test_startup_command_quotes_special_paths_and_rejects_line_breaks(self):
+        from focuscheck.platform_specific import startup
+
+        with mock.patch.object(startup.sys, "frozen", False, create=True), \
+                mock.patch.object(startup.sys, "executable", r"C:\Python & Tools\python.exe"):
+            command = startup.compose_startup_command(
+                r"C:\Focus & Check (dev)%token!\focuscheck_supervisor.py"
+            )
+
+        self.assertIn(r'"C:\Python & Tools\python.exe"', command)
+        self.assertIn(r'"C:\Focus & Check (dev)%token!\focuscheck_supervisor.py"', command)
+        self.assertIn(r'--base-dir "C:\Focus & Check (dev)%token!"', command)
+        with self.assertRaises(ValueError):
+            startup.compose_startup_command("C:\\FocusCheck\\bad\npath.py")
+
     def test_install_startup_writes_registry_command(self):
         from focuscheck.platform_specific import startup
 
