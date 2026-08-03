@@ -1084,6 +1084,42 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HICON], user32.DestroyIcon.argtypes)
         self.assertEqual([wintypes.HINSTANCE, ctypes.c_void_p], user32.LoadIconW.argtypes)
 
+    def test_watcher_message_classifier_covers_session_power_display_tray_and_shutdown(self):
+        from focuscheck.platform_specific import windows
+
+        tray_message = 0x0401
+        taskbar_created = 0xC001
+        cases = [
+            (windows.WM_WTSSESSION_CHANGE, windows.WTS_SESSION_LOCK, 0, ("pause", "lock")),
+            (windows.WM_WTSSESSION_CHANGE, windows.WTS_SESSION_UNLOCK, 0, ("resume", None)),
+            (windows.WM_POWERBROADCAST, windows.PBT_APMSUSPEND, 0, ("pause", "sleep")),
+            (windows.WM_POWERBROADCAST, windows.PBT_APMRESUMEAUTOMATIC, 0, ("resume", None)),
+            (windows.WM_POWERBROADCAST, windows.PBT_APMRESUMESUSPEND, 0, ("resume", None)),
+            (windows.WM_POWERBROADCAST, windows.PBT_APMRESUMESTANDBY, 0, ("resume", None)),
+            (windows.WM_DISPLAYCHANGE, 0, 0, ("display_change", None)),
+            (windows.WM_DPICHANGED, 0, 0, ("display_change", None)),
+            (tray_message, 0, windows.WM_LBUTTONUP, ("tray_click", windows.WM_LBUTTONUP)),
+            (tray_message, 0, windows.WM_CONTEXTMENU, ("tray_click", windows.WM_CONTEXTMENU)),
+            (windows.WM_QUERYENDSESSION, 0, 0, ("shutdown", "query_end_session")),
+            (windows.WM_ENDSESSION, 1, 0, ("shutdown", "end_session")),
+            (taskbar_created, 0, 0, ("taskbar_created", None)),
+        ]
+        for msg, wparam, lparam, expected in cases:
+            with self.subTest(msg=msg, wparam=wparam, lparam=lparam):
+                self.assertEqual(
+                    expected,
+                    windows.classify_watcher_message(
+                        msg,
+                        wparam,
+                        lparam,
+                        tray_message=tray_message,
+                        taskbar_created=taskbar_created,
+                    ),
+                )
+        self.assertIsNone(windows.classify_watcher_message(windows.WM_ENDSESSION, 0, 0))
+        self.assertIsNone(windows.classify_watcher_message(tray_message, 0, 0, tray_message=tray_message))
+        self.assertIsNone(windows.classify_watcher_message(0x9999, 0, 0))
+
     def test_watcher_ui_callbacks_are_cancelled_when_closed(self):
         from focuscheck.platform_specific import windows
         from focuscheck.utils.timers import TimerRegistry

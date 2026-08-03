@@ -41,6 +41,10 @@ HTTRANSPARENT = -1
 WM_LBUTTONUP = 0x0202
 WM_RBUTTONUP = 0x0205
 WM_CONTEXTMENU = 0x007B
+WM_DISPLAYCHANGE = 0x007E
+WM_QUERYENDSESSION = 0x0011
+WM_ENDSESSION = 0x0016
+WM_DPICHANGED = 0x02E0
 
 # Windows session / power constants
 WM_WTSSESSION_CHANGE = 0x02B1
@@ -51,6 +55,31 @@ PBT_APMSUSPEND = 0x0004
 PBT_APMRESUMESUSPEND = 0x0007
 PBT_APMRESUMESTANDBY = 0x0008
 PBT_APMRESUMEAUTOMATIC = 0x0012
+
+
+def classify_watcher_message(msg, wparam, lparam, *, tray_message=0, taskbar_created=0):
+    """Translate native watcher messages into platform-independent events."""
+    if msg == WM_WTSSESSION_CHANGE:
+        if wparam == WTS_SESSION_UNLOCK:
+            return ("resume", None)
+        if wparam == WTS_SESSION_LOCK:
+            return ("pause", "lock")
+    elif msg == WM_POWERBROADCAST:
+        if wparam in (PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMRESUMESTANDBY):
+            return ("resume", None)
+        if wparam == PBT_APMSUSPEND:
+            return ("pause", "sleep")
+    elif msg in (WM_DISPLAYCHANGE, WM_DPICHANGED):
+        return ("display_change", None)
+    elif tray_message and msg == tray_message and int(lparam) in (WM_RBUTTONUP, WM_LBUTTONUP, WM_CONTEXTMENU):
+        return ("tray_click", int(lparam))
+    elif msg == WM_QUERYENDSESSION:
+        return ("shutdown", "query_end_session")
+    elif msg == WM_ENDSESSION and bool(wparam):
+        return ("shutdown", "end_session")
+    elif taskbar_created and msg == taskbar_created:
+        return ("taskbar_created", None)
+    return None
 
 # GDI+ token (global)
 _GDIPLUS_TOKEN = None
@@ -716,10 +745,6 @@ class WindowsWakeWatcher:
         # WNDPROC prototype (pointer-sized return type)
         WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
 
-        WM_DISPLAYCHANGE = 0x007E
-        WM_DPICHANGED = 0x02E0
-        WM_QUERYENDSESSION = 0x0011
-        WM_ENDSESSION = 0x0016
         WM_USER = 0x0400
         self._TRAY_MSG = WM_USER + 1
         # Re-add tray icon after Explorer restarts
@@ -731,45 +756,35 @@ class WindowsWakeWatcher:
         @WNDPROC
         def _proc(hwnd, msg, wParam, lParam):
             try:
-                if msg == WM_WTSSESSION_CHANGE:
-                    if wParam == WTS_SESSION_UNLOCK:
-                        # Resume immediately on unlock
-                        self._schedule_ui("session-resume", 0, self.on_resume)
-                    elif wParam == WTS_SESSION_LOCK:
-                        # Pause immediately on lock
-                        if self.on_pause:
-                            self._schedule_ui("session-lock", 0, lambda: self.on_pause("lock"))
-                elif msg == WM_POWERBROADCAST:
-                    if wParam in (PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND, PBT_APMRESUMESTANDBY):
-                        # Resume immediately on wake
-                        self._schedule_ui("power-resume", 0, self.on_resume)
-                    elif wParam == PBT_APMSUSPEND:
-                        # Pause immediately on suspend
-                        if self.on_pause:
-                            self._schedule_ui("power-sleep", 0, lambda: self.on_pause("sleep"))
-                elif msg in (WM_DISPLAYCHANGE, WM_DPICHANGED):
+                event = classify_watcher_message(
+                    msg,
+                    wParam,
+                    lParam,
+                    tray_message=self._TRAY_MSG,
+                    taskbar_created=self._TaskbarCreated,
+                )
+                if event == ("resume", None):
+                    self._schedule_ui("session-resume", 0, self.on_resume)
+                elif event and event[0] == "pause":
+                    if self.on_pause:
+                        self._schedule_ui(f"session-{event[1]}", 0, lambda reason=event[1]: self.on_pause(reason))
+                elif event == ("display_change", None):
                     if self.on_display_change:
                         self._schedule_ui("display-change", 50, self.on_display_change)
-                elif msg == self._TRAY_MSG:
+                elif event and event[0] == "tray_click":
                     if self.on_tray_click:
-                        msg_code = int(lParam)
-                        if msg_code in (WM_RBUTTONUP, WM_LBUTTONUP, WM_CONTEXTMENU):
-                            self._schedule_ui("tray-click", 0, lambda m=msg_code: self.on_tray_click(m))
-                elif msg == WM_QUERYENDSESSION:
+                        self._schedule_ui("tray-click", 0, lambda code=event[1]: self.on_tray_click(code))
+                elif event == ("shutdown", "query_end_session"):
                     if self.on_shutdown:
                         self._schedule_ui("query-end-session", 0, lambda: self.on_shutdown("query_end_session"))
                     return LRESULT(1)
-                elif msg == WM_ENDSESSION:
-                    if bool(wParam) and self.on_shutdown:
-                        self._schedule_ui("end-session", 0, lambda: self.on_shutdown("end_session"))
-                elif self._TaskbarCreated and msg == self._TaskbarCreated:
-                    # Explorer restarted; re-add tray icon
-                    try:
-                        self._tray_added = False
-                        if self._tray_enabled:
-                            self._schedule_ui("taskbar-created", 200, lambda: self._tray_add("Focus Check"))
-                    except Exception:
-                        pass
+                elif event == ("shutdown", "end_session") and self.on_shutdown:
+                    self._schedule_ui("end-session", 0, lambda: self.on_shutdown("end_session"))
+                elif event == ("taskbar_created", None):
+                    # Explorer restarted; re-add tray icon.
+                    self._tray_added = False
+                    if self._tray_enabled:
+                        self._schedule_ui("taskbar-created", 200, lambda: self._tray_add("Focus Check"))
             except Exception:
                 pass
             try:
@@ -1070,6 +1085,7 @@ __all__ = [
     'enable_click_through_windows',
     'install_httransparent_wndproc',
     'WindowsWakeWatcher',
+    'classify_watcher_message',
     'WinClickThroughOverlay',
     'ensure_gdiplus_started',
     'gdiplus_shutdown',
