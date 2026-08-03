@@ -727,6 +727,17 @@ class AppLifecycleTests(unittest.TestCase):
         app.lifecycle = object()
         self.assertEqual("ready", App._lifecycle_readiness(app))
 
+    def test_heartbeat_lifecycle_snapshot_accepts_mapping_or_missing_adapter(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.lifecycle = mock.Mock()
+        app.lifecycle.snapshot = {"phase": "ready"}
+        self.assertEqual({"phase": "ready"}, App._lifecycle_snapshot(app))
+
+        app.lifecycle = object()
+        self.assertEqual({}, App._lifecycle_snapshot(app))
+
     def test_diagnostic_status_exposes_bounded_health_components(self):
         from focuscheck.app import App
 

@@ -2079,6 +2079,15 @@ class App:
         value = getattr(phase, "value", phase)
         return str(value or LifecyclePhase.READY.value)
 
+    def _lifecycle_snapshot(self) -> dict:
+        """Return optional lifecycle metadata without trusting adapter shape."""
+        snapshot = getattr(getattr(self, "lifecycle", None), "snapshot", None)
+        try:
+            value = snapshot() if callable(snapshot) else snapshot
+        except Exception:
+            return {}
+        return dict(value) if isinstance(value, dict) else {}
+
     def _tray_show_status(self):
         """Show a small privacy-safe health window on the Tk owner thread."""
         def _show():
@@ -2732,7 +2741,7 @@ class App:
                 "sequence": self._heartbeat_sequence,
                 "heartbeat_interval_seconds": FILE_HEARTBEAT_INTERVAL_SECONDS / 1000,
                 "readiness": self._lifecycle_readiness(),
-                "lifecycle": getattr(getattr(self, "lifecycle", None), "snapshot", lambda: {})(),
+                "lifecycle": self._lifecycle_snapshot(),
                 "tk_pulse": True,
                 "paused": effective_paused,
                 "effective_paused": effective_paused,
