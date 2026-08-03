@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-03T03:40:50.270765+00:00",
-  "commit": "badd37329da987645de0f6505b4e2a8a719c4857",
+  "generated_utc": "2026-08-03T03:46:51.453995+00:00",
+  "commit": "da6a9d268826044348e82ff31139313b9a982e85",
   "repository": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3",
   "environment": {
     "python": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]",
@@ -41,7 +41,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 20312,
+      "elapsed_ms": 20578,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\unittest.log"
     },
     {
@@ -52,7 +52,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5016,
+      "elapsed_ms": 5108,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\mutation_smoke.log"
     },
     {
@@ -63,7 +63,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 12891,
+      "elapsed_ms": 12921,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\source_supervisor_selftest.log"
     },
     {
@@ -74,7 +74,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 6546,
+      "elapsed_ms": 6483,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\state_restart_selftest.log"
     },
     {
@@ -87,7 +87,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 907,
+      "elapsed_ms": 828,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\qa_scenario_runner.log"
     },
     {
@@ -99,7 +99,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 702,
+      "elapsed_ms": 671,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\main_selftest.log"
     },
     {
@@ -111,7 +111,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 594,
+      "elapsed_ms": 532,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\tray_selftest.log"
     },
     {
@@ -122,7 +122,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 3015,
+      "elapsed_ms": 2983,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\native_overlay_selftest.log"
     },
     {
@@ -133,7 +133,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 1640,
+      "elapsed_ms": 1641,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\resource_leak_selftest.log"
     },
     {
@@ -144,7 +144,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 10140,
+      "elapsed_ms": 10390,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\settings_inventory.log"
     },
     {
@@ -155,7 +155,7 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 609,
+      "elapsed_ms": 640,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\diagnostic_bundle.log"
     },
     {
@@ -181,8 +181,19 @@
       ],
       "status": "passed",
       "exit_code": 0,
-      "elapsed_ms": 5172,
+      "elapsed_ms": 5078,
       "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\performance_soak.log"
+    },
+    {
+      "name": "test_category_inventory",
+      "command": [
+        "C:\\Users\\singh\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+        "tools/test_category_inventory.py"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_ms": 109,
+      "log": "C:\\Users\\singh\\Documents\\Projects\\FocusCheck_newest_20260802_221221\\3\\_verify_runtime\\test_category_inventory.log"
     },
     {
       "name": "profile_isolation",
@@ -222,8 +233,22 @@
   ],
   "tests": {
     "status": "passed",
-    "count": 334,
+    "count": 335,
     "failure_summary": null
+  },
+  "test_categories": {
+    "status": "passed",
+    "automated": [
+      "persistence",
+      "pure_unit",
+      "simulated_app",
+      "withdrawn_tk"
+    ],
+    "manual": [
+      "destructive_manual_opt_in",
+      "live_windows",
+      "manual_only"
+    ]
   },
   "manual_required": [
     "live tray and Tk interaction",
