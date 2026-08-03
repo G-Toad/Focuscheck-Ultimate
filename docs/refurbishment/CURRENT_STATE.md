@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `332` unittest cases passing.
+- Current automated baseline after hardening: `334` unittest cases passing.
 - The verifier now has `17` passing bounded stages, including real-entrypoint pause/snooze restart integration.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.
 - In the composed application path, the Advanced Settings window delegates persistence through the App boundary rather than calling the settings repository directly.
@@ -15,6 +15,7 @@
 - App status and heartbeat payloads consume the view and expose `runtime_revision` plus pause reason metadata.
 - Pystray post-start health checks are now tracked as cancellable owned timers and cannot outlive tray shutdown.
 - V1/V2 prompt-footer Settings windows now inherit the App persistence boundary instead of using repository fallback in the composed path.
+- Verification timeouts now terminate only the timed-out stage PID tree, and reports include commit/environment/test summary/manual requirements/process leaks with `partial` status when release gates remain manual.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.

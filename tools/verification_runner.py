@@ -11,6 +11,8 @@ import argparse
 import hashlib
 import json
 import os
+import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -28,6 +30,13 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "_verify_runtime"
 REPORT = RUNTIME / "verification.json"
 TRACKED_REPORT = ROOT / "docs" / "refurbishment" / "verification-report.json"
+MANUAL_GATES = [
+    "live tray and Tk interaction",
+    "Windows startup registry and real supervisor restart",
+    "browser/window activity provider matrix",
+    "native lock/sleep/resume and monitor overlay behavior",
+    "release packaging and install/uninstall lifecycle",
+]
 
 
 def snapshot_tree(root: Path) -> dict[str, str]:
@@ -49,32 +58,107 @@ def snapshot_tree(root: Path) -> dict[str, str]:
     return snapshot
 
 
+def _terminate_process_tree(process: subprocess.Popen) -> dict[str, object]:
+    """Stop only the timed-out stage and descendants, never by image name."""
+    pid = int(process.pid)
+    if os.name == "nt":
+        completed = subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(pid)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return {
+            "method": "taskkill_pid_tree",
+            "pid": pid,
+            "exit_code": completed.returncode,
+        }
+
+    try:
+        os.killpg(pid, __import__("signal").SIGKILL)
+        return {"method": "killpg", "pid": pid, "exit_code": 0}
+    except (AttributeError, OSError) as exc:
+        try:
+            process.kill()
+            return {"method": "process_kill", "pid": pid, "exit_code": 0}
+        except OSError as kill_exc:
+            return {
+                "method": "process_kill",
+                "pid": pid,
+                "exit_code": None,
+                "error": f"{type(exc).__name__}: {exc}; {type(kill_exc).__name__}: {kill_exc}",
+            }
+
+
+def _git_commit() -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return completed.stdout.strip() or None
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _test_summary(results: list[dict]) -> dict[str, object]:
+    for result in results:
+        if result["name"] != "unittest":
+            continue
+        try:
+            text = Path(result["log"]).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return {"status": result["status"], "count": None}
+        match = re.search(r"Ran\s+(\d+)\s+tests?", text)
+        failures = re.search(r"FAILED \(([^)]*)\)", text)
+        return {
+            "status": result["status"],
+            "count": int(match.group(1)) if match else None,
+            "failure_summary": failures.group(1) if failures else None,
+        }
+    return {"status": "not_run", "count": None}
+
+
 def run_stage(name: str, args: list[str], env: dict[str, str], timeout: int) -> dict:
     start = time.monotonic()
     log_path = RUNTIME / f"{name}.log"
+    creationflags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if os.name == "nt" else 0
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             args,
             cwd=ROOT,
             env=env,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
-            check=False,
+            start_new_session=os.name != "nt",
+            creationflags=creationflags,
         )
-        output = (completed.stdout or "") + (completed.stderr or "")
+        stdout, stderr = process.communicate(timeout=timeout)
+        output = (stdout or "") + (stderr or "")
         log_path.write_text(output, encoding="utf-8", errors="replace")
         return {
             "name": name,
             "command": args,
-            "status": "passed" if completed.returncode == 0 else "failed",
-            "exit_code": completed.returncode,
+            "status": "passed" if process.returncode == 0 else "failed",
+            "exit_code": process.returncode,
             "elapsed_ms": int((time.monotonic() - start) * 1000),
             "log": str(log_path),
         }
     except subprocess.TimeoutExpired as exc:
         output = (exc.stdout or b"").decode(errors="replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         output += (exc.stderr or b"").decode(errors="replace") if isinstance(exc.stderr, bytes) else (exc.stderr or "")
+        cleanup = _terminate_process_tree(process)
+        try:
+            trailing_stdout, trailing_stderr = process.communicate(timeout=5)
+            output += (trailing_stdout or "") + (trailing_stderr or "")
+        except subprocess.TimeoutExpired:
+            process.kill()
+            trailing_stdout, trailing_stderr = process.communicate()
+            output += (trailing_stdout or "") + (trailing_stderr or "")
         log_path.write_text(output, encoding="utf-8", errors="replace")
         return {
             "name": name,
@@ -84,6 +168,7 @@ def run_stage(name: str, args: list[str], env: dict[str, str], timeout: int) -> 
             "elapsed_ms": int((time.monotonic() - start) * 1000),
             "timeout_seconds": timeout,
             "log": str(log_path),
+            "cleanup": cleanup,
         }
 
 
@@ -169,19 +254,23 @@ def main() -> int:
         "leaked_processes": leaked_processes,
         "error": process_error,
     })
+    automated_pass = all(result["status"] == "passed" for result in results)
     payload = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "commit": _git_commit(),
         "repository": str(ROOT),
+        "environment": {
+            "python": sys.version,
+            "platform": platform.platform(),
+            "executable": sys.executable,
+        },
         "isolated_data_dir": str(data_dir),
         "live_profile_unchanged": isolation_ok,
         "results": results,
-        "manual_gates": [
-            "live tray and Tk interaction",
-            "Windows startup registry and real supervisor restart",
-            "browser/window activity provider matrix",
-            "native lock/sleep/resume and monitor overlay behavior",
-            "release packaging and install/uninstall lifecycle",
-        ],
+        "tests": _test_summary(results),
+        "manual_required": MANUAL_GATES,
+        "process_leaks": leaked_processes,
+        "result": "fail" if not automated_pass else ("partial" if MANUAL_GATES else "pass"),
     }
     REPORT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     TRACKED_REPORT.parent.mkdir(parents=True, exist_ok=True)

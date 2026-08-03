@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,10 +35,31 @@ class VerificationRunnerTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir, mock.patch("tools.verification_runner.RUNTIME", Path(temp_dir)):
             Path(temp_dir).mkdir(exist_ok=True)
-            with mock.patch("tools.verification_runner.subprocess.run", side_effect=__import__("subprocess").TimeoutExpired(["fake"], 1)):
-                result = run_stage("slow", ["fake"], {}, 1)
+            result = run_stage("slow", [sys.executable, "-c", "import time; time.sleep(30)"], {}, 1)
             self.assertEqual("timeout", result["status"])
             self.assertTrue(Path(result["log"]).exists())
+            self.assertEqual("process_kill" if os.name != "nt" else "taskkill_pid_tree", result["cleanup"]["method"])
+
+    def test_timeout_cleanup_does_not_target_processes_by_image_name(self):
+        from tools.verification_runner import _terminate_process_tree
+
+        process = mock.Mock(pid=1234)
+        with mock.patch("tools.verification_runner.os.name", "nt"), mock.patch(
+            "tools.verification_runner.subprocess.run"
+        ) as run:
+            run.return_value.returncode = 0
+            result = _terminate_process_tree(process)
+        self.assertEqual("taskkill_pid_tree", result["method"])
+        self.assertEqual(["taskkill", "/F", "/T", "/PID", "1234"], run.call_args.args[0])
+
+    def test_report_contains_required_machine_readable_fields(self):
+        from tools.verification_runner import _test_summary
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log = Path(temp_dir) / "unittest.log"
+            log.write_text("Ran 12 tests in 0.1s\nOK\n", encoding="utf-8")
+            summary = _test_summary([{"name": "unittest", "status": "passed", "log": str(log)}])
+        self.assertEqual({"status": "passed", "count": 12, "failure_summary": None}, summary)
 
     def test_report_is_json_serializable(self):
         payload = {"status": "passed", "manual_gates": ["Tk"]}
