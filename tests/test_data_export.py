@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 
 class DataExportTests(unittest.TestCase):
@@ -173,6 +174,26 @@ class DataExportTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 export_data(root, source, overwrite=True)
             self.assertEqual("safe", source.read_text(encoding="utf-8"))
+
+    def test_export_rejects_source_mutation_before_promoting_archive(self):
+        from focuscheck.utils.data_export import export_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir) / "data"
+            root.mkdir()
+            source = root / "focus_log.csv"
+            source.write_text("before", encoding="utf-8")
+            output = Path(temp_dir) / "export.zip"
+            original_write = zipfile.ZipFile.write
+
+            def mutate_before_write(archive, filename, arcname=None, compress_type=None):
+                Path(filename).write_text("after", encoding="utf-8")
+                return original_write(archive, filename, arcname=arcname, compress_type=compress_type)
+
+            with mock.patch.object(zipfile.ZipFile, "write", autospec=True, side_effect=mutate_before_write):
+                with self.assertRaises(ValueError):
+                    export_data(root, output)
+            self.assertFalse(output.exists())
 
     def test_data_operations_reject_symlinked_root(self):
         from focuscheck.utils.data_export import clear_data, export_data, inventory_data

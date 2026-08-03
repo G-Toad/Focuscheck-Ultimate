@@ -106,6 +106,10 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
                 })
                 archive.write(path, arcname=relative)
             archive.writestr("EXPORT_MANIFEST.json", json.dumps(manifest, indent=2, sort_keys=True))
+        # Hashing and ZIP writing are separate filesystem reads. Validate the
+        # completed temporary archive so a concurrent source mutation cannot
+        # produce a promoted export whose manifest lies about its contents.
+        validate_export(temporary)
         os.replace(temporary, output)
         return manifest
     finally:
