@@ -251,6 +251,8 @@ Compatibility correction: Standalone V2 adapters now apply the same shutdown sup
 
 Guard safety correction: Standalone V2 website checks now fail closed when native guard sampling raises, rather than treating an unknown lock/idle state as permission to intervene.
 
+Export safety correction: Export destinations now retain their lexical path identity until symlink checks complete, rejecting symlinked outputs before overwrite or promotion and preserving the external target.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -272,6 +274,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `444` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `13c190b`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `445` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `ba11afc`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
