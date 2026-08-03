@@ -135,12 +135,33 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "settings_loader", "settings_saver", "sqlite_connection_factory", "task_db_factory", "tray_factory", "watcher_factory",
-                "heartbeat_writer", "camera_capture_factory",
+                "heartbeat_writer", "camera_capture_factory", "filesystem",
             },
             set(deps.__dataclass_fields__),
         )
         self.assertIs(settings_loader, deps.settings_loader)
         self.assertIs(task_db_factory, deps.task_db_factory)
+
+    def test_filesystem_dependency_controls_app_data_root_creation(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from focuscheck.utils.paths import get_app_paths
+
+        class FileSystemProbe:
+            def __init__(self):
+                self.calls = []
+
+            def mkdir(self, path, **kwargs):
+                self.calls.append((Path(path), kwargs))
+                Path(path).mkdir(**kwargs)
+
+        with TemporaryDirectory() as temp_dir:
+            probe = FileSystemProbe()
+            paths = get_app_paths(Path(temp_dir) / "composed", filesystem=probe)
+
+        self.assertEqual(1, len(probe.calls))
+        self.assertEqual(paths.root, probe.calls[0][0])
+        self.assertEqual({"parents": True, "exist_ok": True}, probe.calls[0][1])
 
     def test_single_instance_mutex_handle_is_released(self):
         import focuscheck.utils.file_ops as file_ops

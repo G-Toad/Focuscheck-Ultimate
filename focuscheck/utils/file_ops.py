@@ -8,6 +8,7 @@ import os
 import platform
 import ctypes
 import threading
+from pathlib import Path
 
 
 # File locks for thread-safe access
@@ -16,6 +17,13 @@ _file_locks_lock = threading.Lock()
 
 # Single instance management
 _single_instance_handle = None
+
+
+class FileSystem:
+    """Small injectable boundary for application-owned filesystem effects."""
+
+    def mkdir(self, path, *, parents=True, exist_ok=True):
+        Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
 
 def get_file_lock(file_path):

@@ -2,6 +2,8 @@
 
 The current automated baseline is `487` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
+The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage; the post-push verifier refresh will update this baseline to `488` tests if the committed tree remains green.
+
 - The current verifier has `19` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.
 - Child settings regression coverage verifies camera and crop saves use the injected App callback and apply normalized committed values only after durable success.

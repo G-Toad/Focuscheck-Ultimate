@@ -255,13 +255,20 @@ class AppPaths:
     temp: Path
 
 
-def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
+def get_app_paths(
+    data_dir: str | os.PathLike[str] | None = None,
+    *,
+    filesystem=None,
+) -> AppPaths:
     """Return one canonical, created path set for the selected data root."""
     root = Path(data_dir) if data_dir is not None else Path(get_data_dir())
     # Runtime composition must not silently follow an unexpected filesystem
     # target supplied through the data-root override or a moved parent.
     _reject_symlinked_path(root, "application data root")
-    root.mkdir(parents=True, exist_ok=True)
+    if filesystem is None:
+        root.mkdir(parents=True, exist_ok=True)
+    else:
+        filesystem.mkdir(root, parents=True, exist_ok=True)
     if root.is_symlink():
         raise ValueError(f"refusing symlinked application data root: {root}")
     return AppPaths(
