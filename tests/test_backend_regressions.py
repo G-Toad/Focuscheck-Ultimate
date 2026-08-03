@@ -404,6 +404,45 @@ class ImportHardeningTests(unittest.TestCase):
         )
         self.assertEqual("active", active["state"])
         self.assertEqual("granted", active["access"])
+        self.assertEqual(
+            "ready",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+            )["state"],
+        )
+        self.assertEqual(
+            "degraded",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+                device_open=True,
+                stream_active=True,
+                degraded=True,
+            )["state"],
+        )
+        self.assertEqual(
+            "failed",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+                device_open=False,
+                error=OSError("camera access denied"),
+            )["state"],
+        )
+        self.assertEqual(
+            "denied",
+            build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+                device_open=True,
+                access="denied",
+            )["access"],
+        )
 
     def test_camera_modules_import_without_opencv(self):
         import focuscheck.ui.camera.adjustment_helpers as helpers
@@ -420,6 +459,48 @@ class ImportHardeningTests(unittest.TestCase):
         mixin._camera_capture = None
         self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
         self.assertNotEqual(Path.cwd() / "camera_photos", mixin._get_camera_photos_directory())
+
+    def test_camera_photo_capture_handles_read_failure_without_writing(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        class Capture:
+            def read(self):
+                return False, None
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin.settings = {"camera_capture_on_click": True}
+        mixin._camera_capture = Capture()
+        mixin._camera_mode = "live"
+
+        with mock.patch.object(CameraFeedMixin, "_get_camera_photos_directory") as directory:
+            directory.return_value = Path(tempfile.mkdtemp()) / "camera_photos"
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed.cv2") as cv2:
+                self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
+                cv2.imwrite.assert_not_called()
+
+    def test_camera_photo_capture_removes_partial_file_when_encoder_fails(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        class Capture:
+            def read(self):
+                return True, object()
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        mixin.settings = {"camera_capture_on_click": True}
+        mixin._camera_capture = Capture()
+        mixin._camera_mode = "live"
+        photo_root = Path(tempfile.mkdtemp()) / "camera_photos"
+
+        def failed_write(path, _frame):
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            Path(path).write_bytes(b"partial")
+            return False
+
+        with mock.patch.object(CameraFeedMixin, "_get_camera_photos_directory", return_value=photo_root):
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed.cv2") as cv2:
+                cv2.imwrite.side_effect = failed_write
+                self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
+                self.assertEqual([], list(photo_root.glob("*")))
 
     def test_camera_feed_generation_invalidates_dequeued_callbacks(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
