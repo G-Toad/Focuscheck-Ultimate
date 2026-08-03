@@ -272,9 +272,10 @@ def enable_click_through_windows(hwnd):
             _ = SetWindowLongW(hwnd, GWL_EXSTYLE, ctypes.c_long(exstyle))
         # Nudge the window manager so the style takes effect immediately
         SWP_FRAMECHANGED = 0x0020
-        user32.SetWindowPos(hwnd, None, 0, 0, 0, 0,
-                            SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED)
-        return True
+        return bool(user32.SetWindowPos(
+            hwnd, None, 0, 0, 0, 0,
+            SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+        ))
     except Exception:
         return False
 
@@ -375,7 +376,9 @@ class WinClickThroughOverlay:
                 ("lpszClassName", wintypes.LPCWSTR),
                 ("hIconSm", wintypes.HICON),
             ]
-        WNDPROC = ctypes.WINFUNCTYPE(LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T)
+        WNDPROC = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)(
+            LRESULT, wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T
+        )
         @WNDPROC
         def _proc(h, msg, wParam, lParam):
             # Always pass mouse through

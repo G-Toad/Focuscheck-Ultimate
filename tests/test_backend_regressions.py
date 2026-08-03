@@ -1152,13 +1152,41 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual(
             [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
              ctypes.c_int, ctypes.c_int, wintypes.UINT],
-            user32.SetWindowPos.argtypes,
+             user32.SetWindowPos.argtypes,
         )
         self.assertEqual(
             [ctypes.c_void_p, wintypes.HWND, wintypes.UINT,
              windows.WPARAM_T, windows.LPARAM_T],
             user32.CallWindowProcW.argtypes,
         )
+
+    def test_click_through_reports_window_position_failure(self):
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self, result=True):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, *_args):
+                return self.result
+
+        for result in (True, False):
+            with self.subTest(result=result):
+                user32 = type(
+                    "User32",
+                    (),
+                    {
+                        "GetWindowLongPtrW": Api(0),
+                        "SetWindowLongPtrW": Api(1),
+                        "SetWindowPos": Api(result),
+                        "CallWindowProcW": Api(1),
+                        "DefWindowProcW": Api(1),
+                    },
+                )()
+                with mock.patch.object(windows, "_user32", return_value=user32):
+                    self.assertEqual(result, windows.enable_click_through_windows(123))
 
     def test_dialog_window_style_helpers_declare_shared_native_signatures(self):
         import ctypes
