@@ -266,11 +266,13 @@ Export path correction: The same export boundary now rejects symlinked parent co
 | E Supervisor/startup | Partial | Supervisor regressions and bounded real-process scenarios cover generation-bound stop, crash/restart, heartbeat hang recovery, circuit-breaker behavior, and reaping; live sleep/resume, native startup, and target-machine evidence remain absent. |
 | F Tk/tray/UI | Unverified | Source tests, headless hand-built/schema-generated Settings round trips, and self-tests exist, but owner-thread, tray uniqueness, deterministic dialog cleanup, persistence-error UI evidence, and interactive Settings review are incomplete. |
 | G Prompts/interventions | Partial | Selected cancellation/cooldown behavior is tested; full V1/V2 matrices and orphan-overlay evidence are absent. |
-| H Windows native | Unverified | No complete ctypes/resource audit or live lock/sleep/resume/multi-monitor/DPI evidence. |
+| H Windows native | Partial | Native API signatures, resource ownership, deterministic watcher-message classification, and bounded overlay/resource self-tests are covered; live lock/sleep/resume, Explorer, multi-monitor, DPI, and hardware evidence remain absent. |
 | I Tasks/logs/privacy | Partial | DB migration safety, logs, allowlisted export, complete known-artifact metadata inventory, confirmed user-facing clear controls, packaged retention, and diagnostic preview/sanitization hardening pass; export privacy evidence, complete privacy controls, and versioned recovery remain incomplete. |
 | J Release evidence | Not met | Manual checklist is `not_run`; disposable upgrade/rollback/install lifecycle is tested, but target-machine installer/signing and release-package consistency evidence are not complete. |
 
 Runtime-state evidence correction: The isolated QA harness now evaluates all `256` combinations of manual pause, snooze, the three guard reasons, prompt/intervention activity, and shutdown state, including effective-pause reason precedence and prompt eligibility; the scenario passes with zero failures.
+
+Native event evidence correction: `WindowsWakeWatcher` now routes session, power, display/DPI, tray, shutdown, and taskbar-recreation messages through a pure classifier with a deterministic regression matrix; this validates translation and dispatch selection but does not replace live Windows event delivery evidence.
 
 ## Explicit Scope Boundary
 
@@ -280,6 +282,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `448` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `ee5808b`. The isolated QA runtime-state scenario covers `256` combinations with zero failures. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `449` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `6b86d3f`. The isolated QA runtime-state scenario covers `256` combinations with zero failures, and the native watcher classifier matrix covers session, power, display/DPI, tray, shutdown, and taskbar events. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
