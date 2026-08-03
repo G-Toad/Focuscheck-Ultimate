@@ -39,6 +39,7 @@ def format_status_snapshot(snapshot: dict) -> str:
         ("Tray backend", snapshot.get("tray_backend", "unknown")),
         ("Settings schema keys", snapshot.get("settings_schema_keys", "unknown")),
         ("Doctor anomalies", snapshot.get("doctor_anomalies", "unknown")),
+        ("Transition journal failures", snapshot.get("transition_sink_failures", "unknown")),
         ("Process ID", snapshot.get("pid", "unknown")),
         ("Data root", snapshot.get("data_root", "unknown")),
     )

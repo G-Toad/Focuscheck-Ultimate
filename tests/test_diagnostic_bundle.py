@@ -17,12 +17,14 @@ class DiagnosticBundleTests(unittest.TestCase):
             "version": "1.2.3",
             "lifecycle": "ready",
             "data_root": "C:/FocusCheck",
+            "transition_sink_failures": 2,
             "private_response": "should not appear",
             "url": "https://private.example/path",
         })
 
         self.assertIn("Version: 1.2.3", rendered)
         self.assertIn("Lifecycle: ready", rendered)
+        self.assertIn("Transition journal failures: 2", rendered)
         self.assertNotIn("should not appear", rendered)
         self.assertNotIn("private.example", rendered)
 
