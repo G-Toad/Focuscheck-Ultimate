@@ -20,6 +20,24 @@ except ImportError:
 class TaskManagementMixin:
     """Mixin for task management functionality in PromptDialog."""
 
+    def _task_now_utc(self):
+        """Return the composed runtime UTC clock, with a safe standalone fallback."""
+        source = getattr(self, "_task_clock", None)
+        if source is None:
+            runtime_state = getattr(getattr(self, "app_ref", None), "_runtime_state", None)
+            source = getattr(runtime_state, "clock", None)
+        if source is None:
+            source = getattr(getattr(self, "taskdb", None), "_clock", None)
+        try:
+            value = source() if callable(source) else source.now_utc()
+            if isinstance(value, datetime):
+                if value.tzinfo is None:
+                    value = value.replace(tzinfo=timezone.utc)
+                return value.astimezone(timezone.utc)
+        except (AttributeError, TypeError, ValueError, OverflowError):
+            pass
+        return datetime.now(timezone.utc)
+
     def _toggle_task_entry(self, _evt=None):
         """
         Toggle inline task entry form visibility.
@@ -166,7 +184,7 @@ class TaskManagementMixin:
             if due_iso:
                 due_dt = datetime.fromisoformat(due_iso)
                 local_due = due_dt.astimezone().strftime("%Y-%m-%d %H:%M")
-                now = datetime.now(timezone.utc)
+                now = self._task_now_utc()
                 if now > due_dt:
                     overdue = True
                     due_txt = f"Due: {local_due} (LIMIT REACHED)"
@@ -212,7 +230,7 @@ class TaskManagementMixin:
         try:
             if due_iso:
                 due_dt = datetime.fromisoformat(due_iso)
-                now = datetime.now(timezone.utc)
+                now = self._task_now_utc()
                 if eval_mode == "before":
                     window_start = due_dt - timedelta(minutes=window_m)
                     if now >= due_dt:
@@ -264,7 +282,7 @@ class TaskManagementMixin:
             if decision_enabled and due_iso:
                 try:
                     due_dt = datetime.fromisoformat(due_iso)
-                    now = datetime.now(timezone.utc)
+                    now = self._task_now_utc()
                     if eval_mode == "after":
                         window_end = due_dt + timedelta(minutes=window_m)
                         if now < due_dt:
@@ -327,7 +345,7 @@ class TaskManagementMixin:
             try:
                 if due_iso:
                     due_dt = datetime.fromisoformat(due_iso)
-                    is_overdue = datetime.now(timezone.utc) > due_dt
+                    is_overdue = self._task_now_utc() >= due_dt
             except Exception:
                 is_overdue = False
             if is_overdue:

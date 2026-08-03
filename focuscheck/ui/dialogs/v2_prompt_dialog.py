@@ -61,6 +61,7 @@ class V2PromptDialog(
         self.activity_info = activity_info or {}
         self.app_ref = app_ref
         self.taskdb = taskdb
+        self._task_clock = getattr(getattr(app_ref, "_runtime_state", None), "clock", None)
         self._dialog_shown_at = time.time()
         self._closed = False
         self._submit_notified = False

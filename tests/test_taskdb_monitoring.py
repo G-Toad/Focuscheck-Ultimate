@@ -170,6 +170,31 @@ class TaskDbLifecycleTests(unittest.TestCase):
         self.assertFalse(prompt._task_decision_required)
         self.assertFalse(prompt._focus_prompt_open)
 
+    def test_prompt_task_deadline_uses_injected_clock(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        taskdb = mock.Mock()
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._task_clock = clock
+        prompt._task_decision_required = False
+        prompt._task_decision_task_id = None
+        prompt._focus_prompt_open = False
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        due = (clock.now_utc() + timedelta(seconds=5)).isoformat()
+        prompt._task_mark_done(42, due)
+        taskdb.mark_completed.assert_called_once_with(42)
+
+        taskdb.reset_mock()
+        clock.advance(5)
+        prompt._task_mark_done(42, due)
+        taskdb.mark_failed.assert_called_once_with(42, timed_out=True)
+        taskdb.mark_completed.assert_not_called()
+
     def test_render_task_panel_restarts_after_automatic_timeout(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins import task_management
         from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin

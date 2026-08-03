@@ -84,6 +84,7 @@ class PromptDialog(
         self.slot_start_dt = slot_start_dt
         self.taskdb = taskdb
         self.app_ref = app_ref
+        self._task_clock = getattr(getattr(app_ref, "_runtime_state", None), "clock", None)
         self.persist_settings = persist_settings
         self.start_monotonic = time.monotonic()
 
