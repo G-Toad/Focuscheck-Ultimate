@@ -153,6 +153,9 @@ def migrate_legacy_data(app_paths: "AppPaths | None" = None, *, legacy_root: str
         target = paths.root / name
         if source.resolve() == target.resolve() or not source.is_file():
             continue
+        if source.is_symlink():
+            events.append({"file": name, "outcome": "rejected_symlink"})
+            continue
         try:
             source_hash = _file_sha256(source)
             if target.exists():

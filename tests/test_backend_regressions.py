@@ -193,6 +193,27 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertEqual(set(durable_artifacts), {event["file"] for event in journal_events})
             self.assertTrue(list(canonical.root.glob("focus_log.csv.legacy-conflict-*")))
 
+    def test_legacy_data_migration_rejects_symlink_sources(self):
+        from focuscheck.utils.paths import get_app_paths, migrate_legacy_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            canonical = get_app_paths(root / "canonical")
+            legacy = root / "legacy"
+            outside = root / "outside.csv"
+            legacy.mkdir()
+            outside.write_text("outside", encoding="utf-8")
+            source = legacy / "focus_log.csv"
+            try:
+                source.symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            events = migrate_legacy_data(canonical, legacy_root=legacy)
+
+            self.assertEqual("rejected_symlink", events[0]["outcome"])
+            self.assertFalse(canonical.focus_log.exists())
+
     def test_save_settings_uses_atomic_replace(self):
         import focuscheck.settings.manager as manager
 
