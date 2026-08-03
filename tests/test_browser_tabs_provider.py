@@ -108,11 +108,17 @@ class BrowserTabsProviderTests(unittest.TestCase):
                 mock.patch.object(browser_tabs, "is_supported_browser", return_value=True), \
                 mock.patch.object(browser_tabs, "_list_uia_tabs", side_effect=hung), \
                 mock.patch.object(browser_tabs, "list_tab_titles", return_value=["CDP tab"]):
-            started_at = time.monotonic()
-            self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(42, "chrome.exe", timeout=0.05))
-            self.assertLess(time.monotonic() - started_at, 0.5)
-            self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(43, "chrome.exe", timeout=0.05))
-            release.set()
+            try:
+                started_at = time.monotonic()
+                self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(42, "chrome.exe", timeout=0.05))
+                self.assertLess(time.monotonic() - started_at, 0.5)
+                self.assertEqual(["CDP tab"], browser_tabs.try_list_browser_tabs(43, "chrome.exe", timeout=0.05))
+            finally:
+                release.set()
+                deadline = time.monotonic() + 0.5
+                while browser_tabs._UIA_IN_FLIGHT and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertFalse(browser_tabs._UIA_IN_FLIGHT)
 
 
 if __name__ == "__main__":

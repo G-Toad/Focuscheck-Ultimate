@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import threading
 import time
 from collections import deque
@@ -13,15 +14,21 @@ from typing import Any
 
 
 _SAFE_STRING_KEYS = {
-    "event", "category", "outcome", "from", "to", "phase", "reason",
+    "event", "category", "outcome", "from", "to", "phase",
     "error_type", "source", "status", "backend", "operation",
 }
+_SAFE_REASON_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,96}$")
 
 
 def _safe_value(key: str, value: Any) -> Any:
     if isinstance(value, (bool, int, float)) or value is None:
         return value
     if isinstance(value, str):
+        if key in {"reason", "target"}:
+            text = value.strip()
+            if _SAFE_REASON_RE.fullmatch(text):
+                return text
+            return {"type": "string", "length": len(value)}
         if key in _SAFE_STRING_KEYS:
             return value[:160]
         return {"type": "string", "length": len(value)}

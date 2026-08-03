@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `517` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `518` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+
+The latest ledger privacy checkpoint bounds free-form `reason` and `target` fields to structural metadata, with regression coverage for private text and path leakage.
 
 The latest observability checkpoint prevents the status window from rendering the absolute data-root path and adds regression coverage; live status interaction remains pending.
 

@@ -280,6 +280,10 @@ class StructuredEventLedgerTests(unittest.TestCase):
             path = Path(temp_dir) / "structured_events.jsonl"
             ledger = StructuredEventLedger(path, max_bytes=4096)
             ledger.append("runtime", {"event": "state", "reason": "safe", "response": "private response"})
+            ledger.append(
+                "runtime",
+                {"event": "unsafe", "reason": "private response https://example.invalid", "target": "C:/Users/private"},
+            )
             for index in range(80):
                 ledger.append("test", {"event": "tick", "index": index, "url": "https://example.invalid/private"})
 
@@ -288,6 +292,7 @@ class StructuredEventLedgerTests(unittest.TestCase):
             payload = json.loads(path.read_text(encoding="utf-8").splitlines()[-1])
             self.assertNotIn("private response", path.read_text(encoding="utf-8"))
             self.assertNotIn("example.invalid", path.read_text(encoding="utf-8"))
+            self.assertNotIn("C:/Users/private", path.read_text(encoding="utf-8"))
             self.assertEqual("test", payload["category"])
 
     def test_event_ledger_rate_limits_bursts_and_recovers_after_window(self):

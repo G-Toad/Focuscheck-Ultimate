@@ -12,6 +12,8 @@ Latest browser-provider correction: UI Automation tab enumeration now runs behin
 
 Latest observability correction: the Tk status formatter now replaces the absolute data-root path with `<runtime-root>`, with regression coverage for path non-disclosure; live status-window evidence remains pending.
 
+Latest ledger privacy correction: free-form `reason` and `target` event fields are now retained only as bounded structural metadata unless they match the safe enum-like contract; regression coverage rejects private text and paths.
+
 Status meanings:
 
 - **Implemented**: the plan requirement has a direct implementation and matching evidence.
