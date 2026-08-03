@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest composed prompt-Settings correction: V1 and V2 prompt Settings links now route through the App-owned close contract when composed, while standalone dialogs retain compatibility cleanup. The machine-readable verifier completed all 19 stages at source checkpoint `a3cff73` with 557 tests and zero process leaks; the outer wrapper exceeded its 120-second limit after report generation, so its shell exit was not used as evidence. Manual Windows and release evidence remains pending.
+
 Latest Settings/prompt correction: tray Settings refresh now uses the App-owned prompt close contract instead of manually destroying the dialog, releasing the prompt coordinator/runtime lease and notifying the engine before regeneration. The full verifier passed at source checkpoint `1f8500e` with 556 tests across 19 stages; manual Windows and release evidence remains pending.
 
 Latest prompt-lifecycle correction: prompt start, failure, coordinator rejection, completion, and interruption now notify the selected engine; V2 website polling is suspended while the prompt owns the UI and resumes after terminal cleanup. The full verifier passed at source checkpoint `fe63f77` with 555 tests across 19 stages; manual Windows and release evidence remains pending.

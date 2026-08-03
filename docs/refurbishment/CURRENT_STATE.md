@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `1f8500e`; 556 unittest cases and all 19 bounded verification stages pass. Engine replacement, timer registration, V2 lifecycle polling, and Settings prompt regeneration paths are failure-safe; manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `a3cff73`; 557 unittest cases and all 19 bounded verification stages pass with zero process leaks. V1/V2 composed prompt Settings cleanup now uses the App lease boundary; manual Windows and release evidence remains pending. The outer verifier wrapper timed out after report generation.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
