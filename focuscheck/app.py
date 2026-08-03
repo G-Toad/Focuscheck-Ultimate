@@ -2093,7 +2093,13 @@ class App:
             try:
                 report = clear_data(self._data_root(), categories=("logs",), confirmed=True)
                 deleted = sum(1 for item in report["files"] if item.get("deleted"))
-                messagebox.showinfo("Logs cleared", f"Deleted {deleted} log files.")
+                if report.get("audit_written") is False:
+                    messagebox.showwarning(
+                        "Logs cleared with warning",
+                        f"Deleted {deleted} log files, but the audit record was not durable.",
+                    )
+                else:
+                    messagebox.showinfo("Logs cleared", f"Deleted {deleted} log files.")
                 return True
             except Exception as exc:
                 messagebox.showerror("Clear logs failed", str(exc))
@@ -2119,10 +2125,17 @@ class App:
                     confirmed=True,
                 )
                 deleted = sum(1 for item in report["files"] if item.get("deleted"))
-                messagebox.showinfo(
-                    "Personal data cleared",
-                    f"Deleted {deleted} personal data files. Restart FocusCheck to reload defaults.",
-                )
+                if report.get("audit_written") is False:
+                    messagebox.showwarning(
+                        "Personal data cleared with warning",
+                        f"Deleted {deleted} personal data files, but the audit record was not durable. "
+                        "Restart FocusCheck to reload defaults.",
+                    )
+                else:
+                    messagebox.showinfo(
+                        "Personal data cleared",
+                        f"Deleted {deleted} personal data files. Restart FocusCheck to reload defaults.",
+                    )
                 return True
             except Exception as exc:
                 messagebox.showerror("Clear personal data failed", str(exc))
@@ -2148,7 +2161,14 @@ class App:
             try:
                 result = apply_retention(self._data_root(), max_age_days=days, apply=True)
                 deleted = sum(1 for item in result if item.get("deleted"))
-                messagebox.showinfo("Log cleanup complete", f"Deleted {deleted} old log files.")
+                audit_failures = sum(1 for item in result if item.get("audit_written") is False)
+                if audit_failures:
+                    messagebox.showwarning(
+                        "Log cleanup completed with warning",
+                        f"Deleted {deleted} old log files, but {audit_failures} audit record(s) were not durable.",
+                    )
+                else:
+                    messagebox.showinfo("Log cleanup complete", f"Deleted {deleted} old log files.")
                 return True
             except Exception as exc:
                 messagebox.showerror("Log cleanup failed", str(exc))
