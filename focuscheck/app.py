@@ -1895,7 +1895,7 @@ class App:
             "version": APP_VERSION,
             "lifecycle": lifecycle,
             "monitoring": "running" if getattr(self, "_engine", None) is not None and not getattr(self, "_engine_shutdown", False) else "stopped",
-            "paused": bool(getattr(self, "settings", {}).get("paused", False)),
+            "paused": effective_paused,
             "effective_paused": effective_paused,
             "snooze_active": snooze_active,
             "pause_reason": pause_reason,

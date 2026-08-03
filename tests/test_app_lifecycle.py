@@ -185,6 +185,44 @@ class AppLifecycleTests(unittest.TestCase):
 
         self.assertTrue(App._manual_pause_intent(app))
 
+    def test_diagnostic_status_uses_effective_runtime_pause(self):
+        from types import SimpleNamespace
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"paused": False}
+        app.guard = mock.Mock()
+        app.guard.diagnostics.return_value = {"healthy": True}
+        app.lifecycle = mock.Mock()
+        app.lifecycle.phase = "ready"
+        runtime_view = SimpleNamespace(
+            effective_pause=True,
+            snooze_active=True,
+            guard_reasons=frozenset({"lock"}),
+            revision=4,
+            effective_pause_reason="snooze",
+            transition_sink_failures=0,
+        )
+        class RuntimeState:
+            def snapshot_view(self):
+                return runtime_view
+
+        app._runtime_state = RuntimeState()
+        app._engine = object()
+        app._engine_shutdown = False
+        app._current_prompt = None
+        app._using_pystray = False
+        app._native_tray_fallback_active = False
+
+        with mock.patch("focuscheck.doctor.get_anomalies", return_value=[]), mock.patch(
+            "focuscheck.settings.schema.get_settings_schema", return_value={"x": object()}
+        ), mock.patch.object(App, "_data_root", return_value="<runtime-root>"):
+            snapshot = App._diagnostic_status_snapshot(app)
+
+        self.assertTrue(snapshot["paused"])
+        self.assertTrue(snapshot["effective_paused"])
+        self.assertEqual("snooze", snapshot["pause_reason"])
+
     def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
         from focuscheck.app import App
 
