@@ -215,7 +215,7 @@ Current checkpoint addition: The latest `6c812db` migration slice rejects symlin
 
 Current checkpoint addition: The latest privacy-boundary slice rejects symlinked roots before resolution for export, metadata inventory, clear-data, and retention operations, with one consolidated regression covering all five API paths. The full verifier records `422` unittest cases, all 18 bounded stages passed, and zero failed stages; symlink-specific cases are explicitly skipped where the environment cannot create symlinks. Target-user privacy, retention, and export evidence remains manual_pending.
 
-Current checkpoint addition: The latest export-integrity slice validates the completed temporary ZIP against its embedded manifest before promotion, preventing source mutation between hashing and archive writing from producing a trusted-but-invalid export. The focused export suite records `10` passing tests with symlink cases skipped where the environment cannot create links; full verification remains pending for this slice.
+Current checkpoint addition: The latest export-integrity slice validates the completed temporary ZIP against its embedded manifest before promotion, preventing source mutation between hashing and archive writing from producing a trusted-but-invalid export. The focused export suite records `10` passing tests with symlink cases skipped where the environment cannot create links; the full verifier records `423` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
 ## Final Acceptance Gates
 
@@ -238,6 +238,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `422` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `36fc8b3`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `423` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `5ec9ab1`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
