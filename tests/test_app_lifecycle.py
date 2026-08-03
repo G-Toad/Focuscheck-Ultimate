@@ -1049,6 +1049,34 @@ class AppLifecycleTests(unittest.TestCase):
         app._runtime_state.is_effectively_paused.assert_called_once_with()
         app._schedule_next.assert_called_once_with(5000)
 
+    def test_reload_settings_snapshot_refreshes_runtime_truth(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        app = App.__new__(App)
+        app.settings = {"manual_paused": False}
+        app._runtime_state = mock.Mock()
+        loaded = {"manual_paused": True, "snooze_until_utc": ""}
+        app._dependencies = AppDependencies(settings_loader=mock.Mock(return_value=loaded))
+
+        self.assertTrue(App._reload_settings_snapshot(app))
+        self.assertIs(loaded, app.settings)
+        app._dependencies.settings_loader.assert_called_once_with()
+        app._runtime_state.refresh_from_settings.assert_called_once_with(loaded)
+
+    def test_reload_settings_snapshot_preserves_current_state_on_loader_failure(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        original = {"manual_paused": False}
+        app.settings = original
+        app._runtime_state = mock.Mock()
+        app._dependencies = type("Dependencies", (), {"settings_loader": mock.Mock(side_effect=OSError("locked"))})()
+
+        self.assertFalse(App._reload_settings_snapshot(app))
+        self.assertIs(original, app.settings)
+        app._runtime_state.refresh_from_settings.assert_not_called()
+
     def test_quit_requests_supervisor_stop_before_cleanup_and_exit(self):
         from focuscheck.app import App
 

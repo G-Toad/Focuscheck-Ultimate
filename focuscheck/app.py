@@ -1302,10 +1302,7 @@ class App:
     # Tray menu
     def _on_tray_click(self, msg=None):
         try:
-            try:
-                self.settings = load_settings()
-            except Exception:
-                pass
+            self._reload_settings_snapshot()
             if msg == WM_LBUTTONUP:
                 if bool(self.settings.get("tray_start_stop_enabled", True)):
                     self._tray_toggle_pause()
@@ -1344,10 +1341,7 @@ class App:
 
     def _show_tray_menu(self):
         try:
-            try:
-                self.settings = load_settings()
-            except Exception:
-                pass
+            self._reload_settings_snapshot()
             paused = self._manual_pause_intent()
             start_stop_enabled = bool(self.settings.get("tray_start_stop_enabled", True))
             settings_enabled = bool(self.settings.get("tray_settings_button_enabled", True))
@@ -2323,10 +2317,7 @@ class App:
 
     def _open_settings_from_tray(self):
         def _show_settings():
-            try:
-                self.settings = load_settings()
-            except Exception:
-                pass
+            self._reload_settings_snapshot()
 
             def apply_and_refresh(new_settings):
                 """
@@ -2395,6 +2386,25 @@ class App:
                 persist_settings=self._persist_settings_draft,
             )
         return self._call_on_ui_thread(_show_settings)
+
+    def _reload_settings_snapshot(self) -> bool:
+        """Reload settings through the composition root and update runtime truth."""
+        try:
+            loader = getattr(getattr(self, "_dependencies", None), "settings_loader", None)
+            loaded = (loader or load_settings)()
+            if not isinstance(loaded, dict):
+                return False
+            self.settings = loaded
+            state = getattr(self, "_runtime_state", None)
+            if state is not None:
+                state.refresh_from_settings(loaded)
+            return True
+        except Exception:
+            try:
+                get_logger().exception("failed to reload settings snapshot", exc_info=True)
+            except Exception:
+                pass
+            return False
 
     def _schedule_prompt_regeneration(self):
         """Schedule post-settings prompt regeneration through the App timer owner."""
