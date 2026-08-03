@@ -102,6 +102,7 @@ class V2FlowTests(unittest.TestCase):
         engine = EngineV2.__new__(EngineV2)
         engine._settings = {"website_flags": [{"domain": "example.com", "enabled": True}]}
         engine._timers = mock.Mock(closed=False)
+        engine.app = AppRef()
 
         engine.on_pause_changed(True, source="manual_pause")
         engine._timers.cancel.assert_called_once_with("website-subpopup")
@@ -117,6 +118,7 @@ class V2FlowTests(unittest.TestCase):
         engine = EngineV2.__new__(EngineV2)
         engine._settings = {"website_flags": [{"domain": "example.com", "enabled": True}]}
         engine._timers = mock.Mock(closed=False)
+        engine.app = AppRef()
 
         engine.on_intervention_changed(True, source="intervention_started")
         engine._timers.cancel.assert_called_once_with("website-subpopup")
@@ -132,6 +134,7 @@ class V2FlowTests(unittest.TestCase):
         engine = EngineV2.__new__(EngineV2)
         engine._settings = {"website_flags": [{"domain": "example.com", "enabled": True}]}
         engine._timers = mock.Mock(closed=False)
+        engine.app = AppRef()
 
         engine.on_prompt_changed(True, source="prompt_started")
         engine._timers.cancel.assert_called_once_with("website-subpopup")
@@ -140,6 +143,19 @@ class V2FlowTests(unittest.TestCase):
         engine._timers.schedule.assert_called_once_with(
             "website-subpopup", 3000, engine._subpopup_tick, interval_ms=3000
         )
+
+    def test_polling_does_not_resume_while_another_prompt_is_still_active(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine._settings = {"website_flags": [{"domain": "example.com", "enabled": True}]}
+        engine._timers = mock.Mock(closed=False)
+        engine.app = AppRef()
+        engine.app._current_prompt = object()
+
+        engine.on_prompt_changed(False, source="prompt_completed")
+
+        engine._timers.schedule.assert_not_called()
 
     def test_v1_anti_habit_hold_uses_composed_monotonic_clock(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin

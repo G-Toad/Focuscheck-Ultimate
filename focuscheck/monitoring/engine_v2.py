@@ -92,7 +92,7 @@ class EngineV2(BaseEngine):
     def on_settings_updated(self, settings):
         self._settings = settings
         if self._has_enabled_website_flags(settings):
-            self._schedule_subpopup_check()
+            self._resume_subpopup_check()
         elif self._timers is not None:
             # Do not retain a three-second provider poll when the feature is
             # disabled; settings changes must also cancel an existing poll.
@@ -104,8 +104,8 @@ class EngineV2(BaseEngine):
             return
         if paused:
             self._timers.cancel("website-subpopup")
-        elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
-            self._schedule_subpopup_check()
+        else:
+            self._resume_subpopup_check()
 
     def on_intervention_changed(self, active: bool, *, source: str = "unknown"):
         """Suspend website polling for the complete intervention lease."""
@@ -113,8 +113,8 @@ class EngineV2(BaseEngine):
             return
         if active:
             self._timers.cancel("website-subpopup")
-        elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
-            self._schedule_subpopup_check()
+        else:
+            self._resume_subpopup_check()
 
     def on_prompt_changed(self, active: bool, *, source: str = "unknown"):
         """Suspend website polling while a prompt owns the application UI."""
@@ -122,7 +122,13 @@ class EngineV2(BaseEngine):
             return
         if active:
             self._timers.cancel("website-subpopup")
-        elif self._has_enabled_website_flags(self._settings or getattr(self.app, "settings", {})):
+        else:
+            self._resume_subpopup_check()
+
+    def _resume_subpopup_check(self):
+        """Resume polling only when all coordinator-owned gates allow it."""
+        settings = self._settings or getattr(self.app, "settings", {})
+        if self._has_enabled_website_flags(settings) and self._should_check_subpopup():
             self._schedule_subpopup_check()
 
     def shutdown(self):
@@ -192,7 +198,7 @@ class EngineV2(BaseEngine):
             self._maybe_show_subpopup()
 
     def _should_check_subpopup(self):
-        if self._subpopup_active:
+        if getattr(self, "_subpopup_active", False):
             return False
         if getattr(self.app, "_current_prompt", None) is not None:
             return False
