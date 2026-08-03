@@ -317,6 +317,7 @@ class App:
         self._next_due_mono = None
         self._next_total_s = None
         self._shutdown_requested = False
+        self._shutdown_cleanup_complete = False
         self._heartbeat_sequence = 0
         self._process_start_utc = datetime.now(timezone.utc).isoformat()
         # Snooze reminder tracking
@@ -2173,37 +2174,62 @@ class App:
             get_logger().info("quit requested | reason=%s", reason)
         except Exception:
             pass
+        self._cleanup_runtime(reason=reason, request_supervisor=True)
+        sys.exit(0)
+
+    def _cleanup_runtime(self, *, reason: str, request_supervisor: bool) -> None:
+        """Run the reverse-order runtime cleanup contract exactly once."""
+        if getattr(self, "_shutdown_cleanup_complete", False):
+            return
+        self._shutdown_cleanup_complete = True
         lifecycle = getattr(self, "lifecycle", None)
-        if lifecycle is not None:
+        if lifecycle is not None and lifecycle.phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED):
             lifecycle.begin_shutdown(reason=reason)
-        self._request_supervisor_stop(reason=reason)
+        if request_supervisor:
+            try:
+                self._request_supervisor_stop(reason=reason)
+            except Exception:
+                try:
+                    get_logger().exception("failed requesting supervisor stop", exc_info=True)
+                except Exception:
+                    pass
         try:
             if getattr(self, "_runtime_state", None) is not None:
                 self._runtime_state.request_shutdown()
-            self._close_current_prompt_for_shutdown()
-            self._close_gentle_reminder()
-            self._shutdown_engine()
-            if getattr(self, "_timers", None) is not None:
-                self._timers.close()
         except Exception:
-            get_logger().exception("shutdown coordinator cleanup failed", exc_info=True)
+            get_logger().exception("runtime state shutdown failed", exc_info=True)
+        for name, callback in (
+            ("prompt", self._close_current_prompt_for_shutdown),
+            ("gentle_reminder", self._close_gentle_reminder),
+            ("engine", self._shutdown_engine),
+        ):
+            try:
+                callback()
+            except Exception:
+                get_logger().exception("shutdown cleanup failed: %s", name, exc_info=True)
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            try:
+                timers.close()
+            except Exception:
+                get_logger().exception("shutdown cleanup failed: timers", exc_info=True)
         try:
             if getattr(self, "_tray", None):
                 self._tray.stop()
         except Exception:
-            pass
+            get_logger().exception("shutdown cleanup failed: tray", exc_info=True)
         try:
             if getattr(self, "_winwatch", None):
                 self._winwatch.close()
         except Exception:
-            pass
+            get_logger().exception("shutdown cleanup failed: watcher", exc_info=True)
         try:
             self.root.destroy()
         except Exception:
-            pass
+            get_logger().exception("shutdown cleanup failed: root", exc_info=True)
         if lifecycle is not None:
-            lifecycle.mark_stopped(reason="user_exit_complete")
-        sys.exit(0)
+            if lifecycle.phase == LifecyclePhase.STOPPING:
+                lifecycle.mark_stopped(reason=f"{reason}_complete")
 
     def _request_supervisor_stop(self, *, reason: str = "user_exit"):
         stop_file = os.environ.get("FOCUSCHECK_SUPERVISOR_STOP_FILE")
@@ -2564,11 +2590,9 @@ class App:
                 lifecycle.fail(exc, reason="mainloop_exception")
             raise
         finally:
-            try:
-                if getattr(self, "_winwatch", None):
-                    self._winwatch.close()
-            except Exception:
-                pass
+            # A fatal mainloop exception must still release every owned
+            # resource, but must not be reported as an intentional user exit.
+            self._cleanup_runtime(reason="run_cleanup", request_supervisor=False)
             # Clean up GDI+ resources if on Windows
             if platform.system().lower() == "windows":
                 try:

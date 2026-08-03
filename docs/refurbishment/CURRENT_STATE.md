@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `316` unittest cases passing.
+- Current automated baseline after hardening: `319` unittest cases passing.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
@@ -18,6 +18,7 @@
 - Manual blocker: live Tk/tray, Windows supervisor/startup, browser/window APIs, native lock/sleep/resume, overlays, and packaging require target Windows evidence.
 - Supervisor stop requests now have an atomic generation-bound acknowledgement; cancellation-aware restart waits avoid delaying explicit supervisor shutdown.
 - The packaged supervisor self-test now exercises READY heartbeat, generation-bound intentional stop, durable acknowledgement, outer/inner frozen-process cleanup, and a no-owned-process postcondition.
+- Fatal mainloop failures now run the full idempotent reverse-order cleanup contract without emitting an intentional supervisor-stop request; lifecycle error type remains visible after cleanup.
 - App publishes a READY heartbeat immediately after lifecycle transition so the supervisor cannot classify normal startup as stale during the 60-second heartbeat cadence.
 - Pause-guard native API failures now publish bounded health metadata rather than degrading silently.
 - Startup inspection distinguishes legacy and duplicate launch mechanisms, and repair promotes the registry route while removing the known legacy launcher.

@@ -48,8 +48,8 @@ class LifecycleCoordinator:
             previous = self.phase
             self.phase = target
             self.reason = str(reason)[:120]
-            if target != LifecyclePhase.FAILED:
-                self.error_type = ""
+            # Keep a recorded failure visible through failed->stopping->stopped
+            # cleanup so diagnostics distinguish a crash from normal exit.
             self._record(previous, target)
             return True
 
@@ -91,4 +91,3 @@ class LifecycleCoordinator:
                 self._sink(dict(event))
             except Exception:
                 pass
-

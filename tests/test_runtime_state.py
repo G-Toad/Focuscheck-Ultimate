@@ -153,6 +153,16 @@ class LifecycleCoordinatorTests(unittest.TestCase):
         self.assertEqual("failed", snapshot["phase"])
         self.assertEqual("RuntimeError", snapshot["error_type"])
 
+    def test_failure_type_survives_orderly_cleanup_after_crash(self):
+        lifecycle = LifecycleCoordinator()
+        lifecycle.transition(LifecyclePhase.STARTING)
+        lifecycle.fail(RuntimeError("boom"), reason="mainloop_exception")
+        lifecycle.begin_shutdown(reason="run_cleanup")
+        lifecycle.mark_stopped(reason="run_cleanup_complete")
+        snapshot = lifecycle.snapshot()
+        self.assertEqual("stopped", snapshot["phase"])
+        self.assertEqual("RuntimeError", snapshot["error_type"])
+
 
 class StructuredEventLedgerTests(unittest.TestCase):
     def test_event_ledger_redacts_strings_and_rotates_within_bound(self):

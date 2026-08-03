@@ -267,6 +267,89 @@ class AppLifecycleTests(unittest.TestCase):
         engine.shutdown.assert_called_once_with()
         self.assertIsNone(app._engine)
 
+    def test_mainloop_failure_runs_full_cleanup_without_supervisor_stop(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
+
+        app = App.__new__(App)
+        app.lifecycle = LifecycleCoordinator()
+        app.lifecycle.transition(LifecyclePhase.STARTING)
+        app.lifecycle.transition(LifecyclePhase.READY)
+        app.root = mock.Mock()
+        app.root.mainloop.side_effect = RuntimeError("mainloop failed")
+        app._shutdown_cleanup_complete = False
+        app._shutdown_requested = False
+        app._runtime_state = mock.Mock()
+        app._current_prompt = None
+        app._gentle_reminder_dialog = None
+        app._engine_shutdown = False
+        engine = mock.Mock()
+        app._engine = engine
+        app._timers = mock.Mock()
+        app._tray = mock.Mock()
+        app._winwatch = mock.Mock()
+        app._request_supervisor_stop = mock.Mock()
+
+        with self.assertRaisesRegex(RuntimeError, "mainloop failed"):
+            app.run()
+
+        app._runtime_state.request_shutdown.assert_called_once_with()
+        engine.shutdown.assert_called_once_with()
+        app._timers.close.assert_called_once_with()
+        app._tray.stop.assert_called_once_with()
+        app._winwatch.close.assert_called_once_with()
+        app.root.destroy.assert_called_once_with()
+        app._request_supervisor_stop.assert_not_called()
+        snapshot = app.lifecycle.snapshot()
+        self.assertEqual("stopped", snapshot["phase"])
+        self.assertEqual("RuntimeError", snapshot["error_type"])
+
+    def test_cleanup_continues_after_failure_in_each_owned_stage(self):
+        from focuscheck.app import App
+
+        stages = ("runtime", "prompt", "gentle", "engine", "timers", "tray", "watcher", "root")
+        for failed_stage in stages:
+            with self.subTest(failed_stage=failed_stage):
+                app = App.__new__(App)
+                app._shutdown_cleanup_complete = False
+                app._runtime_state = mock.Mock()
+                app._current_prompt = None
+                app._gentle_reminder_dialog = None
+                app._engine_shutdown = False
+                app._engine = mock.Mock()
+                app._timers = mock.Mock()
+                app._tray = mock.Mock()
+                app._winwatch = mock.Mock()
+                app.root = mock.Mock()
+                methods = {
+                    "prompt": "_close_current_prompt_for_shutdown",
+                    "gentle": "_close_gentle_reminder",
+                    "engine": "_shutdown_engine",
+                }
+                for stage, method_name in methods.items():
+                    setattr(app, method_name, mock.Mock(side_effect=RuntimeError(stage) if stage == failed_stage else None))
+                if failed_stage == "runtime":
+                    app._runtime_state.request_shutdown.side_effect = RuntimeError("runtime")
+                if failed_stage == "timers":
+                    app._timers.close.side_effect = RuntimeError("timers")
+                if failed_stage == "tray":
+                    app._tray.stop.side_effect = RuntimeError("tray")
+                if failed_stage == "watcher":
+                    app._winwatch.close.side_effect = RuntimeError("watcher")
+                if failed_stage == "root":
+                    app.root.destroy.side_effect = RuntimeError("root")
+
+                App._cleanup_runtime(app, reason="failure_injection", request_supervisor=False)
+
+                app._runtime_state.request_shutdown.assert_called_once_with()
+                app._close_current_prompt_for_shutdown.assert_called_once_with()
+                app._close_gentle_reminder.assert_called_once_with()
+                app._shutdown_engine.assert_called_once_with()
+                app._timers.close.assert_called_once_with()
+                app._tray.stop.assert_called_once_with()
+                app._winwatch.close.assert_called_once_with()
+                app.root.destroy.assert_called_once_with()
+
     def test_engine_switch_closes_prompt_before_old_engine_shutdown(self):
         from focuscheck.app import App
 
