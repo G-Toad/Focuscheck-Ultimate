@@ -19,6 +19,7 @@ _PRIVATE_FIELD_PATTERNS = (
     re.compile(r"(?i)(response(?:_summary)?|user[_ -]?response|window[_ -]?title|title|url)\s*[:=]\s*[^\r\n,}]+"),
     re.compile(r"(?i)(response(?:_summary)?|user[_ -]?response|window[_ -]?title|title|url)\s*[:=]\s*(['\"]).*?\2"),
 )
+DIAGNOSTIC_FORMAT_VERSION = 1
 
 
 def format_status_snapshot(snapshot: dict) -> str:
@@ -94,6 +95,17 @@ def preview_bundle(runtime: Path) -> dict:
     return {"root": str(root), "files": files, "excluded": ["settings", "tasks", "camera", "exports"]}
 
 
+def _bundle_manifest(root: Path) -> dict:
+    """Build archive metadata without embedding the user's absolute path."""
+    preview = preview_bundle(root)
+    return {
+        "format_version": DIAGNOSTIC_FORMAT_VERSION,
+        "files": preview["files"],
+        "excluded": preview["excluded"],
+        "root": "<runtime-root>",
+    }
+
+
 def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Path:
     """Create an atomic sanitized diagnostic ZIP from allowlisted sources."""
     root = Path(runtime).resolve()
@@ -113,7 +125,7 @@ def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Pa
                 archive.writestr(source.name, sanitize(source.read_text(encoding="utf-8", errors="replace"), root=root))
             archive.writestr(
                 "DIAGNOSTIC_MANIFEST.json",
-                json.dumps(preview_bundle(root), indent=2, sort_keys=True),
+                json.dumps(_bundle_manifest(root), indent=2, sort_keys=True),
             )
         os.replace(temporary, destination)
         return destination
@@ -125,4 +137,10 @@ def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Pa
                 pass
 
 
-__all__ = ["create_bundle", "format_status_snapshot", "preview_bundle", "sanitize"]
+__all__ = [
+    "DIAGNOSTIC_FORMAT_VERSION",
+    "create_bundle",
+    "format_status_snapshot",
+    "preview_bundle",
+    "sanitize",
+]

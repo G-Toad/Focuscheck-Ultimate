@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 import zipfile
+import json
 from pathlib import Path
 
 from tools.create_diagnostic_bundle import create_bundle, sanitize
@@ -45,6 +46,10 @@ class DiagnosticBundleTests(unittest.TestCase):
                     set(archive.namelist()),
                 )
                 self.assertNotIn("secret", archive.read("stage.log").decode())
+                manifest = json.loads(archive.read("DIAGNOSTIC_MANIFEST.json"))
+                self.assertEqual(1, manifest["format_version"])
+                self.assertEqual("<runtime-root>", manifest["root"])
+                self.assertNotIn(str(runtime), archive.read("DIAGNOSTIC_MANIFEST.json").decode())
 
     def test_preview_excludes_sensitive_categories_and_bundle_redacts_private_fields(self):
         from focuscheck.utils.diagnostics import create_bundle, preview_bundle
