@@ -335,4 +335,6 @@ TaskDB concurrency correction: concurrent first opens now serialize schema migra
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.
 
+UI dispatch correction: composed App callbacks now reject dispatch after `TimerRegistry.close()` instead of falling back to raw `root.after()`, preventing late tray/Tk work from entering shutdown. The focused UI/lifecycle/tray suite passed `56` tests and the full verifier passed `467` tests across all 19 stages.
+
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
