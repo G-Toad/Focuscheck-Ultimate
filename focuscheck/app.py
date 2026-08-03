@@ -2421,6 +2421,16 @@ class App:
         except Exception:
             return False
 
+    def schedule_once(self, name: str, delay_ms: int, callback) -> bool:
+        """Schedule an App-owned one-shot callback through the named registry."""
+        timers = getattr(self, "_timers", None)
+        if timers is None or timers.closed:
+            return False
+        try:
+            return bool(timers.schedule(str(name), int(delay_ms), callback))
+        except Exception:
+            return False
+
     def _persist_settings_draft(self, draft):
         """Persist a settings-window draft through the App composition root."""
         settings_saver = getattr(getattr(self, "_dependencies", None), "settings_saver", None)

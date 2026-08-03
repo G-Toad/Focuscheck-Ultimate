@@ -13,6 +13,22 @@ from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    def test_schedule_once_uses_named_app_timer_owner(self):
+        from focuscheck.app import App
+        from focuscheck.utils.timers import TimerRegistry
+
+        root = mock.Mock()
+        app = App.__new__(App)
+        app._timers = TimerRegistry(root)
+        callback = mock.Mock()
+
+        self.assertTrue(app.schedule_once("test-callback", 25, callback))
+        self.assertIsNotNone(app._timers.callback_id("test-callback"))
+
+        app._timers.close()
+        self.assertFalse(app.schedule_once("after-close", 25, callback))
+        root.after.assert_called_once()
+
     def test_initial_monitoring_failure_is_re_raised_from_composition(self):
         source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
         tree = ast.parse(source.read_text(encoding="utf-8"))

@@ -174,10 +174,7 @@ def main():
                     run_secs = None
                 break
         if run_secs is not None and run_secs > 0:
-            try:
-                app.root.after(run_secs * 1000, app._quit)
-            except Exception:
-                pass
+            app.schedule_once("cli-run-limit", run_secs * 1000, app._quit)
 
         # Optional: simulate a tray snooze click after a short delay
         simulate_snooze_mins = None
@@ -190,11 +187,12 @@ def main():
                 break
         # Optional: force-enable snooze confirmation for simulation
         if simulate_snooze_mins is not None:
-            try:
-                # Defer a bit to allow the app loop to settle
-                app.root.after(1500, lambda: app._tray_snooze(simulate_snooze_mins))
-            except Exception:
-                pass
+            # Defer a bit to allow the app loop to settle.
+            app.schedule_once(
+                "cli-simulate-tray-snooze",
+                1500,
+                lambda: app._tray_snooze(simulate_snooze_mins),
+            )
 
         app.run()
     except Exception as e:
