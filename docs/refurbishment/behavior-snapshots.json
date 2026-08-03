@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "purpose": "Phase 0 behavior snapshot index; statuses never imply manual Windows completion.",
+  "source_commit": "7f2fb88",
+  "snapshots": [
+    {"id": "launch-direct", "behavior": "direct launch", "expected": "main.py starts one child and exits cleanly on bounded run completion", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
+    {"id": "launch-supervised", "behavior": "supervised launch", "expected": "supervisor owns the child generation and heartbeat", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
+    {"id": "pause-persisted", "behavior": "persisted manual pause", "expected": "manual intent survives reload and suppresses prompt eligibility", "status": "automated", "evidence": ["tests/test_runtime_state.py", "tools/state_restart_selftest.py"]},
+    {"id": "snooze-active", "behavior": "active snooze", "expected": "snooze creates effective pause without consuming manual intent", "status": "automated", "evidence": ["tests/test_runtime_state.py", "tools/state_restart_selftest.py"]},
+    {"id": "snooze-expired", "behavior": "expired snooze", "expected": "expiry clears snooze and preserves explicit manual pause", "status": "automated", "evidence": ["tests/test_runtime_state.py", "tools/state_restart_selftest.py"]},
+    {"id": "duplicate-app", "behavior": "duplicate application", "expected": "single-instance ownership rejects a second application", "status": "automated", "evidence": ["tests/test_taskdb_monitoring.py", "tests/test_backend_regressions.py"]},
+    {"id": "duplicate-supervisor", "behavior": "duplicate supervisor", "expected": "second supervisor is rejected for the same marker root", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
+    {"id": "child-crash", "behavior": "child crash", "expected": "supervisor records failure and starts a replacement generation", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
+    {"id": "child-hang", "behavior": "child heartbeat hang", "expected": "stale heartbeat enters bounded recovery without unrelated process termination", "status": "automated", "evidence": ["tools/source_supervisor_selftest.py", "tests/test_supervisor_harness.py"]},
+    {"id": "tray-exit", "behavior": "tray exit", "expected": "user exit stops the application and is not restarted by the supervisor", "status": "manual_pending", "evidence": ["docs/refurbishment/manual-evidence.json"]},
+    {"id": "shutdown-query", "behavior": "Windows shutdown query and commit", "expected": "query prepares only; committed shutdown runs the normal cleanup contract", "status": "automated", "evidence": ["tests/test_backend_regressions.py", "tests/test_app_lifecycle.py"]},
+    {"id": "settings-corruption", "behavior": "settings corruption", "expected": "corrupt settings are preserved, quarantined, and recovered from a valid backup when available", "status": "automated", "evidence": ["tests/test_settings_state.py", "tests/fixtures/settings_malformed.json"]},
+    {"id": "settings-save-failure", "behavior": "settings save failure", "expected": "caller receives a non-durable result and in-memory state is not falsely committed", "status": "automated", "evidence": ["tests/test_settings_revision.py", "tests/test_settings_state.py"]},
+    {"id": "v1-prompt", "behavior": "V1 prompt", "expected": "prompt generation, validation, response persistence, and cleanup are owner-controlled", "status": "automated", "evidence": ["docs/refurbishment/V1_PROMPT_STATE_MATRIX.md", "tests/test_dialog_keyboard.py"]},
+    {"id": "v2-prompt", "behavior": "V2 prompt", "expected": "activity freshness, response outcome, intervention, and cleanup are bounded", "status": "automated", "evidence": ["tests/test_v2_flows.py", "tests/test_activity_snapshot.py"]},
+    {"id": "website-flag", "behavior": "website flag", "expected": "canonical host matching, confidence, cooldown, allow-once, and pause suppression are deterministic", "status": "automated", "evidence": ["tests/test_taskdb_monitoring.py", "tests/test_v2_flows.py"]},
+    {"id": "intervention-cancel", "behavior": "intervention cancellation", "expected": "selection cancellation restores prompt state and does not consume cooldown", "status": "automated", "evidence": ["tests/test_intervention_coordinator.py", "tests/test_taskdb_monitoring.py"]},
+    {"id": "intervention-success", "behavior": "intervention success", "expected": "successful intervention closes owned overlays and records one outcome", "status": "manual_pending", "evidence": ["docs/refurbishment/manual-evidence.json"]},
+    {"id": "task-transitions", "behavior": "task create/change/complete/fail", "expected": "all transitions are transactional, validated, and observable without logging task text", "status": "automated", "evidence": ["tests/test_taskdb_monitoring.py", "tests/test_taskdb_recovery.py"]},
+    {"id": "optional-dependencies", "behavior": "missing camera or tray dependencies", "expected": "optional features degrade without crashing the core application", "status": "automated", "evidence": ["tests/test_backend_regressions.py", "tests/test_system_tray_commands.py"]}
+  ]
+}

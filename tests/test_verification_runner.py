@@ -123,6 +123,21 @@ class VerificationRunnerTests(unittest.TestCase):
         }
         self.assertTrue(all(required <= set(case) for case in payload["cases"]))
 
+    def test_behavior_snapshot_manifest_covers_phase_zero_cases(self):
+        path = Path(__file__).resolve().parents[1] / "docs" / "refurbishment" / "behavior-snapshots.json"
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(1, payload["schema_version"])
+        snapshots = payload["snapshots"]
+        self.assertEqual(20, len(snapshots))
+        self.assertEqual(
+            {"automated", "live_disposable", "manual_pending"},
+            {item["status"] for item in snapshots},
+        )
+        for item in snapshots:
+            self.assertTrue(item["id"])
+            self.assertTrue(item["expected"])
+            self.assertTrue(item["evidence"])
+
 
 if __name__ == "__main__":
     unittest.main()
