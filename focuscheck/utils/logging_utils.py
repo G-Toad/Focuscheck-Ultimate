@@ -7,11 +7,49 @@ Provides centralized logging configuration with rotation support.
 import os
 import logging
 import hashlib
+import re
 from logging.handlers import RotatingFileHandler
 
 
 _logger = None
 _configured_log_path = None
+
+_PRIVATE_LOG_FIELD_RE = re.compile(
+    r"(?i)\b(response(?:_summary)?|window[_ -]?title|title|url|what|consequences|doing|benefits)\s*[:=]\s*"
+    r"(?:\"[^\"]*\"|'[^']*'|[^\s|,}]+)"
+)
+_WINDOWS_USER_PATH_RE = re.compile(r"(?i)[A-Z]:\\Users\\[^\s|]+")
+_URL_RE = re.compile(r"https?://[^\s\"'<>]+", re.IGNORECASE)
+
+
+def sanitize_log_message(value):
+    """Remove common user-content and local-path forms from diagnostics."""
+    result = str(value)
+    result = _URL_RE.sub("<url-redacted>", result)
+    result = _WINDOWS_USER_PATH_RE.sub("<windows-user-path>", result)
+    result = _PRIVATE_LOG_FIELD_RE.sub(lambda match: f"{match.group(1)}=<redacted>", result)
+    try:
+        home = os.path.expanduser("~")
+        if home and home != "~":
+            result = result.replace(home, "<user-home>")
+    except Exception:
+        pass
+    return result
+
+
+class PrivacyLogFilter(logging.Filter):
+    """Redact rendered records before they reach the application log."""
+
+    def filter(self, record):
+        try:
+            rendered = record.getMessage()
+            redacted = sanitize_log_message(rendered)
+            if redacted != rendered:
+                record.msg = redacted
+                record.args = ()
+        except Exception:
+            pass
+        return True
 
 
 class SafeRotatingFileHandler(RotatingFileHandler):
@@ -84,6 +122,7 @@ def get_logger():
                 backupCount=3,
                 encoding="utf-8"
             )
+            handler.addFilter(PrivacyLogFilter())
             handler.setFormatter(
                 logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
             )
@@ -91,6 +130,7 @@ def get_logger():
         except Exception:
             # Fallback to stderr-only
             sh = logging.StreamHandler()
+            sh.addFilter(PrivacyLogFilter())
             sh.setFormatter(
                 logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
             )

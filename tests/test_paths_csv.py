@@ -99,6 +99,21 @@ class CsvLoggerTests(unittest.TestCase):
         self.assertNotIn("private response that must not be logged", logged)
         self.assertIn("response_summary", logged)
 
+    def test_log_filter_redacts_rendered_private_fields_and_paths(self):
+        import logging
+        from focuscheck.utils.logging_utils import PrivacyLogFilter
+
+        record = logging.LogRecord(
+            "focuscheck", logging.INFO, __file__, 1,
+            "title=%s url=%s path=%s", ("private title", "https://example.test/secret", "C:\\Users\\singh\\private"), None,
+        )
+        self.assertTrue(PrivacyLogFilter().filter(record))
+        rendered = record.getMessage()
+        self.assertNotIn("private title", rendered)
+        self.assertNotIn("example.test", rendered)
+        self.assertNotIn("C:\\Users\\singh", rendered)
+        self.assertIn("<redacted>", rendered)
+
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):
         from focuscheck.database.csv_logger import _excel_safe
 
