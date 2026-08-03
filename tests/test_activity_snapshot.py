@@ -141,6 +141,39 @@ class ActivitySnapshotTests(unittest.TestCase):
 
 
 class WindowsActivityProbeTests(unittest.TestCase):
+    def test_foreground_probe_does_not_attach_cdp_url_to_non_browser(self):
+        from focuscheck.platform_specific import activity_probe
+
+        class Api:
+            def __init__(self, result=0):
+                self.result = result
+                self.argtypes = None
+                self.restype = None
+
+            def __call__(self, *_args):
+                return self.result
+
+        user32 = type("User32", (), {
+            "GetWindowTextLengthW": Api(0),
+            "GetWindowTextW": Api(0),
+            "GetClassNameW": Api(0),
+            "GetForegroundWindow": Api(123),
+            "GetWindowThreadProcessId": Api(1),
+        })()
+        windll = type("Windll", (), {"user32": user32})()
+        with mock.patch.object(activity_probe.platform, "system", return_value="Windows"), \
+                mock.patch.object(activity_probe.ctypes, "windll", windll), \
+                mock.patch.object(activity_probe, "_get_process_path", return_value=r"C:\\Windows\\notepad.exe"), \
+                mock.patch.object(activity_probe, "_get_window_text", return_value="Example tab"), \
+                mock.patch.object(activity_probe, "_get_window_class", return_value="Notepad"), \
+                mock.patch.object(activity_probe, "get_best_url_for_window") as cdp, \
+                mock.patch.object(activity_probe, "try_get_browser_url") as uia:
+            info = activity_probe.get_active_window_info()
+
+        self.assertIsNone(info["url"])
+        cdp.assert_not_called()
+        uia.assert_not_called()
+
     def test_icon_extraction_declares_shell_user_and_gdi_signatures(self):
         from focuscheck.platform_specific import icon_extract
 

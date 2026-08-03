@@ -5,7 +5,7 @@ import platform
 import ctypes
 from ctypes import wintypes
 
-from .browser_info import try_get_browser_url
+from .browser_info import is_supported_browser, try_get_browser_url
 from .cdp_browser import get_best_url_for_window
 
 
@@ -131,10 +131,12 @@ def get_active_window_info():
         }
         try:
             url = None
-            # Prefer CDP if available
-            url = get_best_url_for_window(title) or None
-            if not url:
-                url = try_get_browser_url(hwnd, process_name)
+            # CDP is global to Chromium and must never attach a browser tab
+            # to an unrelated foreground process with a matching title.
+            if is_supported_browser(process_name):
+                url = get_best_url_for_window(title) or None
+                if not url:
+                    url = try_get_browser_url(hwnd, process_name)
             info["url"] = url
         except Exception:
             info["url"] = None
