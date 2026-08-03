@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest Settings/prompt correction: tray Settings refresh now uses the App-owned prompt close contract instead of manually destroying the dialog, releasing the prompt coordinator/runtime lease and notifying the engine before regeneration. The full verifier passed at source checkpoint `1f8500e` with 556 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest prompt-lifecycle correction: prompt start, failure, coordinator rejection, completion, and interruption now notify the selected engine; V2 website polling is suspended while the prompt owns the UI and resumes after terminal cleanup. The full verifier passed at source checkpoint `fe63f77` with 555 tests across 19 stages; manual Windows and release evidence remains pending.
 
 Latest intervention-lifecycle correction: App-owned intervention lease transitions now notify the selected engine; V2 cancels website polling for the full wizard lease and resumes only after cleanup, with finalization protected against lease-release failures. The full verifier passed at source checkpoint `a948f12` with 554 tests across 19 stages; manual Windows and release evidence remains pending.

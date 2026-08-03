@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest Settings/prompt evidence: source checkpoint `1f8500e` proves tray Settings refresh releases the active prompt lease through the shared close path before scheduling regeneration. The full verifier passed all 19 stages with 556 tests; release status remains partial because manual Windows and packaging gates are not run.
+
 Latest prompt-lifecycle evidence: source checkpoint `fe63f77` proves V2 website polling is suspended for prompt ownership and resumes after completion, interruption, rejection, or creation failure. The full verifier passed all 19 stages with 555 tests; release status remains partial because manual Windows and packaging gates are not run.
 
 Latest intervention-lifecycle evidence: source checkpoint `a948f12` proves V2 website polling is suspended for the entire App-owned intervention lease and resumes after lease cleanup, including failure-isolated finalization. The full verifier passed all 19 stages with 554 tests; release status remains partial because manual Windows and packaging gates are not run.
