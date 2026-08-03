@@ -1559,7 +1559,7 @@ class App:
                 if state is not None:
                     return state.set_snooze_until(value)
             self.settings[key] = value
-            result = save_settings(self.settings)
+            result = self._persist_settings_draft(self.settings)
             durable = getattr(result, "durable_write", result)
             if durable:
                 committed = getattr(result, "committed_settings", None)
