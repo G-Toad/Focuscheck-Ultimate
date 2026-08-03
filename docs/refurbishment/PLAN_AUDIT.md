@@ -161,6 +161,8 @@ Current checkpoint addition: The latest `c11865a` V1 flow checkpoint adds withdr
 
 Current checkpoint addition: The current V1 lifecycle slice adds explicit parent ownership and callback-free interruption cleanup for Focus/Waste detail dialogs, including grab/timer release and `_focus_prompt_open` reset.
 
+Current checkpoint addition: The latest `28cd8a6` V1 ownership checkpoint passes the full verifier with `394` unittest cases and all 18 bounded stages; manual V1 interruption evidence remains pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -182,6 +184,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `393` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `c11865a`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `394` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `28cd8a6`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
