@@ -1,4 +1,4 @@
-"""Monitoring engine stub for Version 2 prompts."""
+"""Activity-aware monitoring engine for Version 2 prompts."""
 
 import copy
 import time

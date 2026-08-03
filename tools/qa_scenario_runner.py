@@ -582,14 +582,14 @@ def run_prompt_flow_scenarios(log: QaLog):
                 raise RuntimeError("boom")
 
         with mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.InterventionWizard", Wizard):
-            result = dialog._start_intervention_stub()
+            result = dialog._start_intervention()
         checks = {"result_false": result is False, "active_reset": dialog.app_ref._intervention_active is False}
         log.event("v2.intervention_exception_resets_state", "assert_reset", all(checks.values()), checks=checks)
         assert all(checks.values())
 
     with scenario(log, "v2.cancelled_intervention_no_success_log"):
         dialog = make_dialog(decision="yes")
-        dialog._start_intervention_stub = lambda: False
+            dialog._start_intervention = lambda: False
         dialog._log_response = mock.Mock()
         dialog._close = mock.Mock()
 

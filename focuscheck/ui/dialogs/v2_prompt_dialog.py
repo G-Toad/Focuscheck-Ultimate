@@ -438,14 +438,14 @@ class V2PromptDialog(
             return
 
         if decision == "yes":
-            completed = self._start_intervention_stub()
+            completed = self._start_intervention()
             if not completed:
                 return
 
         self._log_response(decision)
         self._close()
 
-    def _start_intervention_stub(self):
+    def _start_intervention(self):
         logger = None
         try:
             logger = get_logger()

@@ -116,7 +116,7 @@ class V2FlowTests(unittest.TestCase):
                 raise RuntimeError("boom")
 
         with mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.InterventionWizard", Wizard):
-            self.assertFalse(dialog._start_intervention_stub())
+            self.assertFalse(dialog._start_intervention())
 
         self.assertFalse(dialog.app_ref._intervention_active)
 
@@ -126,7 +126,7 @@ class V2FlowTests(unittest.TestCase):
         dialog.winfo_viewable = lambda: True
         dialog._force_window_to_front = lambda: None
 
-        self.assertTrue(dialog._start_intervention_stub())
+        self.assertTrue(dialog._start_intervention())
         dialog.app_ref.run_intervention.assert_called_once_with(
             dialog.settings,
             preselect_hwnd=None,
@@ -170,7 +170,7 @@ class V2FlowTests(unittest.TestCase):
         with mock.patch.object(v2_prompt_dialog.threading, "get_ident", return_value=456), \
                 mock.patch.object(v2_prompt_dialog.threading, "Event", return_value=cancelled), \
                 mock.patch.object(v2_prompt_dialog.messagebox, "showinfo"):
-            self.assertFalse(dialog._start_intervention_stub())
+            self.assertFalse(dialog._start_intervention())
 
         self.assertGreaterEqual(cancelled.set.call_count, 1)
         cancelled.is_set.return_value = True
@@ -193,7 +193,7 @@ class V2FlowTests(unittest.TestCase):
         logger = mock.Mock()
         with mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.InterventionWizard", Wizard), \
                 mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.get_logger", return_value=logger):
-            self.assertTrue(dialog._start_intervention_stub())
+            self.assertTrue(dialog._start_intervention())
 
         logged = " ".join(str(call) for call in logger.info.call_args_list)
         self.assertNotIn("private.example/secret-token", logged)
@@ -201,7 +201,7 @@ class V2FlowTests(unittest.TestCase):
 
     def test_cancelled_intervention_does_not_log_or_close(self):
         dialog = self._dialog(decision="yes")
-        dialog._start_intervention_stub = lambda: False
+        dialog._start_intervention = lambda: False
         dialog._log_response = mock.Mock()
         dialog._close = mock.Mock()
 
