@@ -13,7 +13,7 @@ $env:FOCUSCHECK_FORCE_STARTED = ""
 python main.py --run-seconds=3
 ```
 
-Observed on 2026-08-03:
+Observed on 2026-08-03 (historical run):
 
 - Process exit code: `0`.
 - Data root was a unique `%TEMP%` directory, not `%APPDATA%` and not the repository.
@@ -21,6 +21,21 @@ Observed on 2026-08-03:
 - No interactive tray, prompt, browser, lock/sleep/resume, startup-registry, or packaged-installer behavior was claimed by this run.
 
 This evidence supports direct launch, isolated path selection, basic persistence initialization, heartbeat publication, and clean timed shutdown only.
+
+Latest isolated rerun on 2026-08-03:
+
+```powershell
+$env:FOCUS_DATA_DIR = "$env:TEMP\FocusCheckDirectLaunch_<unique>"
+py -3 -c "from focuscheck.settings import save_settings; save_settings({'paused': True, 'snooze_until_utc': ''})"
+$env:FOCUSCHECK_FORCE_STARTED = "1" # legacy variable; must be ignored
+py -3 main.py --run-seconds=3
+py -3 -c "from focuscheck.settings import load_settings; print(load_settings().get('paused'))"
+```
+
+- Process exit code: `0`; elapsed time was approximately `4.1` seconds.
+- The unique temporary root contained `focus_app.log`, `focus_log.csv`, `focus_settings.json.lock`, `focus_tasks.sqlite3`, `hb.txt`, `runtime_state.jsonl`, and `structured_events.jsonl`.
+- With a persisted pause, the process exited `0` and the post-run settings read `paused=True`; the legacy force-start environment variable did not bypass the explicit-start contract. The command targeted only the unique temporary root; startup/profile mutation was not independently inspected by this rerun.
+- This remains direct-process evidence only, not manual UI, supervisor-restart, browser, overlay, lock/sleep/resume, or installer evidence.
 
 ## Native tray smoke
 
