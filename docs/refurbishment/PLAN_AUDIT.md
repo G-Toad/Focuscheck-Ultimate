@@ -28,9 +28,11 @@ Latest composition-root correction: core runtime services now have explicit inje
 
 Latest composition-root extension: PauseGuard and PromptCoordinator are now injectable App dependencies, including prompt-coordinator recovery paths, with lifecycle coverage that preserves standalone fixture compatibility. Full composition extraction and manual Windows/release evidence remain open.
 
+Latest composition-root engine correction: selected V1/V2 monitoring engine construction now passes through an injectable factory receiving the selected class and App context, while the default engine constructors and V2 clock/provider wiring remain unchanged. Manual Windows and release evidence remain open.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `df2713a`; the post-push verifier records `522` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `cf22b9e`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
