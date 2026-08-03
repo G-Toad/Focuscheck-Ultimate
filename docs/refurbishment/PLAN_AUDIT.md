@@ -283,6 +283,8 @@ Live supervisor evidence correction: an isolated Windows probe launched the actu
 
 Startup-launcher evidence correction: with `APPDATA` redirected to a disposable Windows profile, the real `--install-startup` path generated the expected `RunFocusCheckSupervisor.cmd` with supervisor, `--run`, base-directory, and timing arguments; `--uninstall-startup` removed it. Real shell/Run-key execution remains unverified.
 
+Canonical Run-key evidence correction: an isolated uniquely named value was written to the real current-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` key through `startup.install_startup()`, read back as `REG_SZ`, classified `valid` by `inspect_startup()`, confirmed by `is_startup_installed()`, and removed through `uninstall_startup()` with a final `absent` state. The production `FocusCheck` value was not touched. Explorer sign-in launch, lock/sleep/resume, and target-machine startup evidence remain open.
+
 Activity-provider evidence correction: `safe_activity_snapshot()` now enforces one in-flight provider call, returning a bounded `provider busy` snapshot while a timed-out daemon worker is still running; focused coverage proves repeated polling does not accumulate concurrent stuck workers.
 
 Recovery-path correction: `TaskDB.restore_from()` rejects symlinked source and destination path components before creating restore directories or temporary files, and the export importer now adds a separate manifest/hash/settings/SQLite validation boundary with staged promotion and rollback; focused regressions preserve external targets and cover the import confirmation/restore contract.

@@ -64,6 +64,24 @@ This proves the source launcher generation/removal contract in an isolated
 Windows profile. It does not prove real Explorer/Run-key shell execution or
 interactive startup behavior.
 
+Latest isolated canonical Run-key probe on 2026-08-03:
+
+- A uniquely named disposable value was written to the current user's
+  `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` key through
+  `startup.install_startup()`.
+- The value was stored as `REG_SZ` and contained the source-mode Python
+  command targeting `focuscheck_supervisor.py --run --base-dir` with the exact
+  repository root.
+- `inspect_startup()` classified the installed value as `valid`, and
+  `is_startup_installed()` returned true.
+- `startup.uninstall_startup()` removed the value; a final inspection returned
+  `absent`. Cleanup also ran in `finally`, and the real `FocusCheck` value was
+  not touched.
+
+This is direct per-user registry install/inspection/removal evidence. It does
+not prove that Explorer launches the value at sign-in, nor lock/sleep/resume,
+interactive tray behavior, or target-machine startup behavior.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
