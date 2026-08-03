@@ -141,6 +141,8 @@ Current checkpoint addition: The latest `6dda0dc` run makes stop-request and sto
 
 Current checkpoint addition: The latest `d162449` run routes wizard off-thread Tk dispatch through its owned timer registry and cancels the registry entry after timeout; the full verifier records `384` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The current intervention checkpoint routes delayed prompt-focus recovery through the prompt's timer owner, with a standalone wizard-registry fallback; focused intervention coverage passes pending the full verifier.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

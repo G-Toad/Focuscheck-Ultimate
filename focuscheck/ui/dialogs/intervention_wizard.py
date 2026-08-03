@@ -714,6 +714,18 @@ class InterventionWizard:
         # callback cannot inspect or destroy a selection dialog from a prior run.
         self._timers = TimerRegistry(parent)
 
+    def _schedule_prompt_focus(self, prompt_ref) -> bool:
+        """Schedule prompt focus recovery through the prompt's timer owner."""
+        if prompt_ref is None:
+            return False
+        callback = getattr(prompt_ref, "_force_window_to_front", None)
+        if not callable(callback):
+            return False
+        owner = getattr(prompt_ref, "_timers", None)
+        if owner is None or getattr(owner, "closed", False):
+            owner = self._timers
+        return bool(owner.schedule("intervention-prompt-focus", 50, callback))
+
     def run(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False, intervention_id=None):
         logger = None
         try:
@@ -907,7 +919,7 @@ class InterventionWizard:
                 try:
                     prompt_ref.deiconify()
                     prompt_ref.lift()
-                    prompt_ref.after(50, getattr(prompt_ref, "_force_window_to_front", lambda: None))
+                    self._schedule_prompt_focus(prompt_ref)
                 except Exception:
                     if logger:
                         logger.exception("intervention: failed to restore prompt after selection error", exc_info=True)
@@ -956,7 +968,7 @@ class InterventionWizard:
                 try:
                     prompt_ref.deiconify()
                     prompt_ref.lift()
-                    prompt_ref.after(50, getattr(prompt_ref, "_force_window_to_front", lambda: None))
+                    self._schedule_prompt_focus(prompt_ref)
                 except Exception:
                     if logger:
                         logger.exception("intervention: failed to restore prompt in fail-safe", exc_info=True)

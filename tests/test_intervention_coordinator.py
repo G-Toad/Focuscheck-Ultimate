@@ -258,6 +258,22 @@ class InterventionCoordinatorTests(unittest.TestCase):
         parent.callback()
         callback.assert_not_called()
 
+    def test_prompt_focus_recovery_uses_prompt_timer_owner(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        wizard = intervention_wizard.InterventionWizard.__new__(intervention_wizard.InterventionWizard)
+        wizard._timers = mock.Mock()
+        prompt = mock.Mock()
+        prompt._timers = mock.Mock()
+        prompt._timers.closed = False
+        prompt._force_window_to_front = mock.Mock()
+
+        self.assertTrue(wizard._schedule_prompt_focus(prompt))
+        prompt._timers.schedule.assert_called_once_with(
+            "intervention-prompt-focus", 50, prompt._force_window_to_front
+        )
+        wizard._timers.schedule.assert_not_called()
+
     def test_reflection_timeout_invalidates_queued_tk_callback(self):
         from focuscheck.ui.dialogs import intervention_reflection_dialog
 
