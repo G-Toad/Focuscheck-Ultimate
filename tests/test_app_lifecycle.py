@@ -511,6 +511,7 @@ class AppLifecycleTests(unittest.TestCase):
         app._close_snooze_confirmation = lambda: events.append("snooze_confirmation")
         app._close_snooze_reminder = lambda: events.append("snooze")
         app._close_gentle_reminder = lambda: events.append("gentle")
+        app._close_diagnostic_status_window = lambda: events.append("diagnostic_status")
         app._shutdown_engine = lambda: events.append("engine")
         app._timers = mock.Mock()
         app._tray = None
@@ -518,8 +519,22 @@ class AppLifecycleTests(unittest.TestCase):
         app.root = mock.Mock()
         App._cleanup_runtime(app, reason="test", request_supervisor=False)
 
-        self.assertEqual(["prompt", "snooze_confirmation", "snooze", "gentle", "engine"], events)
+        self.assertEqual(
+            ["prompt", "snooze_confirmation", "snooze", "gentle", "diagnostic_status", "engine"],
+            events,
+        )
         app.root.destroy.assert_called_once_with()
+
+    def test_diagnostic_status_close_clears_reference(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._diagnostic_status_window = mock.Mock()
+
+        App._close_diagnostic_status_window(app)
+
+        app._diagnostic_status_window.destroy.assert_called_once_with()
+        self.assertIsNone(app._diagnostic_status_window)
 
     def test_prompt_visibility_recovery_close_uses_full_cleanup_contract(self):
         from focuscheck.app import App

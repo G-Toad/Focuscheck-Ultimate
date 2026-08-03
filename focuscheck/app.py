@@ -1954,6 +1954,17 @@ class App:
 
         return self._call_on_ui_thread(_show)
 
+    def _close_diagnostic_status_window(self):
+        """Close the optional status window during application shutdown."""
+        window = getattr(self, "_diagnostic_status_window", None)
+        self._diagnostic_status_window = None
+        if window is None:
+            return
+        try:
+            window.destroy()
+        except Exception:
+            pass
+
     def _tray_open_data_folder(self):
         try:
             path = str(self._data_root())
@@ -2331,6 +2342,7 @@ class App:
             ("snooze_confirmation", self._close_snooze_confirmation),
             ("snooze_reminder", self._close_snooze_reminder),
             ("gentle_reminder", self._close_gentle_reminder),
+            ("diagnostic_status", self._close_diagnostic_status_window),
             ("engine", self._shutdown_engine),
         ):
             try:
