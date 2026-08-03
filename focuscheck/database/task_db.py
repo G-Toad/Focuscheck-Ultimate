@@ -402,7 +402,9 @@ class TaskDB:
                         due = due.replace(tzinfo=timezone.utc)
                     else:
                         due = due.astimezone(timezone.utc)
-                    if self._now_utc() > due:
+                    # The deadline is inclusive: the task is timed out at the
+                    # exact instant the UI marks it overdue.
+                    if self._now_utc() >= due:
                         cur.execute(
                             "UPDATE tasks SET status='failed', completed_utc=?, timed_out=1, "
                             "change_reason=COALESCE(NULLIF(change_reason, ''), 'task deadline overdue') "

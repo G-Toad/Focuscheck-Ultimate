@@ -93,6 +93,23 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertTrue(db.mark_completed(second_id))
             self.assertEqual(now.isoformat(), db.list_history(limit=1)[0]["completed_utc"])
 
+    def test_overdue_transition_is_inclusive_at_exact_deadline(self):
+        from focuscheck.database.task_db import TaskDB
+
+        now = datetime(2026, 7, 20, 10, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            db = TaskDB(str(Path(temp_dir) / "tasks.sqlite3"), clock=lambda: now)
+            task_id = db.start_task(
+                title="Exact deadline",
+                due_utc=now.isoformat(),
+                why="",
+                consequences="",
+            )
+
+            self.assertEqual([task_id], db.overdue_active_to_failed())
+            self.assertIsNone(db.get_active())
+            self.assertEqual(1, db.list_history(limit=1)[0]["timed_out"])
+
     def test_invalid_task_timestamp_is_rejected_at_persistence_boundary(self):
         from focuscheck.database.task_db import TaskDB
 
