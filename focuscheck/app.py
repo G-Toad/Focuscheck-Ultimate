@@ -2586,14 +2586,18 @@ class App:
             paths = getattr(self, "paths", None)
             heartbeat_path = Path(getattr(paths, "heartbeat", HEARTBEAT_PATH))
             heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
-            temp_path = heartbeat_path.with_name(
-                f"{heartbeat_path.name}.{os.getpid()}.{self._heartbeat_sequence}.tmp"
-            )
-            with temp_path.open("w", encoding="utf-8") as f:
-                json.dump(payload, f)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(temp_path, heartbeat_path)
+            heartbeat_writer = getattr(getattr(self, "_dependencies", None), "heartbeat_writer", None)
+            if callable(heartbeat_writer):
+                heartbeat_writer(heartbeat_path, payload)
+            else:
+                temp_path = heartbeat_path.with_name(
+                    f"{heartbeat_path.name}.{os.getpid()}.{self._heartbeat_sequence}.tmp"
+                )
+                with temp_path.open("w", encoding="utf-8") as f:
+                    json.dump(payload, f)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(temp_path, heartbeat_path)
             self._heartbeat_write_failures = 0
         except Exception as exc:
             self._heartbeat_write_failures = getattr(self, "_heartbeat_write_failures", 0) + 1

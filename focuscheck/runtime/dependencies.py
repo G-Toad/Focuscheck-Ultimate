@@ -19,3 +19,4 @@ class AppDependencies:
     task_db_factory: Callable[..., Any] | None = None
     tray_factory: Callable[..., Any] | None = None
     watcher_factory: Callable[..., Any] | None = None
+    heartbeat_writer: Callable[[Any, dict[str, Any]], Any] | None = None

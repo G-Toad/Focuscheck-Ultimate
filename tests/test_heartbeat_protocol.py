@@ -141,3 +141,27 @@ class HeartbeatProtocolTests(unittest.TestCase):
         self.assertTrue(payload["effective_paused"])
         self.assertTrue(payload["snooze_active"])
         self.assertEqual(["lock"], payload["guard_reasons"])
+
+    def test_app_heartbeat_uses_composed_writer_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        writes = []
+        app = App.__new__(App)
+        app.settings = {"paused": False, "interval_seconds": 60}
+        app.guard = mock.Mock()
+        app.guard.should_pause.return_value = False
+        app._heartbeat_sequence = 0
+        app._process_start_utc = "2030-01-01T00:00:00+00:00"
+        app._dependencies = AppDependencies(
+            heartbeat_writer=lambda path, payload: writes.append((path, payload))
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir, mock.patch(
+            "focuscheck.app.HEARTBEAT_PATH", str(Path(temp_dir) / "hb.txt")
+        ):
+            app._write_heartbeat()
+
+        self.assertEqual(1, len(writes))
+        self.assertEqual(1, writes[0][1]["sequence"])
+        self.assertEqual(Path(temp_dir) / "hb.txt", writes[0][0])
