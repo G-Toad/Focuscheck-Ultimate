@@ -75,6 +75,26 @@ with tempfile.TemporaryDirectory() as directory:
     assert db.mark_completed(task_id)
 """,
     ),
+    Mutation(
+        "supervisor_stable_ready_backoff",
+        "focuscheck_supervisor.py",
+        "if now - self._ready_since_mono < STABLE_RUNTIME_SECONDS:\n            return",
+        "if False:\n            return",
+        """
+from unittest import mock
+import focuscheck_supervisor as module
+supervisor = module.FocusCheckSupervisor.__new__(module.FocusCheckSupervisor)
+supervisor.restart_delay = 1.0
+supervisor.current_delay = 8.0
+supervisor._restart_history = [1.0]
+supervisor._degraded_until = 99.0
+supervisor._ready_since_mono = 10.0
+supervisor.logger = type("Logger", (), {"log": lambda *_args: None})()
+with mock.patch.object(module.time, "monotonic", return_value=39.9):
+    supervisor._maybe_reset_after_stable()
+assert supervisor.current_delay == 8.0
+""",
+    ),
 )
 
 
@@ -83,6 +103,9 @@ def _run_mutation(mutation: Mutation) -> None:
         root = Path(temp_dir)
         shutil.copytree(ROOT / "focuscheck", root / "focuscheck")
         source = root / mutation.source
+        if not source.exists():
+            source.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / mutation.source, source)
         text = source.read_text(encoding="utf-8")
         if mutation.original not in text:
             raise RuntimeError(f"mutation anchor missing: {mutation.name}")

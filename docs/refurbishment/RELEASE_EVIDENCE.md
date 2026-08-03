@@ -11,7 +11,7 @@ The current automated baseline is `331` tests; the detailed older bullets are re
 - Runtime-state view coverage verifies immutable revision/effective-reason snapshots and revision rollback after failed persistence.
 - Status/heartbeat regression coverage verifies scalar-safe runtime revision and pause-reason publication from the immutable view.
 - Tray regression coverage verifies the post-start health timer is cancelled and cleared during tray stop.
-- Mutation-smoke coverage kills four selected mutants, including the TaskDB active-to-completed transition contract.
+- Mutation-smoke coverage kills five selected mutants, including TaskDB active-to-completed and supervisor stable-ready backoff contracts.
 
 - The current verifier has `16` passing bounded stages, including `source_supervisor_selftest`, which launches disposable real children and verifies failure/restart, generation/PID-bound stop acknowledgement, heartbeat hang recovery, circuit-breaker entry, and child reaping. This does not replace manual target-machine, sleep/resume, or production-duration supervision evidence.
 - Fatal-mainloop cleanup is covered by a failure-injection matrix across runtime state, prompt, reminder, engine, timer, tray, watcher, and Tk-root stages; the regression also verifies no intentional supervisor-stop request is emitted after a crash.
