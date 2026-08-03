@@ -225,7 +225,7 @@ Current checkpoint addition: The latest export-validation slice rejects malforme
 
 Current checkpoint addition: The latest rollback-boundary slice restricts rollback to generated sibling backups, rejects reparse-point backup trees, and proves an unrelated directory cannot replace the current installation. The focused packaging suite records `16` passing tests with the reparse-point case skipped where the environment cannot create links; the full verifier records `427` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
-Current checkpoint addition: The latest audit-durability slice makes clear-data and retention report `audit_written` plus bounded audit errors, and fsyncs retention audit records before reporting them durable. The focused privacy suite records `18` passing tests with symlink cases skipped where the environment cannot create links; full verification remains pending for this slice.
+Current checkpoint addition: The latest audit-durability slice makes clear-data and retention report `audit_written` plus bounded audit errors, and fsyncs retention audit records before reporting them durable. The focused privacy suite records `18` passing tests with symlink cases skipped where the environment cannot create links; the full verifier records `429` unittest cases, all 18 bounded stages passed, and zero failed stages.
 
 ## Final Acceptance Gates
 
@@ -248,6 +248,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `427` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `c25803e`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `429` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `b23f89a`. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
