@@ -249,6 +249,29 @@ class DialogKeyboardTests(unittest.TestCase):
                 getattr(dialog, method_name)()
             self.assertEqual([callback_name], events)
 
+    def test_focus_and_waste_dialogs_own_initial_focus_timer(self):
+        from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog
+        from focuscheck.ui.dialogs.waste_prompt_dialog import WastePromptDialog
+
+        root = _make_root()
+        try:
+            for dialog_type, kwargs in (
+                (FocusPromptDialog, {"ask_doing": False, "ask_benefits": False}),
+                (WastePromptDialog, {"ask_what": False, "ask_consequences": False}),
+            ):
+                dialog = dialog_type(
+                    root,
+                    auto_focus=True,
+                    settings={"spam_detection_enabled": False, "challenge_system_enabled": False},
+                    **kwargs,
+                )
+                timers = dialog._timers
+                self.assertIsNotNone(timers.callback_id("initial-focus"))
+                dialog.destroy()
+                self.assertTrue(timers.closed)
+        finally:
+            root.destroy()
+
     def test_snooze_prompt_can_disable_reason_and_exact_fields(self):
         from focuscheck.ui.dialogs.snooze_prompt_dialog import SnoozePromptDialog
 

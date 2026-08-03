@@ -9,6 +9,7 @@ import time
 from .spam_detection import SpamDetector
 from ...settings.gates import is_spam_detection_enabled
 from .challenge_system import create_challenge_system
+from ...utils.timers import TimerRegistry
 
 try:
     from ...utils import get_logger
@@ -37,6 +38,7 @@ class WastePromptDialog(tk.Toplevel):
         self.require_all_fields = bool(require_all_fields)
         self._focus_order = []
         self._field_controls = []
+        self._timers = TimerRegistry(self)
         self._monotonic_clock = monotonic_clock if callable(monotonic_clock) else time.monotonic
         self._dialog_shown_at = self._monotonic_clock()
 
@@ -124,7 +126,13 @@ class WastePromptDialog(tk.Toplevel):
         self.bind("<Escape>", self._on_escape, add=True)
 
         if self._auto_focus:
-            self.after_idle(self._set_initial_focus)
+            self._timers.schedule("initial-focus", 0, self._set_initial_focus)
+
+    def destroy(self):
+        timers = getattr(self, "_timers", None)
+        if timers is not None:
+            timers.close()
+        return super().destroy()
 
     def _init_spam_detector(self):
         """Initialize spam detector with settings configuration."""

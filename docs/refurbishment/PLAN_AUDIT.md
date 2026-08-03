@@ -145,6 +145,8 @@ Current checkpoint addition: The latest `5793ecc` run routes delayed prompt-focu
 
 Current checkpoint addition: The latest `c775b4a` run routes prompt minimize recovery through the prompt timer owner instead of direct Tk scheduling; the full verifier records `386` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The current V1 detail-dialog checkpoint gives Focus and Waste dialogs registry-owned initial-focus timers that close before destruction; focused dialog coverage passes pending the full verifier.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
