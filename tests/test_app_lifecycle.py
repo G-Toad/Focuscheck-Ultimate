@@ -452,6 +452,8 @@ class AppLifecycleTests(unittest.TestCase):
                     log_header_factory=lambda _path: None,
                     task_db_factory=lambda *_args, **_kwargs: object(),
                     timer_registry_factory=lambda *_args, **_kwargs: mock.Mock(),
+                    tray_factory=lambda **_kwargs: mock.Mock(start=mock.Mock(return_value=False)),
+                    watcher_factory=lambda *_args, **_kwargs: mock.Mock(),
                     startup_stage_hook=inject,
                     tk_root_factory=lambda: root,
                 )
@@ -467,8 +469,6 @@ class AppLifecycleTests(unittest.TestCase):
                     stack.enter_context(mock.patch.object(App, "_log_startup_diagnostics"))
                     stack.enter_context(mock.patch.object(App, "_schedule_next"))
                     stack.enter_context(mock.patch.object(App, "_write_heartbeat"))
-                    stack.enter_context(mock.patch("focuscheck.app.SystemTray", None))
-                    stack.enter_context(mock.patch("focuscheck.app.platform.system", return_value="Linux"))
 
                     with self.assertRaisesRegex(RuntimeError, f"startup stage failed: {failed_stage}"):
                         App(dependencies=dependencies)
