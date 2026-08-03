@@ -94,3 +94,43 @@ class DiagnosticBundleTests(unittest.TestCase):
                 preview_bundle(linked_root)
             with self.assertRaises(ValueError):
                 create_bundle(linked_root, base / "diagnostic.zip")
+
+    def test_bundle_rejects_symlinked_destination_without_touching_target(self):
+        from focuscheck.utils.diagnostics import create_bundle
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            runtime = base / "runtime"
+            runtime.mkdir()
+            (runtime / "stage.log").write_text("safe", encoding="utf-8")
+            external = base / "external.zip"
+            external.write_bytes(b"keep")
+            destination = base / "bundle.zip"
+            try:
+                destination.symlink_to(external)
+            except (OSError, NotImplementedError):
+                self.skipTest("file symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                create_bundle(runtime, destination, overwrite=True)
+            self.assertEqual(b"keep", external.read_bytes())
+
+    def test_bundle_rejects_symlinked_destination_parent(self):
+        from focuscheck.utils.diagnostics import create_bundle
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            runtime = base / "runtime"
+            runtime.mkdir()
+            (runtime / "stage.log").write_text("safe", encoding="utf-8")
+            external = base / "external"
+            external.mkdir()
+            linked_parent = base / "linked"
+            try:
+                linked_parent.symlink_to(external, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                create_bundle(runtime, linked_parent / "bundle.zip")
+            self.assertEqual([], list(external.iterdir()))

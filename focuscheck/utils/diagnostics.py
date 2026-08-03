@@ -29,6 +29,17 @@ def _diagnostic_root(runtime: Path) -> Path:
     return supplied.resolve()
 
 
+def _contains_symlink_component(path: Path) -> bool:
+    current = path
+    while True:
+        if current.is_symlink():
+            return True
+        parent = current.parent
+        if parent == current:
+            return False
+        current = parent
+
+
 def format_status_snapshot(snapshot: dict) -> str:
     """Render a bounded, privacy-safe health snapshot for the status window."""
     if not isinstance(snapshot, dict):
@@ -117,7 +128,12 @@ def _bundle_manifest(root: Path) -> dict:
 def create_bundle(runtime: Path, output: Path, *, overwrite: bool = False) -> Path:
     """Create an atomic sanitized diagnostic ZIP from allowlisted sources."""
     root = _diagnostic_root(runtime)
-    destination = Path(output).resolve()
+    destination = Path(output)
+    if not destination.is_absolute():
+        destination = Path.cwd() / destination
+    destination = destination.absolute()
+    if destination.is_symlink() or _contains_symlink_component(destination.parent):
+        raise ValueError("diagnostic destination is a symlink")
     preview_bundle(root)
     if destination.exists() and not overwrite:
         raise FileExistsError(destination)
