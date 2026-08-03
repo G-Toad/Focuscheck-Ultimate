@@ -279,7 +279,10 @@ class App:
         except Exception:
             pass
         self.root.withdraw()
-        self._timers = TimerRegistry(self.root)
+        self._timers = TimerRegistry(
+            self.root,
+            event_sink=lambda event: self._event_ledger.append("timer", event),
+        )
         self._ui_dispatch_sequence = 0
         # Ensure window handle is realized before using it for shell hooks
         try:

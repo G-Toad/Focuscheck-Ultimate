@@ -17,11 +17,21 @@ class _Timer:
 class TimerRegistry:
     """Own named Tk timers and make stale callbacks harmless."""
 
-    def __init__(self, scheduler: Any) -> None:
+    def __init__(self, scheduler: Any, *, event_sink: Callable[[dict[str, Any]], Any] | None = None) -> None:
         self._scheduler = scheduler
+        self._event_sink = event_sink
         self._timers: dict[str, _Timer] = {}
         self._generations: dict[str, int] = {}
         self._closed = False
+
+    def _emit(self, action: str, name: str, **fields: Any) -> None:
+        if self._event_sink is None:
+            return
+        try:
+            self._event_sink({"event": "timer", "action": action, "name": name, **fields})
+        except Exception:
+            # Observability must not change timer behavior or shutdown.
+            pass
 
     def schedule(
         self,
@@ -54,6 +64,12 @@ class TimerRegistry:
                     timer.callback_id = self._scheduler.after(max(0, int(interval_ms)), run)
 
         timer.callback_id = self._scheduler.after(max(0, int(delay_ms)), run)
+        self._emit(
+            "schedule",
+            name,
+            delay_ms=max(0, int(delay_ms)),
+            interval_ms=None if interval_ms is None else max(0, int(interval_ms)),
+        )
         return True
 
     def cancel(self, name: str) -> bool:
@@ -67,6 +83,7 @@ class TimerRegistry:
             # Tk may already be dispatching the callback; generation checks
             # still make that callback a no-op.
             pass
+        self._emit("cancel", name)
         return True
 
     def cancel_all(self) -> None:
@@ -76,6 +93,7 @@ class TimerRegistry:
     def close(self) -> None:
         self._closed = True
         self.cancel_all()
+        self._emit("close", "registry")
 
     def callback_id(self, name: str) -> Any:
         timer = self._timers.get(name)

@@ -99,6 +99,34 @@ class RuntimeFoundationTests(unittest.TestCase):
         scheduler.fire(new_id)
         self.assertEqual(["new"], calls)
 
+    def test_timer_registry_emits_lifecycle_events_without_affecting_callbacks(self):
+        scheduler = FakeScheduler()
+        events = []
+        registry = TimerRegistry(scheduler, event_sink=events.append)
+
+        registry.schedule("prompt", 25, lambda: None, interval_ms=1000)
+        registry.schedule("prompt", 50, lambda: None)
+        registry.cancel("prompt")
+        registry.close()
+
+        self.assertEqual("schedule", events[0]["action"])
+        self.assertEqual(25, events[0]["delay_ms"])
+        self.assertEqual("cancel", events[1]["action"])
+        self.assertEqual("schedule", events[2]["action"])
+        self.assertEqual("cancel", events[3]["action"])
+        self.assertEqual("close", events[4]["action"])
+
+    def test_timer_registry_ignores_event_sink_failures(self):
+        scheduler = FakeScheduler()
+
+        def fail(_event):
+            raise RuntimeError("ledger unavailable")
+
+        registry = TimerRegistry(scheduler, event_sink=fail)
+        self.assertTrue(registry.schedule("prompt", 1, lambda: None))
+        self.assertTrue(registry.cancel("prompt"))
+        registry.close()
+
     def test_close_cancels_recurring_timer_and_rejects_new_work(self):
         scheduler = FakeScheduler()
         registry = TimerRegistry(scheduler)
