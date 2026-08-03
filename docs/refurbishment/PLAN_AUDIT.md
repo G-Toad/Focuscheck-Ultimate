@@ -149,6 +149,8 @@ Current checkpoint addition: The latest `51dd049` run gives Focus and Waste dial
 
 Current checkpoint addition: The latest `023bab7` run extends the withdrawn-root Tk resource self-test to construct and destroy Focus and Waste child dialogs with no remaining Tk children or non-daemon threads; the full verifier records `387` unittest cases and all 18 bounded stages passed.
 
+Current checkpoint addition: The latest `9e26196` code checkpoint adds focused V1 Focus detail coverage proving failed challenge and spam validation keep the dialog open and do not notify submission; the full verifier records `389` unittest cases and all 18 bounded stages passed.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -170,6 +172,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `387` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `023bab7`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `389` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `9e26196`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
