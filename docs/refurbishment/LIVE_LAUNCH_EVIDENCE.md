@@ -54,6 +54,16 @@ This is direct source-supervisor/duplicate-launch evidence. It does not prove
 Run-key startup, lock/sleep/resume, interactive tray behavior, browser activity,
 or production-duration supervision.
 
+Latest isolated startup-folder launcher probe on 2026-08-03:
+
+- With `APPDATA` redirected to a unique disposable directory, `--install-startup` generated `RunFocusCheckSupervisor.cmd` under the expected Startup-folder path.
+- The generated launcher contained the supervisor script, `--run`, the exact repository `--base-dir`, and the requested check/resume/restart timing arguments.
+- `--uninstall-startup` removed the launcher, and the path was absent afterward.
+
+This proves the source launcher generation/removal contract in an isolated
+Windows profile. It does not prove real Explorer/Run-key shell execution or
+interactive startup behavior.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
