@@ -1215,7 +1215,9 @@ class App:
                     pass
         try:
             timers = getattr(self, "_timers", None)
-            if timers is not None and not timers.closed:
+            if timers is not None:
+                if timers.closed:
+                    return False
                 self._ui_dispatch_sequence = getattr(self, "_ui_dispatch_sequence", 0) + 1
                 timers.schedule(
                     f"ui-dispatch-{self._ui_dispatch_sequence}",

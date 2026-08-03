@@ -39,6 +39,23 @@ class UiContractTests(unittest.TestCase):
         app.root.callback()
         self.assertTrue(app.root.cancelled)
 
+    def test_dispatch_rejects_work_after_timer_registry_closes(self):
+        from focuscheck.app import App
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Root:
+            def after(self, _delay, _callback):
+                raise AssertionError("closed composed App must not use raw Tk after")
+
+        app = App.__new__(App)
+        app._tk_thread_id = 123
+        app.root = Root()
+        app._timers = TimerRegistry(app.root)
+        app._timers.close()
+
+        with mock.patch("focuscheck.app.threading.get_ident", return_value=456):
+            self.assertFalse(App._call_on_ui_thread(app, lambda: None))
+
     def test_tray_without_repository_does_not_write_config_fallback(self):
         from focuscheck.system_tray import SystemTray
 
