@@ -36,9 +36,11 @@ Latest startup composition extension: application log-header creation now passes
 
 Latest path-composition extension: canonical `AppPaths` selection now passes through an injectable factory before later startup side effects, with a regression proving the path snapshot boundary. Production defaults remain unchanged; target-user migration and manual release evidence remain pending.
 
+Latest path-binding extension: CSV and application-log path configuration now receive injectable App dependencies and the frozen `AppPaths` snapshot, with lifecycle coverage for both bindings. Production defaults remain unchanged; target-user and manual release evidence remain pending.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `080b718`; the post-push verifier records `524` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `4d66b26`; the post-push verifier records `525` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
