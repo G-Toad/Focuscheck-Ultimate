@@ -16,6 +16,8 @@ Latest browser-session safety correction: recovery files are now read with a bou
 
 Latest browser profile-boundary correction: session recovery rejects symlinked profile components before path resolution, reducing the risk of reading an unexpected target through a browser-profile reparse path. The full verifier passed at source checkpoint `a4ae68e` with 538 tests across 19 stages; symlink-specific execution remains environment-dependent and live browser evidence remains pending.
 
+Latest manual-evidence correction: `tools/manual_evidence.py` now lists, validates, and atomically records individual target-machine evidence cases; pass/fail recording requires explicit `--human-confirmed`, and automated or simulated runs remain `not_run`. The full verifier passed at source checkpoint `e09917c` with 541 tests across 19 stages; no manual case has been promoted.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.

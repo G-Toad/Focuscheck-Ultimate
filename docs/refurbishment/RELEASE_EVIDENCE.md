@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `538` tests across 19 bounded stages at source checkpoint `a4ae68e`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `541` tests across 19 bounded stages at source checkpoint `e09917c`; the detailed older bullets are retained as historical baseline context.
+
+The latest release-evidence checkpoint adds a non-destructive manual checklist CLI. It refuses to record pass/fail without explicit human confirmation, validates the five-case schema, and atomically writes only an explicitly requested case; the committed manual evidence remains `not_run`.
 
 The latest browser profile-boundary checkpoint rejects symlinked profile components before recovery reads. The full verifier passed; the symlink-specific test is skipped when the host cannot create directory symlinks, and live browser evidence remains pending.
 
