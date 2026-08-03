@@ -34,9 +34,11 @@ Latest startup composition correction: legacy migration now passes through an in
 
 Latest startup composition extension: application log-header creation now passes through an injectable dependency, and the constructor failure matrix avoids patching that module-global writer. Production defaults remain unchanged; existing-user and manual release evidence remain pending.
 
+Latest path-composition extension: canonical `AppPaths` selection now passes through an injectable factory before later startup side effects, with a regression proving the path snapshot boundary. Production defaults remain unchanged; target-user migration and manual release evidence remain pending.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `190ab7a`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `080b718`; the post-push verifier records `524` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
