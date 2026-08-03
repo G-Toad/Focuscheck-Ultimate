@@ -47,15 +47,20 @@ class ActivitySnapshotTests(unittest.TestCase):
 
     def test_provider_timeout_does_not_block_caller(self):
         release = threading.Event()
+        finished = threading.Event()
 
         def provider():
-            release.wait(1.0)
-            return {"hwnd": 1, "title": "late"}
+            try:
+                release.wait(1.0)
+                return {"hwnd": 1, "title": "late"}
+            finally:
+                finished.set()
 
         started = time.monotonic()
         snapshot = safe_activity_snapshot(provider, timeout_seconds=0.01)
         elapsed = time.monotonic() - started
         release.set()
+        self.assertTrue(finished.wait(1.0))
 
         self.assertLess(elapsed, 0.2)
         self.assertEqual(("provider timeout",), snapshot.errors)
@@ -85,9 +90,10 @@ class ActivitySnapshotTests(unittest.TestCase):
         self.assertEqual(captured.isoformat(), error.captured_utc)
 
         release = threading.Event()
+        finished = threading.Event()
         try:
             timeout = safe_activity_snapshot(
-                lambda: release.wait(1.0),
+                lambda: (release.wait(1.0), finished.set())[0],
                 timeout_seconds=0.01,
                 clock=lambda: captured,
             )
@@ -95,6 +101,7 @@ class ActivitySnapshotTests(unittest.TestCase):
             self.assertEqual(("provider timeout",), timeout.errors)
         finally:
             release.set()
+            self.assertTrue(finished.wait(1.0))
 
     def test_title_only_activity_is_medium_confidence(self):
         snapshot = ActivitySnapshot.from_mapping({"hwnd": 12, "title": "Browser"})
