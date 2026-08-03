@@ -39,7 +39,7 @@ class BrowserSessionTests(unittest.TestCase):
         tabs = parse_firefox_recovery(data)
         self.assertEqual(1, len(tabs))
         self.assertEqual("Current", tabs[0].title)
-        self.assertEqual("https://current.example/path?private=1", tabs[0].url)
+        self.assertEqual("https://current.example/path", tabs[0].url)
         self.assertEqual(0, tabs[0].window_index)
 
     def test_firefox_recovery_rejects_bad_header_or_payload(self):

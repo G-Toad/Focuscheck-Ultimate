@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 from typing import Iterable, Mapping
+from urllib.parse import urlsplit, urlunsplit
 
 
 _MAX_FILE_BYTES = 16 * 1024 * 1024
@@ -44,6 +45,16 @@ class BrowserTab:
 
 def _bounded(value, limit: int) -> str:
     return str(value or "")[:limit]
+
+
+def _safe_url(value) -> str:
+    """Keep session URLs useful for matching without retaining query data."""
+    raw = _bounded(value, _MAX_URL_LENGTH)
+    try:
+        parts = urlsplit(raw)
+        return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+    except ValueError:
+        return ""
 
 
 def _unique_tabs(tabs: Iterable[BrowserTab]) -> list[BrowserTab]:
@@ -135,7 +146,7 @@ def parse_firefox_recovery(data: bytes) -> list[BrowserTab]:
             entry = entries[selected]
             if not isinstance(entry, dict):
                 continue
-            url = _bounded(entry.get("url"), _MAX_URL_LENGTH)
+            url = _safe_url(entry.get("url"))
             title = _bounded(entry.get("title"), _MAX_TITLE_LENGTH)
             if url.startswith(("http://", "https://")):
                 tabs.append(BrowserTab(title=title, url=url, window_index=window_index, source="firefox-session"))
@@ -151,7 +162,7 @@ def parse_chromium_session(data: bytes) -> list[BrowserTab]:
     """
     if not isinstance(data, (bytes, bytearray)):
         return []
-    tabs = [BrowserTab(url=match.group(0).decode("utf-8", "ignore"), source="chromium-session")
+    tabs = [BrowserTab(url=_safe_url(match.group(0).decode("utf-8", "ignore")), source="chromium-session")
             for match in _URL_RE.finditer(bytes(data)[:_MAX_FILE_BYTES])]
     return _unique_tabs(tabs)
 
