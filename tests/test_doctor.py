@@ -30,3 +30,21 @@ class DoctorTests(unittest.TestCase):
             self.assertEqual(doctor.MAX_ANOMALIES, len(doctor.ANOMALIES))
         finally:
             doctor.ANOMALIES[:] = original
+
+    def test_unknown_setting_diagnostics_store_only_value_summary(self):
+        from focuscheck.settings.manager import validate_settings
+        import focuscheck.doctor as doctor
+
+        original = list(doctor.ANOMALIES)
+        secret = "private setting text that must not enter diagnostics"
+        try:
+            doctor.ANOMALIES.clear()
+            with mock.patch("focuscheck.settings.manager.log_doctor_mode") as log_doctor:
+                validate_settings({"plugin_private": secret})
+
+            details = log_doctor.call_args.args[2]
+            self.assertEqual("str", details["value_summary"]["type"])
+            self.assertEqual(len(secret), details["value_summary"]["length"])
+            self.assertNotIn(secret, repr(details))
+        finally:
+            doctor.ANOMALIES[:] = original

@@ -12,7 +12,7 @@ from datetime import date, datetime, timezone
 from .defaults import DEFAULT_SETTINGS
 from .migrations import CURRENT_SETTINGS_SCHEMA_VERSION, migrate_settings
 from ..utils.paths import choose_path, legacy_path
-from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode
+from ..utils.logging_utils import log_exception, get_logger, log_doctor_mode, privacy_summary
 from .registry import SETTINGS_REGISTRY
 from .file_lock import settings_file_lock
 from .website_flags import normalize_website_domain
@@ -190,7 +190,11 @@ def validate_settings(data):
         if k not in SETTINGS_REGISTRY:
             # Unknown settings are retained for forward compatibility, but their
             # values must not be copied into diagnostic output.
-            log_doctor_mode("UnknownSetting", f"Unknown setting key '{k}' found.", {"key": k, "value_type": type(v).__name__})
+            log_doctor_mode(
+                "UnknownSetting",
+                "Unknown setting key found.",
+                {"key": k, "value_summary": privacy_summary(v)},
+            )
         s[k] = v
 
     # SECOND: Apply defaults for any missing keys
