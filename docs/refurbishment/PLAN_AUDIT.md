@@ -281,7 +281,7 @@ Supervisor evidence correction: The real disposable source-supervisor self-test 
 
 Activity-provider evidence correction: `safe_activity_snapshot()` now enforces one in-flight provider call, returning a bounded `provider busy` snapshot while a timed-out daemon worker is still running; focused coverage proves repeated polling does not accumulate concurrent stuck workers.
 
-Recovery-path correction: `TaskDB.restore_from()` now rejects symlinked source and destination path components before creating restore directories or temporary files, with focused regressions preserving external targets; export archive import/recovery is intentionally still not claimed.
+Recovery-path correction: `TaskDB.restore_from()` rejects symlinked source and destination path components before creating restore directories or temporary files, and the export importer now adds a separate manifest/hash/settings/SQLite validation boundary with staged promotion and rollback; focused regressions preserve external targets and cover the import confirmation/restore contract.
 
 Export-validation correction: `validate_export()` now rejects symlinked archive files and parent components before opening an archive, with focused path-boundary regressions; the prior aggregate failure was a timeout-worker test-order race, and the corrected full verifier rerun passed.
 
