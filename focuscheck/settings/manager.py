@@ -182,6 +182,8 @@ def _migrate_legacy_settings(canonical_path):
 
 
 def _read_valid_settings_backup(path):
+    if os.path.islink(path):
+        return None
     try:
         with open(path, "r", encoding="utf-8") as handle:
             raw = json.load(handle)
@@ -741,6 +743,20 @@ def load_settings():
 
     with _settings_lock, settings_file_lock(SETTINGS_PATH):
         logger.info("  Lock acquired")
+        if os.path.islink(SETTINGS_PATH):
+            quarantine_path = f"{SETTINGS_PATH}.corrupt-{uuid.uuid4().hex[:12]}"
+            try:
+                os.replace(SETTINGS_PATH, quarantine_path)
+            except OSError:
+                logger.exception("failed to quarantine symlinked settings")
+            _append_migration_event(
+                sidecars["journal"],
+                source_version="unknown",
+                target_version=CURRENT_SETTINGS_SCHEMA_VERSION,
+                outcome="rejected_symlink",
+                detail="canonical settings source is a symlink",
+            )
+            return DEFAULT_SETTINGS.copy()
         logger.info("  Checking if settings file exists...")
         exists = os.path.exists(SETTINGS_PATH)
         logger.info("    File exists: %s", exists)

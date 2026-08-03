@@ -371,6 +371,29 @@ class SettingsSaveTests(unittest.TestCase):
                 loaded = manager.load_settings()
             self.assertEqual(77, loaded["interval_seconds"])
 
+    def test_symlinked_canonical_settings_is_quarantined_without_reading_target(self):
+        import json
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            settings_path = root / "focus_settings.json"
+            target = root / "outside-settings.json"
+            target.write_text(json.dumps({"interval_seconds": 999}), encoding="utf-8")
+            try:
+                settings_path.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            with mock.patch.object(manager, "choose_path", return_value=str(settings_path)):
+                loaded = manager.load_settings()
+
+            self.assertNotEqual(999, loaded["interval_seconds"])
+            self.assertFalse(settings_path.exists())
+            self.assertTrue(list(root.glob("focus_settings.json.corrupt-*")))
+            event = json.loads((root / "focus_settings.json.migration.jsonl").read_text(encoding="utf-8").splitlines()[-1])
+            self.assertEqual("rejected_symlink", event["outcome"])
+
 
 class TaskDbTests(unittest.TestCase):
     def test_overdue_naive_datetime_is_treated_as_utc(self):
