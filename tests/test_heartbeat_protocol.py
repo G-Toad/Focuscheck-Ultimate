@@ -113,3 +113,31 @@ class HeartbeatProtocolTests(unittest.TestCase):
             logger = logger_factory.return_value
         self.assertEqual(2, app._heartbeat_write_failures)
         self.assertEqual(2, logger.warning.call_count)
+
+    def test_app_heartbeat_uses_runtime_coordinator_pause_truth(self):
+        from focuscheck.app import App
+        from focuscheck.utils.clock import FakeClock
+        from datetime import datetime, timezone
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        app = App.__new__(App)
+        app.settings = {"paused": False, "interval_seconds": 60}
+        app.guard = mock.Mock()
+        app._runtime_state = mock.Mock()
+        app._runtime_state.snapshot.manual_paused = False
+        app._runtime_state.snapshot.guard_reasons = {"lock"}
+        app._runtime_state.snapshot.snooze_active.return_value = True
+        app._runtime_state.clock = clock
+        app._runtime_state.is_effectively_paused.return_value = True
+        app._heartbeat_sequence = 0
+        app._process_start_utc = "2030-01-01T00:00:00+00:00"
+        with tempfile.TemporaryDirectory() as temp_dir, mock.patch(
+            "focuscheck.app.HEARTBEAT_PATH", str(Path(temp_dir) / "hb.txt")
+        ):
+            app._write_heartbeat()
+            payload = json.loads((Path(temp_dir) / "hb.txt").read_text(encoding="utf-8"))
+
+        app.guard.should_pause.assert_not_called()
+        self.assertTrue(payload["effective_paused"])
+        self.assertTrue(payload["snooze_active"])
+        self.assertEqual(["lock"], payload["guard_reasons"])

@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `314` unittest cases passing.
+- Current automated baseline after hardening: `315` unittest cases passing.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
@@ -90,5 +90,6 @@
 - Prompt eligibility now calls `RuntimeStateCoordinator.is_effectively_paused()` at the App scheduler boundary, preserving the coordinator's injected clock instead of reading the snapshot's wall-clock convenience property.
 - App-composed V2 interventions now use `App.run_intervention()` for the intervention lease, prompt visibility, wizard context, and cleanup; standalone V2 dialogs retain a compatibility fallback.
 - CSV and intervention-reflection writers are rebound during App composition to the immutable `AppPaths` snapshot instead of retaining import-time output paths.
+- Heartbeats and the status snapshot now expose coordinator-derived effective pause, snooze activity, and guard reasons; composed heartbeat generation no longer re-samples guard state directly.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

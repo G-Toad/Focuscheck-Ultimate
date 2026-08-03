@@ -1770,12 +1770,27 @@ class App:
             camera = {"state": "inactive"}
         else:
             camera = {"state": str(camera.get("state", "unknown"))}
+        runtime_state = getattr(self, "_runtime_state", None)
+        effective_paused = bool(getattr(self, "settings", {}).get("paused", False))
+        snooze_active = False
+        guard_reasons = []
+        if runtime_state is not None:
+            try:
+                effective_paused = bool(runtime_state.is_effectively_paused())
+                snapshot = runtime_state.snapshot
+                snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
+                guard_reasons = sorted(str(reason) for reason in snapshot.guard_reasons)
+            except Exception:
+                pass
         return {
             "application": APP_NAME,
             "version": APP_VERSION,
             "lifecycle": lifecycle,
             "monitoring": "running" if getattr(self, "_engine", None) is not None and not getattr(self, "_engine_shutdown", False) else "stopped",
             "paused": bool(getattr(self, "settings", {}).get("paused", False)),
+            "effective_paused": effective_paused,
+            "snooze_active": snooze_active,
+            "guard_reasons": guard_reasons,
             "prompt_active": getattr(self, "_current_prompt", None) is not None,
             "intervention_active": bool(getattr(self, "_intervention_active", False)),
             "camera": camera,
@@ -2232,10 +2247,24 @@ class App:
         try:
             self._heartbeat_sequence = getattr(self, "_heartbeat_sequence", 0) + 1
             process_start_utc = getattr(self, "_process_start_utc", datetime.now(timezone.utc).isoformat())
-            manual_paused = bool(self.settings.get("paused", False))
-            guard_paused = bool(self.guard.should_pause())
+            runtime_state = getattr(self, "_runtime_state", None)
+            if runtime_state is not None:
+                snapshot = runtime_state.snapshot
+                manual_paused = bool(snapshot.manual_paused)
+                snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
+                guard_reasons = set(snapshot.guard_reasons)
+                guard_paused = bool(guard_reasons)
+                effective_paused = bool(runtime_state.is_effectively_paused())
+            else:
+                manual_paused = bool(self.settings.get("paused", False))
+                snooze_active = False
+                guard_paused = bool(self.guard.should_pause())
+                guard_reasons = {"system_guard"} if guard_paused else set()
+                effective_paused = bool(manual_paused or guard_paused)
             if manual_paused:
                 pause_reason = "manual"
+            elif snooze_active:
+                pause_reason = "snooze"
             elif guard_paused:
                 pause_reason = "guard"
             else:
@@ -2258,9 +2287,12 @@ class App:
                 "readiness": getattr(getattr(self, "lifecycle", None), "phase", LifecyclePhase.READY).value,
                 "lifecycle": getattr(getattr(self, "lifecycle", None), "snapshot", lambda: {})(),
                 "tk_pulse": True,
-                "paused": bool(manual_paused or guard_paused),
+                "paused": effective_paused,
+                "effective_paused": effective_paused,
                 "manual_paused": manual_paused,
+                "snooze_active": snooze_active,
                 "guard_paused": guard_paused,
+                "guard_reasons": sorted(guard_reasons),
                 "guard_health": guard_health,
                 "pause_reason": pause_reason,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
