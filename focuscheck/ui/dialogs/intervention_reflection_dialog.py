@@ -19,6 +19,8 @@ except Exception:  # pragma: no cover - fallback
         import logging
         return logging.getLogger(__name__)
 
+from ...utils.timers import TimerRegistry
+
 
 TAXONOMY_VERSION = "v1"
 
@@ -287,6 +289,7 @@ class InterventionReflectionDialog(tk.Toplevel):
         if tid is not None and threading.get_ident() != tid:
             done = threading.Event()
             cancelled = threading.Event()
+            dispatch_timers = TimerRegistry(parent)
 
             def _run_on_ui():
                 if cancelled.is_set():
@@ -298,11 +301,15 @@ class InterventionReflectionDialog(tk.Toplevel):
                     done.set()
 
             try:
-                parent.after(0, _run_on_ui)
+                dispatch_timers.schedule("reflection-dispatch", 0, _run_on_ui)
                 if not done.wait(timeout=30.0):
                     cancelled.set()
             except Exception:
                 logger.exception("reflection dialog marshal failed", exc_info=True)
+            finally:
+                # Cancel a queued dispatch after timeout or completion so a
+                # late callback cannot open a dialog after the caller returns.
+                dispatch_timers.close()
         else:
             _open()
         return result_holder["value"]
