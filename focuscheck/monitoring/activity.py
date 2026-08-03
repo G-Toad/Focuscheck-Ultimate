@@ -99,15 +99,19 @@ class ActivitySnapshot:
         )
 
     def is_fresh(self, max_age_seconds: float = 5.0, *, now: datetime | None = None) -> bool:
+        age = self.age_seconds(now=now)
+        return age is not None and 0 <= age <= max(0.0, max_age_seconds)
+
+    def age_seconds(self, *, now: datetime | None = None) -> float | None:
+        """Return capture age, or ``None`` when the timestamp is invalid."""
         try:
             captured = datetime.fromisoformat(self.captured_utc.replace("Z", "+00:00"))
             if captured.tzinfo is None:
                 captured = captured.replace(tzinfo=timezone.utc)
             current = now or datetime.now(timezone.utc)
-            age = (current.astimezone(timezone.utc) - captured.astimezone(timezone.utc)).total_seconds()
-            return 0 <= age <= max(0.0, max_age_seconds)
+            return (current.astimezone(timezone.utc) - captured.astimezone(timezone.utc)).total_seconds()
         except (TypeError, ValueError, OverflowError):
-            return False
+            return None
 
     def as_mapping(self) -> dict[str, Any]:
         data = asdict(self)

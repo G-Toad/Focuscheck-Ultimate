@@ -96,10 +96,22 @@ class EngineV2(BaseEngine):
             self._timers.close()
 
     def _get_activity_info(self):
-        info = safe_activity_snapshot(
+        snapshot = safe_activity_snapshot(
             self._activity_provider,
             clock=getattr(self, "_activity_clock", None),
-        ).as_mapping()
+        )
+        now_utc = None
+        activity_clock = getattr(self, "_activity_clock", None)
+        if callable(activity_clock):
+            try:
+                now_utc = activity_clock()
+            except Exception:
+                now_utc = None
+        info = snapshot.as_mapping()
+        age_seconds = snapshot.age_seconds(now=now_utc)
+        info["activity_age_s"] = age_seconds
+        info["activity_fresh"] = snapshot.is_fresh(now=now_utc)
+        info["activity_usable"] = bool(info["activity_fresh"] and not snapshot.errors)
         hwnd = info.get("hwnd")
         now = getattr(self, "_monotonic", time.monotonic)()
         if hwnd and hwnd == self._last_hwnd:
@@ -160,6 +172,10 @@ class EngineV2(BaseEngine):
         if not flags:
             return
         info = self._get_activity_info()
+        # A provider error or stale timestamp must never trigger a website
+        # intervention, even if a partial title/URL happens to match.
+        if info.get("activity_usable", True) is not True:
+            return
         match = self._match_flag(info, flags)
         if not match:
             return

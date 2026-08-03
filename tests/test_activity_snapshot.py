@@ -89,6 +89,13 @@ class ActivitySnapshotTests(unittest.TestCase):
         snapshot = ActivitySnapshot(captured_utc=(datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat())
         self.assertFalse(snapshot.is_fresh(max_age_seconds=5))
 
+    def test_snapshot_age_uses_injected_current_time(self):
+        captured = datetime(2030, 1, 1, tzinfo=timezone.utc)
+        snapshot = ActivitySnapshot(captured_utc=captured.isoformat())
+        self.assertEqual(4.0, snapshot.age_seconds(now=captured + timedelta(seconds=4)))
+        self.assertTrue(snapshot.is_fresh(max_age_seconds=5, now=captured + timedelta(seconds=4)))
+        self.assertFalse(snapshot.is_fresh(max_age_seconds=5, now=captured + timedelta(seconds=6)))
+
 
 class WindowsActivityProbeTests(unittest.TestCase):
     def test_icon_extraction_declares_shell_user_and_gdi_signatures(self):
