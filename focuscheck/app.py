@@ -762,9 +762,15 @@ class App:
         if callable(factory):
             return factory(cls, self)
         if cls is EngineV2:
+            activity_provider = getattr(self, "_activity_provider", None)
+            if activity_provider is None:
+                provider_factory = getattr(getattr(self, "_dependencies", None), "activity_provider_factory", None)
+                if callable(provider_factory):
+                    activity_provider = provider_factory()
+                    self._activity_provider = activity_provider
             return cls(
                 self,
-                activity_provider=getattr(self, "_activity_provider", None),
+                activity_provider=activity_provider,
                 clock=getattr(self, "_runtime_clock", None),
             )
         return cls(self)

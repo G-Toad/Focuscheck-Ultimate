@@ -212,6 +212,7 @@ class AppLifecycleTests(unittest.TestCase):
             {
                 "settings_loader", "settings_saver", "app_paths_factory", "csv_paths_configurator", "log_path_configurator", "legacy_migration_factory", "log_header_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
+                "activity_provider_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
                 "shutdown_stage_hook", "tk_root_factory",
@@ -220,6 +221,42 @@ class AppLifecycleTests(unittest.TestCase):
         )
         self.assertIs(settings_loader, deps.settings_loader)
         self.assertIs(task_db_factory, deps.task_db_factory)
+
+    def test_activity_provider_factory_composes_v2_engine_provider(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        provider = lambda: {"title": "factory activity"}
+        factory = mock.Mock(return_value=provider)
+        received = {}
+
+        class Engine:
+            name = "v2"
+
+            def __init__(self, _app, activity_provider=None, clock=None):
+                received["provider"] = activity_provider
+                received["clock"] = clock
+
+            def on_settings_updated(self, _settings):
+                return None
+
+            def shutdown(self):
+                return None
+
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(activity_provider_factory=factory)
+        app._activity_provider = None
+        app._runtime_clock = None
+        app.settings = {"monitoring_mode": "v2"}
+        app._engine = None
+        app._current_prompt = None
+
+        with mock.patch("focuscheck.app.EngineV2", Engine), mock.patch.object(App, "_get_engine_class", return_value=Engine):
+            App._ensure_engine(app)
+
+        factory.assert_called_once_with()
+        self.assertIs(provider, received["provider"])
+        self.assertIs(provider, app._activity_provider)
 
     def test_startup_stage_hook_is_optional_and_propagates_failures(self):
         from focuscheck.app import App

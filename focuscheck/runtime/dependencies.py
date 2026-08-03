@@ -25,6 +25,7 @@ class AppDependencies:
     sqlite_connection_factory: Callable[..., Any] | None = None
     task_db_factory: Callable[..., Any] | None = None
     engine_factory: Callable[[type[Any], Any], Any] | None = None
+    activity_provider_factory: Callable[[], Any] | None = None
     tray_factory: Callable[..., Any] | None = None
     watcher_factory: Callable[..., Any] | None = None
     heartbeat_writer: Callable[[Any, dict[str, Any]], Any] | None = None
