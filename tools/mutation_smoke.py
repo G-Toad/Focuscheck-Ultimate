@@ -95,6 +95,40 @@ with mock.patch.object(module.time, "monotonic", return_value=39.9):
 assert supervisor.current_delay == 8.0
 """,
     ),
+    Mutation(
+        "tray_post_start_timer_ownership",
+        "focuscheck/system_tray.py",
+        'if self._post_start_timer is timer_holder.get("timer"):',
+        'if self._post_start_timer is timer:',
+        """
+from unittest.mock import patch
+from focuscheck.system_tray import SystemTray
+
+class App:
+    settings = {}
+
+class Icon:
+    title = "FocusCheck"
+
+class Timer:
+    def __init__(self, _delay, callback):
+        self.callback = callback
+        self.daemon = False
+    def start(self):
+        return None
+    def cancel(self):
+        return None
+
+alive = []
+tray = SystemTray(app=App(), name="FocusCheck", on_alive=lambda: alive.append(True))
+tray._icon = Icon()
+with patch("focuscheck.system_tray.threading.Timer", Timer):
+    tray._schedule_post_start_check()
+    tray._post_start_timer.callback()
+assert alive == [True]
+assert tray._post_start_timer is None
+""",
+    ),
 )
 
 
