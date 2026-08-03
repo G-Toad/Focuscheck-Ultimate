@@ -148,6 +148,20 @@ This adds a real supported Chromium-family provider result. It does not prove
 Firefox UI Automation extraction, real user-browser behavior, or website-flag
 intervention semantics.
 
+Firefox capability probe on 2026-08-03:
+
+- The repository provider recognized the live Firefox process as supported but
+  returned bounded no-data (`tabs=[]`, `url=None`) for its visible window.
+- UI Automation client creation failed on this host with COM
+  `Invalid class string`.
+- A disposable Firefox `--remote-debugging-port` probe returned HTTP `404` for
+  both `/json/version` and `/json/list`; it did not expose a Chromium CDP
+  target protocol.
+- The disposable Firefox process/profile were removed after the probe.
+
+This is explicit host-capability evidence, not Firefox extraction evidence;
+Firefox UIA extraction remains a target-machine/manual gate.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
