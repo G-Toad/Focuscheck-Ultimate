@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `519` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `516` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
 The latest application-log checkpoint redacts unstructured tray diagnostic labels and adds regression coverage for returned values and settings values.
 

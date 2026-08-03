@@ -6,7 +6,7 @@ Latest correction: all active native callback factories in the primary Windows a
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.
 
-Current checkpoint: the callback portability slice is represented by source commit `7f326a3`; the post-push verifier records `515` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `ed5f5a0`; the post-push verifier records `516` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Latest browser-provider correction: UI Automation tab enumeration now runs behind a bounded single-flight worker and falls back to CDP on timeout, preventing COM stalls from blocking Tk or accumulating workers; live browser evidence remains pending.
 
