@@ -151,6 +151,25 @@ def _configure_window_style_api(user32):
     user32.DefWindowProcW.restype = LRESULT
 
 
+def _configure_watcher_user32_api(user32):
+    """Declare User32 signatures used by the session/tray watcher."""
+    user32.RegisterWindowMessageW.argtypes = [wintypes.LPCWSTR]
+    user32.RegisterWindowMessageW.restype = wintypes.UINT
+    user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+    user32.GetSystemMetrics.restype = ctypes.c_int
+    user32.LoadImageW.argtypes = [
+        wintypes.HINSTANCE, wintypes.LPCWSTR, wintypes.UINT,
+        ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    ]
+    user32.LoadImageW.restype = wintypes.HANDLE
+    user32.LoadIconW.argtypes = [wintypes.HINSTANCE, ctypes.c_void_p]
+    user32.LoadIconW.restype = wintypes.HICON
+    user32.DestroyIcon.argtypes = [wintypes.HICON]
+    user32.DestroyIcon.restype = wintypes.BOOL
+    user32.DefWindowProcW.argtypes = [wintypes.HWND, wintypes.UINT, WPARAM_T, LPARAM_T]
+    user32.DefWindowProcW.restype = LRESULT
+
+
 def _get_last_error_info():
     try:
         code = ctypes.get_last_error()
@@ -598,6 +617,8 @@ class WindowsWakeWatcher:
 
         # API handles
         user32 = ctypes.windll.user32
+        _configure_window_style_api(user32)
+        _configure_watcher_user32_api(user32)
         self._CallWindowProcW = user32.CallWindowProcW
         # Correct prototypes (avoid 32-bit truncation on 64-bit)
         try:
@@ -654,6 +675,7 @@ class WindowsWakeWatcher:
             self._Shell_NotifyIconW.restype = wintypes.BOOL
         except Exception:
             self._Shell_NotifyIconW = None
+        self._DestroyIcon = user32.DestroyIcon
 
         # Old proc
         self._old_wndproc = self._GetWindowLongPtrW(self.hwnd, GWL_WNDPROC)
@@ -719,7 +741,7 @@ class WindowsWakeWatcher:
                 pass
             try:
                 if not self._old_wndproc:
-                    return ctypes.windll.user32.DefWindowProcW(hwnd, msg, wParam, lParam)
+                    return user32.DefWindowProcW(hwnd, msg, wParam, lParam)
             except Exception:
                 pass
             return self._CallWindowProcW(ctypes.c_void_p(self._old_wndproc), hwnd, msg, wParam, lParam)
@@ -753,6 +775,7 @@ class WindowsWakeWatcher:
         if self._Shell_NotifyIconW is None or self._tray_added:
             return
         user32 = ctypes.windll.user32
+        _configure_watcher_user32_api(user32)
         # Try loading a custom icon from file first (assets/focus.ico or focus.ico)
         self._hicon = None
         try:
@@ -900,7 +923,12 @@ class WindowsWakeWatcher:
     def _destroy_custom_icon(self):
         if self._hicon:
             try:
-                ctypes.windll.user32.DestroyIcon(self._hicon)
+                destroy_icon = getattr(self, "_DestroyIcon", None)
+                if destroy_icon is None:
+                    user32 = ctypes.windll.user32
+                    _configure_watcher_user32_api(user32)
+                    destroy_icon = user32.DestroyIcon
+                destroy_icon(self._hicon)
             except Exception:
                 pass
             self._hicon = None

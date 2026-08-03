@@ -778,6 +778,28 @@ class ImportHardeningTests(unittest.TestCase):
                           ctypes.c_int, ctypes.c_int, wintypes.UINT],
                          user32.SetWindowPos.argtypes)
 
+    def test_watcher_declares_tray_and_session_native_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "RegisterWindowMessageW", "GetSystemMetrics", "LoadImageW",
+                "LoadIconW", "DestroyIcon", "DefWindowProcW",
+            )
+        })()
+        windows._configure_watcher_user32_api(user32)
+        self.assertEqual([wintypes.LPCWSTR], user32.RegisterWindowMessageW.argtypes)
+        self.assertEqual([ctypes.c_int], user32.GetSystemMetrics.argtypes)
+        self.assertEqual([wintypes.HICON], user32.DestroyIcon.argtypes)
+        self.assertEqual([wintypes.HINSTANCE, ctypes.c_void_p], user32.LoadIconW.argtypes)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes
