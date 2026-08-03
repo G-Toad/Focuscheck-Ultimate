@@ -392,16 +392,16 @@ class V2PromptDialog(
             self.settings.update(new_settings)
             if self.app_ref is not None:
                 try:
-                    self._closed = True
-                    try:
+                    close_current = getattr(self.app_ref, "_close_current_prompt", None)
+                    if callable(close_current):
+                        # The composed App owns the prompt lease and cleanup.
+                        close_current(source="settings")
+                    else:
+                        # Keep standalone prompt fixtures compatible.
+                        self._closed = True
                         self._cleanup_camera_feed()
-                    except Exception:
-                        pass
-                    try:
                         self._cleanup_timers()
-                    except Exception:
-                        pass
-                    self.destroy()
+                        self.destroy()
                     regenerate = getattr(self.app_ref, "_schedule_prompt_regeneration", None)
                     if callable(regenerate):
                         regenerate()

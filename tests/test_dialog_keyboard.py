@@ -361,6 +361,36 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_composed_prompt_settings_uses_app_prompt_close_contract(self):
+        from datetime import datetime
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+
+        class App:
+            root = mock.Mock()
+            _persist_settings_draft = mock.Mock()
+            _schedule_prompt_regeneration = mock.Mock()
+            _close_current_prompt = mock.Mock()
+
+        root = _make_root()
+        try:
+            for dialog_type, kwargs in (
+                (PromptDialog, {"slot_start_dt": datetime.now()}),
+                (V2PromptDialog, {"slot_start_dt": datetime.now(), "activity_info": {}}),
+            ):
+                dialog = dialog_type.__new__(dialog_type)
+                dialog.settings = {}
+                dialog.app_ref = App()
+                with mock.patch("focuscheck.ui.windows.SettingsWindow") as settings_window:
+                    dialog_type._open_settings(dialog)
+                settings_window.call_args.kwargs["on_save"]({"example": True})
+                dialog.app_ref._close_current_prompt.assert_called_once_with(source="settings")
+                dialog.app_ref._schedule_prompt_regeneration.assert_called_once_with()
+                dialog.app_ref._close_current_prompt.reset_mock()
+                dialog.app_ref._schedule_prompt_regeneration.reset_mock()
+        finally:
+            root.destroy()
+
     def test_v1_prompt_finishes_when_timer_cleanup_raises(self):
         from datetime import datetime
         from focuscheck.ui.dialogs.prompt_dialog import PromptDialog

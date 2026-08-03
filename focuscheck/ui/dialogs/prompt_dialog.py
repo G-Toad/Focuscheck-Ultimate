@@ -529,27 +529,18 @@ class PromptDialog(
             # If we have a reference to the app, close this dialog and trigger a new prompt immediately
             if self.app_ref is not None:
                 try:
-                    # Mark as closed to prevent scheduling issues
-                    self._closed = True
-
-                    # Clean up this dialog
-                    try:
+                    close_current = getattr(self.app_ref, "_close_current_prompt", None)
+                    if callable(close_current):
+                        # The composed App owns the prompt lease and must run
+                        # the coordinator cleanup contract, not just destroy Tk.
+                        close_current(source="settings")
+                    else:
+                        # Keep standalone prompt fixtures compatible.
+                        self._closed = True
                         self._cleanup_camera_feed()
-                    except Exception:
-                        pass
-
-                    try:
                         self._cleanup_all_timers()
-                    except Exception:
-                        pass
-
-                    try:
                         self._destroy_stage5_overlays()
-                    except Exception:
-                        pass
-
-                    # Destroy this dialog
-                    self.destroy()
+                        self.destroy()
 
                     # Schedule immediate new prompt with updated settings
                     regenerate = getattr(self.app_ref, "_schedule_prompt_regeneration", None)
