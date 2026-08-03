@@ -31,11 +31,14 @@ except Exception:  # pragma: no cover - fallback
         pass
 
 try:
-    from ...utils import get_logger
+    from ...utils import get_logger, privacy_summary
 except Exception:  # pragma: no cover - fallback
     def get_logger():
         import logging
         return logging.getLogger(__name__)
+
+    def privacy_summary(value):
+        return {"type": type(value).__name__, "length": len(str(value or "")), "sha256": None}
 
 from ...utils.timers import TimerRegistry
 
@@ -464,7 +467,12 @@ class V2PromptDialog(
             title = self.activity_info.get("title")
             try:
                 if logger:
-                    logger.info("intervention wizard starting | hwnd=%s title=%s hide_prompt=%s", preselect, title, hide_prompt)
+                    logger.info(
+                        "intervention wizard starting | hwnd=%s title_summary=%s hide_prompt=%s",
+                        preselect,
+                        privacy_summary(title),
+                        hide_prompt,
+                    )
             except Exception:
                 pass
             result = False

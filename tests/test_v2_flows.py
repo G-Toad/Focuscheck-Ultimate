@@ -68,6 +68,28 @@ class V2FlowTests(unittest.TestCase):
 
         self.assertFalse(dialog.app_ref._intervention_active)
 
+    def test_intervention_log_summarizes_active_window_title(self):
+        dialog = self._dialog()
+        dialog.activity_info = {"hwnd": 123, "title": "private.example/secret-token"}
+        dialog.winfo_viewable = lambda: True
+        dialog._force_window_to_front = lambda: None
+
+        class Wizard:
+            def __init__(self, _parent, _settings):
+                pass
+
+            def run(self, **_kwargs):
+                return True
+
+        logger = mock.Mock()
+        with mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.InterventionWizard", Wizard), \
+                mock.patch("focuscheck.ui.dialogs.v2_prompt_dialog.get_logger", return_value=logger):
+            self.assertTrue(dialog._start_intervention_stub())
+
+        logged = " ".join(str(call) for call in logger.info.call_args_list)
+        self.assertNotIn("private.example/secret-token", logged)
+        self.assertIn("title_summary", logged)
+
     def test_cancelled_intervention_does_not_log_or_close(self):
         dialog = self._dialog(decision="yes")
         dialog._start_intervention_stub = lambda: False

@@ -4,7 +4,7 @@ from .audio import AudioAlarm, get_audio_alarm
 from .colors import parse_rgb_hex
 from .file_ops import acquire_single_instance, get_file_lock, release_single_instance
 from .due_time import parse_due_time
-from .logging_utils import configure_log_path, get_logger, log_exception, rotate_log_if_needed
+from .logging_utils import configure_log_path, get_logger, log_exception, privacy_summary, rotate_log_if_needed
 from .paths import (
     AppPaths,
     APP_LOG_PATH,
@@ -65,6 +65,7 @@ __all__ = [
     "get_logger",
     "configure_log_path",
     "log_exception",
+    "privacy_summary",
     "log_window_state",
     "parse_rgb_hex",
     "parse_due_time",
