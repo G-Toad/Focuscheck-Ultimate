@@ -59,6 +59,7 @@
 - Spotlight region cleanup now tracks `SetWindowRgn` ownership and releases temporary regions on success, failure, and construction exceptions.
 - Core and dialog click-through/WNDPROC helpers now declare shared style, positioning, callback, and fallback-dispatch signatures.
 - The native tray/session watcher now declares User32 message, metrics, icon load/destroy, and fallback window-procedure signatures.
+- The App native tray menu path now declares pointer-safe signatures for menu creation, item insertion, cursor lookup, foreground activation, tracking, and destruction.
 - Prompt Windows integration now declares style, positioning, taskbar flash, foreground, thread-attach, and current-thread APIs.
 - V2 subpopup metrics and phrase-acronym foreground/focus paths now use typed native API boundaries.
 - Prompt monitor placement now declares monitor/cursor/window-rect APIs and uses pointer-sized `LPARAM` in the monitor enumeration callback.

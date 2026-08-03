@@ -87,6 +87,35 @@ from .utils.paths import (
 FILE_HEARTBEAT_INTERVAL_SECONDS = 60_000
 
 
+def _configure_native_tray_api(user32):
+    """Declare pointer-safe signatures for the native tray menu calls."""
+    user32.CreatePopupMenu.argtypes = []
+    user32.CreatePopupMenu.restype = wintypes.HMENU
+    user32.AppendMenuW.argtypes = [
+        wintypes.HMENU,
+        wintypes.UINT,
+        ctypes.c_size_t,
+        wintypes.LPCWSTR,
+    ]
+    user32.AppendMenuW.restype = wintypes.BOOL
+    user32.DestroyMenu.argtypes = [wintypes.HMENU]
+    user32.DestroyMenu.restype = wintypes.BOOL
+    user32.GetCursorPos.argtypes = [ctypes.c_void_p]
+    user32.GetCursorPos.restype = wintypes.BOOL
+    user32.SetForegroundWindow.argtypes = [wintypes.HWND]
+    user32.SetForegroundWindow.restype = wintypes.BOOL
+    user32.TrackPopupMenu.argtypes = [
+        wintypes.HMENU,
+        wintypes.UINT,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        wintypes.HWND,
+        ctypes.c_void_p,
+    ]
+    user32.TrackPopupMenu.restype = ctypes.c_int
+
+
 def resolve_initial_monitoring_state(settings):
     """Return (started_bool, reason) for initial monitoring state."""
     try:
@@ -1163,12 +1192,8 @@ class App:
             native_used = False
             try:
                 user32 = ctypes.windll.user32
+                _configure_native_tray_api(user32)
                 TrackPopupMenu = user32.TrackPopupMenu
-                try:
-                    TrackPopupMenu.argtypes = [wintypes.HMENU, wintypes.UINT, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.HWND, ctypes.c_void_p]
-                    TrackPopupMenu.restype = ctypes.c_int
-                except Exception:
-                    pass
 
                 MF_STRING = 0x00000000
                 MF_DISABLED = 0x00000002

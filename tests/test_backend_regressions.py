@@ -911,6 +911,29 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.HICON], user32.DestroyIcon.argtypes)
         self.assertEqual([wintypes.HINSTANCE, ctypes.c_void_p], user32.LoadIconW.argtypes)
 
+    def test_app_declares_native_tray_menu_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck import app
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "CreatePopupMenu", "AppendMenuW", "DestroyMenu", "GetCursorPos",
+                "SetForegroundWindow", "TrackPopupMenu",
+            )
+        })()
+        app._configure_native_tray_api(user32)
+        self.assertEqual([], user32.CreatePopupMenu.argtypes)
+        self.assertEqual([wintypes.HMENU], user32.DestroyMenu.argtypes)
+        self.assertEqual([ctypes.c_void_p], user32.GetCursorPos.argtypes)
+        self.assertEqual([wintypes.HWND], user32.SetForegroundWindow.argtypes)
+        self.assertEqual(ctypes.c_int, user32.TrackPopupMenu.restype)
+
     def test_prompt_windows_integration_declares_focus_and_style_signatures(self):
         import ctypes
         from ctypes import wintypes
