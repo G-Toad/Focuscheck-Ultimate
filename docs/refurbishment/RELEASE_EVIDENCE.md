@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest native-tray correction: source checkpoint `08e45f7` declares the `kernel32.SetLastError` contract used while opening the native tray menu and removes the raw untyped fallback call. The full verifier passed all 20 stages with 570 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
+
 Latest native-error correction: source checkpoint `b0d4114` centralizes pointer-safe `GetLastError` and `FormatMessageW` declarations and reuses the contract from intervention diagnostics. The full verifier passed all 20 stages with 569 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.
 
 Latest native-overlay correction: source checkpoints `d605f65` and `8814d0f` declare the intensification stage-5 `SetWindowPos` contract and keep configured User32/GDI handles for later overlay alpha/destruction calls, with compatibility-safe partial-fixture fallbacks. The full verifier passed all 20 stages with 568 tests and zero process leaks; live Windows/UIA/browser behavior and packaging remain manual gates.

@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest native-tray correction: source checkpoint `08e45f7` types the Kernel32 last-error reset used by native tray-menu dispatch. The full verifier passed all 20 stages with 570 tests and zero process leaks; live Windows/native evidence remains pending.
+
 Latest native-error correction: source checkpoint `b0d4114` centralizes the Kernel32 error-reporting declarations and routes intervention diagnostics through the shared helper. The full verifier passed all 20 stages with 569 tests and zero process leaks; live Windows/native evidence remains pending.
 
 Latest native-overlay correction: source checkpoints `d605f65` and `8814d0f` close two active stage-5 native call paths by declaring `SetWindowPos` before intensification updates and reusing configured overlay handles for alpha/destruction. The full verifier passed all 20 stages with 568 tests and zero process leaks; live Windows/native evidence remains pending.
