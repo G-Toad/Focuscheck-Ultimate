@@ -50,4 +50,25 @@ def build_camera_capability(
     }
 
 
-__all__ = ["build_camera_capability"]
+def camera_capability_message(capability: dict[str, object]) -> str:
+    """Return a short user-facing explanation without exposing paths/errors."""
+    state = str(capability.get("state", "unknown"))
+    dependencies = capability.get("dependencies")
+    if state == "dependency_missing" and isinstance(dependencies, dict):
+        missing = [
+            name for name, available in dependencies.items()
+            if not bool(available)
+        ]
+        labels = {"opencv": "OpenCV", "pillow": "Pillow"}
+        names = ", ".join(labels.get(name, name) for name in missing) or "camera support"
+        return f"Camera unavailable: install {names} to enable camera features."
+    if state == "device_unavailable":
+        return "Camera unavailable: no camera device could be opened."
+    if state == "failed":
+        return "Camera unavailable: camera access failed."
+    if state == "degraded":
+        return "Camera running in degraded mode."
+    return "Camera unavailable: camera features could not be started."
+
+
+__all__ = ["build_camera_capability", "camera_capability_message"]

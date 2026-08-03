@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from ...camera.manual_crop_utils import process_manual_crop_frame
-from ...camera.capability import build_camera_capability
+from ...camera.capability import build_camera_capability, camera_capability_message
 from ..camera_feed_helpers import (
     resize_maintain_aspect,
     resize_fixed,
@@ -208,10 +208,27 @@ class CameraFeedMixin:
             parent_container: Parent tkinter container to add camera feed to
 
         Returns:
-            Frame containing the camera feed, or None if camera not available
+            Frame containing the camera feed or an unavailable-capability notice.
         """
-        if not self._camera_enabled or self._camera_capture is None:
+        if not self._camera_enabled:
             return None
+
+        if self._camera_capture is None:
+            # Keep the prompt usable while making an opted-in unavailable
+            # capability explicit instead of silently removing the section.
+            self._camera_feed_container = tk.Frame(parent_container, bg="#111")
+            tk.Label(
+                self._camera_feed_container,
+                text=camera_capability_message(getattr(self, "_camera_capability", {})),
+                fg="#d9c98c",
+                bg="#111",
+                justify="left",
+                anchor="w",
+                wraplength=420,
+                padx=8,
+                pady=6,
+            ).pack(fill="x")
+            return self._camera_feed_container
 
         try:
             # Determine the fixed display size based on sizing mode

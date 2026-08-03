@@ -368,7 +368,7 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertTrue(dialog._timers.closed)
 
     def test_camera_capability_reports_bounded_states(self):
-        from focuscheck.ui.camera.capability import build_camera_capability
+        from focuscheck.ui.camera.capability import build_camera_capability, camera_capability_message
 
         self.assertEqual(
             "disabled",
@@ -442,6 +442,23 @@ class ImportHardeningTests(unittest.TestCase):
                 device_open=True,
                 access="denied",
             )["access"],
+        )
+        self.assertIn(
+            "OpenCV, Pillow",
+            camera_capability_message(build_camera_capability(
+                enabled=True,
+                opencv_available=False,
+                pillow_available=False,
+            )),
+        )
+        self.assertEqual(
+            "Camera unavailable: no camera device could be opened.",
+            camera_capability_message(build_camera_capability(
+                enabled=True,
+                opencv_available=True,
+                pillow_available=True,
+                device_open=False,
+            )),
         )
 
     def test_camera_modules_import_without_opencv(self):
