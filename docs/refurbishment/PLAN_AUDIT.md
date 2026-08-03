@@ -203,6 +203,8 @@ Current checkpoint addition: The latest `480d491` V2 lifecycle checkpoint remove
 
 Current checkpoint addition: The latest `9fa301b` task-UI durability slice requires successful `TaskDB` results before refresh/state clearing and reports creation/completion persistence failures; the focused task/monitoring suite records `57` passing tests. The current follow-up adds transactional task replacement through `TaskDB.change_task()` and covers validation-before-close; the focused suite records `59` passing tests. Full UI task flow and live persistence-error evidence remain manual_pending.
 
+Current checkpoint addition: The latest `534416f` task lifecycle checkpoint fixes the mutation-smoke anchor exposed by the new `TaskDB.change_task()` SQL, so the intended completion-transition mutant is now actually exercised. The full verifier records `417` unittest cases, all 18 bounded stages passed, zero failed stages, and all five selected mutants killed. Full UI task flow and live persistence-error evidence remain manual_pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -224,6 +226,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `415` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `9fa301b`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+Latest verification checkpoint: `417` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `534416f`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
