@@ -86,6 +86,8 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertEqual(now.isoformat(), db.get_active()["created_utc"])
             self.assertEqual([task_id], db.overdue_active_to_failed())
             self.assertEqual(now.isoformat(), db.list_history(limit=1)[0]["completed_utc"])
+            self.assertEqual(1, db.list_history(limit=1)[0]["timed_out"])
+            self.assertEqual("task deadline overdue", db.list_history(limit=1)[0]["change_reason"])
 
             second_id = db.start_task(title="Completed task", due_utc=None, why="", consequences="")
             self.assertTrue(db.mark_completed(second_id))
@@ -147,6 +149,26 @@ class TaskDbLifecycleTests(unittest.TestCase):
             self.assertEqual(second_id, db.get_active()["id"])
             self.assertEqual([second_id], [row["id"] for row in active])
             self.assertIn(first_id, [row["id"] for row in changed])
+
+    def test_prompt_task_done_marks_overdue_task_as_timed_out(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.task_management import TaskManagementMixin
+
+        taskdb = mock.Mock()
+        prompt = TaskManagementMixin.__new__(TaskManagementMixin)
+        prompt.taskdb = taskdb
+        prompt._task_decision_required = True
+        prompt._task_decision_task_id = 42
+        prompt._focus_prompt_open = True
+        prompt._render_task_panel = mock.Mock()
+        prompt._refresh_analytics = mock.Mock()
+
+        overdue = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat()
+        prompt._task_mark_done(42, overdue)
+
+        taskdb.mark_failed.assert_called_once_with(42, timed_out=True)
+        taskdb.mark_completed.assert_not_called()
+        self.assertFalse(prompt._task_decision_required)
+        self.assertFalse(prompt._focus_prompt_open)
 
     def test_analytics_today_uses_explicit_timezone_at_dst_boundary(self):
         from focuscheck.database.task_db import TaskDB

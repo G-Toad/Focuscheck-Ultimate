@@ -363,7 +363,12 @@ class TaskDB:
                     else:
                         due = due.astimezone(timezone.utc)
                     if self._now_utc() > due:
-                        cur.execute("UPDATE tasks SET status='failed', completed_utc=? WHERE id=? AND status='active'", (now_iso, tid))
+                        cur.execute(
+                            "UPDATE tasks SET status='failed', completed_utc=?, timed_out=1, "
+                            "change_reason=COALESCE(NULLIF(change_reason, ''), 'task deadline overdue') "
+                            "WHERE id=? AND status='active'",
+                            (now_iso, tid),
+                        )
                         if cur.rowcount == 1:
                             affected.append(tid)
                 except (TypeError, ValueError, OverflowError):
