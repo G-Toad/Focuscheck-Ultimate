@@ -183,6 +183,8 @@ class _WinClickThroughOverlay:
     def __init__(self, x, y, w, h, color_hex="#000000"):
         self.hwnd = None
         self._brush = None
+        self._user32 = None
+        self._gdi32 = None
         self._register_class()
         self._create_window(x, y, w, h, color_hex)
 
@@ -194,6 +196,8 @@ class _WinClickThroughOverlay:
             return
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
+        self._user32 = user32
+        self._gdi32 = gdi32
         _configure_overlay_api(user32, gdi32, ctypes.windll.kernel32)
         class WNDCLASSEXW(ctypes.Structure):
             _fields_ = [
@@ -235,6 +239,8 @@ class _WinClickThroughOverlay:
     def _create_window(self, x, y, w, h, color_hex):
         user32 = ctypes.windll.user32
         gdi32 = ctypes.windll.gdi32
+        self._user32 = user32
+        self._gdi32 = gdi32
         _configure_overlay_api(user32, gdi32, ctypes.windll.kernel32)
         WS_POPUP = 0x80000000
         WS_EX_LAYERED = 0x00080000
@@ -292,7 +298,9 @@ class _WinClickThroughOverlay:
         try:
             a = int(max(0, min(255, alpha * 255)))
             LWA_ALPHA = 0x00000002
-            return bool(ctypes.windll.user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA))
+            user32 = self._user32 or ctypes.windll.user32
+            _configure_overlay_api(user32, self._gdi32 or ctypes.windll.gdi32, ctypes.windll.kernel32)
+            return bool(user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA))
         except Exception:
             return False
 
@@ -301,7 +309,9 @@ class _WinClickThroughOverlay:
         brush = self._brush
         if hwnd:
             try:
-                result = ctypes.windll.user32.DestroyWindow(hwnd)
+                user32 = self._user32 or ctypes.windll.user32
+                _configure_overlay_api(user32, self._gdi32 or ctypes.windll.gdi32, ctypes.windll.kernel32)
+                result = user32.DestroyWindow(hwnd)
                 if result is not None and not bool(result):
                     return False
             except Exception:
@@ -310,7 +320,9 @@ class _WinClickThroughOverlay:
         self._brush = None
         if brush:
             try:
-                ctypes.windll.gdi32.DeleteObject(brush)
+                gdi32 = self._gdi32 or ctypes.windll.gdi32
+                _configure_overlay_api(self._user32 or ctypes.windll.user32, gdi32, ctypes.windll.kernel32)
+                gdi32.DeleteObject(brush)
             except Exception:
                 pass
         return True

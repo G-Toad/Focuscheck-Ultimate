@@ -11,7 +11,7 @@ import platform
 import ctypes
 from ctypes import wintypes
 
-from ..intensification_helpers import lift_all_child_windows
+from ..intensification_helpers import lift_all_child_windows, _configure_window_position_api
 import tkinter as tk
 
 try:
@@ -547,6 +547,7 @@ class IntensificationMixin:
                     # Position main prompt dialog above overlay
                     prompt_hwnd = wintypes.HWND(self.winfo_id())
                     user32 = ctypes.windll.user32
+                    _configure_window_position_api(user32)
                     SWP_NOACTIVATE = 0x0010
                     SWP_NOMOVE = 0x0002
                     SWP_NOSIZE = 0x0001
@@ -695,6 +696,7 @@ class IntensificationMixin:
                     try:
                         prompt_hwnd = wintypes.HWND(self.winfo_id())
                         user32 = ctypes.windll.user32
+                        _configure_window_position_api(user32)
                         SWP_NOACTIVATE = 0x0010
                         SWP_NOMOVE = 0x0002
                         SWP_NOSIZE = 0x0001

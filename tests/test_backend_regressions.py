@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -1601,6 +1602,12 @@ class ImportHardeningTests(unittest.TestCase):
             user32.SetWindowPos.argtypes,
         )
         self.assertEqual(wintypes.BOOL, user32.SetWindowPos.restype)
+
+    def test_stage5_overlay_reuses_configured_native_handles(self):
+        from focuscheck.ui.dialogs import windows_utils
+
+        self.assertIn("self._user32 or ctypes.windll.user32", inspect.getsource(windows_utils._WinClickThroughOverlay.set_alpha))
+        self.assertIn("self._user32 or ctypes.windll.user32", inspect.getsource(windows_utils._WinClickThroughOverlay.destroy))
 
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
