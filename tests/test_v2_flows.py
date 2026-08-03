@@ -135,6 +135,48 @@ class V2FlowTests(unittest.TestCase):
             hide_prompt=True,
         )
 
+    def test_off_thread_intervention_timeout_invalidates_v2_dispatch(self):
+        from focuscheck.ui.dialogs import v2_prompt_dialog
+
+        class Root:
+            def __init__(self):
+                self.callbacks = []
+
+            def after(self, _delay, callback):
+                self.callbacks.append(callback)
+                return "dispatch"
+
+            def after_cancel(self, _timer_id):
+                return None
+
+        class App:
+            def __init__(self, root):
+                self.root = root
+                self._tk_thread_id = -1
+                self.run_intervention = mock.Mock(return_value=True)
+
+        dialog = self._dialog()
+        root = Root()
+        dialog.app_ref = App(root)
+        dialog._closed = False
+        dialog.deiconify = lambda: None
+        dialog.lift = lambda: None
+        dialog._force_window_to_front = lambda: None
+
+        cancelled = mock.Mock()
+        cancelled.wait.return_value = False
+        cancelled.is_set.return_value = False
+
+        with mock.patch.object(v2_prompt_dialog.threading, "get_ident", return_value=456), \
+                mock.patch.object(v2_prompt_dialog.threading, "Event", return_value=cancelled), \
+                mock.patch.object(v2_prompt_dialog.messagebox, "showinfo"):
+            self.assertFalse(dialog._start_intervention_stub())
+
+        self.assertGreaterEqual(cancelled.set.call_count, 1)
+        cancelled.is_set.return_value = True
+        root.callbacks[0]()
+        dialog.app_ref.run_intervention.assert_not_called()
+
     def test_intervention_log_summarizes_active_window_title(self):
         dialog = self._dialog()
         dialog.activity_info = {"hwnd": 123, "title": "private.example/secret-token"}

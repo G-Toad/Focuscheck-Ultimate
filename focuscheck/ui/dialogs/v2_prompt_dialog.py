@@ -553,22 +553,33 @@ class V2PromptDialog(
             except Exception:
                 pass
             done = threading.Event()
+            cancelled = threading.Event()
             outcome = {"completed": False}
 
             def _run_on_ui():
+                if cancelled.is_set() or self._closed:
+                    done.set()
+                    return
                 try:
                     outcome["completed"] = bool(_run_intervention())
                 finally:
                     done.set()
 
+            dispatch_timers = TimerRegistry(parent)
             try:
-                parent.after(0, _run_on_ui)
+                dispatch_timers.schedule("v2-intervention-dispatch", 0, _run_on_ui)
             except Exception:
                 if logger:
                     logger.exception("intervention: failed to marshal to Tk thread", exc_info=True)
                 return False
-            done.wait(timeout=60.0)
-            return outcome["completed"]
+            try:
+                if not done.wait(timeout=60.0):
+                    cancelled.set()
+                    return False
+                return outcome["completed"]
+            finally:
+                # Invalidate a queued Tk callback after timeout or completion.
+                dispatch_timers.close()
 
         return _run_intervention()
 
