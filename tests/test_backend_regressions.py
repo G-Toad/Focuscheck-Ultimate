@@ -1582,6 +1582,26 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([], magnification.MagInitialize.argtypes)
         self.assertEqual([ctypes.c_void_p], magnification.MagSetFullscreenColorEffect.argtypes)
 
+    def test_intensification_child_window_position_declares_native_signature(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.ui.dialogs import intensification_helpers
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {"SetWindowPos": Api()})()
+        intensification_helpers._configure_window_position_api(user32)
+
+        self.assertEqual(
+            [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+             ctypes.c_int, ctypes.c_int, wintypes.UINT],
+            user32.SetWindowPos.argtypes,
+        )
+        self.assertEqual(wintypes.BOOL, user32.SetWindowPos.restype)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

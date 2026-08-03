@@ -13,6 +13,20 @@ except ImportError:
         return logging.getLogger(__name__)
 
 
+def _configure_window_position_api(user32):
+    """Declare the SetWindowPos contract before native child-window updates."""
+    user32.SetWindowPos.argtypes = [
+        wintypes.HWND,
+        wintypes.HWND,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        wintypes.UINT,
+    ]
+    user32.SetWindowPos.restype = wintypes.BOOL
+
+
 def lift_all_child_windows(owner):
     """Lift all child Toplevel windows above dim overlays (stage5)."""
     try:
@@ -44,6 +58,7 @@ def lift_all_child_windows(owner):
                                     SWP_NOACTIVATE = 0x0010
                                     SWP_NOMOVE = 0x0002
                                     SWP_NOSIZE = 0x0001
+                                    _configure_window_position_api(user32)
                                     user32.SetWindowPos(
                                         child_hwnd,
                                         insert_after,
