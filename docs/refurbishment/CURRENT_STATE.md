@@ -3,7 +3,7 @@
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `291` unittest cases passing.
+- Current automated baseline after hardening: `292` unittest cases passing.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
@@ -21,6 +21,7 @@
 - Single-instance mutex ownership now has explicit Win32 signatures and deterministic handle release on application exit/failure.
 - App lifecycle transitions are validated by a coordinator and exposed in the App heartbeat.
 - Lifecycle/runtime metadata is persisted in a bounded privacy-safe structured event ledger and is eligible for sanitized diagnostic bundles.
+- The structured event ledger applies a bounded default rate limit of 600 events per 60 seconds, exposes suppressed-event counts, and supports an injected monotonic clock for deterministic tests.
 - Settings UI save-key/schema drift is statically checked, saves patch the loaded revision draft so state-only, plugin, and future keys survive untouched, and a schema-generated Advanced tab owns additional editable configuration; complete schema coverage and full visible-control round trips remain open.
 - Windows shutdown query and committed end-session paths are distinct; committed shutdown uses the normal cleanup coordinator.
 - Guard refreshes are coordinator-owned and unchanged guard states do not create duplicate transition records.

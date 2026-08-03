@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import threading
+import time
+from collections import deque
 from typing import Any
 
 
@@ -33,10 +35,40 @@ def _safe_value(key: str, value: Any) -> Any:
 class StructuredEventLedger:
     """Persist recent operational metadata without user-provided content."""
 
-    def __init__(self, path: str | os.PathLike[str], *, max_bytes: int = 512 * 1024) -> None:
+    def __init__(
+        self,
+        path: str | os.PathLike[str],
+        *,
+        max_bytes: int = 512 * 1024,
+        max_events_per_window: int = 600,
+        window_seconds: float = 60.0,
+        monotonic_clock=None,
+    ) -> None:
         self.path = Path(path)
         self.max_bytes = max(4096, int(max_bytes))
+        self.max_events_per_window = max(1, int(max_events_per_window))
+        self.window_seconds = max(0.1, float(window_seconds))
+        self._monotonic_clock = monotonic_clock or time.monotonic
+        self._event_times = deque()
+        self._dropped_events = 0
         self._lock = threading.Lock()
+
+    @property
+    def dropped_events(self) -> int:
+        """Return the bounded count of events suppressed by rate limiting."""
+        with self._lock:
+            return self._dropped_events
+
+    def _allow_event(self) -> bool:
+        now = float(self._monotonic_clock())
+        cutoff = now - self.window_seconds
+        while self._event_times and self._event_times[0] <= cutoff:
+            self._event_times.popleft()
+        if len(self._event_times) >= self.max_events_per_window:
+            self._dropped_events += 1
+            return False
+        self._event_times.append(now)
+        return True
 
     def append(self, category: str, event: dict[str, Any] | None = None, **fields: Any) -> None:
         payload: dict[str, Any] = {"utc": datetime.now(timezone.utc).isoformat(), "category": str(category)[:80]}
@@ -46,6 +78,8 @@ class StructuredEventLedger:
             payload[str(key)[:80]] = _safe_value(str(key), value)
         line = json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n"
         with self._lock:
+            if not self._allow_event():
+                return
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 if self.path.exists() and self.path.stat().st_size + len(line.encode("utf-8")) > self.max_bytes:
@@ -59,4 +93,3 @@ class StructuredEventLedger:
             except OSError:
                 # Observability must never break the application.
                 return
-

@@ -173,3 +173,26 @@ class StructuredEventLedgerTests(unittest.TestCase):
             self.assertNotIn("private response", path.read_text(encoding="utf-8"))
             self.assertNotIn("example.invalid", path.read_text(encoding="utf-8"))
             self.assertEqual("test", payload["category"])
+
+    def test_event_ledger_rate_limits_bursts_and_recovers_after_window(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "structured_events.jsonl"
+            now = [0.0]
+            ledger = StructuredEventLedger(
+                path,
+                max_events_per_window=2,
+                window_seconds=10,
+                monotonic_clock=lambda: now[0],
+            )
+            ledger.append("test", {"event": "one"})
+            ledger.append("test", {"event": "two"})
+            ledger.append("test", {"event": "dropped"})
+            self.assertEqual(1, ledger.dropped_events)
+            self.assertEqual(2, len(path.read_text(encoding="utf-8").splitlines()))
+
+            now[0] = 11.0
+            ledger.append("test", {"event": "after_window"})
+            self.assertEqual(3, len(path.read_text(encoding="utf-8").splitlines()))
