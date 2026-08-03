@@ -28,6 +28,7 @@ _CATEGORY_PATTERNS = {
 }
 _SENSITIVE_CATEGORIES = {"settings", "tasks", "camera"}
 EXPORT_FORMAT_VERSION = 1
+DATA_CLEAR_AUDIT_FORMAT_VERSION = 1
 
 
 def _selected_categories(categories) -> set[str]:
@@ -193,21 +194,44 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
         raise NotADirectoryError(root)
     records = []
     for path, category in _files_for_categories(root, selected):
+        relative = path.relative_to(root).as_posix()
+        try:
+            initial_stat = path.stat()
+        except OSError as exc:
+            records.append({
+                "path": relative,
+                "category": category,
+                "size": None,
+                "sensitive": category in _SENSITIVE_CATEGORIES,
+                "deleted": False,
+                "error": type(exc).__name__,
+            })
+            continue
         record = {
-            "path": path.relative_to(root).as_posix(),
+            "path": relative,
             "category": category,
-            "size": path.stat().st_size,
+            "size": initial_stat.st_size,
             "sensitive": category in _SENSITIVE_CATEGORIES,
         }
+        deleted = False
+        error = None
         try:
+            if path.is_symlink():
+                raise OSError("symlink candidate rejected")
+            current_stat = path.stat()
+            if current_stat.st_size != initial_stat.st_size or current_stat.st_mtime_ns != initial_stat.st_mtime_ns:
+                raise OSError("candidate changed during clear")
             path.unlink()
-            record["deleted"] = True
+            deleted = True
         except OSError as exc:
-            record["deleted"] = False
-            record["error"] = type(exc).__name__
+            error = "changed_during_clear" if "changed during" in str(exc) else type(exc).__name__
+        record["deleted"] = deleted
+        if error:
+            record["error"] = error
         records.append(record)
 
     audit = {
+        "format_version": DATA_CLEAR_AUDIT_FORMAT_VERSION,
         "utc": datetime.now(timezone.utc).isoformat(),
         "operation": "clear_data",
         "categories": sorted(selected),
@@ -224,4 +248,11 @@ def clear_data(source_root, *, categories, confirmed=False) -> dict:
     return audit
 
 
-__all__ = ["CATEGORIES", "clear_data", "export_data", "inventory_data", "validate_export"]
+__all__ = [
+    "CATEGORIES",
+    "DATA_CLEAR_AUDIT_FORMAT_VERSION",
+    "clear_data",
+    "export_data",
+    "inventory_data",
+    "validate_export",
+]

@@ -31,6 +31,7 @@ class DataExportTests(unittest.TestCase):
             self.assertTrue((root / "focus_settings.json").exists())
             self.assertTrue((root / "focus_tasks.sqlite3").exists())
             self.assertIn('"operation":"clear_data"', (root / "data_clear_audit.jsonl").read_text(encoding="utf-8"))
+            self.assertIn('"format_version":1', (root / "data_clear_audit.jsonl").read_text(encoding="utf-8"))
 
     def test_default_export_excludes_sensitive_categories_and_writes_manifest(self):
         from tools.export_data import export_data
