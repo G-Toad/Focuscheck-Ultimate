@@ -11,6 +11,30 @@ from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    def test_prompt_regeneration_uses_timer_registry_and_cancels_on_shutdown(self):
+        from focuscheck.app import App
+        from focuscheck.utils.timers import TimerRegistry
+
+        class Root:
+            def after(self, _delay, callback):
+                self.callback = callback
+                return "regenerate-1"
+
+            def after_cancel(self, _timer_id):
+                self.cancelled = True
+
+        app = App.__new__(App)
+        app.root = Root()
+        app._timers = TimerRegistry(app.root)
+        app._schedule_next = mock.Mock()
+
+        self.assertTrue(app._schedule_prompt_regeneration())
+        app._timers.close()
+        app.root.callback()
+
+        app._schedule_next.assert_not_called()
+        self.assertTrue(app.root.cancelled)
+
     def test_slot_start_info_uses_app_owned_clock(self):
         from focuscheck.app import App
         from focuscheck.utils.clock import FakeClock

@@ -2225,7 +2225,7 @@ class App:
                             self._current_prompt = None
 
                             # Schedule immediate new prompt with updated settings
-                            self.root.after(100, lambda: self._schedule_next(0))
+                            self._schedule_prompt_regeneration()
 
                     except Exception as e:
                         try:
@@ -2240,6 +2240,19 @@ class App:
                 persist_settings=self._persist_settings_draft,
             )
         return self._call_on_ui_thread(_show_settings)
+
+    def _schedule_prompt_regeneration(self):
+        """Schedule post-settings prompt regeneration through the App timer owner."""
+        callback = lambda: self._schedule_next(0)
+        timers = getattr(self, "_timers", None)
+        if timers is not None and not timers.closed:
+            timers.schedule("settings-prompt-regenerate", 100, callback)
+            return True
+        try:
+            self.root.after(100, callback)
+            return True
+        except Exception:
+            return False
 
     def _persist_settings_draft(self, draft):
         """Persist a settings-window draft through the App composition root."""
