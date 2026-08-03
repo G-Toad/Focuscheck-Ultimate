@@ -2,7 +2,7 @@
   "schema_version": 1,
   "status": "not_run",
   "environment": "isolated administrator Windows machine required",
-  "instructions": "Populate every case only after executing it on the target machine; simulated or automated evidence must not be marked manual_pass.",
+  "instructions": "Populate every case only after executing it on the target machine; simulated or automated evidence must not be marked manual_pass. Use tools/manual_evidence.py to validate or atomically record outcomes.",
   "cases": [
     {
       "id": "WIN-001",
