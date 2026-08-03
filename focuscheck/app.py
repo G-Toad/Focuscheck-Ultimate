@@ -2693,7 +2693,17 @@ class App:
                 self._gentle_reminder_next_mono = 0.0
                 self._close_gentle_reminder()
                 return
-            if self.settings.get("paused", False) or self._current_prompt is not None:
+            runtime_state = getattr(self, "_runtime_state", None)
+            if runtime_state is not None:
+                try:
+                    effectively_paused = bool(runtime_state.is_effectively_paused())
+                except Exception:
+                    effectively_paused = bool(self.settings.get("paused", False))
+            else:
+                # Standalone fixtures and legacy consumers may not compose the
+                # runtime coordinator; retain their compatibility behavior.
+                effectively_paused = bool(self.settings.get("paused", False))
+            if effectively_paused or self._current_prompt is not None:
                 return
             dialog = self._gentle_reminder_dialog
             if dialog is not None:

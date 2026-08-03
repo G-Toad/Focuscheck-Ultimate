@@ -167,6 +167,8 @@ Current checkpoint addition: The current V1 challenge slice extends parent-owned
 
 Current checkpoint addition: The latest `a517583` challenge-ownership checkpoint passes the full verifier with `395` unittest cases and all 18 bounded stages; manual acronym interruption evidence remains pending.
 
+Current checkpoint addition: The current runtime-state slice routes gentle-reminder suppression through the coordinator's effective-pause API instead of raw settings pause state; live guard/lock/sleep evidence remains pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

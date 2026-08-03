@@ -128,6 +128,29 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["dismiss"], events)
         self.assertIsNone(app._gentle_reminder_dialog)
 
+    def test_gentle_reminder_uses_effective_runtime_pause(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {
+            "gentle_reminder_enabled": True,
+            "gentle_reminder_interval": 1,
+            "paused": False,
+        }
+        app._runtime_state = mock.Mock()
+        app._runtime_state.is_effectively_paused.return_value = True
+        app._gentle_reminder_next_mono = 99.0
+        app._gentle_reminder_dialog = None
+        app._current_prompt = None
+
+        with mock.patch("focuscheck.app.time.monotonic", return_value=100.0), mock.patch(
+            "focuscheck.app.GentleReminderDialog"
+        ) as dialog:
+            App._maybe_show_gentle_reminder(app)
+
+        app._runtime_state.is_effectively_paused.assert_called_once_with()
+        dialog.assert_not_called()
+
     def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
         from focuscheck.app import App
 
