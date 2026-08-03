@@ -33,8 +33,9 @@ This file defines externally observable behaviour that agents must preserve unle
 3. The child app stops tray integration and platform watchers.
 4. The child app destroys the Tk root and exits.
 5. The supervisor sees the intentional stop marker.
-6. The supervisor clears the marker and exits without restarting the child.
-7. Startup registration is not modified.
+6. The supervisor terminates the child within a bounded wait, then records whether termination was graceful, already complete, or forced after timeout.
+7. The supervisor atomically publishes a matching acknowledgement before clearing the marker and exiting without restarting the child.
+8. Startup registration is not modified.
 
 ## Startup Registration
 

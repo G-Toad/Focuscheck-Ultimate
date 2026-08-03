@@ -47,6 +47,8 @@ RESTART_WINDOW_SECONDS = 300.0
 MAX_RESTARTS_IN_WINDOW = 5
 DEGRADED_COOLDOWN_SECONDS = 300.0
 STABLE_RUNTIME_SECONDS = 30.0
+CHILD_TERMINATE_TIMEOUT = 10.0
+CHILD_KILL_TIMEOUT = 5.0
 
 
 def _configure_supervisor_native_api(kernel32):
@@ -533,9 +535,9 @@ class FocusCheckSupervisor:
             self.logger.log("FocusCheck stable; restart backoff reset")
 
 
-    def _terminate_child(self) -> None:
+    def _terminate_child(self) -> str:
         if not self.child:
-            return
+            return "no_child"
         proc = self.child
         self.child = None
         inner_pid = None
@@ -547,26 +549,37 @@ class FocusCheckSupervisor:
             if inner_pid:
                 self.logger.log(f"Stopping frozen inner FocusCheck process (pid={inner_pid})")
                 kill_process_tree(inner_pid)
-            return
+                return "forced_inner"
+            return "already_exited"
         self.logger.log("Stopping FocusCheck")
         try:
             proc.terminate()
         except Exception:
             try:
                 proc.kill()
+                proc.wait(timeout=CHILD_KILL_TIMEOUT)
+                return "forced"
             except Exception:
-                return
+                return "termination_failed"
         try:
-            proc.wait(timeout=10)
+            proc.wait(timeout=CHILD_TERMINATE_TIMEOUT)
+            termination = "graceful"
         except subprocess.TimeoutExpired:
+            self.logger.log(
+                f"FocusCheck did not stop within {CHILD_TERMINATE_TIMEOUT:.0f}s; forcing termination"
+            )
             try:
                 proc.kill()
-                proc.wait(timeout=5)
+                proc.wait(timeout=CHILD_KILL_TIMEOUT)
+                termination = "forced_after_timeout"
             except Exception:
-                pass
+                termination = "termination_failed"
         if inner_pid and _pid_is_alive(inner_pid):
             self.logger.log(f"Stopping frozen inner FocusCheck process (pid={inner_pid})")
             kill_process_tree(inner_pid)
+            if termination == "graceful":
+                termination = "forced_inner"
+        return termination
     def _heartbeat_stale(self) -> bool:
         if self.child is None or self.child.poll() is not None:
             return False
@@ -633,7 +646,7 @@ class FocusCheckSupervisor:
         except OSError:
             pass
 
-    def _acknowledge_stop_request(self) -> None:
+    def _acknowledge_stop_request(self, *, termination: str = "unknown") -> None:
         """Publish a durable acknowledgement before leaving the supervisor."""
         try:
             payload = json.loads(self.stop_file.read_text(encoding="utf-8"))
@@ -645,6 +658,7 @@ class FocusCheckSupervisor:
                 "pid": int(payload.get("pid", 0)),
                 "utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "status": "acknowledged",
+                "termination": str(termination)[:40],
             }
             self.stop_ack_file.parent.mkdir(parents=True, exist_ok=True)
             temporary = self.stop_ack_file.with_name(
@@ -661,7 +675,10 @@ class FocusCheckSupervisor:
                     temporary.unlink()
                 except OSError:
                     pass
-            self.logger.log(f"Intentional FocusCheck stop acknowledged (request_id={ack['request_id']})")
+            self.logger.log(
+                f"Intentional FocusCheck stop acknowledged "
+                f"(request_id={ack['request_id']}, termination={ack['termination']})"
+            )
         except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
             self.logger.log(f"Could not acknowledge intentional stop: {exc}")
 
@@ -704,7 +721,7 @@ class FocusCheckSupervisor:
                     self.logger.log(f"FocusCheck exited with {exit_code}")
                     self.child = None
                     if self._intentional_stop_requested(exited_pid):
-                        self._acknowledge_stop_request()
+                        self._acknowledge_stop_request(termination="already_exited")
                         self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
                         self._clear_stop_request()
                         self.stop_event.set()
@@ -726,8 +743,8 @@ class FocusCheckSupervisor:
             # while the child is still owned so frozen bootloader/inner-PID
             # exits cannot race the acknowledgement path.
             if self._intentional_stop_requested():
-                self._terminate_child()
-                self._acknowledge_stop_request()
+                termination = self._terminate_child()
+                self._acknowledge_stop_request(termination=termination)
                 self._clear_stop_request()
                 self.logger.log("Intentional FocusCheck stop requested; supervisor exiting")
                 self.stop_event.set()

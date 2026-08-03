@@ -170,7 +170,7 @@ class HarnessSupervisor:
 
             def _terminate_child(inner_self):
                 inner_self.terminations += 1
-                super()._terminate_child()
+                return super()._terminate_child()
 
         self.logger = MemoryLogger()
         self.supervisor = TestSupervisor(
@@ -389,6 +389,45 @@ class SupervisorHarnessTests(unittest.TestCase):
             self.assertEqual("request-1", ack["request_id"])
             self.assertEqual("generation-1", ack["generation"])
             self.assertEqual("acknowledged", ack["status"])
+            self.assertEqual("unknown", ack["termination"])
+
+    def test_child_termination_timeout_is_reported_and_forced(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        class HangingProcess:
+            pid = 1234
+
+            def __init__(self):
+                self.killed = False
+                self.wait_calls = []
+
+            def poll(self):
+                return None
+
+            def terminate(self):
+                return None
+
+            def kill(self):
+                self.killed = True
+
+            def wait(self, timeout=None):
+                self.wait_calls.append(timeout)
+                if len(self.wait_calls) == 1:
+                    raise __import__("subprocess").TimeoutExpired(["FocusCheck"], timeout)
+                return -9
+
+        process = HangingProcess()
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.child = process
+        supervisor.target_script = Path("main.py")
+        supervisor.logger = MemoryLogger()
+
+        termination = supervisor._terminate_child()
+
+        self.assertEqual("forced_after_timeout", termination)
+        self.assertTrue(process.killed)
+        self.assertEqual([10.0, 5.0], process.wait_calls)
+        self.assertTrue(any("forcing termination" in line for line in supervisor.logger.lines))
 
     def test_intentional_stop_acknowledgement_ignores_foreign_generation(self):
         from focuscheck_supervisor import FocusCheckSupervisor, FileLogger
