@@ -18,6 +18,8 @@ Latest browser profile-boundary correction: session recovery rejects symlinked p
 
 Latest manual-evidence correction: `tools/manual_evidence.py` now lists, validates, and atomically records individual target-machine evidence cases; pass/fail recording requires explicit `--human-confirmed`, and automated or simulated runs remain `not_run`. The full verifier passed at source checkpoint `e09917c` with 541 tests across 19 stages; no manual case has been promoted.
 
+Latest register-traceability correction: `tools/validate_refurbishment_registers.py` now validates row shape, unique IDs, traceability fields, statuses, and untriaged severity-0/1 defects; it exposed and corrected a duplicate `DB-011` identifier, leaving 98 unique defect rows and 6 contradiction rows. The full verifier passed at source checkpoint `809696e` with 544 tests across 19 stages; manual verification requirements remain separate.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.

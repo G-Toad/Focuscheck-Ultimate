@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `541` tests across 19 bounded stages at source checkpoint `e09917c`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `544` tests across 19 bounded stages at source checkpoint `809696e`; the detailed older bullets are retained as historical baseline context.
+
+The latest register checkpoint adds automated validation for 98 unique defect rows and 6 contradiction rows, including traceability fields and untriaged severity-0/1 detection. It corrected a duplicate `DB-011` identifier; this does not convert manual target-machine requirements into automated passes.
 
 The latest release-evidence checkpoint adds a non-destructive manual checklist CLI. It refuses to record pass/fail without explicit human confirmation, validates the five-case schema, and atomically writes only an explicitly requested case; the committed manual evidence remains `not_run`.
 
