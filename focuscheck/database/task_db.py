@@ -10,7 +10,9 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from ..utils.logging_utils import log_exception
 
 
-CURRENT_TASK_SCHEMA_VERSION = 3
+CURRENT_TASK_SCHEMA_VERSION = 4
+MAX_TASK_TEXT_LENGTH = 8192
+MAX_TASK_REASON_LENGTH = 2048
 
 
 def _normalize_utc(value, *, allow_none=False):
@@ -32,6 +34,20 @@ def _normalize_utc(value, *, allow_none=False):
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc).isoformat()
+
+
+def _bounded_text(value, field, *, required=False, limit=MAX_TASK_TEXT_LENGTH):
+    """Validate user-authored task text before it reaches SQLite."""
+    if value is None:
+        if required:
+            raise ValueError(f"{field} must not be empty")
+        return None
+    text = str(value)
+    if required and not text.strip():
+        raise ValueError(f"{field} must not be empty")
+    if len(text) > limit:
+        raise ValueError(f"{field} exceeds the {limit}-character limit")
+    return text
 
 
 class TaskDB:
@@ -196,6 +212,74 @@ class TaskDB:
                         (3, self._now_utc().isoformat()),
                     )
                     cur.execute(f"PRAGMA user_version = {CURRENT_TASK_SCHEMA_VERSION}")
+                # Version 4 adds validation triggers without rebuilding the
+                # table, so legacy rows remain intact while future writes are
+                # bounded and restricted to the documented state machine.
+                if schema_version < 4:
+                    cur.execute(
+                        "UPDATE tasks SET status='changed', "
+                        "change_reason=CASE WHEN NULLIF(change_reason, '') IS NULL "
+                        "THEN 'reconciled invalid legacy task status' "
+                        "ELSE change_reason || '; reconciled invalid legacy task status' END "
+                        "WHERE status NOT IN ('active', 'completed', 'failed', 'changed')"
+                    )
+                    cur.execute(
+                        "INSERT OR IGNORE INTO schema_migrations(version, applied_utc) VALUES (?, ?)",
+                        (4, self._now_utc().isoformat()),
+                    )
+                    cur.execute("PRAGMA user_version = 4")
+                cur.executescript(
+                    f"""
+                    CREATE TRIGGER IF NOT EXISTS tasks_validate_insert
+                    BEFORE INSERT ON tasks
+                    WHEN NEW.status NOT IN ('active', 'completed', 'failed', 'changed')
+                      OR NEW.title IS NULL OR length(NEW.title) > {MAX_TASK_TEXT_LENGTH}
+                      OR (NEW.why IS NOT NULL AND length(NEW.why) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.consequences IS NOT NULL AND length(NEW.consequences) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.change_reason IS NOT NULL AND length(NEW.change_reason) > {MAX_TASK_REASON_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'task row violates status or text policy');
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS tasks_validate_update
+                    BEFORE UPDATE OF status, title, why, consequences, change_reason ON tasks
+                    WHEN NEW.status NOT IN ('active', 'completed', 'failed', 'changed')
+                      OR NEW.title IS NULL OR length(NEW.title) > {MAX_TASK_TEXT_LENGTH}
+                      OR (NEW.why IS NOT NULL AND length(NEW.why) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.consequences IS NOT NULL AND length(NEW.consequences) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.change_reason IS NOT NULL AND length(NEW.change_reason) > {MAX_TASK_REASON_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'task row violates status or text policy');
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS waste_events_validate_insert
+                    BEFORE INSERT ON waste_events
+                    WHEN (NEW.what IS NOT NULL AND length(NEW.what) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.consequences IS NOT NULL AND length(NEW.consequences) > {MAX_TASK_TEXT_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'waste event violates text policy');
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS waste_events_validate_update
+                    BEFORE UPDATE OF what, consequences ON waste_events
+                    WHEN (NEW.what IS NOT NULL AND length(NEW.what) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.consequences IS NOT NULL AND length(NEW.consequences) > {MAX_TASK_TEXT_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'waste event violates text policy');
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS focus_events_validate_insert
+                    BEFORE INSERT ON focus_events
+                    WHEN (NEW.doing IS NOT NULL AND length(NEW.doing) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.benefits IS NOT NULL AND length(NEW.benefits) > {MAX_TASK_TEXT_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'focus event violates text policy');
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS focus_events_validate_update
+                    BEFORE UPDATE OF doing, benefits ON focus_events
+                    WHEN (NEW.doing IS NOT NULL AND length(NEW.doing) > {MAX_TASK_TEXT_LENGTH})
+                      OR (NEW.benefits IS NOT NULL AND length(NEW.benefits) > {MAX_TASK_TEXT_LENGTH})
+                    BEGIN
+                        SELECT RAISE(ABORT, 'focus event violates text policy');
+                    END;
+                    """
+                )
                 con.commit()
         except Exception as exc:
             log_exception("TaskDB: failed ensuring schema")
@@ -333,6 +417,9 @@ class TaskDB:
             return self._row_to_dict(row) if row else None
 
     def start_task(self, *, title, due_utc, why, consequences):
+        title = _bounded_text(title, "title", required=True)
+        why = _bounded_text(why, "why")
+        consequences = _bounded_text(consequences, "consequences")
         now = self._now_utc().isoformat()
         due_utc = _normalize_utc(due_utc, allow_none=True)
         with self._conn() as con:
@@ -375,6 +462,7 @@ class TaskDB:
             return cur.rowcount == 1
 
     def mark_changed(self, task_id, reason):
+        reason = _bounded_text(reason, "change_reason", required=True, limit=MAX_TASK_REASON_LENGTH)
         with self._conn() as con:
             cur = con.cursor()
             cur.execute("UPDATE tasks SET status='changed', change_reason=? WHERE id=? AND status='active'", (reason, task_id))
@@ -513,6 +601,8 @@ class TaskDB:
         return rows
 
     def record_waste_event(self, *, what, consequences, active_task_id=None, when_utc=None):
+        what = _bounded_text(what, "what")
+        consequences = _bounded_text(consequences, "consequences")
         try:
             if when_utc is None:
                 when_utc = self._now_utc().isoformat()
@@ -532,6 +622,8 @@ class TaskDB:
 
 
     def record_focus_event(self, *, doing, benefits, active_task_id=None, when_utc=None):
+        doing = _bounded_text(doing, "doing")
+        benefits = _bounded_text(benefits, "benefits")
         try:
             if when_utc is None:
                 when_utc = self._now_utc().isoformat()

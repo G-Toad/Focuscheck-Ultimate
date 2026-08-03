@@ -42,8 +42,8 @@ class TaskDbRecoveryTests(unittest.TestCase):
             task_id = db.start_task(title="Persist", due_utc=None, why="", consequences="")
             db.backup_to(backup)
             with sqlite3.connect(path) as con:
-                self.assertEqual(3, con.execute("PRAGMA user_version").fetchone()[0])
-                self.assertEqual(3, con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0])
+                self.assertEqual(4, con.execute("PRAGMA user_version").fetchone()[0])
+                self.assertEqual(4, con.execute("SELECT MAX(version) FROM schema_migrations").fetchone()[0])
             TaskDB.restore_from(backup, restored)
             restored_db = TaskDB(str(restored))
             self.assertEqual(task_id, restored_db.get_active()["id"])
@@ -70,6 +70,62 @@ class TaskDbRecoveryTests(unittest.TestCase):
             self.assertTrue(Path(db.pre_migration_backup).exists())
             with sqlite3.connect(db.pre_migration_backup) as backup:
                 self.assertEqual(1, backup.execute("PRAGMA user_version").fetchone()[0])
+
+    def test_legacy_unknown_status_is_reconciled_before_validation_triggers(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = Path(temp_dir) / "legacy.sqlite3"
+            with sqlite3.connect(path) as con:
+                con.executescript(
+                    """
+                    PRAGMA user_version = 3;
+                    CREATE TABLE tasks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        created_utc TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        why TEXT,
+                        consequences TEXT,
+                        due_utc TEXT,
+                        status TEXT NOT NULL,
+                        completed_utc TEXT,
+                        change_reason TEXT,
+                        timed_out INTEGER NOT NULL DEFAULT 0
+                    );
+                    INSERT INTO tasks(created_utc, title, status)
+                    VALUES ('2026-08-03T00:00:00+00:00', 'legacy', 'mystery');
+                    """
+                )
+                con.commit()
+
+            db = TaskDB(str(path))
+            row = db.list_history(limit=1)[0]
+            self.assertEqual("changed", row["status"])
+            self.assertIn("reconciled invalid legacy task status", row["change_reason"])
+            with sqlite3.connect(path) as con:
+                self.assertEqual(4, con.execute("PRAGMA user_version").fetchone()[0])
+
+    def test_task_schema_rejects_invalid_future_rows(self):
+        from focuscheck.database.task_db import TaskDB, MAX_TASK_TEXT_LENGTH
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            path = Path(temp_dir) / "tasks.sqlite3"
+            TaskDB(str(path))
+            with sqlite3.connect(path) as con:
+                with self.assertRaises(sqlite3.IntegrityError):
+                    con.execute(
+                        "INSERT INTO tasks(created_utc, title, status) VALUES (?, ?, ?)",
+                        ("2026-08-03T00:00:00+00:00", "bad", "mystery"),
+                    )
+                with self.assertRaises(sqlite3.IntegrityError):
+                    con.execute(
+                        "INSERT INTO tasks(created_utc, title, status) VALUES (?, ?, ?)",
+                        ("2026-08-03T00:00:00+00:00", "x" * (MAX_TASK_TEXT_LENGTH + 1), "active"),
+                    )
+
+            db = TaskDB(str(path))
+            with self.assertRaises(ValueError):
+                db.start_task(title="x" * (MAX_TASK_TEXT_LENGTH + 1), due_utc=None, why="", consequences="")
 
     def test_corrupt_existing_database_is_rejected_without_replacement(self):
         from focuscheck.database.task_db import TaskDB
