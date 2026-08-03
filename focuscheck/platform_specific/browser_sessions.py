@@ -176,7 +176,9 @@ def _safe_read(path: Path, root: Path) -> bytes | None:
         resolved.relative_to(resolved_root)
         if resolved.stat().st_size > _MAX_FILE_BYTES:
             return None
-        return resolved.read_bytes()
+        with resolved.open("rb") as stream:
+            data = stream.read(_MAX_FILE_BYTES + 1)
+        return None if len(data) > _MAX_FILE_BYTES else data
     except (OSError, RuntimeError, ValueError):
         return None
 
