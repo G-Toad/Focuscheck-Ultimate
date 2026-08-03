@@ -203,6 +203,15 @@ def inspect_startup(name: str = "FocusCheck") -> StartupInspection:
     except Exception as exc:
         return StartupInspection("error", detail=str(exc), launcher_path=launcher_text, launcher_present=launcher_present)
 
+    if typ != getattr(winreg, "REG_SZ", 1):
+        return StartupInspection(
+            "duplicate" if launcher_present else "malformed",
+            command=command,
+            detail=f"startup registry value has unsupported type {typ!r}",
+            launcher_path=launcher_text,
+            launcher_present=launcher_present,
+        )
+
     if not command:
         return StartupInspection(
             "duplicate" if launcher_present else "malformed",

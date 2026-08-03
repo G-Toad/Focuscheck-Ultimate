@@ -1204,6 +1204,25 @@ class StartupCommandTests(unittest.TestCase):
         self.assertTrue(inspection.present)
         self.assertTrue(inspection.repairable)
 
+    def test_inspect_startup_rejects_non_string_registry_value(self):
+        from focuscheck.platform_specific import startup
+
+        fake_winreg = types.SimpleNamespace(
+            HKEY_CURRENT_USER=object(),
+            KEY_READ=2,
+            REG_SZ=1,
+            OpenKey=lambda *args: "key",
+            QueryValueEx=lambda *_args: ('"C:\\FocusCheck\\FocusCheck.exe"', 4),
+            CloseKey=lambda _key: None,
+        )
+        with mock.patch.dict(sys.modules, {"winreg": fake_winreg}), \
+                mock.patch.object(startup._platform, "system", return_value="Windows"):
+            inspection = startup.inspect_startup("FocusCheckTest")
+
+        self.assertEqual("malformed", inspection.status)
+        self.assertTrue(inspection.present)
+        self.assertTrue(inspection.repairable)
+
     def test_inspect_startup_normalizes_slashes_for_valid_command(self):
         from focuscheck.platform_specific import startup
 
