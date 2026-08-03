@@ -8,6 +8,8 @@ Latest browser-session correction: tab enumeration now has a bounded, read-only 
 
 Latest lifecycle observability correction: heartbeat readiness now accepts enum, string, or missing lifecycle phase values from injected adapters instead of assuming `.value`, preserving heartbeat publication for partial-composition tests and custom adapters. The full verifier passed at source checkpoint `eb61736` with 534 tests across 19 stages; manual Windows and release evidence remains pending.
 
+Latest composition correction: `AppDependencies` now supports an `activity_provider_factory`, and V2 engine construction composes it through the App boundary when no direct provider is supplied. The full verifier passed at source checkpoint `9eadfd7` with 535 tests across 19 stages; live browser evidence remains pending.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.

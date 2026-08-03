@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `534` tests across 19 bounded stages at source checkpoint `eb61736`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `535` tests across 19 bounded stages at source checkpoint `9eadfd7`; the detailed older bullets are retained as historical baseline context.
+
+The latest composition checkpoint adds an injectable activity-provider factory for V2 engine construction while preserving direct-provider and production defaults. Focused lifecycle tests and the full verifier passed; live browser and Windows evidence remains pending.
 
 The latest lifecycle observability checkpoint makes heartbeat readiness capability-safe for injected lifecycle adapters and adds regression coverage for enum, string, and missing phase values. Focused lifecycle tests and the full verifier passed; manual Windows and release evidence remains pending.
 
