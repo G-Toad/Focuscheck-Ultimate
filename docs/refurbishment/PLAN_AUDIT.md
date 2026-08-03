@@ -81,7 +81,7 @@ The bounded runner at `tools/verification_runner.py` currently reports passing s
 The older stage-description sentence above retains the 164-case historical inventory; the current runner result is 259 cases as recorded in the latest rerun immediately above. The runner now contains 15 passing bounded stages, including `mutation_smoke`, `resource_leak_selftest`, and `data_export`.
 The detailed older-case sentences immediately above are retained for provenance; the subsequent current checkpoint is the 242-case run recorded here.
 
-Current checkpoint supersession: `286` unittest cases and all 15 bounded stages pass; the current run additionally covers bounded CDP target/title/URL inputs, browser tab-title de-duplication, and redacted active-window-title diagnostics. The older checkpoint prose above is retained for provenance.
+Current checkpoint supersession: `287` unittest cases and all 15 bounded stages pass; the current run additionally covers bounded CDP target/title/URL inputs, browser tab-title de-duplication, and redacted active-window-title diagnostics at both V2 entry and intervention-tab queue boundaries. The older checkpoint prose above is retained for provenance.
 
 ## Final Acceptance Gates
 

@@ -19,11 +19,14 @@ from ...platform_specific.browser_tabs import try_list_browser_tabs
 from ...utils.timers import TimerRegistry
 
 try:
-    from ...utils import get_logger
+    from ...utils import get_logger, privacy_summary
 except Exception:  # pragma: no cover - fallback
     def get_logger():
         import logging
         return logging.getLogger(__name__)
+
+    def privacy_summary(value):
+        return {"type": type(value).__name__, "length": len(str(value or "")), "sha256": None}
 
 try:
     from .intervention_reflection_dialog import InterventionReflectionDialog
@@ -366,7 +369,7 @@ class WindowSelectionDialog(tk.Toplevel):
             title = entry.get("title", "")
             proc = entry.get("process_name", "")
             try:
-                get_logger().info("tabs for %s (%s): %s", title, proc, len(tabs))
+                get_logger().info("tabs for title_summary=%s (%s): %s", privacy_summary(title), proc, len(tabs))
             except Exception:
                 pass
             if not tabs:

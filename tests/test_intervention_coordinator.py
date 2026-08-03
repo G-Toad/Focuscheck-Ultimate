@@ -120,6 +120,25 @@ class InterventionCoordinatorTests(unittest.TestCase):
         self.assertIsNone(dialog._front_timer_id)
         self.assertIsNone(dialog._tab_scan_timer_id)
 
+    def test_selection_tab_scan_does_not_log_window_title(self):
+        from focuscheck.ui.dialogs.intervention_wizard import WindowSelectionDialog
+
+        dialog = object.__new__(WindowSelectionDialog)
+        dialog._closed = False
+        dialog._tab_queue = mock.Mock()
+        dialog._tab_queue.get_nowait.side_effect = [
+            ({"title": "private.example/secret-token", "process_name": "chrome.exe"}, [], ""),
+            Exception("empty"),
+        ]
+        dialog._timers = mock.Mock()
+        dialog._items = []
+        with mock.patch("focuscheck.ui.dialogs.intervention_wizard.get_logger") as logger:
+            dialog._drain_tab_queue()
+
+        logged = " ".join(str(call) for call in logger.return_value.info.call_args_list)
+        self.assertNotIn("private.example/secret-token", logged)
+        self.assertIn("title_summary", logged)
+
     def test_app_intervention_lease_is_released_after_failure(self):
         from focuscheck.app import App
 
