@@ -189,6 +189,8 @@ Current checkpoint addition: The latest `3189ec0` checkpoint makes startup resol
 
 Current checkpoint addition: The latest `fd34706` checkpoint adds a withdrawn-Tk QA scenario for valid V1 Focus/Waste detail completion and callback-free parent interruption; the full isolated QA run reports `qa_failures=0`, and the full verifier records `404` unittest cases and all 18 bounded stages passed. Interactive target-Windows evidence remains manual_pending.
 
+Current checkpoint addition: The latest `e4157b4` checkpoint removes four orphaned adaptive-brightness Settings variables and adds an exhaustive structural binding contract for remaining hand-built controls; the full verifier records `405` unittest cases and all 18 bounded stages passed. Interactive value-by-value Settings review remains manual_pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -210,6 +212,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `404` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `fd34706`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `405` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `e4157b4`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
