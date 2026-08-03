@@ -75,6 +75,7 @@ NON_VISIBLE_SETTING_CLASSIFICATIONS = {
     "manual_crop_show_safe_zones": "specialized_editor",
     "manual_crop_zoom": "specialized_editor",
     "paused": "state_only",
+    "manual_paused": "state_only",
     "settings_revision": "state_only",
     "settings_schema_version": "state_only",
     "snooze_until_utc": "state_only",

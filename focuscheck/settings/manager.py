@@ -253,7 +253,7 @@ def validate_settings(data):
         "always_on_top", "center_on_show", "follow_cursor_monitor", "specific_monitor_only",
         "anti_habit_enabled", "randomize_buttons", "overlays_enabled",
         "phrase_acronym_enabled", "custom_button_phrases_enabled",
-        "force_always_on", "paused", "pause_when_inactive_or_lid_closed", "pause_on_idle",
+        "force_always_on", "paused", "manual_paused", "pause_when_inactive_or_lid_closed", "pause_on_idle",
         "pause_on_lid_closed", "pause_on_lock", "pause_on_sleep",
         "overdrive_stage4_enabled",
         "overdrive_stage5_enabled",
@@ -327,6 +327,12 @@ def validate_settings(data):
         "manual_crop_show_safe_zones", "manual_crop_lock_aspect",
     ]:
         s[b] = _bool(s.get(b, DEFAULT_SETTINGS[b]), DEFAULT_SETTINGS[b])
+    # Older documents only had the overloaded `paused` field. When a legacy
+    # document also has a snooze marker, preserve the historical snooze-owned
+    # pause as non-manual; otherwise migrate paused intent to the new field.
+    if "manual_paused" not in data:
+        legacy_snooze = str(data.get("snooze_until_utc", data.get("snooze_until", "")) or "").strip()
+        s["manual_paused"] = bool(s.get("paused", False)) and not bool(legacy_snooze)
     # Strings
     s["webhook_url"] = str(s.get("webhook_url", "")).strip()
     s["snooze_until_utc"] = str(s.get("snooze_until_utc", DEFAULT_SETTINGS.get("snooze_until_utc", "")) or "").strip()

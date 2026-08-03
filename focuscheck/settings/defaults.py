@@ -40,6 +40,8 @@ DEFAULT_SETTINGS = {
     "inactive_as_sleep_seconds": 45,     # used only if pause_on_idle=True
     "pause_poll_interval_seconds": 5,    # how often to re-check while paused
     "paused": False,
+    # Durable manual intent; `paused` remains the derived effective-pause compatibility field.
+    "manual_paused": False,
     "snooze_until_utc": "",
 
     # Optional webhook

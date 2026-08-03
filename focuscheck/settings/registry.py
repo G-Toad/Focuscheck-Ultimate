@@ -32,7 +32,14 @@ SETTINGS_REGISTRY = {
     "pause_on_sleep": {"type": bool, "default": True, "description": "Pause during system sleep."},
     "inactive_as_sleep_seconds": {"type": int, "default": 45, "description": "Idle time before pausing."},
     "pause_poll_interval_seconds": {"type": int, "default": 5, "description": "Polling interval when paused."},
-    "paused": {"type": bool, "default": False, "description": "Current pause state."},
+    "paused": {"type": bool, "default": False, "description": "Current effective pause state."},
+    "manual_paused": {
+        "type": bool,
+        "default": False,
+        "description": "Durable manual pause intent; effective pause also includes snooze and guards.",
+        "persistence_class": "state_only",
+        "runtime_consumer": "focuscheck.runtime.state.RuntimeStateCoordinator",
+    },
 
     # Spam Detection
     "spam_detection_enabled": {"type": bool, "default": True, "description": "Master switch for spam detection."},

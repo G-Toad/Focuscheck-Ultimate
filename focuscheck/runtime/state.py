@@ -67,15 +67,25 @@ class RuntimeStateCoordinator:
         self.clock = clock or SystemClock()
         self._transition_sink = transition_sink
         self.snapshot = RuntimeSnapshot(
-            manual_paused=bool(settings.get("paused", False)),
+            manual_paused=self._manual_pause_from_settings(settings, self.clock.now_utc()),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
         )
+
+    @staticmethod
+    def _manual_pause_from_settings(settings: MutableMapping[str, Any], now: datetime | None = None) -> bool:
+        """Read separated intent, preserving raw-dictionary compatibility."""
+        if "manual_paused" in settings:
+            return bool(settings.get("manual_paused", False))
+        # Settings loaded through validate_settings receive an explicit
+        # migration result. Callers constructing legacy dictionaries directly
+        # retain the historical manual-pause-preserving behavior.
+        return bool(settings.get("paused", False))
 
     def refresh_from_settings(self, settings: MutableMapping[str, Any]) -> None:
         """Adopt a reloaded settings document without losing runtime leases."""
         self.settings = settings
         self.snapshot.revision += 1
-        self.snapshot.manual_paused = bool(settings.get("paused", False))
+        self.snapshot.manual_paused = self._manual_pause_from_settings(settings, self.clock.now_utc())
         self.snapshot.snooze_until_utc = str(settings.get("snooze_until_utc", "") or "")
 
     def _safe_snapshot(self, snapshot: RuntimeSnapshot | None = None) -> dict:
@@ -109,6 +119,7 @@ class RuntimeStateCoordinator:
             self.snapshot.manual_paused
             or self.snapshot.snooze_active(self.clock.now_utc())
         )
+        self.settings["manual_paused"] = self.snapshot.manual_paused
         self.settings["snooze_until_utc"] = self.snapshot.snooze_until_utc
         if self._persist is not None:
             try:

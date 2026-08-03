@@ -55,7 +55,7 @@ class SettingDescriptor:
 
 
 def _section(key: str) -> str:
-    if key.startswith(("pause", "inactive", "force_always")) or key == "paused":
+    if key.startswith(("pause", "inactive", "force_always")) or key in {"paused", "manual_paused"}:
         return "pause"
     if key.startswith(("snooze", "monitoring", "v2_")):
         return "monitoring"

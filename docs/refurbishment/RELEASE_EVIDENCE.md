@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `338` tests; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `341` tests; the detailed older bullets are retained as historical baseline context.
 
 - The current verifier has `18` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.

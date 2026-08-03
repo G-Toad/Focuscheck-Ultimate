@@ -29,7 +29,8 @@ Current default key count: `231`.
 ## State-Only Or Internal
 
 - `settings_schema_version`: migration/validation state.
-- `paused`: durable manual pause state.
+- `paused`: durable effective-pause compatibility state derived from manual intent and active snooze.
+- `manual_paused`: durable manual pause intent; state-only and never exposed as an ordinary user setting.
 - `snooze_until_utc`: durable snooze expiry state.
 - `study_phrase_index`, `waste_phrase_index`: runtime sequential phrase state.
 

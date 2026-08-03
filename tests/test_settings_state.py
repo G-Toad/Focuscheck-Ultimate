@@ -45,6 +45,16 @@ class SettingsValidationTests(unittest.TestCase):
         self.assertFalse(settings["tray_exit_button_enabled"])
         self.assertFalse(settings["overlays_enabled"])
 
+    def test_legacy_pause_state_migrates_manual_intent_separately_from_snooze(self):
+        from focuscheck.settings.manager import validate_settings
+
+        legacy_manual = validate_settings({"paused": True, "snooze_until_utc": ""})
+        legacy_snooze = validate_settings({"paused": True, "snooze_until_utc": "2030-01-01T00:05:00+00:00"})
+
+        self.assertTrue(legacy_manual["manual_paused"])
+        self.assertFalse(legacy_snooze["manual_paused"])
+        self.assertTrue(legacy_snooze["paused"])
+
     def test_validate_settings_parses_every_boolean_default(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
         from focuscheck.settings.manager import validate_settings

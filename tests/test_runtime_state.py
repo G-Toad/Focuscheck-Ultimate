@@ -74,6 +74,37 @@ class RuntimeStateTests(unittest.TestCase):
         state.clear_snooze()
         self.assertFalse(state.snapshot.effectively_paused)
 
+    def test_legacy_paused_snooze_is_not_reclassified_as_manual_intent(self):
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        from focuscheck.settings.manager import validate_settings
+
+        settings = validate_settings({
+            "paused": True,
+            "snooze_until_utc": (clock.now_utc() + timedelta(minutes=5)).isoformat(),
+        })
+        state = RuntimeStateCoordinator(settings, clock=clock)
+
+        self.assertFalse(state.snapshot.manual_paused)
+        self.assertTrue(state.snapshot.effectively_paused)
+        state.clear_snooze()
+        self.assertFalse(state.snapshot.manual_paused)
+        self.assertFalse(settings["paused"])
+        self.assertFalse(settings["manual_paused"])
+
+    def test_explicit_manual_intent_survives_snooze_expiry(self):
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        settings = {
+            "paused": True,
+            "manual_paused": True,
+            "snooze_until_utc": (clock.now_utc() + timedelta(minutes=5)).isoformat(),
+        }
+        state = RuntimeStateCoordinator(settings, clock=clock)
+
+        state.clear_snooze()
+        self.assertTrue(state.snapshot.manual_paused)
+        self.assertTrue(settings["paused"])
+        self.assertTrue(settings["manual_paused"])
+
     def test_expired_snooze_is_not_effectively_paused(self):
         settings = {"paused": False, "snooze_until_utc": "2000-01-01T00:00:00+00:00"}
         state = RuntimeStateCoordinator(settings)
