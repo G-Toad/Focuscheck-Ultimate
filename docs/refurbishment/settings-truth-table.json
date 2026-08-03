@@ -1,0 +1,5545 @@
+{
+  "schema_version": 1,
+  "default_key_count": 232,
+  "visible_key_count": 206,
+  "non_visible_key_count": 26,
+  "keys": [
+    {
+      "key": "always_on_top",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_reminder_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_reminder_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_settings_window.py",
+        "tools/manual_snooze_dialog.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "anti_habit_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/button_handling.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/button_handling.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_v2_flows.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "audio_alarm_duration_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ]
+    },
+    {
+      "key": "audio_alarm_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "once",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "audio_alarm_pattern",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "rapid_beeps",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "audio_alarm_trigger",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "overdrive",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "audio_alerts_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "audio_earphone_safe_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "audio_max_volume",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.7,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "audio_speaker_switch_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 30,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ]
+    },
+    {
+      "key": "audio_try_speaker_switch",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_age_format",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "simple",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_birthdate",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "2005-01-01",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "biodata_custom_text",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "biodata_first_name",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_font_size",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 14,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_last_name",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_lineage_text",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "Heir of the Singh family",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_pulse_animation",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_role_text",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "Student",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_show_days_lived",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_show_full_name",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_show_lineage",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_show_role",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_style",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "dramatic",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "biodata_title",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "Mr",
+      "ui_section": "privacy",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "camera_auto_adapt",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_capture_on_click",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_backend_regressions.py"
+      ]
+    },
+    {
+      "key": "camera_device_index",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_center_vertical_bias",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.65,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_crop_height_multiplier",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 1.6,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_crop_width_multiplier",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 1.4,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_detection_interval",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 10,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_detection_method",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "haar",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_edge_aware_zoom",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_edge_threshold",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.15,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_edge_zoom_multiplier",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 1.3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_fallback_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "aspect_ratio",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_max_height",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 300,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_max_misses",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_face_max_width",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 400,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_maximize_in_display",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/camera_feed_helpers.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/camera_feed_helpers.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_face_zoom_factor",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 1.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_feed_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "camera_feed_height",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 240,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_feed_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "live",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_feed_width",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 320,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_flip_horizontal",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_fps",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 20,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_backend_regressions.py"
+      ]
+    },
+    {
+      "key": "camera_invert_colors",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_manual_adjustments_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_manual_brightness",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "camera_manual_contrast",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_manual_gamma",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_manual_saturation",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_manual_sharpness",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_manual_tint",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/ui/camera_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ]
+    },
+    {
+      "key": "camera_show_face_detection",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "camera_sizing_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "aspect_ratio",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/dialogs/camera_feed_helpers.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/camera_test_window.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/camera_feed_helpers.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/camera_feed.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "center_on_show",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "challenge_allow_skip",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/challenge_system.py",
+        "focuscheck/ui/settings_tabs/challenges_tab.py",
+        "focuscheck/ui/settings_tabs/validation_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "challenge_min_total_length",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 10,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ]
+    },
+    {
+      "key": "challenge_min_words",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/challenge_system.py",
+        "focuscheck/ui/settings_tabs/challenges_tab.py",
+        "focuscheck/ui/settings_tabs/validation_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "challenge_show_hints",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/challenges_tab.py",
+        "focuscheck/ui/settings_tabs/validation_tab.py"
+      ]
+    },
+    {
+      "key": "challenge_studying_frequency",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ]
+    },
+    {
+      "key": "challenge_studying_goal_connection_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_studying_learning_specificity_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_studying_output_expectation_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_studying_will_commitment_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_system_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_because_reasoning_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_fear_acknowledgment_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_frequency",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/challenge_system.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_hour_projection_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_lying_confrontation_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_should_gap_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_tomorrow_regret_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "challenge_wasting_wasting_acknowledgment_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py"
+      ]
+    },
+    {
+      "key": "custom_button_phrases_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_runtime_foundations.py"
+      ]
+    },
+    {
+      "key": "disable_jiggling",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "enable_intensity_pulse",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "enable_intensity_shake",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "enable_overdrive_flash_background",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "enable_overdrive_jiggle_buttons",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "enable_overdrive_shake_loop",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "encouragement_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "focus_prompt_ask_benefits",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "focus_prompt_ask_doing",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "follow_cursor_monitor",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "force_always_on",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_settings_state.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "gentle_reminder_drift_delay",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py"
+      ]
+    },
+    {
+      "key": "gentle_reminder_drift_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "gentle_reminder_drift_speed",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 1.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/gentle_reminder_dialog.py"
+      ]
+    },
+    {
+      "key": "gentle_reminder_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "tests/test_app_lifecycle.py"
+      ]
+    },
+    {
+      "key": "gentle_reminder_interval",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 15,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/ui/schema_controls.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "hide_wasting_button",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "inactive_as_sleep_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 45,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "intensify_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 15,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "tests/test_paths_csv.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "interval_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 60,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_heartbeat_protocol.py",
+        "tests/test_paths_csv.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_revision.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tests/test_ui_contracts.py",
+        "tools/qa_scenario_runner.py",
+        "tools/source_supervisor_selftest.py"
+      ]
+    },
+    {
+      "key": "jiggle_style",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "nudge",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_anchor_mode",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "center",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_property_invariants.py"
+      ]
+    },
+    {
+      "key": "manual_crop_box_height",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 300,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_box_width",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 400,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "manual_crop_center_offset_x",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 0.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_center_offset_y",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 0.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_corner",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "top_left",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_corner_expand_x",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 1.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ]
+    },
+    {
+      "key": "manual_crop_corner_expand_y",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 1.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ]
+    },
+    {
+      "key": "manual_crop_edge",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "top",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_edge_offset",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 0.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "manual_crop_grid_overlay",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "off",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "manual_crop_lock_aspect",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "manual_crop_presets",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "dict",
+      "default": {
+        "Face Close-up": {
+          "anchor_mode": "center",
+          "zoom": 2.0,
+          "center_offset_x": 0.0,
+          "center_offset_y": -0.1,
+          "box_width": 320,
+          "box_height": 240
+        },
+        "Upper Body": {
+          "anchor_mode": "center",
+          "zoom": 1.3,
+          "center_offset_x": 0.0,
+          "center_offset_y": 0.0,
+          "box_width": 400,
+          "box_height": 300
+        },
+        "Full Frame": {
+          "anchor_mode": "center",
+          "zoom": 1.0,
+          "center_offset_x": 0.0,
+          "center_offset_y": 0.0,
+          "box_width": 640,
+          "box_height": 480
+        },
+        "Desk View": {
+          "anchor_mode": "edge",
+          "zoom": 1.2,
+          "edge": "top",
+          "edge_offset": 0.0,
+          "box_width": 640,
+          "box_height": 360
+        }
+      },
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "manual_crop_preview_opacity",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 0.7,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "manual_crop_show_safe_zones",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "manual_crop_zoom",
+      "classification": "specialized_editor",
+      "ui_owner": "none",
+      "canonical_type": "float",
+      "default": 1.0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/crop_adjustment_window.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/camera/manual_crop_utils.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "manual_paused",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "state_only",
+      "deprecated": false,
+      "runtime_consumer": "focuscheck.runtime.state.RuntimeStateCoordinator",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/system_tray.py",
+        "focuscheck/runtime/journal.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/system_tray.py",
+        "focuscheck/runtime/journal.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_heartbeat_protocol.py",
+        "tests/test_property_invariants.py",
+        "tests/test_runtime_state.py",
+        "tests/test_settings_state.py",
+        "tests/test_system_tray_commands.py",
+        "tools/performance_soak.py",
+        "tools/qa_scenario_runner.py",
+        "tools/state_restart_selftest.py"
+      ]
+    },
+    {
+      "key": "max_intensity_level",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "modal_dialog_auto_focus",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/windows_integration.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/windows_integration.py"
+      ]
+    },
+    {
+      "key": "monitoring_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "v1",
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "overdrive_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 60,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/database/csv_logger.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_paths_csv.py",
+        "tests/test_v2_flows.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage4_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 12,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage4_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage4_flash_ms",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 60,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 60,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_click_through",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_dim_color",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "#000000",
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_dim_max_alpha",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.92,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_dim_pulse",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_engine",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "overlay",
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_hold_after_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_slow_dim_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "overdrive_stage5_slow_dim_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 30,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_settings_state.py"
+      ]
+    },
+    {
+      "key": "overlays_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/intervention_wizard.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/intervention_wizard.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_on_idle",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_settings_state.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_on_lid_closed",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_settings_state.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_on_lock",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_on_sleep",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_settings_state.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_poll_interval_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "pause_when_inactive_or_lid_closed",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_settings_state.py",
+        "tests/test_taskdb_monitoring.py",
+        "tests/test_v2_flows.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "paused",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "pause",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/system_tray.py",
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/runtime/journal.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_reminder_dialog.py",
+        "focuscheck/utils/diagnostics.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/system_tray.py",
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/runtime/journal.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/guards.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_reminder_dialog.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "focuscheck/utils/diagnostics.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_heartbeat_protocol.py",
+        "tests/test_property_invariants.py",
+        "tests/test_runtime_state.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tests/test_system_tray_commands.py",
+        "tests/test_taskdb_monitoring.py",
+        "tools/mutation_smoke.py",
+        "tools/performance_soak.py",
+        "tools/qa_scenario_runner.py",
+        "tools/state_restart_selftest.py"
+      ]
+    },
+    {
+      "key": "phrase_acronym_box_size",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 60,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ]
+    },
+    {
+      "key": "phrase_acronym_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_dialog_keyboard.py"
+      ]
+    },
+    {
+      "key": "phrase_acronym_font_size",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 16,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ]
+    },
+    {
+      "key": "phrase_acronym_letter_size",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 45,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/phrase_acronym_dialog.py"
+      ]
+    },
+    {
+      "key": "popup_layout_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "vertical",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/general_tab.py"
+      ]
+    },
+    {
+      "key": "prompt_require_all_fields",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ]
+    },
+    {
+      "key": "randomize_buttons",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/button_handling.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/button_handling.py"
+      ]
+    },
+    {
+      "key": "require_active_task",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "settings_revision",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_settings_revision.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tools/qa_scenario_runner.py",
+        "tools/settings_inventory.py"
+      ]
+    },
+    {
+      "key": "settings_schema_version",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 2,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/ui/schema_controls.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_state.py",
+        "tools/mutation_smoke.py"
+      ]
+    },
+    {
+      "key": "shake_lock_position",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/intensification.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py"
+      ]
+    },
+    {
+      "key": "show_task_analytics",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "show_time_info",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_force_all_heuristics",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_max_jump_chars",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 3,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_min_keypress_ratio",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.8,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_min_time_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "int",
+      "default": 2,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_prevent_paste",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_require_focus_during_typing",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_require_phrase",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_required_phrase",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "I am snoozing",
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_exact_time_per_char",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "float",
+      "default": 0.03,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_prompt_ask_reason",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/manual_snooze_dialog.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "snooze_prompt_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_prompt_exact_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/manual_snooze_dialog.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "snooze_prompt_sentences",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "list",
+      "default": [
+        "I am choosing to cause disorder.",
+        "I am disrupting my focus and accepting the consequences.",
+        "I am letting impulsiveness overwrite my goals.",
+        "I am abandoning discipline and embracing chaos."
+      ],
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tests/test_settings_schema.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_prompt_validation_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "snooze_reminder_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/alerts_tab.py",
+        "tests/test_app_lifecycle.py"
+      ]
+    },
+    {
+      "key": "snooze_reminder_interval_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 300,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/ui/windows.py"
+      ]
+    },
+    {
+      "key": "snooze_sentence_case_sensitive",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "tools/manual_snooze_dialog.py"
+      ]
+    },
+    {
+      "key": "snooze_until_utc",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/runtime/state.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/ui/schema_controls.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_property_invariants.py",
+        "tests/test_runtime_state.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tests/test_v2_flows.py",
+        "tools/mutation_smoke.py",
+        "tools/qa_scenario_runner.py",
+        "tools/state_restart_selftest.py"
+      ]
+    },
+    {
+      "key": "spam_banned_words",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "list",
+      "default": [
+        "idk",
+        "dunno",
+        "meh",
+        "whatever"
+      ],
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "spam_detection_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "tests/test_dialog_keyboard.py",
+        "tests/test_settings_window.py",
+        "tests/test_validation.py",
+        "tools/qa_scenario_runner.py",
+        "tools/resource_leak_selftest.py"
+      ]
+    },
+    {
+      "key": "spam_dictionary_check",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_flag_if_under",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 1,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_gibberish_detection",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_keyboard_pattern_check",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_max_consecutive_chars",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_max_pattern_repetition",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 4,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_max_vowel_ratio",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.75,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_keyboard_sequence_length",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_length_require_spaces",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 20,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_real_word_ratio",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.5,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_time_to_submit",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 2,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_unique_char_ratio",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.3,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_min_vowel_ratio",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "float",
+      "default": 0.15,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "spam_min_word_length",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 2,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_repetition_check",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_spacing_check",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_timing_check",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "spam_vague_words",
+      "classification": "active_user_facing",
+      "ui_owner": "schema_generated",
+      "canonical_type": "list",
+      "default": [
+        "stuff",
+        "things",
+        "something",
+        "nothing"
+      ],
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/focus_prompt_dialog.py",
+        "focuscheck/ui/dialogs/snooze_prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py",
+        "tests/test_property_invariants.py"
+      ]
+    },
+    {
+      "key": "specific_monitor_index",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/window_placement.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/window_placement.py",
+        "focuscheck/ui/settings_tabs/general_tab.py"
+      ]
+    },
+    {
+      "key": "specific_monitor_only",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/window_placement.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/window_placement.py",
+        "focuscheck/ui/settings_tabs/general_tab.py"
+      ]
+    },
+    {
+      "key": "study_phrase_index",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "tests/test_runtime_foundations.py"
+      ]
+    },
+    {
+      "key": "study_phrase_list",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "list",
+      "default": [
+        "By any means necessary",
+        "Focus on the goal",
+        "Excellence demands sacrifice",
+        "Win this moment"
+      ],
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_runtime_foundations.py",
+        "tests/test_settings_schema.py"
+      ]
+    },
+    {
+      "key": "study_phrase_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "random",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_runtime_foundations.py"
+      ]
+    },
+    {
+      "key": "study_phrase_override",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "studying_hold_ms",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 800,
+      "ui_section": "prompt",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_v2_flows.py"
+      ]
+    },
+    {
+      "key": "tasks_analytics_timescale",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "lifetime",
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "tasks_change_counts_as_fail",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "tasks_decision_prompt_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_taskdb_monitoring.py"
+      ]
+    },
+    {
+      "key": "tasks_decision_threshold_minutes",
+      "classification": "migration_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 5,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "tasks_decision_window_minutes",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 10,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py",
+        "tests/test_taskdb_monitoring.py"
+      ]
+    },
+    {
+      "key": "tasks_evaluation_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "before",
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/task_management.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_taskdb_monitoring.py"
+      ]
+    },
+    {
+      "key": "tasks_post_eval_minutes",
+      "classification": "migration_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 10,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/schema_controls.py"
+      ]
+    },
+    {
+      "key": "tasks_study_implies_fail_on_decision",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "tasks",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "time_info_12h",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "time_info_anchor_hhmm",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "09:00",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ]
+    },
+    {
+      "key": "time_info_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "hour",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "time_info_refresh_ms",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 1000,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ]
+    },
+    {
+      "key": "time_info_show_seconds",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "time_info_show_task_remaining",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/time_display.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "tray_exit_button_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tests/test_system_tray_commands.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "tray_settings_button_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_settings_window.py",
+        "tests/test_system_tray_commands.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "tray_start_stop_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py"
+      ],
+      "references": [
+        "focuscheck/app.py",
+        "focuscheck/settings/gates.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_app_lifecycle.py",
+        "tests/test_settings_window.py",
+        "tests/test_system_tray_commands.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "ui_scale_percent",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "int",
+      "default": 100,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "focuscheck/ui/settings_tabs/general_tab.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "v2_focus_requires_enter",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": false,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "v2_force_all_validations",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/validation_tab.py"
+      ]
+    },
+    {
+      "key": "v2_hide_prompt_during_intervention",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_v2_flows.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "v2_question_use_window_title",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "monitoring",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/v2_prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "waste_phrase_index",
+      "classification": "state_only",
+      "ui_owner": "none",
+      "canonical_type": "int",
+      "default": 0,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "waste_phrase_list",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "list",
+      "default": [
+        "Stop wasting precious time",
+        "Get back to work now",
+        "Discipline equals freedom",
+        "Future you is watching"
+      ],
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py",
+        "tests/test_settings_schema.py"
+      ]
+    },
+    {
+      "key": "waste_phrase_mode",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "random",
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "waste_phrase_override",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog.py",
+        "focuscheck/ui/settings_tabs/behavior_tab.py"
+      ]
+    },
+    {
+      "key": "wasting_prompt_ask_consequences",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "wasting_prompt_ask_what",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/prompt_dialog_mixins/anti_habit.py",
+        "tests/test_dialog_keyboard.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    },
+    {
+      "key": "wasting_prompt_validation_enabled",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "bool",
+      "default": true,
+      "ui_section": "general",
+      "sensitivity": "normal",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/dialogs/waste_prompt_dialog.py"
+      ]
+    },
+    {
+      "key": "webhook_url",
+      "classification": "deferred_compatibility",
+      "ui_owner": "none",
+      "canonical_type": "str",
+      "default": "",
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py"
+      ],
+      "references": [
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/schema_controls.py",
+        "focuscheck/ui/windows.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_window.py"
+      ]
+    },
+    {
+      "key": "website_flags",
+      "classification": "active_user_facing",
+      "ui_owner": "hand_built_or_specialized",
+      "canonical_type": "list",
+      "default": [],
+      "ui_section": "general",
+      "sensitivity": "sensitive",
+      "persistence_class": "configuration",
+      "deprecated": false,
+      "runtime_consumer": "settings.manager",
+      "runtime_references": [
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/settings/schema.py"
+      ],
+      "references": [
+        "focuscheck/monitoring/engine_v2.py",
+        "focuscheck/settings/manager.py",
+        "focuscheck/settings/migrations.py",
+        "focuscheck/settings/schema.py",
+        "focuscheck/ui/windows.py",
+        "focuscheck/ui/settings_tabs/website_flags_tab.py",
+        "focuscheck/ui/settings_tabs/__init__.py",
+        "tests/test_backend_regressions.py",
+        "tests/test_property_invariants.py",
+        "tests/test_settings_schema.py",
+        "tests/test_settings_state.py",
+        "tests/test_settings_window.py",
+        "tests/test_taskdb_monitoring.py",
+        "tools/qa_scenario_runner.py"
+      ]
+    }
+  ]
+}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import ast
+import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -79,24 +81,75 @@ def _runtime_source_files():
     return files
 
 
-def main() -> int:
+def build_inventory() -> dict:
+    """Build a deterministic, per-key settings truth inventory."""
     defaults = _load_defaults()
     files = list(_source_files())
     runtime_files = _runtime_source_files()
+    visible_keys = _ui_save_keys() - {"settings_revision"}
+    classifications = _non_visible_classifications()
+    from focuscheck.settings.schema import get_settings_schema
+    from focuscheck.ui.schema_controls import SCHEMA_CONTROL_KEYS
+
+    schema = get_settings_schema()
+    keys = []
+    for key in sorted(defaults):
+        descriptor = schema[key]
+        references = [
+            path.relative_to(ROOT).as_posix()
+            for path in files
+            if key in path.read_text(encoding="utf-8", errors="ignore")
+        ]
+        runtime_references = [
+            path.relative_to(ROOT).as_posix()
+            for path in runtime_files
+            if key in path.read_text(encoding="utf-8", errors="ignore")
+        ]
+        if key in visible_keys:
+            classification = "active_user_facing"
+            ui_owner = "schema_generated" if key in SCHEMA_CONTROL_KEYS else "hand_built_or_specialized"
+        else:
+            classification = classifications.get(key, "unclassified")
+            ui_owner = "none"
+        keys.append({
+            "key": key,
+            "classification": classification,
+            "ui_owner": ui_owner,
+            "canonical_type": descriptor.canonical_type,
+            "default": descriptor.default,
+            "ui_section": descriptor.ui_section,
+            "sensitivity": descriptor.sensitivity,
+            "persistence_class": descriptor.persistence_class,
+            "deprecated": descriptor.deprecated,
+            "runtime_consumer": descriptor.runtime_consumer,
+            "runtime_references": runtime_references,
+            "references": references,
+        })
+    return {
+        "schema_version": 1,
+        "default_key_count": len(defaults),
+        "visible_key_count": len(visible_keys),
+        "non_visible_key_count": len(defaults) - len(visible_keys),
+        "keys": keys,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=None)
+    args = parser.parse_args()
+    inventory = build_inventory()
+    defaults = {item["key"] for item in inventory["keys"]}
+    visible_keys = {item["key"] for item in inventory["keys"] if item["classification"] == "active_user_facing"}
+    classifications = _non_visible_classifications()
+    unclassified = sorted(item["key"] for item in inventory["keys"] if item["classification"] == "unclassified")
+    unexpected_classifications = sorted(set(classifications) - defaults - {"settings_revision"})
     try:
-        print(f"settings={len(defaults)}")
-        visible_keys = sorted(_ui_save_keys() - {"settings_revision"})
-        excluded = _non_visible_classifications()
-        unclassified = sorted((set(defaults) - set(visible_keys)) - set(excluded))
-        unexpected_classifications = sorted(set(excluded) - set(defaults) - {"settings_revision"})
-        runtime_only_refs = {
-            key: [path.relative_to(ROOT).as_posix() for path in runtime_files if key in path.read_text(encoding="utf-8", errors="ignore")]
-            for key in visible_keys
-        }
-        missing_runtime = [key for key, refs in runtime_only_refs.items() if not refs]
+        print(f"settings={inventory['default_key_count']}")
+        missing_runtime = sorted(item["key"] for item in inventory["keys"] if item["classification"] == "active_user_facing" and not item["runtime_references"])
         print(f"visible_save_keys={len(visible_keys)}")
         print(f"visible_without_runtime_consumer={len(missing_runtime)}")
-        print(f"classified_non_visible={len(set(defaults) & set(excluded))}")
+        print(f"classified_non_visible={inventory['non_visible_key_count'] - len(unclassified)}")
         print(f"unclassified_non_visible={len(unclassified)}")
         if unexpected_classifications:
             print("unexpected_classifications=" + ",".join(unexpected_classifications))
@@ -107,13 +160,12 @@ def main() -> int:
         if missing_runtime:
             print("missing_runtime_keys=" + ",".join(missing_runtime))
         print("key\treferences\tfiles")
-        for key in sorted(defaults):
-            refs = []
-            for path in files:
-                text = path.read_text(encoding="utf-8", errors="ignore")
-                if key in text:
-                    refs.append(path.relative_to(ROOT).as_posix())
-            print(f"{key}\t{len(refs)}\t{', '.join(refs)}")
+        for item in inventory["keys"]:
+            print(f"{item['key']}\t{len(item['references'])}\t{', '.join(item['references'])}")
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(inventory, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+            print(f"inventory_json={args.output}")
     except (OSError, SyntaxError, ValueError):
         return 0
     return 0

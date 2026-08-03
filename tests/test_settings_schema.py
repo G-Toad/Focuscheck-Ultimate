@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
 import unittest
 from unittest import mock
@@ -184,6 +185,20 @@ class SettingsSchemaContractTests(unittest.TestCase):
         excluded = set(NON_VISIBLE_SETTING_CLASSIFICATIONS)
         self.assertEqual(set(), (defaults - visible) - excluded)
         self.assertEqual(set(), excluded - defaults - {"settings_revision"})
+
+    def test_checked_in_truth_table_covers_every_default_deterministically(self):
+        artifact_path = Path(__file__).resolve().parents[1] / "docs" / "refurbishment" / "settings-truth-table.json"
+        artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        keys = artifact["keys"]
+        self.assertEqual(sorted(item["key"] for item in keys), [item["key"] for item in keys])
+        self.assertEqual(set(DEFAULT_SETTINGS), {item["key"] for item in keys})
+        self.assertEqual(len(DEFAULT_SETTINGS), artifact["default_key_count"])
+        self.assertEqual(0, sum(item["classification"] == "unclassified" for item in keys))
+        self.assertEqual(
+            artifact["visible_key_count"],
+            sum(item["classification"] == "active_user_facing" for item in keys),
+        )
+        self.assertTrue(all(item["runtime_consumer"] for item in keys))
 
 
 if __name__ == "__main__":

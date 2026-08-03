@@ -8,7 +8,14 @@ For exact per-key reference counts, run:
 py -3 tools\settings_inventory.py
 ```
 
-Current default key count: `231`.
+The checked-in machine-readable contract is
+`docs/refurbishment/settings-truth-table.json`. It contains one deterministic
+record for every default key, including classification, UI ownership, schema
+type/section/sensitivity, runtime source references, and persistence class.
+The settings-schema regression suite verifies that this artifact covers the
+complete default set and contains no unclassified key.
+
+Current default key count: `232`.
 
 ## Active User-Facing Families
 
