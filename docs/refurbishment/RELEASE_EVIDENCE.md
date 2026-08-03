@@ -1,8 +1,9 @@
 # Release Evidence
 
-The current automated baseline is `321` tests; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `322` tests; the detailed older bullets are retained as historical baseline context.
 
 - The current verifier has `17` passing bounded stages. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
+- Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.
 
 - The current verifier has `16` passing bounded stages, including `source_supervisor_selftest`, which launches disposable real children and verifies failure/restart, generation/PID-bound stop acknowledgement, heartbeat hang recovery, circuit-breaker entry, and child reaping. This does not replace manual target-machine, sleep/resume, or production-duration supervision evidence.
 - Fatal-mainloop cleanup is covered by a failure-injection matrix across runtime state, prompt, reminder, engine, timer, tray, watcher, and Tk-root stages; the regression also verifies no intentional supervisor-stop request is emitted after a crash.

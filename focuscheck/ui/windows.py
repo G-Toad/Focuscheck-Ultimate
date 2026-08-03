@@ -120,7 +120,7 @@ class AdvancedSettingsWindow(
         },
     }
 
-    def __init__(self, master, settings, on_save):
+    def __init__(self, master, settings, on_save, persist_settings=None):
         super().__init__(master)
         self.title("Settings")
         self.geometry("950x750")
@@ -128,6 +128,7 @@ class AdvancedSettingsWindow(
         self.resizable(True, True)  # Explicitly enable resizing
         self.settings = settings.copy()
         self.on_save = on_save
+        self.persist_settings = persist_settings
 
         self._init_vars()
         self._build_ui()
@@ -892,7 +893,8 @@ class AdvancedSettingsWindow(
             # included in the same revision-aware save transaction.
             s.update(self._schema_settings.values())
 
-            result = save_settings(s)
+            persist = self.persist_settings or save_settings
+            result = persist(s)
             if not result:
                 message = "Settings changed elsewhere; reload before saving." if getattr(result, "conflict", False) else (
                     getattr(result, "error", None) or "Settings could not be written durably."

@@ -2181,8 +2181,24 @@ class App:
                         except Exception:
                             pass
 
-            SettingsWindow(self.root, self.settings, on_save=apply_and_refresh)
+            SettingsWindow(
+                self.root,
+                self.settings,
+                on_save=apply_and_refresh,
+                persist_settings=self._persist_settings_draft,
+            )
         return self._call_on_ui_thread(_show_settings)
+
+    def _persist_settings_draft(self, draft):
+        """Persist a settings-window draft through the App composition root."""
+        result = save_settings(draft)
+        committed = getattr(result, "committed_settings", None)
+        if getattr(result, "durable_write", bool(result)) and isinstance(committed, dict):
+            self.settings.update(committed)
+            state = getattr(self, "_runtime_state", None)
+            if state is not None:
+                state.refresh_from_settings(committed)
+        return result
 
     def _open_task_dialog_from_tray(self):
         def _show_task_dialog():

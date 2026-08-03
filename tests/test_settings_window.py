@@ -159,6 +159,33 @@ class SettingsWindowSaveTests(unittest.TestCase):
             with contextlib.suppress(tk.TclError):
                 root.destroy()
 
+    def test_composed_window_uses_app_persistence_callback(self):
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.windows import AdvancedSettingsWindow
+
+        root = _make_root()
+        try:
+            saved = []
+            committed = dict(DEFAULT_SETTINGS)
+            committed["settings_revision"] = 7
+            persist = mock.Mock(return_value=type(
+                "Result", (), {"durable_write": True, "committed_settings": committed}
+            )())
+            window = AdvancedSettingsWindow(
+                root,
+                DEFAULT_SETTINGS,
+                saved.append,
+                persist_settings=persist,
+            )
+            window.withdraw()
+            with mock.patch("focuscheck.settings.manager.save_settings", side_effect=AssertionError("UI repository bypass")):
+                window._save()
+            persist.assert_called_once()
+            self.assertEqual(7, saved[0]["settings_revision"])
+        finally:
+            with contextlib.suppress(tk.TclError):
+                root.destroy()
+
     def test_save_payload_round_trips_representative_active_tabs(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
 
