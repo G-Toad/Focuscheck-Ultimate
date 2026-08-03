@@ -38,6 +38,30 @@ function Remove-MatchingStartup([string]$InstallPath, [string]$Name) {
     }
 }
 
+function Get-ValidatedBackup([string]$InstallPath, [string]$Candidate) {
+    if ([string]::IsNullOrWhiteSpace($Candidate)) { return $null }
+    try {
+        $installParent = [IO.Path]::GetFullPath((Split-Path -Parent $InstallPath))
+        $backup = Get-Item -LiteralPath $Candidate -Force
+        if (-not $backup.PSIsContainer) { return $null }
+        if (($backup.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return $null }
+        $backupParent = [IO.Path]::GetFullPath((Split-Path -Parent $backup.FullName))
+        if ($backupParent.TrimEnd('\', '/') -ine $installParent.TrimEnd('\', '/') -or
+            -not $backup.Name.StartsWith('.FocusCheck.backup.', [StringComparison]::OrdinalIgnoreCase)) {
+            return $null
+        }
+        $reparsePoints = Get-ChildItem -LiteralPath $backup.FullName -Recurse -Force -ErrorAction Stop |
+            Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 }
+        if ($reparsePoints) { return $null }
+        if (-not (Test-Path -LiteralPath (Join-Path $backup.FullName 'FocusCheck.exe') -PathType Leaf)) {
+            return $null
+        }
+        return $backup.FullName
+    } catch {
+        return $null
+    }
+}
+
 function Restore-FailedPromotion([string]$InstallPath) {
     if (-not (Test-Path -LiteralPath $InstallPath)) { return }
     $manifestPath = Join-Path $InstallPath "package-manifest.json"
@@ -52,6 +76,7 @@ function Restore-FailedPromotion([string]$InstallPath) {
             Write-Warning "Unable to read promoted package manifest during rollback: $($_.Exception.Message)"
         }
     }
+    $backup = Get-ValidatedBackup $InstallPath $backup
     $parent = Split-Path -Parent $InstallPath
     $failed = Join-Path $parent (".FocusCheck.failed.{0}" -f [Guid]::NewGuid().ToString("N"))
     Move-Item -LiteralPath $InstallPath -Destination $failed
