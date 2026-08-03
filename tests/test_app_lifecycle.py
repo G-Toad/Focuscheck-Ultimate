@@ -675,6 +675,21 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertTrue(snapshot["effective_paused"])
         self.assertEqual("snooze", snapshot["pause_reason"])
 
+    def test_heartbeat_readiness_accepts_injected_lifecycle_shapes(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.lifecycle import LifecyclePhase
+
+        app = App.__new__(App)
+        app.lifecycle = mock.Mock()
+        app.lifecycle.phase = LifecyclePhase.STARTING
+        self.assertEqual("starting", App._lifecycle_readiness(app))
+
+        app.lifecycle.phase = "custom-ready"
+        self.assertEqual("custom-ready", App._lifecycle_readiness(app))
+
+        app.lifecycle = object()
+        self.assertEqual("ready", App._lifecycle_readiness(app))
+
     def test_diagnostic_status_exposes_bounded_health_components(self):
         from focuscheck.app import App
 

@@ -2066,6 +2066,13 @@ class App:
             "data_root": str(self._data_root()),
         }
 
+    def _lifecycle_readiness(self) -> str:
+        """Return heartbeat-safe lifecycle text for injected adapters."""
+        lifecycle = getattr(self, "lifecycle", None)
+        phase = getattr(lifecycle, "phase", None)
+        value = getattr(phase, "value", phase)
+        return str(value or LifecyclePhase.READY.value)
+
     def _tray_show_status(self):
         """Show a small privacy-safe health window on the Tk owner thread."""
         def _show():
@@ -2718,7 +2725,7 @@ class App:
                 "process_start_utc": process_start_utc,
                 "sequence": self._heartbeat_sequence,
                 "heartbeat_interval_seconds": FILE_HEARTBEAT_INTERVAL_SECONDS / 1000,
-                "readiness": getattr(getattr(self, "lifecycle", None), "phase", LifecyclePhase.READY).value,
+                "readiness": self._lifecycle_readiness(),
                 "lifecycle": getattr(getattr(self, "lifecycle", None), "snapshot", lambda: {})(),
                 "tk_pulse": True,
                 "paused": effective_paused,
