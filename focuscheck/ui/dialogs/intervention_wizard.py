@@ -703,6 +703,9 @@ class InterventionWizard:
         self.parent = parent
         self.settings = settings if settings is not None else getattr(parent, "settings", {})
         self._error_shown = False
+        # Keep the parent-owned fail-safe timer generation-aware so a late
+        # callback cannot inspect or destroy a selection dialog from a prior run.
+        self._timers = TimerRegistry(parent)
 
     def run(self, preselect_hwnd=None, preselect_title=None, prompt_ref=None, hide_prompt=False, intervention_id=None):
         logger = None
@@ -911,17 +914,9 @@ class InterventionWizard:
             return False
 
         fail_safe = {"fired": False}
-        selection_visibility_timer = None
 
         def _cancel_selection_visibility_check():
-            nonlocal selection_visibility_timer
-            timer_id = selection_visibility_timer
-            selection_visibility_timer = None
-            if timer_id:
-                try:
-                    self.parent.after_cancel(timer_id)
-                except Exception:
-                    pass
+            self._timers.cancel("selection-visibility")
 
         def _restore_prompt_with_error(reason):
             _cancel_selection_visibility_check()
@@ -967,8 +962,6 @@ class InterventionWizard:
                     logger.exception("intervention: failed to show fail-safe error", exc_info=True)
 
         def _selection_visibility_check():
-            nonlocal selection_visibility_timer
-            selection_visibility_timer = None
             if fail_safe["fired"]:
                 return
             if selection_dialog is None or getattr(selection_dialog, "_closed", False):
@@ -1011,7 +1004,7 @@ class InterventionWizard:
                     _restore_prompt_with_error(reason)
 
         try:
-            selection_visibility_timer = self.parent.after(500, _selection_visibility_check)
+            self._timers.schedule("selection-visibility", 500, _selection_visibility_check)
         except Exception:
             if logger:
                 logger.exception("intervention: failed to schedule selection fail-safe", exc_info=True)

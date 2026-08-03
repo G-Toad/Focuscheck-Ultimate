@@ -221,6 +221,31 @@ class InterventionCoordinatorTests(unittest.TestCase):
         parent.callbacks[0]()
         wizard._run_internal.assert_not_called()
 
+    def test_intervention_wizard_owns_parent_fail_safe_timer_registry(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        class Parent:
+            def after(self, delay, callback):
+                self.delay = delay
+                self.callback = callback
+                return "timer-1"
+
+            def after_cancel(self, timer_id):
+                self.cancelled = timer_id
+
+        parent = Parent()
+        wizard = intervention_wizard.InterventionWizard(parent, {})
+        callback = mock.Mock()
+
+        self.assertTrue(wizard._timers.schedule("selection-visibility", 500, callback))
+        self.assertEqual(500, parent.delay)
+        self.assertTrue(wizard._timers.cancel("selection-visibility"))
+        self.assertEqual("timer-1", parent.cancelled)
+
+        # A callback retained by Tk after cancellation must be harmless.
+        parent.callback()
+        callback.assert_not_called()
+
     def test_reflection_timeout_invalidates_queued_tk_callback(self):
         from focuscheck.ui.dialogs import intervention_reflection_dialog
 
