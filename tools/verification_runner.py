@@ -250,25 +250,26 @@ def main() -> int:
     process_before = focuscheck_process_snapshot(ROOT)
     py = sys.executable
     stages = [
-        ("compileall", [py, "-m", "compileall", "main.py", "focuscheck", "focuscheck_supervisor.py", "tests", "tools"]),
-        ("unittest", [py, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"]),
-        ("mutation_smoke", [py, "tools/mutation_smoke.py"]),
-        ("source_supervisor_selftest", [py, "tools/source_supervisor_selftest.py"]),
-        ("state_restart_selftest", [py, "tools/state_restart_selftest.py"]),
-        ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"]),
-        ("main_selftest", [py, "main.py", "--selftest"]),
-        ("tray_selftest", [py, "main.py", "--tray-selftest"]),
-        ("native_overlay_selftest", [py, "tools/spotlight_overlay_selftest.py"]),
-        ("resource_leak_selftest", [py, "tools/resource_leak_selftest.py"]),
-        ("settings_inventory", [py, "tools/settings_inventory.py"]),
-        ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"]),
-        ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip"), "--overwrite"]),
-        ("data_recovery", [py, "tools/data_recovery_selftest.py"]),
-        ("performance_soak", [py, "tools/performance_soak.py"]),
-        ("test_category_inventory", [py, "tools/test_category_inventory.py"]),
-        ("plan_register_coverage", [py, "tools/plan_register_coverage.py"]),
+        ("compileall", [py, "-m", "compileall", "main.py", "focuscheck", "focuscheck_supervisor.py", "tests", "tools"], args.timeout),
+        ("unittest", [py, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"], args.timeout),
+        ("mutation_smoke", [py, "tools/mutation_smoke.py"], args.timeout),
+        ("source_supervisor_selftest", [py, "tools/source_supervisor_selftest.py"], args.timeout),
+        ("state_restart_selftest", [py, "tools/state_restart_selftest.py"], args.timeout),
+        ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"], args.timeout),
+        ("main_selftest", [py, "main.py", "--selftest"], args.timeout),
+        ("tray_selftest", [py, "main.py", "--tray-selftest"], args.timeout),
+        ("native_overlay_selftest", [py, "tools/spotlight_overlay_selftest.py"], args.timeout),
+        ("resource_leak_selftest", [py, "tools/resource_leak_selftest.py"], args.timeout),
+        ("package_build", [py, "tools/package_build_selftest.py"], max(180, args.timeout)),
+        ("settings_inventory", [py, "tools/settings_inventory.py"], args.timeout),
+        ("diagnostic_bundle", [py, "tools/create_diagnostic_bundle.py"], args.timeout),
+        ("data_export", [py, "tools/export_data.py", "--source", str(data_dir), "--output", str(RUNTIME / "data_export.zip"), "--overwrite"], args.timeout),
+        ("data_recovery", [py, "tools/data_recovery_selftest.py"], args.timeout),
+        ("performance_soak", [py, "tools/performance_soak.py"], args.timeout),
+        ("test_category_inventory", [py, "tools/test_category_inventory.py"], args.timeout),
+        ("plan_register_coverage", [py, "tools/plan_register_coverage.py"], args.timeout),
     ]
-    results = [run_stage(name, command, env, max(1, args.timeout)) for name, command in stages]
+    results = [run_stage(name, command, env, max(1, timeout)) for name, command, timeout in stages]
     live_after = snapshot_tree(live_profile)
     isolation_ok = live_before == live_after
     registry_after = snapshot_user_run_key()

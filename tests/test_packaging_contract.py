@@ -65,6 +65,23 @@ class PackagingContractTests(unittest.TestCase):
         ):
             self.assertTrue((root / relative).is_file(), relative)
 
+    def test_disposable_current_source_package_build_is_in_standard_verifier(self):
+        root = Path(__file__).resolve().parents[1]
+        runner = (root / "tools/verification_runner.py").read_text(encoding="utf-8")
+        self.assertIn('("package_build", [py, "tools/package_build_selftest.py"]', runner)
+        self.assertIn("max(180, args.timeout)", runner)
+        self.assertIn("tools/package_build_selftest.py", runner)
+
+    def test_package_build_selftest_uses_disposable_paths_and_validates_frozen_supervisor(self):
+        root = Path(__file__).resolve().parents[1]
+        tool = (root / "tools/package_build_selftest.py").read_text(encoding="utf-8")
+        self.assertIn("TemporaryDirectory", tool)
+        self.assertIn("build_package.ps1", tool)
+        self.assertIn("promote_package.ps1", tool)
+        self.assertIn("validate_package.ps1", tool)
+        self.assertIn("packaged_supervisor_selftest.py", tool)
+        self.assertIn("FocusCheckSupervisor.exe", tool)
+
     def test_build_work_tree_is_outside_distributable_output(self):
         root = Path(__file__).resolve().parents[1]
         build = (root / "tools/build_package.ps1").read_text(encoding="utf-8")
