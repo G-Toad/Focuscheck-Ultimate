@@ -1086,6 +1086,36 @@ class AppLifecycleTests(unittest.TestCase):
 
         app.root.destroy.assert_called_once_with()
 
+    def test_cleanup_continues_when_lifecycle_transition_fails(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.lifecycle import LifecyclePhase
+
+        class FailingLifecycle:
+            phase = LifecyclePhase.STARTING
+
+            def begin_shutdown(self, **_kwargs):
+                raise RuntimeError("lifecycle transition failed")
+
+        app = App.__new__(App)
+        app.lifecycle = FailingLifecycle()
+        app._shutdown_cleanup_complete = False
+        app._runtime_state = None
+        app._current_prompt = None
+        app._gentle_reminder_dialog = None
+        app._snooze_reminder_dialog = None
+        app._snooze_confirm_dialog = None
+        app._diagnostic_status_window = None
+        app._engine = None
+        app._engine_shutdown = False
+        app._timers = None
+        app._tray = None
+        app._winwatch = None
+        app.root = mock.Mock()
+
+        App._cleanup_runtime(app, reason="failing_lifecycle", request_supervisor=False)
+
+        app.root.destroy.assert_called_once_with()
+
     def test_engine_switch_closes_prompt_before_old_engine_shutdown(self):
         from focuscheck.app import App
 

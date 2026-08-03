@@ -2541,10 +2541,13 @@ class App:
         self._record_operational_event("shutdown", event="started", outcome=reason)
         lifecycle = getattr(self, "lifecycle", None)
         if lifecycle is not None:
-            phase = getattr(lifecycle, "phase", None)
-            begin_shutdown = getattr(lifecycle, "begin_shutdown", None)
-            if phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED) and callable(begin_shutdown):
-                begin_shutdown(reason=reason)
+            try:
+                phase = getattr(lifecycle, "phase", None)
+                begin_shutdown = getattr(lifecycle, "begin_shutdown", None)
+                if phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED) and callable(begin_shutdown):
+                    begin_shutdown(reason=reason)
+            except Exception:
+                get_logger().exception("shutdown lifecycle transition failed", exc_info=True)
         # Direct launches do not have a supervisor to notify. Only enter the
         # stop-request path when the supervised composition injected its marker
         # file; otherwise a normal direct exit must not emit a false warning.
@@ -2601,10 +2604,13 @@ class App:
         except Exception:
             get_logger().exception("shutdown cleanup failed: root", exc_info=True)
         if lifecycle is not None:
-            if getattr(lifecycle, "phase", None) == LifecyclePhase.STOPPING:
-                mark_stopped = getattr(lifecycle, "mark_stopped", None)
-                if callable(mark_stopped):
-                    mark_stopped(reason=f"{reason}_complete")
+            try:
+                if getattr(lifecycle, "phase", None) == LifecyclePhase.STOPPING:
+                    mark_stopped = getattr(lifecycle, "mark_stopped", None)
+                    if callable(mark_stopped):
+                        mark_stopped(reason=f"{reason}_complete")
+            except Exception:
+                get_logger().exception("shutdown lifecycle completion failed", exc_info=True)
 
     def _shutdown_stage(self, name):
         """Expose deterministic shutdown checkpoints without changing defaults."""
