@@ -114,6 +114,7 @@ def main() -> int:
         ("unittest", [py, "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py"]),
         ("mutation_smoke", [py, "tools/mutation_smoke.py"]),
         ("source_supervisor_selftest", [py, "tools/source_supervisor_selftest.py"]),
+        ("state_restart_selftest", [py, "tools/state_restart_selftest.py"]),
         ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"]),
         ("main_selftest", [py, "main.py", "--selftest"]),
         ("tray_selftest", [py, "main.py", "--tray-selftest"]),

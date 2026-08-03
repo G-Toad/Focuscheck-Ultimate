@@ -4,10 +4,11 @@
 
 - Branch: `main`
 - Automated test baseline: 320 unittest cases.
-- Verification runner: all 16 bounded stages pass, including compile, tests, mutation smoke, real-process supervisor restart/stop, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
+- Verification runner: all 17 bounded stages pass, including compile, tests, mutation smoke, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
 - The verifier also runs disposable real-process supervisor scenarios covering crash/restart, generation-bound stop acknowledgement, hang recovery, circuit-breaker entry, and child reaping; production-duration and target-machine supervision remain pending.
 - Fatal mainloop cleanup now uses the same idempotent reverse-order runtime coordinator as intentional exit, preserves the original lifecycle error type, and avoids writing an intentional supervisor-stop request after a crash.
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
+- Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
 - Release status: `NOT_READY`.
