@@ -282,6 +282,8 @@ Activity-provider evidence correction: `safe_activity_snapshot()` now enforces o
 
 Recovery-path correction: `TaskDB.restore_from()` now rejects symlinked source and destination path components before creating restore directories or temporary files, with focused regressions preserving external targets; export archive import/recovery is intentionally still not claimed.
 
+Export-validation correction: `validate_export()` now rejects symlinked archive files and parent components before opening an archive, with focused path-boundary regressions; the prior aggregate failure was a timeout-worker test-order race, and the corrected full verifier rerun passed.
+
 ## Explicit Scope Boundary
 
 Correction: diagnostic bundle creation now rejects symlinked output files and parent path components before creating temporary files or replacing the destination; focused tests cover both boundaries, with symlink cases skipped where this Windows shell lacks symlink privileges.
@@ -290,6 +292,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `453` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `448b89a`. The source-supervisor stage includes healthy heartbeat progression and stable-ready backoff-reset evidence, the activity-provider stage proves single-flight timeout handling, task-database recovery rejects symlinked path components, the isolated QA runtime-state scenario covers `256` combinations with zero failures, and the native watcher classifier matrix covers session, power, display/DPI, tray, shutdown, and taskbar events. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining Tk children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `455` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `2351d64`. The source-supervisor stage includes healthy heartbeat progression and stable-ready backoff-reset evidence, the activity-provider stage proves single-flight timeout handling, task-database recovery rejects symlinked path components, export validation rejects symlinked archive paths, the isolated QA runtime-state scenario covers `256` combinations with zero failures, and the native watcher classifier matrix covers session, power, display/DPI, tray, shutdown, and taskbar events. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining Tk children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
