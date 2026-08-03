@@ -21,7 +21,7 @@ from .prompt_dialog_mixins.windows_integration import _configure_windows_integra
 class PhraseAcronymDialog(tk.Toplevel):
     """Dialog for phrase acronym challenge with button clicks and typing."""
 
-    def __init__(self, parent, phrase, on_complete, settings):
+    def __init__(self, parent, phrase, on_complete, settings, on_close=None):
         """
         Initialize the acronym challenge dialog.
 
@@ -35,6 +35,7 @@ class PhraseAcronymDialog(tk.Toplevel):
 
         self.phrase = phrase
         self.on_complete = on_complete
+        self.on_close = on_close
         self.settings = settings
         self._closed = False
         self._timers = TimerRegistry(self)
@@ -508,6 +509,17 @@ class PhraseAcronymDialog(tk.Toplevel):
     def _on_close(self):
         """Handle window close button (treat as cancel)."""
         # Don't call on_complete - user cancelled
+        self._close_timers()
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+        if callable(self.on_close):
+            self.on_close()
+
+    def close(self):
+        """Close from an owning prompt interruption without callbacks."""
         self._close_timers()
         try:
             self.grab_release()

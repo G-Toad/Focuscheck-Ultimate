@@ -163,6 +163,8 @@ Current checkpoint addition: The current V1 lifecycle slice adds explicit parent
 
 Current checkpoint addition: The latest `28cd8a6` V1 ownership checkpoint passes the full verifier with `394` unittest cases and all 18 bounded stages; manual V1 interruption evidence remains pending.
 
+Current checkpoint addition: The current V1 challenge slice extends parent-owned interruption cleanup to phrase-acronym dialogs, separating user cancellation from callback-free shutdown/pause cleanup.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

@@ -292,17 +292,26 @@ class AntiHabitMixin:
 
         # Define completion callback
         def _on_complete():
+            self._follow_up_dialog = None
+            self._focus_prompt_open = False
             choice = "Studying" if button_type == "study" else "Wasting time"
             self._finish(choice)
 
+        def _on_close():
+            self._follow_up_dialog = None
+            self._focus_prompt_open = False
+
         # Import and show acronym dialog
         from ..phrase_acronym_dialog import PhraseAcronymDialog
-        PhraseAcronymDialog(
+        self._focus_prompt_open = True
+        dialog = PhraseAcronymDialog(
             self,
             phrase=phrase,
             on_complete=_on_complete,
-            settings=self.settings
+            settings=self.settings,
+            on_close=_on_close,
         )
+        self._follow_up_dialog = None if getattr(dialog, "_closed", False) else dialog
 
     def _get_phrase_for_button(self, button_type):
         """

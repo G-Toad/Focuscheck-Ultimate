@@ -233,6 +233,58 @@ class DialogKeyboardTests(unittest.TestCase):
         finally:
             root.destroy()
 
+    def test_v1_acronym_dialog_closes_with_parent_interruption(self):
+        from datetime import datetime
+
+        from focuscheck.settings.defaults import DEFAULT_SETTINGS
+        from focuscheck.ui.dialogs.phrase_acronym_dialog import PhraseAcronymDialog
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+
+        root = _make_root()
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update({
+            "always_on_top": False,
+            "anti_habit_enabled": False,
+            "camera_feed_enabled": False,
+            "encouragement_enabled": False,
+            "phrase_acronym_enabled": True,
+            "challenge_system_enabled": False,
+            "spam_detection_enabled": False,
+            "focus_prompt_ask_doing": False,
+            "focus_prompt_ask_benefits": False,
+            "show_task_analytics": False,
+        })
+        submitted = []
+        try:
+            with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"):
+                dialog = PromptDialog(
+                    root,
+                    settings,
+                    lambda: submitted.append(True),
+                    datetime.now(),
+                    taskdb=None,
+                    app_ref=None,
+                )
+                dialog.withdraw()
+                dialog._trigger_studying_choice()
+                root.update()
+
+                child = next(
+                    child for child in dialog.winfo_children() if isinstance(child, PhraseAcronymDialog)
+                )
+                timers = child._timers
+                dialog._cleanup_all_timers()
+                root.update()
+
+                self.assertFalse(child.winfo_exists())
+                self.assertTrue(timers.closed)
+                self.assertIsNone(dialog._follow_up_dialog)
+                self.assertFalse(dialog._focus_prompt_open)
+                self.assertEqual([], submitted)
+                dialog.destroy()
+        finally:
+            root.destroy()
+
     def test_task_entry_enter_submits(self):
         from focuscheck.ui.dialogs.task_entry_dialog import TaskEntryDialog
 
