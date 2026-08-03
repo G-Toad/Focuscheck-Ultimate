@@ -32,6 +32,13 @@ class LaunchScriptContractTests(unittest.TestCase):
         parser_source = inspect.getsource(focuscheck_supervisor.parse_args)
         self.assertIn('"--force-start"', parser_source)
 
+    def test_tray_test_timeout_uses_named_timer_registry(self):
+        source = (ROOT / "main.py").read_text(encoding="utf-8")
+
+        self.assertIn("from focuscheck.utils.timers import TimerRegistry", source)
+        self.assertIn('timers.schedule("tray-test-timeout"', source)
+        self.assertNotIn("r.after(20000", source)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -131,10 +131,12 @@ def main():
     if "--tray-test" in sys.argv:
         import tkinter as tk
         from focuscheck.platform_specific.windows import WindowsWakeWatcher
+        from focuscheck.utils.timers import TimerRegistry
 
         r = tk.Tk()
         r.withdraw()
         r.update_idletasks()
+        timers = TimerRegistry(r)
         try:
             w = WindowsWakeWatcher(
                 r,
@@ -145,9 +147,17 @@ def main():
             )
             tk.Label(r, text="Tray test running...")
         except Exception as e:
+            timers.close()
+            r.destroy()
             print(f"Tray test failed: {e}", file=sys.stderr)
             sys.exit(1)
-        r.after(20000, lambda: (w.close(), r.destroy()))
+
+        def _finish_tray_test():
+            timers.close()
+            w.close()
+            r.destroy()
+
+        timers.schedule("tray-test-timeout", 20000, _finish_tray_test)
         r.mainloop()
         sys.exit(0)
     
