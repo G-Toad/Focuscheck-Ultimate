@@ -2540,8 +2540,11 @@ class App:
         self._shutdown_cleanup_complete = True
         self._record_operational_event("shutdown", event="started", outcome=reason)
         lifecycle = getattr(self, "lifecycle", None)
-        if lifecycle is not None and lifecycle.phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED):
-            lifecycle.begin_shutdown(reason=reason)
+        if lifecycle is not None:
+            phase = getattr(lifecycle, "phase", None)
+            begin_shutdown = getattr(lifecycle, "begin_shutdown", None)
+            if phase not in (LifecyclePhase.STOPPING, LifecyclePhase.STOPPED) and callable(begin_shutdown):
+                begin_shutdown(reason=reason)
         # Direct launches do not have a supervisor to notify. Only enter the
         # stop-request path when the supervised composition injected its marker
         # file; otherwise a normal direct exit must not emit a false warning.
@@ -2598,8 +2601,10 @@ class App:
         except Exception:
             get_logger().exception("shutdown cleanup failed: root", exc_info=True)
         if lifecycle is not None:
-            if lifecycle.phase == LifecyclePhase.STOPPING:
-                lifecycle.mark_stopped(reason=f"{reason}_complete")
+            if getattr(lifecycle, "phase", None) == LifecyclePhase.STOPPING:
+                mark_stopped = getattr(lifecycle, "mark_stopped", None)
+                if callable(mark_stopped):
+                    mark_stopped(reason=f"{reason}_complete")
 
     def _shutdown_stage(self, name):
         """Expose deterministic shutdown checkpoints without changing defaults."""
