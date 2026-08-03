@@ -210,7 +210,7 @@ class AppLifecycleTests(unittest.TestCase):
         deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
         self.assertEqual(
             {
-                "settings_loader", "settings_saver", "legacy_migration_factory", "log_header_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
+                "settings_loader", "settings_saver", "app_paths_factory", "legacy_migration_factory", "log_header_factory", "sqlite_connection_factory", "task_db_factory", "engine_factory", "tray_factory", "watcher_factory",
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
@@ -251,6 +251,30 @@ class AppLifecycleTests(unittest.TestCase):
         app = App.__new__(App)
         app._dependencies = dependencies
         self.assertIs(root_factory, app._dependencies.tk_root_factory)
+
+    def test_app_paths_factory_is_used_before_startup_side_effects(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        paths = mock.Mock()
+        paths_factory = mock.Mock(return_value=paths)
+
+        def fail_at_paths(stage):
+            if stage == "paths_composed":
+                raise RuntimeError("stop after path composition")
+
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(
+            app_paths_factory=paths_factory,
+            startup_stage_hook=fail_at_paths,
+        )
+        app._clock_override = None
+
+        with self.assertRaisesRegex(RuntimeError, "stop after path composition"):
+            App._initialize(app)
+
+        paths_factory.assert_called_once_with(filesystem=None)
+        self.assertIs(paths, app.paths)
 
     def test_prompt_coordinator_recovery_uses_composed_factory(self):
         from focuscheck.app import App

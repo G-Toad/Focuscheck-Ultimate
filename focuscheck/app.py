@@ -254,7 +254,8 @@ class App:
     def _initialize(self, *, force_start=False):
         self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
-        self.paths = get_app_paths(filesystem=getattr(self._dependencies, "filesystem", None))
+        paths_factory = self._dependencies.app_paths_factory or get_app_paths
+        self.paths = paths_factory(filesystem=getattr(self._dependencies, "filesystem", None))
         self._startup_stage("paths_composed")
         clock_factory = self._dependencies.clock_factory or SystemClock
         self._runtime_clock = self._clock_override or clock_factory()
