@@ -173,6 +173,8 @@ Current checkpoint addition: The latest `e0c6642` runtime-state checkpoint passe
 
 Current checkpoint addition: The current tray-state slice selects Pause/Resume from coordinator-owned manual intent rather than compatibility effective-pause state; live tray guard/snooze evidence remains pending.
 
+Current checkpoint addition: The latest `c9a5cd3` tray-state checkpoint passes the full verifier with `397` unittest cases and all 18 bounded stages; the machine-readable report remains partial pending manual gates.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -194,6 +196,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `396` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `e0c6642`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `397` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `c9a5cd3`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
