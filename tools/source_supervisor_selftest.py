@@ -186,6 +186,63 @@ def _run_hang_restart(root: Path, child: Path) -> None:
         supervisor_module.HEARTBEAT_MAX_AGE = old_max_age
 
 
+def _run_stable_runtime(root: Path, child: Path) -> None:
+    old_stable_runtime = supervisor_module.STABLE_RUNTIME_SECONDS
+    supervisor_module.STABLE_RUNTIME_SECONDS = 2.0
+    supervisor = _new_supervisor(root, child)
+    # Model a child that already recovered from a crash so the stable window
+    # has a real backoff/history state to reset.
+    supervisor.current_delay = supervisor.restart_delay * 2
+    supervisor._restart_history = [time.monotonic()]
+    thread, errors = _run_thread(supervisor)
+    try:
+        first_payload = _wait_for(
+            root / "hb.txt",
+            lambda path: _current_heartbeat(path, supervisor.child_generation),
+            5,
+        )
+        first_sequence = int(first_payload["sequence"])
+        first_pid = int(first_payload["pid"])
+        deadline = time.monotonic() + 8
+        latest = first_payload
+        while time.monotonic() < deadline:
+            latest = _current_heartbeat(root / "hb.txt", supervisor.child_generation) or latest
+            if int(latest.get("sequence", first_sequence)) > first_sequence:
+                break
+            time.sleep(0.1)
+        assert int(latest["sequence"]) > first_sequence, "healthy child heartbeat did not advance"
+        assert int(latest["pid"]) == first_pid
+        _wait_for_text(root / "supervisor.log", "FocusCheck stable; restart backoff reset", 8)
+        assert supervisor.child is not None and supervisor.child.poll() is None
+        assert not errors, errors
+
+        payload = latest
+        (root / "supervisor.stop").write_text(json.dumps({
+            "protocol_version": 1,
+            "request_id": "source-stable-runtime",
+            "supervisor_id": supervisor.supervisor_id,
+            "generation": payload["generation"],
+            "pid": payload["pid"],
+            "process_start_utc": payload["process_start_utc"],
+            "utc": datetime.now(timezone.utc).isoformat(),
+            "reason": "source_stable_runtime",
+        }), encoding="ascii")
+        thread.join(15)
+        assert not thread.is_alive(), "supervisor did not stop after stable-runtime request"
+        assert not errors, errors
+        ack = json.loads((root / "supervisor.stop.ack").read_text(encoding="ascii"))
+        assert ack["request_id"] == "source-stable-runtime"
+        assert ack["termination"] == "graceful"
+        assert not _pid_is_alive(first_pid), f"stable child process leaked: {first_pid}"
+        print(
+            "source supervisor stable-runtime passed "
+            f"(sequence={first_sequence}->{latest['sequence']}, child_pid={first_pid})"
+        )
+    finally:
+        _cleanup_supervisor(supervisor, thread)
+        supervisor_module.STABLE_RUNTIME_SECONDS = old_stable_runtime
+
+
 def _run_circuit_breaker(root: Path, child: Path) -> None:
     old_limit = supervisor_module.MAX_RESTARTS_IN_WINDOW
     supervisor_module.MAX_RESTARTS_IN_WINDOW = 2
@@ -227,6 +284,7 @@ def _run_scenario(mode: str, runner) -> None:
 def main() -> int:
     _run_scenario("crash_stop", _run_crash_and_stop)
     _run_scenario("hang", _run_hang_restart)
+    _run_scenario("stable", _run_stable_runtime)
     _run_scenario("circuit", _run_circuit_breaker)
     return 0
 
