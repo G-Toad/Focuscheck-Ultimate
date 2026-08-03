@@ -4,7 +4,8 @@
 
 - Branch: `main`
 - Automated test baseline: 316 unittest cases.
-- Verification runner: all 15 bounded stages pass, including compile, tests, mutation smoke, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
+- Verification runner: all 16 bounded stages pass, including compile, tests, mutation smoke, real-process supervisor restart/stop, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
+- The verifier also runs a disposable real-process supervisor scenario covering crash/restart, generation-bound stop acknowledgement, and child reaping; production-duration and target-machine supervision remain pending.
 - Core-service performance soak budgets pass; native/UI long-duration measurements remain pending.
 - Isolated native overlay region-update self-test passes; the broader native/UI matrix remains pending.
 - Release status: `NOT_READY`.
