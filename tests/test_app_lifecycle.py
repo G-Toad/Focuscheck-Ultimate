@@ -133,7 +133,10 @@ class AppLifecycleTests(unittest.TestCase):
 
         deps = AppDependencies(settings_loader=settings_loader, task_db_factory=task_db_factory)
         self.assertEqual(
-            {"settings_loader", "task_db_factory", "tray_factory", "watcher_factory", "heartbeat_writer"},
+            {
+                "settings_loader", "task_db_factory", "tray_factory", "watcher_factory",
+                "heartbeat_writer", "camera_capture_factory",
+            },
             set(deps.__dataclass_fields__),
         )
         self.assertIs(settings_loader, deps.settings_loader)

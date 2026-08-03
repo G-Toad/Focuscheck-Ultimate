@@ -11,6 +11,45 @@ from unittest import mock
 
 
 class SettingsSaveTests(unittest.TestCase):
+    def test_prompt_camera_uses_composed_capture_factory(self):
+        from focuscheck.runtime.dependencies import AppDependencies
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+        import focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed as camera_feed
+
+        class Capture:
+            def isOpened(self):
+                return True
+
+            def set(self, *_args):
+                return True
+
+        created = []
+
+        def factory(index):
+            created.append(index)
+            return Capture()
+
+        prompt = type("Prompt", (), {})()
+        prompt.settings = {
+            "camera_feed_enabled": True,
+            "camera_device_index": 3,
+            "camera_feed_mode": "live",
+            "camera_sizing_mode": "aspect_ratio",
+        }
+        prompt._ui_scale = 1.0
+        prompt.app_ref = type(
+            "AppRef", (), {"_dependencies": AppDependencies(camera_capture_factory=factory)}
+        )()
+
+        with mock.patch.object(camera_feed, "CV2_AVAILABLE", True), mock.patch.object(
+            camera_feed, "PIL_AVAILABLE", True
+        ):
+            CameraFeedMixin._init_camera_feed(prompt)
+
+        self.assertEqual([3], created)
+        self.assertIsInstance(prompt._camera_capture, Capture)
+        self.assertEqual("available", prompt._camera_capability["device"])
+
     def test_legacy_migration_fatal_outcomes_are_distinguished_from_safe_events(self):
         from focuscheck.utils.paths import migration_has_fatal_failure
 

@@ -111,9 +111,14 @@ class CameraFeedMixin:
             return
 
         try:
-            # Initialize camera
+            # Initialize camera through the composed App when available;
+            # standalone dialogs retain the direct OpenCV fallback.
             camera_index = int(self.settings.get("camera_device_index", 0))
-            self._camera_capture = cv2.VideoCapture(camera_index)
+            app_dependencies = getattr(getattr(self, "app_ref", None), "_dependencies", None)
+            capture_factory = getattr(app_dependencies, "camera_capture_factory", None)
+            if not callable(capture_factory):
+                capture_factory = cv2.VideoCapture
+            self._camera_capture = capture_factory(camera_index)
 
             if not self._camera_capture.isOpened():
                 try:

@@ -20,3 +20,4 @@ class AppDependencies:
     tray_factory: Callable[..., Any] | None = None
     watcher_factory: Callable[..., Any] | None = None
     heartbeat_writer: Callable[[Any, dict[str, Any]], Any] | None = None
+    camera_capture_factory: Callable[[int], Any] | None = None
