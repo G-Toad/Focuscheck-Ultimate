@@ -2191,7 +2191,12 @@ class App:
             except Exception:
                 pass
             from .utils.diagnostics import format_status_snapshot
-            window = tk.Toplevel(self.root)
+            window_factory = getattr(
+                getattr(self, "_dependencies", None),
+                "status_window_factory",
+                None,
+            )
+            window = (window_factory or tk.Toplevel)(self.root)
             window.title("FocusCheck Status")
             window.geometry("560x430")
             window.minsize(480, 320)

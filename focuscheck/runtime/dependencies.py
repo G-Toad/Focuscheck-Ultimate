@@ -47,6 +47,7 @@ class AppDependencies:
     snooze_prompt_factory: Callable[..., Any] | None = None
     snooze_reminder_dialog_factory: Callable[..., Any] | None = None
     gentle_reminder_dialog_factory: Callable[..., Any] | None = None
+    status_window_factory: Callable[..., Any] | None = None
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None

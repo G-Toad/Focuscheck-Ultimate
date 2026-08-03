@@ -108,6 +108,7 @@ class AppLifecycleTests(unittest.TestCase):
             "snooze_prompt_factory",
             "snooze_reminder_dialog_factory",
             "gentle_reminder_dialog_factory",
+            "status_window_factory",
         ):
             self.assertIn(name, text)
 
@@ -281,6 +282,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "intervention_wizard_factory", "settings_window_factory",
                 "task_entry_dialog_factory", "snooze_prompt_factory",
                 "snooze_reminder_dialog_factory", "gentle_reminder_dialog_factory",
+                "status_window_factory",
             },
             set(deps.__dataclass_fields__),
         )
