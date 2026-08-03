@@ -899,7 +899,8 @@ class AdvancedSettingsWindow(
                 )
                 messagebox.showerror("Save Error", message)
                 return
-            self.on_save(s)
+            committed = getattr(result, "committed_settings", None)
+            self.on_save(dict(committed) if isinstance(committed, dict) else s)
             self.destroy()
 
         except Exception as e:

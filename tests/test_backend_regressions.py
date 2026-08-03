@@ -229,6 +229,19 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertTrue(failed.validation_passed)
             self.assertIn("disk full", failed.error)
 
+    def test_save_settings_result_exposes_committed_normalized_snapshot(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = str(Path(temp_dir) / "focus_settings.json")
+            with mock.patch.object(manager, "choose_path", return_value=settings_path):
+                result = manager.save_settings({"interval_seconds": 1})
+
+        self.assertTrue(result)
+        self.assertIsInstance(result.committed_settings, dict)
+        self.assertEqual(10, result.committed_settings["interval_seconds"])
+        self.assertEqual(result.revision, result.committed_settings["settings_revision"])
+
     def test_save_settings_returns_false_and_keeps_existing_file_on_write_failure(self):
         import focuscheck.settings.manager as manager
 

@@ -37,6 +37,7 @@ class SettingsSaveResult:
     validation_passed: bool
     error: str | None = None
     conflict: bool = False
+    committed_settings: dict | None = None
 
     def __bool__(self) -> bool:
         return self.durable_write
@@ -931,6 +932,7 @@ def save_settings(s, expected_revision=None):
                 durable_write=True,
                 backup_created=backup_created,
                 validation_passed=True,
+                committed_settings=dict(validated),
             )
 
         except Exception as e:
