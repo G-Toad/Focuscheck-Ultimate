@@ -192,7 +192,8 @@ class EngineV2(BaseEngine):
                 if guard is not None and guard.should_pause():
                     return False
         except Exception:
-            pass
+            # Unknown native guard state must not enable an intervention.
+            return False
         return True
 
     def _maybe_show_subpopup(self):
