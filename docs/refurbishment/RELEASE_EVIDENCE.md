@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest prompt-lifecycle evidence: source checkpoint `fe63f77` proves V2 website polling is suspended for prompt ownership and resumes after completion, interruption, rejection, or creation failure. The full verifier passed all 19 stages with 555 tests; release status remains partial because manual Windows and packaging gates are not run.
+
 Latest intervention-lifecycle evidence: source checkpoint `a948f12` proves V2 website polling is suspended for the entire App-owned intervention lease and resumes after lease cleanup, including failure-isolated finalization. The full verifier passed all 19 stages with 554 tests; release status remains partial because manual Windows and packaging gates are not run.
 
 Latest tray-snooze evidence: source checkpoint `f5b25ed` proves the fallback tray's direct snooze-setting path notifies the monitoring engine after a durable transition. The full verifier passed all 19 stages with 553 tests; release status remains partial because manual Windows and packaging gates are not run.
