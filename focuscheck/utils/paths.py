@@ -16,6 +16,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def _reject_symlinked_path(path: Path, description: str) -> None:
+    """Reject a path or existing parent component that redirects elsewhere."""
+    absolute = path.absolute()
+    for component in (absolute, *absolute.parents):
+        if component.is_symlink():
+            raise ValueError(f"refusing symlinked {description}: {path}")
+
+
 def get_base_dir():
     """Get the base directory of the application (focuscheck package root)."""
     try:
@@ -40,6 +48,8 @@ def get_data_dir():
     # Allow override via env var
     env = os.environ.get("FOCUS_DATA_DIR")
     if env:
+        env_path = Path(env)
+        _reject_symlinked_path(env_path, "application data root")
         try:
             os.makedirs(env, exist_ok=True)
             return env
@@ -108,6 +118,7 @@ def choose_path(filename):
     # recovery tooling. It must not be bypassed by a stale file beside code.
     env = os.environ.get("FOCUS_DATA_DIR")
     if env:
+        _reject_symlinked_path(Path(env), "application data root")
         try:
             os.makedirs(env, exist_ok=True)
         except Exception:
@@ -249,10 +260,7 @@ def get_app_paths(data_dir: str | os.PathLike[str] | None = None) -> AppPaths:
     root = Path(data_dir) if data_dir is not None else Path(get_data_dir())
     # Runtime composition must not silently follow an unexpected filesystem
     # target supplied through the data-root override or a moved parent.
-    absolute_root = root.absolute()
-    for component in (absolute_root, *absolute_root.parents):
-        if component.is_symlink():
-            raise ValueError(f"refusing symlinked application data root: {root}")
+    _reject_symlinked_path(root, "application data root")
     root.mkdir(parents=True, exist_ok=True)
     if root.is_symlink():
         raise ValueError(f"refusing symlinked application data root: {root}")

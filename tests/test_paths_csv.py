@@ -58,6 +58,23 @@ class PathHelperTests(unittest.TestCase):
         self.assertNotEqual("C:\\Installed\\FocusCheck", data_dir)
         self.assertTrue(data_dir.endswith("FocusCheck"))
 
+    def test_data_dir_rejects_symlinked_override_root(self):
+        from focuscheck.utils import paths
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            real_root = base / "real"
+            real_root.mkdir()
+            linked_root = base / "linked"
+            try:
+                linked_root.symlink_to(real_root, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with mock.patch.dict(paths.os.environ, {"FOCUS_DATA_DIR": str(linked_root)}):
+                with self.assertRaisesRegex(ValueError, "symlinked application data root"):
+                    paths.get_data_dir()
+
 
 class CsvLoggerTests(unittest.TestCase):
     def test_csv_logger_paths_follow_composed_app_paths(self):
