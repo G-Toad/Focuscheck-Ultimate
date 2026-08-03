@@ -45,8 +45,9 @@ def compose_startup_command(entrypoint=None):
         if entrypoint is None:
             root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             entrypoint = os.path.join(root, "focuscheck_supervisor.py")
-            return f'"{sys.executable}" "{os.path.abspath(entrypoint)}" --run --base-dir "{root}"'
-        return f'"{sys.executable}" "{os.path.abspath(entrypoint)}"'
+        supervisor = os.path.abspath(entrypoint)
+        root = os.path.dirname(supervisor)
+        return f'"{sys.executable}" "{supervisor}" --run --base-dir "{root}"'
     except Exception:
         return os.path.abspath(entrypoint or sys.argv[0] or __file__)
 

@@ -448,6 +448,16 @@ class StartupCommandTests(unittest.TestCase):
         self.assertIn("--base-dir", command)
         self.assertNotIn("test_runner.py", command)
 
+    def test_explicit_startup_entrypoint_keeps_supervisor_arguments(self):
+        from focuscheck.platform_specific import startup
+
+        with mock.patch.object(startup.sys, "frozen", False, create=True), \
+                mock.patch.object(startup.sys, "executable", "C:\\Python\\python.exe"):
+            command = startup.compose_startup_command("C:\\FocusCheck\\focuscheck_supervisor.py")
+
+        self.assertIn('"C:\\FocusCheck\\focuscheck_supervisor.py"', command)
+        self.assertIn('--run --base-dir "C:\\FocusCheck"', command)
+
     def test_install_startup_writes_registry_command(self):
         from focuscheck.platform_specific import startup
 
