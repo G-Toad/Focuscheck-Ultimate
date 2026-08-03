@@ -298,8 +298,9 @@ class _WinClickThroughOverlay:
         try:
             a = int(max(0, min(255, alpha * 255)))
             LWA_ALPHA = 0x00000002
-            user32 = self._user32 or ctypes.windll.user32
-            _configure_overlay_api(user32, self._gdi32 or ctypes.windll.gdi32, ctypes.windll.kernel32)
+            user32 = getattr(self, "_user32", None) or ctypes.windll.user32
+            if getattr(self, "_user32", None) is not None:
+                _configure_overlay_api(user32, self._gdi32, ctypes.windll.kernel32)
             return bool(user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA))
         except Exception:
             return False
@@ -309,8 +310,9 @@ class _WinClickThroughOverlay:
         brush = self._brush
         if hwnd:
             try:
-                user32 = self._user32 or ctypes.windll.user32
-                _configure_overlay_api(user32, self._gdi32 or ctypes.windll.gdi32, ctypes.windll.kernel32)
+                user32 = getattr(self, "_user32", None) or ctypes.windll.user32
+                if getattr(self, "_user32", None) is not None:
+                    _configure_overlay_api(user32, self._gdi32, ctypes.windll.kernel32)
                 result = user32.DestroyWindow(hwnd)
                 if result is not None and not bool(result):
                     return False
@@ -320,8 +322,9 @@ class _WinClickThroughOverlay:
         self._brush = None
         if brush:
             try:
-                gdi32 = self._gdi32 or ctypes.windll.gdi32
-                _configure_overlay_api(self._user32 or ctypes.windll.user32, gdi32, ctypes.windll.kernel32)
+                gdi32 = getattr(self, "_gdi32", None) or ctypes.windll.gdi32
+                if getattr(self, "_user32", None) is not None:
+                    _configure_overlay_api(self._user32, gdi32, ctypes.windll.kernel32)
                 gdi32.DeleteObject(brush)
             except Exception:
                 pass
