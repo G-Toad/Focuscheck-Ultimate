@@ -2,6 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
+- Latest verified source checkpoint: `7013367`; 546 unittest cases and all 19 bounded verification stages pass. Engine replacement construction is failure-safe; manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.

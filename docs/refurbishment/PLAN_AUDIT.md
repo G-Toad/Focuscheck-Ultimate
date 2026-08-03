@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest engine-switch correction: `_ensure_engine()` now constructs a selected replacement before shutting down the current monitoring engine, so a factory failure preserves the running engine and active prompt. The full verifier passed at source checkpoint `7013367` with 546 tests across 19 stages; manual Windows and release evidence remains pending.
+
 Latest lifecycle correction: `App.run()` no longer duplicates the lifecycle completion transition after `_cleanup_runtime`; cleanup owns the transition and preserves the original mainloop failure even when an injected lifecycle adapter is minimal or transition reporting fails. The full verifier passed at source checkpoint `2e721b8` with 529 tests across 19 stages; manual evidence remains pending.
 
 Latest browser-session correction: tab enumeration now has a bounded, read-only fallback for Firefox `recovery.jsonlz4` selected entries and conservative Chromium HTTP(S) session strings after UI Automation and CDP. Recovered URLs strip query and fragment components, and recovered tabs are limited to selection UI because they cannot prove foreground identity; the full verifier passed at source checkpoint `1c63aa0` with 533 tests across 19 stages. Live browser evidence remains pending.

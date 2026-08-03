@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest engine-switch evidence: source checkpoint `7013367` constructs the replacement monitoring engine before tearing down the existing engine, and regression coverage proves factory failure preserves the active engine and prompt. The full verifier passed all 19 stages with 546 tests; release status remains partial because manual Windows and packaging gates are not run.
+
 The current automated baseline is `544` tests across 19 bounded stages at source checkpoint `809696e`; the detailed older bullets are retained as historical baseline context.
 
 The latest register checkpoint adds automated validation for 98 unique defect rows and 6 contradiction rows, including traceability fields and untriaged severity-0/1 detection. It corrected a duplicate `DB-011` identifier; this does not convert manual target-machine requirements into automated passes.
