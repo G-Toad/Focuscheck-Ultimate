@@ -14,6 +14,8 @@ Latest heartbeat metadata correction: lifecycle heartbeat snapshots now accept c
 
 Latest browser-session safety correction: recovery files are now read with a bounded stream after the initial size check, preventing a growing session file from bypassing the parser budget. Oversized-file rejection is covered; the full verifier passed at source checkpoint `91e8d31` with 537 tests across 19 stages.
 
+Latest browser profile-boundary correction: session recovery rejects symlinked profile components before path resolution, reducing the risk of reading an unexpected target through a browser-profile reparse path. The full verifier passed at source checkpoint `a4ae68e` with 538 tests across 19 stages; symlink-specific execution remains environment-dependent and live browser evidence remains pending.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.

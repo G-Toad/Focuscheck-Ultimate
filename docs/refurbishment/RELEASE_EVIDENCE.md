@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `537` tests across 19 bounded stages at source checkpoint `91e8d31`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `538` tests across 19 bounded stages at source checkpoint `a4ae68e`; the detailed older bullets are retained as historical baseline context.
+
+The latest browser profile-boundary checkpoint rejects symlinked profile components before recovery reads. The full verifier passed; the symlink-specific test is skipped when the host cannot create directory symlinks, and live browser evidence remains pending.
 
 The latest browser-session safety checkpoint bounds reads even when a session file changes after its initial stat, with an oversized-file regression. Focused browser tests and the full verifier passed; live browser evidence remains pending.
 
