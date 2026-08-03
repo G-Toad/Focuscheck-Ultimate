@@ -56,6 +56,21 @@ class AppLifecycleTests(unittest.TestCase):
         app._schedule_next.assert_not_called()
         self.assertTrue(app.root.cancelled)
 
+    def test_prompt_regeneration_rejects_closed_timer_registry(self):
+        from focuscheck.app import App
+        from focuscheck.utils.timers import TimerRegistry
+
+        root = mock.Mock()
+        app = App.__new__(App)
+        app.root = root
+        app._timers = TimerRegistry(root)
+        app._timers.close()
+        app._schedule_next = mock.Mock()
+
+        self.assertFalse(app._schedule_prompt_regeneration())
+        root.after.assert_not_called()
+        app._schedule_next.assert_not_called()
+
     def test_slot_start_info_uses_app_owned_clock(self):
         from focuscheck.app import App
         from focuscheck.utils.clock import FakeClock

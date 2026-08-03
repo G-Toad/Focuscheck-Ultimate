@@ -2410,7 +2410,9 @@ class App:
         """Schedule post-settings prompt regeneration through the App timer owner."""
         callback = lambda: self._schedule_next(0)
         timers = getattr(self, "_timers", None)
-        if timers is not None and not timers.closed:
+        if timers is not None:
+            if timers.closed:
+                return False
             timers.schedule("settings-prompt-regenerate", 100, callback)
             return True
         try:
