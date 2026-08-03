@@ -222,6 +222,30 @@ class SupervisorHarnessTests(unittest.TestCase):
         self.assertIsNone(supervisor.child)
         self.assertTrue(any("Failed to start FocusCheck" in line for line in supervisor.logger.lines))
 
+    def test_force_start_is_forwarded_only_when_explicitly_configured(self):
+        import focuscheck_supervisor as supervisor_module
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.target_script = Path("C:/FocusCheck/main.py")
+        supervisor.python_executable = "python"
+        supervisor.logger = MemoryLogger()
+        supervisor.stop_event = FakeEvent()
+        supervisor.current_delay = 3.0
+        supervisor.force_start = True
+        supervisor.child = None
+        supervisor.supervisor_id = "supervisor"
+        supervisor.child_generation = None
+        supervisor.stop_file = Path("C:/FocusCheck/supervisor.stop")
+        supervisor.stop_ack_file = Path("C:/FocusCheck/supervisor.stop.ack")
+        supervisor.heartbeat_path = Path("C:/FocusCheck/hb.txt")
+        process = mock.Mock(pid=1234)
+        with mock.patch.object(supervisor_module.subprocess, "Popen", return_value=process) as popen:
+            supervisor._launch_focuscheck()
+
+        command = popen.call_args.args[0]
+        self.assertEqual(["python", str(Path("C:/FocusCheck/main.py")), "--force-start"], command)
+
     def test_resume_gap_uses_process_scoped_restart(self):
         import focuscheck_supervisor as supervisor_module
         from focuscheck_supervisor import FocusCheckSupervisor

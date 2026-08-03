@@ -116,14 +116,10 @@ def _configure_native_tray_api(user32):
     user32.TrackPopupMenu.restype = ctypes.c_int
 
 
-def resolve_initial_monitoring_state(settings):
+def resolve_initial_monitoring_state(settings, *, force_start=False):
     """Return (started_bool, reason) for initial monitoring state."""
-    try:
-        force = str(os.environ.get("FOCUSCHECK_FORCE_STARTED", "")).strip().lower()
-    except Exception:
-        force = ""
-    if force in ("1", "true", "yes", "on"):
-        return True, "env_force_started"
+    if bool(force_start):
+        return True, "explicit_force_start"
 
     try:
         mode = str(os.environ.get("FOCUSCHECK_START_STOP_MODE", "")).strip().lower()
@@ -229,7 +225,8 @@ if platform.system().lower() == "windows":
 
 
 class App:
-    def __init__(self):
+    def __init__(self, *, force_start=False):
+        self._force_start = bool(force_start)
         # Freeze one path snapshot for every component composed by this App.
         self.paths = get_app_paths()
         configure_log_path(self.paths.app_log)
@@ -458,7 +455,10 @@ class App:
         self._write_heartbeat()
 
     def _apply_initial_monitoring_state(self):
-        desired, reason = resolve_initial_monitoring_state(self.settings)
+        desired, reason = resolve_initial_monitoring_state(
+            self.settings,
+            force_start=self._force_start,
+        )
         self._reconcile_snooze_state_on_startup()
         persisted_paused = bool(self.settings.get("paused", False))
         logger = get_logger()

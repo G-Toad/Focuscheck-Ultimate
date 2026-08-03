@@ -25,6 +25,13 @@ class LaunchScriptContractTests(unittest.TestCase):
         self.assertNotIn("pythonw main.py", script)
         self.assertNotIn("focuscheck_force_started", script)
 
+    def test_force_start_is_an_explicit_supervisor_argument(self):
+        import inspect
+        import focuscheck_supervisor
+
+        parser_source = inspect.getsource(focuscheck_supervisor.parse_args)
+        self.assertIn('"--force-start"', parser_source)
+
 
 if __name__ == "__main__":
     unittest.main()

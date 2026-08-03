@@ -238,7 +238,7 @@ class FeatureGateTests(unittest.TestCase):
 
 
 class StartupStateTests(unittest.TestCase):
-    def test_resolve_initial_monitoring_state_env_overrides(self):
+    def test_resolve_initial_monitoring_state_requires_explicit_force_start(self):
         import os
         from unittest import mock
         from focuscheck.app import resolve_initial_monitoring_state
@@ -247,10 +247,13 @@ class StartupStateTests(unittest.TestCase):
             self.assertEqual((False, "env_mode_stopped"), resolve_initial_monitoring_state({}))
 
         with mock.patch.dict(os.environ, {"FOCUSCHECK_FORCE_STARTED": "1"}, clear=False):
-            self.assertEqual((True, "env_force_started"), resolve_initial_monitoring_state({}))
+            self.assertEqual((True, "default_force_started"), resolve_initial_monitoring_state({}))
+            self.assertEqual((False, "persisted_paused"), resolve_initial_monitoring_state({"paused": True}))
 
-        with mock.patch.dict(os.environ, {"FOCUSCHECK_START_STOP_MODE": "paused", "FOCUSCHECK_FORCE_STARTED": "1"}, clear=False):
-            self.assertEqual((True, "env_force_started"), resolve_initial_monitoring_state({"paused": True}))
+        self.assertEqual(
+            (True, "explicit_force_start"),
+            resolve_initial_monitoring_state({"paused": True}, force_start=True),
+        )
 
     def test_resolve_initial_monitoring_state_preserves_persisted_pause(self):
         import os

@@ -163,7 +163,7 @@ def main():
     # Start the application (with optional timeout/simulation)
     try:
         # Instantiate app first so we can schedule actions on its Tk loop
-        app = App()
+        app = App(force_start="--force-start" in sys.argv)
         # Optional: run for N seconds then quit (prevents running forever during tests)
         run_secs = None
         for arg in sys.argv:

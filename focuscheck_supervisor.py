@@ -371,6 +371,7 @@ class FocusCheckSupervisor:
         check_interval: float = DEFAULT_CHECK_INTERVAL,
         resume_gap: float = DEFAULT_RESUME_GAP,
         restart_delay: float = DEFAULT_RESTART_DELAY,
+        force_start: bool = False,
         stop_file: Path | None = None,
         stop_ack_file: Path | None = None,
         heartbeat_path: Path | None = None,
@@ -381,6 +382,7 @@ class FocusCheckSupervisor:
         self.check_interval = max(1.0, check_interval)
         self.resume_gap = max(self.check_interval * 2.0, resume_gap)
         self.restart_delay = max(1.0, restart_delay)
+        self.force_start = bool(force_start)
         self.stop_event = threading.Event()
         self.child: subprocess.Popen[str] | None = None
         self.last_tick = time.monotonic()
@@ -440,6 +442,8 @@ class FocusCheckSupervisor:
 
     def _launch_focuscheck(self) -> None:
         cmd = [self.python_executable, str(self.target_script)]
+        if getattr(self, "force_start", False):
+            cmd.append("--force-start")
         env = os.environ.copy()
         env.setdefault("FOCUSCHECK_SUPERVISED", "1")
         self.child_generation = uuid.uuid4().hex
@@ -451,7 +455,8 @@ class FocusCheckSupervisor:
         env["FOCUSCHECK_SUPERVISOR_ID"] = self.supervisor_id
         env["FOCUSCHECK_CHILD_GENERATION"] = self.child_generation
         # A normal supervised launch must preserve a durable manual pause. An
-        # explicit force-start command may set this environment variable.
+        # An explicit --force-start command is forwarded as a child argument;
+        # normal supervision does not override persisted pause state.
         env["FOCUSCHECK_SUPERVISOR_STOP_FILE"] = str(self.stop_file)
         env["FOCUSCHECK_SUPERVISOR_STOP_ACK_FILE"] = str(self.stop_ack_file)
         creationflags = 0
@@ -880,6 +885,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--resume-gap", type=float, default=DEFAULT_RESUME_GAP)
     parser.add_argument("--restart-delay", type=float, default=DEFAULT_RESTART_DELAY)
     parser.add_argument(
+        "--force-start",
+        action="store_true",
+        help="Explicitly override persisted manual pause for this supervised run",
+    )
+    parser.add_argument(
         "--log-file",
         type=Path,
         default=None,
@@ -932,6 +942,7 @@ def main() -> None:
                     check_interval=args.check_interval,
                     resume_gap=args.resume_gap,
                     restart_delay=args.restart_delay,
+                    force_start=args.force_start,
                 )
                 supervisor.run()
             finally:

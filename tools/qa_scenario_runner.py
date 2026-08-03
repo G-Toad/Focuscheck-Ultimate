@@ -168,11 +168,11 @@ def run_state_scenarios(log: QaLog):
 
     with scenario(log, "startup.state.precedence"):
         with mock.patch.dict(os.environ, {"FOCUSCHECK_FORCE_STARTED": "1", "FOCUSCHECK_START_STOP_MODE": "paused"}, clear=False):
-            force_result = resolve_initial_monitoring_state({"paused": True})
+            force_result = resolve_initial_monitoring_state({"paused": True}, force_start=True)
         with mock.patch.dict(os.environ, {}, clear=True):
             persisted_result = resolve_initial_monitoring_state({"paused": True})
         checks = {
-            "force_wins": force_result == (True, "env_force_started"),
+            "force_wins": force_result == (True, "explicit_force_start"),
             "persisted_pause": persisted_result == (False, "persisted_paused"),
         }
         log.event("startup.state.precedence", "assert_startup_state", all(checks.values()), checks=checks, force_result=force_result, persisted_result=persisted_result)
