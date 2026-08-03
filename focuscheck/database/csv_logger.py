@@ -20,6 +20,30 @@ INTERVENTION_REFLECTION_PATH = choose_path("focus_intervention_reflections.jsonl
 MAX_JSONL_RECORD_BYTES = 256 * 1024
 
 
+def _clock_now_utc(clock=None):
+    """Read a composed UTC clock, falling back safely for legacy callers."""
+    try:
+        value = clock() if callable(clock) else clock.now_utc()
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+    except (AttributeError, TypeError, ValueError, OverflowError):
+        pass
+    return datetime.now(timezone.utc)
+
+
+def _clock_monotonic(clock=None):
+    """Read a composed monotonic clock, falling back for legacy callers."""
+    try:
+        value = clock.monotonic()
+        if isinstance(value, (int, float)):
+            return float(value)
+    except (AttributeError, TypeError, ValueError, OverflowError):
+        pass
+    return time.monotonic()
+
+
 def configure_paths(app_paths) -> None:
     """Bind CSV/JSONL output to the App composition-root snapshot."""
     global LOG_PATH, WASTE_LOG_PATH, FOCUS_LOG_PATH, INTERVENTION_REFLECTION_PATH
@@ -166,7 +190,7 @@ def ensure_log_header(path=None):
 
 
 def append_log(*, response, latency_ms, settings, intensity_level_reached,
-               slot_start_dt, overdrive_deadline_s):
+               slot_start_dt, overdrive_deadline_s, clock=None):
     """Append a response to the CSV log."""
     logger = get_logger()
     logger.info("=" * 80)
@@ -179,10 +203,10 @@ def append_log(*, response, latency_ms, settings, intensity_level_reached,
     logger.info("    - overdrive_deadline_s: %s", overdrive_deadline_s)
 
     logger.info("  Calculating timing information...")
-    now_utc = datetime.now(timezone.utc)
+    now_utc = _clock_now_utc(clock)
     logger.info("    Current time (UTC): %s", now_utc)
 
-    elapsed_s = (time.monotonic() - slot_start_dt["mono_start"])
+    elapsed_s = _clock_monotonic(clock) - slot_start_dt["mono_start"]
     logger.info("    Elapsed seconds since slot start: %.3f", elapsed_s)
 
     late_by_ms = max(0, int((elapsed_s - overdrive_deadline_s) * 1000))
@@ -208,7 +232,7 @@ def append_log(*, response, latency_ms, settings, intensity_level_reached,
 
             row_data = [
                 now_utc.isoformat(),
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                now_utc.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_dt["utc_start"].isoformat(),
                 slot_start_dt["local_minute"],
                 _excel_safe(response), on_time, late_by_ms,
@@ -289,9 +313,9 @@ def ensure_waste_log_header():
     return _safe_csv_write(WASTE_LOG_PATH, _write_header)
 
 
-def append_waste_log(*, slot_start_dt, latency_ms, what, consequences, active_task):
+def append_waste_log(*, slot_start_dt, latency_ms, what, consequences, active_task, clock=None):
     """Log wasted time to CSV."""
-    now_utc = datetime.now(timezone.utc)
+    now_utc = _clock_now_utc(clock)
     # Normalize slot_start_utc string from either dict or datetime
     try:
         if isinstance(slot_start_dt, dict):
@@ -311,7 +335,7 @@ def append_waste_log(*, slot_start_dt, latency_ms, what, consequences, active_ta
             w = csv.writer(f)
             w.writerow([
                 now_utc.isoformat(),
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                now_utc.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_utc,
                 int(latency_ms),
                 _excel_safe(what or ""),
@@ -349,9 +373,9 @@ def ensure_focus_log_header():
     return _safe_csv_write(FOCUS_LOG_PATH, _write_header)
 
 
-def append_focus_log(*, slot_start_dt, latency_ms, doing, benefits, active_task):
+def append_focus_log(*, slot_start_dt, latency_ms, doing, benefits, active_task, clock=None):
     """Log studying confirmation details to CSV."""
-    now_utc = datetime.now(timezone.utc)
+    now_utc = _clock_now_utc(clock)
     try:
         if isinstance(slot_start_dt, dict):
             us = slot_start_dt.get("utc_start")
@@ -370,7 +394,7 @@ def append_focus_log(*, slot_start_dt, latency_ms, doing, benefits, active_task)
             w = csv.writer(f)
             w.writerow([
                 now_utc.isoformat(),
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                now_utc.astimezone().strftime("%Y-%m-%d %H:%M:%S"),
                 slot_start_utc,
                 int(latency_ms),
                 _excel_safe(doing or ""),

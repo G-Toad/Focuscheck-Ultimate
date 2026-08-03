@@ -125,7 +125,8 @@ class AntiHabitMixin:
                         latency_ms=latency_ms,
                         doing=doing,
                         benefits=benefits,
-                        active_task=active
+                        active_task=active,
+                        clock=getattr(self, "_task_clock", None),
                     )
                 except Exception:
                     log_exception("focus prompt: CSV append failed")
@@ -239,7 +240,14 @@ class AntiHabitMixin:
                 # Also record to CSV for quick export
                 try:
                     latency_ms = int((time.monotonic() - self.start_monotonic) * 1000)
-                    append_waste_log(slot_start_dt=self.slot_start_dt, latency_ms=latency_ms, what=what, consequences=cons, active_task=active)
+                    append_waste_log(
+                        slot_start_dt=self.slot_start_dt,
+                        latency_ms=latency_ms,
+                        what=what,
+                        consequences=cons,
+                        active_task=active,
+                        clock=getattr(self, "_task_clock", None),
+                    )
                 except Exception:
                     log_exception("waste prompt: CSV append failed")
             finally:

@@ -676,7 +676,8 @@ class PromptDialog(
                 settings=self.settings,
                 intensity_level_reached=self.intensity_level + (10 if self._overdrive else 0),
                 slot_start_dt=self.slot_start_dt,
-                overdrive_deadline_s=int(self.settings["overdrive_after_seconds"])
+                overdrive_deadline_s=int(self.settings["overdrive_after_seconds"]),
+                clock=getattr(self, "_task_clock", None),
             )
         except Exception as e:
             try:

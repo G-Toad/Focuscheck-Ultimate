@@ -583,6 +583,7 @@ class V2PromptDialog(
                 intensity_level_reached=0,
                 slot_start_dt=self.slot_start_dt,
                 overdrive_deadline_s=int(self.settings.get("overdrive_after_seconds", 60)),
+                clock=getattr(self, "_task_clock", None),
             )
         except Exception:
             pass

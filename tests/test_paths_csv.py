@@ -180,6 +180,31 @@ class CsvLoggerTests(unittest.TestCase):
             with open(focus_path, newline="", encoding="utf-8") as f:
                 self.assertEqual(2, len(list(csv.reader(f))))
 
+    def test_csv_append_uses_injected_clock_for_timestamp_and_elapsed_time(self):
+        import focuscheck.database.csv_logger as logger
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc), current_monotonic=7.0)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = str(Path(temp_dir) / "focus.csv")
+            slot = {"utc_start": clock.now_utc(), "local_minute": "10:00", "mono_start": 0.0}
+            with mock.patch.object(logger, "LOG_PATH", log_path):
+                self.assertTrue(logger.append_log(
+                    response="OK",
+                    latency_ms=10,
+                    settings={"interval_seconds": 60, "intensify_after_seconds": 15, "overdrive_after_seconds": 60},
+                    intensity_level_reached=1,
+                    slot_start_dt=slot,
+                    overdrive_deadline_s=60,
+                    clock=clock,
+                ))
+
+            with open(log_path, newline="", encoding="utf-8") as handle:
+                row = list(csv.reader(handle))[1]
+
+        self.assertEqual(clock.now_utc().isoformat(), row[0])
+        self.assertEqual("YES", row[5])
+
     def test_safe_csv_write_reports_failure_without_raising(self):
         import focuscheck.database.csv_logger as logger
 
