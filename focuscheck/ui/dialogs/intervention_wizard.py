@@ -132,6 +132,7 @@ class WindowSelectionDialog(tk.Toplevel):
         self._closed = False
         self._tab_queue = queue.Queue()
         self._tab_threads = []
+        self._tab_scan_cancel = threading.Event()
         self._front_timer_id = None
         self._tab_scan_timer_id = None
         self._timers = TimerRegistry(self)
@@ -302,9 +303,17 @@ class WindowSelectionDialog(tk.Toplevel):
 
     def _cancel_scheduled_callbacks(self):
         """Cancel recurring callbacks before the Toplevel is destroyed."""
+        self._tab_scan_cancel.set()
         self._timers.close()
         self._front_timer_id = None
         self._tab_scan_timer_id = None
+        for thread in self._tab_threads:
+            if thread.is_alive() and thread is not threading.current_thread():
+                try:
+                    thread.join(timeout=0.1)
+                except Exception:
+                    pass
+        self._tab_threads.clear()
 
     def destroy(self):
         self._cancel_scheduled_callbacks()
@@ -329,6 +338,8 @@ class WindowSelectionDialog(tk.Toplevel):
 
     def _start_tab_scan(self, preselect_title):
         def worker(entry):
+            if self._tab_scan_cancel.is_set():
+                return
             title = entry.get("title", "")
             proc = entry.get("process_name", "")
             hwnd = entry.get("hwnd")
@@ -339,6 +350,8 @@ class WindowSelectionDialog(tk.Toplevel):
                 tabs = try_list_browser_tabs(hwnd, proc)
             except Exception:
                 tabs = []
+            if self._tab_scan_cancel.is_set():
+                return
             try:
                 self._tab_queue.put((entry, tabs, preselect_title))
             except Exception:

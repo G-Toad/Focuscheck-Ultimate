@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import unittest
 from unittest import mock
 
@@ -129,10 +130,14 @@ class InterventionCoordinatorTests(unittest.TestCase):
         dialog._front_timer_id = "front"
         dialog._tab_scan_timer_id = "tabs"
         dialog._timers = mock.Mock()
+        dialog._tab_scan_cancel = threading.Event()
+        dialog._tab_threads = []
 
         dialog._cancel_scheduled_callbacks()
 
         dialog._timers.close.assert_called_once_with()
+        self.assertTrue(dialog._tab_scan_cancel.is_set())
+        self.assertEqual([], dialog._tab_threads)
         self.assertIsNone(dialog._front_timer_id)
         self.assertIsNone(dialog._tab_scan_timer_id)
 
