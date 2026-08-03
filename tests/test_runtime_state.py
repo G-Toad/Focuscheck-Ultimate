@@ -59,6 +59,24 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertEqual("manual_pause", events[0]["event"])
         self.assertNotIn("snooze_until_utc", events[0])
 
+    def test_transition_sink_failures_are_bounded_and_exposed(self):
+        def fail(_event):
+            raise OSError("journal unavailable")
+
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            transition_sink=fail,
+        )
+        state.set_guard_reason("lock", True)
+        state.set_guard_reason("lock", False)
+
+        view = state.snapshot_view()
+        self.assertEqual(2, view.transition_sink_failures)
+        self.assertFalse(view.effective_pause)
+        state._transition_sink_failures = 999
+        state.set_guard_reason("sleep", True)
+        self.assertEqual(999, state.snapshot_view().transition_sink_failures)
+
     def test_runtime_journal_uses_injected_clock(self):
         from focuscheck.runtime.journal import RuntimeTransitionJournal
 

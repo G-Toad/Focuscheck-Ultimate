@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable, MutableMapping, Any
 from ..utils.clock import SystemClock
+from ..utils.logging_utils import get_logger
 
 
 @dataclass
@@ -54,6 +55,7 @@ class RuntimeStateView:
     shutdown_requested: bool
     effective_pause: bool
     effective_pause_reason: str | None
+    transition_sink_failures: int = 0
 
 
 class RuntimeStateCoordinator:
@@ -70,6 +72,7 @@ class RuntimeStateCoordinator:
         self._persist = persist
         self.clock = clock or SystemClock()
         self._transition_sink = transition_sink
+        self._transition_sink_failures = 0
         self.snapshot = RuntimeSnapshot(
             manual_paused=self._manual_pause_from_settings(settings, self.clock.now_utc()),
             snooze_until_utc=str(settings.get("snooze_until_utc", "") or ""),
@@ -103,6 +106,7 @@ class RuntimeStateCoordinator:
             "prompt_active": current.prompt_active,
             "intervention_active": current.intervention_active,
             "shutdown_requested": current.shutdown_requested,
+            "transition_sink_failures": self._transition_sink_failures,
         }
 
     def _record(self, event: str, outcome: str, snapshot: RuntimeSnapshot | None = None) -> None:
@@ -112,8 +116,17 @@ class RuntimeStateCoordinator:
         payload.update({"event": event, "outcome": outcome})
         try:
             self._transition_sink(payload)
-        except Exception:
-            pass
+        except Exception as exc:
+            # A journal failure must not break the user-facing state transition,
+            # but it must remain visible to status/heartbeat diagnostics.
+            self._transition_sink_failures = min(999, self._transition_sink_failures + 1)
+            try:
+                get_logger().warning(
+                    "runtime transition journal failed | event=%s outcome=%s error=%s",
+                    payload["event"], payload["outcome"], type(exc).__name__,
+                )
+            except Exception:
+                pass
 
     def _commit(self, mutate: Callable[[], None], event: str) -> bool:
         before_settings = deepcopy(dict(self.settings))
@@ -168,6 +181,7 @@ class RuntimeStateCoordinator:
             shutdown_requested=bool(current.shutdown_requested),
             effective_pause=bool(current.manual_paused or snooze_active or guard_reasons),
             effective_pause_reason=reason,
+            transition_sink_failures=self._transition_sink_failures,
         )
 
     def set_manual_paused(self, value: bool) -> bool:

@@ -1857,6 +1857,7 @@ class App:
         guard_reasons = []
         runtime_revision = None
         pause_reason = None
+        transition_sink_failures = 0
         if runtime_state is not None:
             try:
                 view_factory = getattr(type(runtime_state), "snapshot_view", None)
@@ -1867,6 +1868,7 @@ class App:
                     guard_reasons = sorted(view.guard_reasons)
                     runtime_revision = view.revision
                     pause_reason = view.effective_pause_reason
+                    transition_sink_failures = int(getattr(view, "transition_sink_failures", 0) or 0)
                 else:
                     effective_paused = bool(runtime_state.is_effectively_paused())
                     snapshot = runtime_state.snapshot
@@ -1884,6 +1886,7 @@ class App:
             "snooze_active": snooze_active,
             "pause_reason": pause_reason,
             "runtime_revision": runtime_revision,
+            "transition_sink_failures": transition_sink_failures,
             "guard_reasons": guard_reasons,
             "prompt_active": getattr(self, "_current_prompt", None) is not None,
             "intervention_active": bool(getattr(self, "_intervention_active", False)),
@@ -2397,6 +2400,7 @@ class App:
             self._heartbeat_sequence = getattr(self, "_heartbeat_sequence", 0) + 1
             process_start_utc = getattr(self, "_process_start_utc", None) or self._now_utc().isoformat()
             runtime_state = getattr(self, "_runtime_state", None)
+            transition_sink_failures = 0
             if runtime_state is not None:
                 view_factory = getattr(type(runtime_state), "snapshot_view", None)
                 view = runtime_state.snapshot_view() if callable(view_factory) else None
@@ -2408,6 +2412,7 @@ class App:
                     effective_paused = bool(view.effective_pause)
                     runtime_revision = view.revision
                     pause_reason = view.effective_pause_reason
+                    transition_sink_failures = int(getattr(view, "transition_sink_failures", 0) or 0)
                 else:
                     snapshot = runtime_state.snapshot
                     manual_paused = bool(snapshot.manual_paused)
@@ -2426,6 +2431,7 @@ class App:
                 effective_paused = bool(manual_paused or guard_paused)
                 runtime_revision = None
                 pause_reason = None
+                transition_sink_failures = 0
             if manual_paused:
                 pause_reason = "manual"
             elif snooze_active:
@@ -2461,6 +2467,7 @@ class App:
                 "guard_health": guard_health,
                 "pause_reason": pause_reason,
                 "runtime_revision": runtime_revision,
+                "transition_sink_failures": transition_sink_failures,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
             }
             paths = getattr(self, "paths", None)
