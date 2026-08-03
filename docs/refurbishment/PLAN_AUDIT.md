@@ -52,6 +52,8 @@ The packaging checkpoint now also includes a shell transaction wrapper that vali
 
 All named documentation/report files exist, and migration fixtures plus a diagnostic bundle generator exist. File presence is not completion evidence: `manual-evidence.json` is explicitly `not_run`, the durable task/log fixture manifest is covered by regression tests, and the defect register covers only a subset of the plan's defect register with incomplete required fields such as reproduction, commit/PR, and per-defect manual verification.
 
+The plan-required V1 prompt state matrix is now present in `V1_PROMPT_STATE_MATRIX.md`; it records per-state invariants and evidence references, while visible UI, hardware, and interruption rows remain explicitly `manual_pending`.
+
 The plan's final-release deliverables were also checked individually:
 
 | Required deliverable | Status |
