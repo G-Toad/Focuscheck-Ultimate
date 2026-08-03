@@ -169,7 +169,7 @@ def parse_chromium_session(data: bytes) -> list[BrowserTab]:
 
 def _safe_read(path: Path, root: Path) -> bytes | None:
     try:
-        if path.is_symlink() or not path.is_file():
+        if _has_symlink_component(path, root) or not path.is_file():
             return None
         resolved_root = root.resolve()
         resolved = path.resolve()
@@ -183,15 +183,30 @@ def _safe_read(path: Path, root: Path) -> bytes | None:
         return None
 
 
-def _candidate_paths(process_name: str, env: Mapping[str, str]) -> list[tuple[Path, str]]:
+def _has_symlink_component(path: Path, root: Path) -> bool:
+    """Reject reparse-like profile components before resolving a session file."""
+    current = Path(path)
+    boundary = Path(root)
+    try:
+        while True:
+            if current.is_symlink():
+                return True
+            if current == boundary or current.parent == current:
+                return boundary.is_symlink() if current != boundary else False
+            current = current.parent
+    except OSError:
+        return True
+
+
+def _candidate_paths(process_name: str, env: Mapping[str, str]) -> list[tuple[Path, str, Path]]:
     process = (process_name or "").lower()
-    candidates: list[tuple[Path, str]] = []
+    candidates: list[tuple[Path, str, Path]] = []
     if process == "firefox.exe":
         appdata = env.get("APPDATA")
         if appdata:
             root = Path(appdata) / "Mozilla" / "Firefox" / "Profiles"
             for profile in sorted(root.glob("*"))[:_MAX_PROFILE_FILES]:
-                candidates.append((profile / "sessionstore-backups" / "recovery.jsonlz4", "firefox"))
+                candidates.append((profile / "sessionstore-backups" / "recovery.jsonlz4", "firefox", root))
     elif process in _CHROMIUM_ROOTS:
         variable, *parts = _CHROMIUM_ROOTS[process]
         base = env.get(variable)
@@ -200,7 +215,7 @@ def _candidate_paths(process_name: str, env: Mapping[str, str]) -> list[tuple[Pa
             profiles = [root] if process.startswith("opera") else sorted(root.glob("*"))[:_MAX_PROFILE_FILES]
             for profile in profiles:
                 session_dir = profile / "Sessions"
-                candidates.extend((session_dir / name, "chromium") for name in ("Current Tabs", "Current Session"))
+                candidates.extend((session_dir / name, "chromium", root) for name in ("Current Tabs", "Current Session"))
     return candidates[:_MAX_PROFILE_FILES * 2]
 
 
@@ -209,13 +224,12 @@ def collect_browser_tabs(process_name: str, *, env: Mapping[str, str] | None = N
     """Collect bounded session tabs for a browser process without mutation."""
     environment = dict(os.environ if env is None else env)
     if roots is not None:
-        candidates = [(Path(root), "firefox" if (process_name or "").lower() == "firefox.exe" else "chromium")
+        candidates = [(Path(root), "firefox" if (process_name or "").lower() == "firefox.exe" else "chromium", Path(root).parent)
                       for root in roots]
     else:
         candidates = _candidate_paths(process_name, environment)
     tabs: list[BrowserTab] = []
-    for path, kind in candidates[:_MAX_PROFILE_FILES * 2]:
-        root = path.parent
+    for path, kind, root in candidates[:_MAX_PROFILE_FILES * 2]:
         data = _safe_read(path, root)
         if data is None:
             continue

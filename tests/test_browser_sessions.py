@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -72,6 +73,26 @@ class BrowserSessionTests(unittest.TestCase):
             path = Path(temp_dir) / "Current Tabs"
             path.write_bytes(b"x" * (browser_sessions._MAX_FILE_BYTES + 1))
             self.assertEqual([], browser_sessions.collect_browser_tabs("chrome.exe", roots=[path]))
+
+    def test_collection_rejects_symlinked_profile_component(self):
+        from focuscheck.platform_specific.browser_sessions import collect_browser_tabs
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            real_profile = base / "real-profile"
+            session = real_profile / "sessionstore-backups" / "recovery.jsonlz4"
+            session.parent.mkdir(parents=True)
+            payload = {"windows": [{"tabs": [{"entries": [{"url": "https://linked.example"}]}]}]}
+            session.write_bytes(b"mozLz40\x00" + _lz4_literal_block(json.dumps(payload).encode()))
+            profiles = base / "Mozilla" / "Firefox" / "Profiles"
+            profiles.mkdir(parents=True)
+            linked_profile = profiles / "linked-profile"
+            try:
+                os.symlink(real_profile, linked_profile, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+            tabs = collect_browser_tabs("firefox.exe", env={"APPDATA": temp_dir})
+        self.assertEqual([], tabs)
 
 
 if __name__ == "__main__":
