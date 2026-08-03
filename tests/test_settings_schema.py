@@ -5,7 +5,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 import unittest
+from unittest import mock
 
+from focuscheck.settings.defaults import DEFAULT_SETTINGS
 from focuscheck.settings.schema import SENSITIVE_SETTING_KEYS, get_settings_schema, schema_manifest
 from focuscheck.ui.schema_controls import (
     EXISTING_DYNAMIC_KEYS,
@@ -15,6 +17,74 @@ from focuscheck.ui.schema_controls import (
 
 
 class SettingsSchemaContractTests(unittest.TestCase):
+    def test_hand_built_controls_round_trip_through_save_payload(self):
+        """Exercise the real hand-built _save mapping without requiring Tk."""
+        from focuscheck.ui.windows import AdvancedSettingsWindow
+
+        source_path = Path(__file__).resolve().parents[1] / "focuscheck" / "ui" / "windows.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        bindings: dict[str, str] = {}
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef) or node.name != "_save":
+                continue
+            for child in ast.walk(node):
+                if not isinstance(child, ast.Dict):
+                    continue
+                for key, value in zip(child.keys, child.values):
+                    if not isinstance(key, ast.Constant) or not isinstance(key.value, str):
+                        continue
+                    for ref in ast.walk(value):
+                        if isinstance(ref, ast.Attribute) and ref.attr.endswith("_var"):
+                            bindings[ref.attr] = key.value
+
+        class FakeVariable:
+            def __init__(self, value):
+                self.value = value
+
+            def get(self):
+                return self.value
+
+        window = AdvancedSettingsWindow.__new__(AdvancedSettingsWindow)
+        window.settings = dict(DEFAULT_SETTINGS)
+        window.on_save = mock.Mock()
+        window.persist_settings = mock.Mock(return_value=True)
+        window.destroy = mock.Mock()
+        window._schema_settings = mock.Mock()
+        window._schema_settings.values.return_value = {}
+
+        for attr, key in bindings.items():
+            self.assertIn(key, DEFAULT_SETTINGS, key)
+            value = DEFAULT_SETTINGS[key]
+            # Tk StringVar/DoubleVar values arrive as text; BooleanVar keeps
+            # a bool. Model that boundary so fallback parsing is exercised.
+            window.__dict__[attr] = FakeVariable(value if isinstance(value, bool) else str(value))
+        window.study_phrase_list = list(DEFAULT_SETTINGS["study_phrase_list"])
+        window.waste_phrase_list = list(DEFAULT_SETTINGS["waste_phrase_list"])
+        window.snooze_sentence_list = list(DEFAULT_SETTINGS["snooze_prompt_sentences"])
+        window.website_flags_list = list(DEFAULT_SETTINGS["website_flags"])
+        window.studying_challenge_vars = {
+            challenge_id: FakeVariable(DEFAULT_SETTINGS[f"challenge_studying_{challenge_id}_enabled"])
+            for challenge_id, _, _ in window.STUDYING_CHALLENGES
+        }
+        window.wasting_challenge_vars = {
+            challenge_id: FakeVariable(DEFAULT_SETTINGS[f"challenge_wasting_{challenge_id}_enabled"])
+            for challenge_id, _, _ in window.WASTING_CHALLENGES
+        }
+
+        window._save()
+
+        window.persist_settings.assert_called_once()
+        payload = window.persist_settings.call_args.args[0]
+        for key in bindings.values():
+            self.assertIn(key, payload, key)
+            self.assertEqual(DEFAULT_SETTINGS[key], payload[key], key)
+        for challenge_id in window.studying_challenge_vars:
+            key = f"challenge_studying_{challenge_id}_enabled"
+            self.assertEqual(DEFAULT_SETTINGS[key], payload[key], key)
+        for challenge_id in window.wasting_challenge_vars:
+            key = f"challenge_wasting_{challenge_id}_enabled"
+            self.assertEqual(DEFAULT_SETTINGS[key], payload[key], key)
+
     def test_hand_built_controls_have_save_payload_bindings(self):
         source_path = Path(__file__).resolve().parents[1] / "focuscheck" / "ui" / "windows.py"
         tree = ast.parse(source_path.read_text(encoding="utf-8"))
