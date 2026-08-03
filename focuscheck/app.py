@@ -581,7 +581,6 @@ class App:
                     state.clear_snooze()
                 else:
                     self.settings["snooze_until_utc"] = ""
-                    self.settings["paused"] = False
                     save_settings(self.settings)
                 return
             self.settings["paused"] = True
@@ -1411,7 +1410,6 @@ class App:
             state.clear_snooze()
         else:
             self.settings["snooze_until_utc"] = ""
-            self.settings["paused"] = False
             save_settings(self.settings)
         try:
             get_logger().info("snooze expired, resuming eligible reminders")
@@ -1573,9 +1571,11 @@ class App:
 
             self._close_current_prompt(source=f"snooze_{mins}m")
 
-            # Cancel any existing snooze unpause timer
-            if self._snooze_unpause_timer_id is not None:
-                self._cancel_snooze_timer()
+            # Cancel any existing snooze timer, including a registry-owned timer
+            # whose legacy callback ID is not exposed by the caller.
+            had_timer = self._snooze_unpause_timer_id is not None
+            self._cancel_snooze_timer()
+            if had_timer:
                 try:
                     get_logger().info("tray: cancelled prior snooze-unpause timer")
                 except Exception:

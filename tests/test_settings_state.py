@@ -383,6 +383,35 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertEqual("", settings["snooze_until_utc"])
         self.assertTrue(settings["paused"])
 
+    def test_expired_startup_snooze_fallback_preserves_manual_pause(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {
+            "paused": True,
+            "snooze_until_utc": "2000-01-01T00:00:00+00:00",
+        }
+        app._snooze_unpause_timer_id = None
+
+        with mock.patch("focuscheck.app.save_settings") as save_settings:
+            App._reconcile_snooze_state_on_startup(app)
+
+        self.assertTrue(app.settings["paused"])
+        self.assertEqual("", app.settings["snooze_until_utc"])
+        save_settings.assert_called_once()
+
+    def test_cancel_snooze_timer_cancels_registry_without_legacy_id(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app._timers = mock.Mock()
+        app._snooze_unpause_timer_id = None
+
+        App._cancel_snooze_timer(app)
+
+        app._timers.cancel.assert_called_once_with("snooze-expiry")
+        self.assertIsNone(app._snooze_unpause_timer_id)
+
     def test_snooze_expiry_callback_preserves_manual_pause(self):
         from focuscheck.app import App
         from focuscheck.runtime.state import RuntimeStateCoordinator
@@ -401,6 +430,24 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertTrue(settings["paused"])
         self.assertEqual("", settings["snooze_until_utc"])
         app._schedule_next.assert_called_once_with(0)
+
+    def test_snooze_expiry_fallback_preserves_manual_pause(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {
+            "paused": True,
+            "snooze_until_utc": "2030-01-01T00:05:00+00:00",
+        }
+        app._snooze_unpause_timer_id = "timer-1"
+        app._schedule_next = mock.Mock()
+
+        with mock.patch("focuscheck.app.save_settings") as save_settings:
+            App._expire_snooze(app)
+
+        self.assertTrue(app.settings["paused"])
+        self.assertEqual("", app.settings["snooze_until_utc"])
+        save_settings.assert_called_once()
 
     def test_snooze_state_preserves_manual_pause_and_expires_without_clearing_it(self):
         from focuscheck.runtime.state import RuntimeStateCoordinator
