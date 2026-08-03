@@ -1394,6 +1394,36 @@ class AppLifecycleTests(unittest.TestCase):
         app.guard.should_pause.assert_called_once_with()
         app._runtime_state.set_guard_reason.assert_called_once_with("system_guard", True)
 
+    def test_guard_transition_notifies_engine_when_effective_pause_changes(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        class Guard:
+            def __init__(self):
+                self.paused = True
+
+            def should_pause(self):
+                return self.paused
+
+        class Engine:
+            def __init__(self):
+                self.events = []
+
+            def on_pause_changed(self, paused, *, source="unknown"):
+                self.events.append((paused, source))
+
+        settings = {"manual_paused": False, "paused": False, "snooze_until_utc": ""}
+        app = App.__new__(App)
+        app.settings = settings
+        app.guard = Guard()
+        app._runtime_state = RuntimeStateCoordinator(settings)
+        app._engine = Engine()
+
+        self.assertTrue(App._refresh_guard_state(app))
+        app.guard.paused = False
+        self.assertFalse(App._refresh_guard_state(app))
+        self.assertEqual([(True, "system_guard"), (False, "system_guard")], app._engine.events)
+
     def test_prompt_tick_uses_in_memory_settings_snapshot(self):
         from focuscheck.app import App
 

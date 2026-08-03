@@ -905,7 +905,19 @@ class App:
             guard_paused = False
         runtime_state = getattr(self, "_runtime_state", None)
         if runtime_state is not None:
+            previous_effective = None
+            try:
+                previous_effective = bool(runtime_state.is_effectively_paused())
+            except Exception:
+                pass
             runtime_state.set_guard_reason("system_guard", guard_paused)
+            if previous_effective is not None:
+                try:
+                    current_effective = bool(runtime_state.is_effectively_paused())
+                    if current_effective != previous_effective:
+                        self._notify_engine_pause_state(source="system_guard")
+                except Exception:
+                    pass
         return guard_paused
 
     def _maybe_show_prompt(self):
