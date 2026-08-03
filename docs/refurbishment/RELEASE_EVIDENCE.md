@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `527` tests across 19 bounded stages at source checkpoint `5853ec0`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `527` tests across 19 bounded stages at source checkpoint `e4e88b1`; the detailed older bullets are retained as historical baseline context.
 
 The latest health-snapshot checkpoint adds bounded supervisor, heartbeat, watcher, TaskDB, and activity-provider health metadata to the status surface without exposing runtime paths or user content; interactive status-window evidence remains pending.
 
@@ -23,6 +23,8 @@ The latest tray-composition correction honors an injected tray adapter even when
 The latest watcher-composition correction honors an explicitly injected watcher adapter on non-Windows hosts while retaining the Windows-only default. Live session/power/display watcher evidence remains pending.
 
 The latest fault-injection correction makes the real 13-checkpoint constructor failure matrix use the injected App-owned timer factory rather than patching the timer module global. The automated baseline is unchanged; manual/release evidence remains pending.
+
+The latest fault-injection extension also injects tray and watcher adapters in that matrix, removing global optional-backend and platform patches while exercising composed startup through watcher initialization. Manual/release evidence remains pending.
 
 The latest native self-test checkpoint routes the standalone `--tray-test` timeout through a named timer registry and cleans up the registry/root when watcher construction fails; broader native/manual evidence remains pending.
 

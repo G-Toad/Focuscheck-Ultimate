@@ -44,9 +44,11 @@ Latest watcher-composition correction: an explicit injected watcher adapter is n
 
 Latest fault-injection correction: the real 13-checkpoint constructor failure matrix now injects the App-owned `TimerRegistry` factory instead of patching the timer module global, strengthening composition and partial-cleanup evidence without changing the automated baseline.
 
+Latest fault-injection extension: the same constructor matrix now injects tray and watcher adapters, eliminating global optional-backend and platform patches while exercising the composed startup path through watcher initialization.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `5853ec0`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `e4e88b1`; the post-push verifier records `527` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
