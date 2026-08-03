@@ -32,9 +32,11 @@ Latest composition-root engine correction: selected V1/V2 monitoring engine cons
 
 Latest startup composition correction: legacy migration now passes through an injectable App dependency, and the complete constructor failure matrix no longer patches the module-global migration function. Production defaults remain unchanged; existing-user migration evidence remains pending.
 
+Latest startup composition extension: application log-header creation now passes through an injectable dependency, and the constructor failure matrix avoids patching that module-global writer. Production defaults remain unchanged; existing-user and manual release evidence remain pending.
+
 Latest startup-security correction: generated Startup-folder batch launchers now reject line breaks, disable delayed expansion, and escape percent expansion plus command metacharacters in interpolated paths; hostile-path regression coverage passes.
 
-Current checkpoint: the current source/evidence checkpoint is `747fe33`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
+Current checkpoint: the current source/evidence checkpoint is `190ab7a`; the post-push verifier records `523` tests across 19 passing stages, while the five manual evidence groups remain explicitly pending.
 
 Status meanings:
 
