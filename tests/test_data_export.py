@@ -189,6 +189,45 @@ class DataExportTests(unittest.TestCase):
                 with self.subTest(index=index), self.assertRaises(ValueError):
                     validate_export(archive_path)
 
+    def test_validate_export_rejects_symlinked_archive_path(self):
+        from focuscheck.utils.data_export import validate_export
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            target = root / "target.zip"
+            with zipfile.ZipFile(target, "w") as archive:
+                archive.writestr("EXPORT_MANIFEST.json", json.dumps({
+                    "format_version": 1, "categories": [], "files": [],
+                }))
+            linked = root / "linked.zip"
+            try:
+                linked.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("file symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                validate_export(linked)
+
+    def test_validate_export_rejects_symlinked_archive_parent(self):
+        from focuscheck.utils.data_export import validate_export
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            target_dir = root / "target"
+            target_dir.mkdir()
+            with zipfile.ZipFile(target_dir / "export.zip", "w") as archive:
+                archive.writestr("EXPORT_MANIFEST.json", json.dumps({
+                    "format_version": 1, "categories": [], "files": [],
+                }))
+            linked_dir = root / "linked"
+            try:
+                linked_dir.symlink_to(target_dir, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                validate_export(linked_dir / "export.zip")
+
     def test_inventory_covers_known_operational_and_recovery_artifacts_without_contents(self):
         from focuscheck.utils.data_export import inventory_data
 

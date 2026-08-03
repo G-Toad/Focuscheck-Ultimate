@@ -156,7 +156,12 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
 
 def validate_export(archive_path) -> dict:
     """Validate an export archive and return its trusted embedded manifest."""
-    archive_path = Path(archive_path).resolve()
+    archive_path = Path(archive_path)
+    if not archive_path.is_absolute():
+        archive_path = Path.cwd() / archive_path
+    archive_path = archive_path.absolute()
+    if archive_path.is_symlink() or _contains_symlink_component(archive_path.parent):
+        raise ValueError("refusing to validate through a symlinked archive path")
     if not archive_path.is_file():
         raise FileNotFoundError(archive_path)
     try:
