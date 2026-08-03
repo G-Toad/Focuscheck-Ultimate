@@ -184,6 +184,40 @@ class InterventionCoordinatorTests(unittest.TestCase):
             self.assertFalse(app._intervention_active)
         app._runtime_state.end_intervention.assert_called_once()
 
+    def test_action_dialog_creation_failure_closes_spotlight_and_restores_prompt(self):
+        from focuscheck.ui.dialogs import intervention_wizard
+
+        wizard = intervention_wizard.InterventionWizard.__new__(intervention_wizard.InterventionWizard)
+        wizard.parent = mock.Mock()
+        wizard.settings = {"disable_overlays": False}
+        wizard._timers = mock.Mock()
+        prompt = mock.Mock()
+        prompt.winfo_exists.return_value = True
+        overlay = mock.Mock()
+
+        with mock.patch.object(intervention_wizard, "list_top_level_windows", return_value=[{"hwnd": 1}]), \
+                mock.patch.object(intervention_wizard, "gates") as gates, \
+                mock.patch.object(intervention_wizard, "BlackoutOverlay", return_value=mock.Mock()), \
+                mock.patch.object(intervention_wizard, "WindowSelectionDialog") as selection_type, \
+                mock.patch.object(intervention_wizard, "SpotlightOverlay", return_value=overlay), \
+                mock.patch.object(intervention_wizard, "InterventionActionDialog", side_effect=RuntimeError("action init")), \
+                mock.patch.object(intervention_wizard, "get_logger"):
+            gates.are_overlays_enabled.return_value = True
+            selection = selection_type.return_value
+            selection._selection = {"windows": [{"hwnd": 1}], "tabs": []}
+            selection._closed = False
+            selection.update_idletasks.return_value = None
+            wizard.parent.wait_window.side_effect = [None, None]
+            wizard._schedule_prompt_focus = mock.Mock()
+
+            result = wizard._run_internal(prompt_ref=prompt, hide_prompt=True)
+
+        self.assertFalse(result)
+        overlay.close.assert_called_once_with()
+        prompt.deiconify.assert_called_once_with()
+        prompt.lift.assert_called_once_with()
+        wizard._schedule_prompt_focus.assert_called_once_with(prompt)
+
     def test_app_intervention_runner_owns_prompt_visibility_and_context(self):
         from focuscheck.app import App
 

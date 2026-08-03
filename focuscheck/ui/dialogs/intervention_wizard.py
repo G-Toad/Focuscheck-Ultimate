@@ -1232,7 +1232,26 @@ class InterventionWizard:
                 if logger:
                     logger.exception("intervention: auto-check schedule failed", exc_info=True)
 
-        action = InterventionActionDialog(self.parent, on_verify=_verify, on_cancel=_cancel)
+        try:
+            action = InterventionActionDialog(self.parent, on_verify=_verify, on_cancel=_cancel)
+        except Exception:
+            if logger:
+                logger.exception("intervention: action dialog creation failed", exc_info=True)
+            try:
+                if overlay is not None:
+                    overlay.close()
+            except Exception:
+                if logger:
+                    logger.exception("intervention: failed to close spotlight after action creation failure", exc_info=True)
+            if prompt_ref is not None and prompt_hidden:
+                try:
+                    prompt_ref.deiconify()
+                    prompt_ref.lift()
+                    self._schedule_prompt_focus(prompt_ref)
+                except Exception:
+                    if logger:
+                        logger.exception("intervention: failed to restore prompt after action creation failure", exc_info=True)
+            return False
         action_timers["owner"] = action._timers
         try:
             if logger:
