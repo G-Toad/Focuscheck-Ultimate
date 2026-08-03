@@ -129,7 +129,12 @@ def resolve_initial_monitoring_state(settings, *, force_start=False):
     if mode in ("stopped", "stop", "paused", "pause"):
         return False, "env_mode_stopped"
 
-    if bool(settings.get("paused", False)):
+    # Once migrated, durable manual intent is authoritative. The legacy
+    # compatibility field remains the fallback for pre-migration callers.
+    persisted_paused = bool(
+        settings.get("manual_paused", settings.get("paused", False))
+    )
+    if persisted_paused:
         return False, "persisted_paused"
 
     return True, "default_force_started"

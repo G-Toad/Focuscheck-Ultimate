@@ -273,6 +273,17 @@ class StartupStateTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {}, clear=True):
             self.assertEqual((False, "persisted_paused"), resolve_initial_monitoring_state({"paused": True}))
 
+    def test_resolve_initial_monitoring_state_prefers_explicit_manual_intent(self):
+        import os
+        from unittest import mock
+        from focuscheck.app import resolve_initial_monitoring_state
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                (True, "default_force_started"),
+                resolve_initial_monitoring_state({"paused": True, "manual_paused": False}),
+            )
+
 
 class FakeRoot:
     def __init__(self):
