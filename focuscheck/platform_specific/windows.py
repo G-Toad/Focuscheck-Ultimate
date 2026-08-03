@@ -104,6 +104,22 @@ def _kernel32():
     return ctypes.WinDLL("kernel32", use_last_error=True)
 
 
+def _configure_error_api(kernel32):
+    """Declare the Kernel32 error-reporting signatures used by native paths."""
+    kernel32.GetLastError.argtypes = []
+    kernel32.GetLastError.restype = wintypes.DWORD
+    kernel32.FormatMessageW.argtypes = [
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.LPWSTR,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+    ]
+    kernel32.FormatMessageW.restype = wintypes.DWORD
+
+
 def _configure_overlay_api(user32, gdi32, kernel32):
     """Declare the native signatures used by the overlay lifecycle."""
     user32.RegisterClassExW.argtypes = [ctypes.c_void_p]
@@ -206,13 +222,17 @@ def _get_last_error_info():
     try:
         code = ctypes.get_last_error()
         if not code:
-            code = _kernel32().GetLastError()
+            kernel32 = _kernel32()
+            _configure_error_api(kernel32)
+            code = kernel32.GetLastError()
         msg = ""
         try:
             FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000
             FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200
             buf = ctypes.create_unicode_buffer(1024)
-            _kernel32().FormatMessageW(
+            kernel32 = locals().get("kernel32") or _kernel32()
+            _configure_error_api(kernel32)
+            kernel32.FormatMessageW(
                 FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                 None,
                 code,

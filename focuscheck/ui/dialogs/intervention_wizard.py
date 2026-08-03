@@ -16,6 +16,7 @@ from ...platform_specific.window_enumeration import (
 )
 from ...platform_specific.browser_info import is_supported_browser
 from ...platform_specific.browser_tabs import try_list_browser_tabs
+from ...platform_specific.windows import _get_last_error_info
 from ...utils.timers import TimerRegistry
 
 try:
@@ -1632,34 +1633,6 @@ def _is_offscreen(window):
         return False
     except Exception:
         return False
-
-
-def _get_last_error_info():
-    try:
-        import ctypes
-        code = ctypes.get_last_error()
-        if not code:
-            code = ctypes.windll.kernel32.GetLastError()
-        msg = ""
-        try:
-            FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000
-            FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200
-            buf = ctypes.create_unicode_buffer(1024)
-            ctypes.windll.kernel32.FormatMessageW(
-                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                None,
-                code,
-                0,
-                buf,
-                len(buf),
-                None,
-            )
-            msg = buf.value.strip()
-        except Exception:
-            msg = ""
-        return int(code), msg
-    except Exception:
-        return None, ""
 
 
 __all__ = ["InterventionWizard"]

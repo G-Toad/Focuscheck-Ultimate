@@ -1500,6 +1500,27 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.UINT], main_kernel32.SetErrorMode.argtypes)
         self.assertEqual(wintypes.UINT, main_kernel32.SetErrorMode.restype)
 
+    def test_windows_error_reporting_declares_kernel32_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        kernel32 = type("Kernel32", (), {"GetLastError": Api(), "FormatMessageW": Api()})()
+        windows._configure_error_api(kernel32)
+        self.assertEqual([], kernel32.GetLastError.argtypes)
+        self.assertEqual(wintypes.DWORD, kernel32.GetLastError.restype)
+        self.assertEqual(
+            [wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD,
+             wintypes.LPWSTR, wintypes.DWORD, ctypes.c_void_p],
+            kernel32.FormatMessageW.argtypes,
+        )
+        self.assertEqual(wintypes.DWORD, kernel32.FormatMessageW.restype)
+
     def test_prompt_windows_integration_declares_focus_and_style_signatures(self):
         import ctypes
         from ctypes import wintypes
