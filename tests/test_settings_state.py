@@ -415,6 +415,31 @@ class SnoozeStateTests(unittest.TestCase):
         self.assertEqual("", settings["snooze_until_utc"])
         self.assertTrue(settings["paused"])
 
+    def test_expired_startup_snooze_does_not_create_manual_pause(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, tzinfo=timezone.utc))
+        settings = {
+            "paused": True,
+            "manual_paused": False,
+            "snooze_until_utc": (clock.now_utc() - timedelta(minutes=1)).isoformat(),
+        }
+        app = App.__new__(App)
+        app.settings = settings
+        app._force_start = False
+        app._runtime_state = RuntimeStateCoordinator(settings, clock=clock)
+        app._snooze_unpause_timer_id = None
+        app._set_paused = mock.Mock()
+
+        with mock.patch("focuscheck.app.save_settings"):
+            App._apply_initial_monitoring_state(app)
+
+        app._set_paused.assert_called_once_with(False, source="startup_default_force_started")
+        self.assertFalse(app._runtime_state.snapshot.manual_paused)
+        self.assertFalse(settings["paused"])
+
     def test_expired_startup_snooze_fallback_preserves_manual_pause(self):
         from focuscheck.app import App
 

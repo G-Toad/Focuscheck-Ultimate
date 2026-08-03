@@ -484,11 +484,13 @@ class App:
         self._write_heartbeat()
 
     def _apply_initial_monitoring_state(self):
+        # Reconcile snooze first so an expired effective pause cannot be
+        # mistaken for durable manual intent by the startup decision.
+        self._reconcile_snooze_state_on_startup()
         desired, reason = resolve_initial_monitoring_state(
             self.settings,
             force_start=self._force_start,
         )
-        self._reconcile_snooze_state_on_startup()
         persisted_paused = bool(self.settings.get("paused", False))
         logger = get_logger()
         if desired:
