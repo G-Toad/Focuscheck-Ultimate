@@ -2,12 +2,14 @@
 
 ## Currency warning
 
-The package hashes recorded below are historical artifacts from earlier source checkpoints. They are not release evidence for current source `08e45f7`; rebuild and revalidate both frozen executables after the next source checkpoint before promotion or release.
+Entries below the current candidate are historical artifacts from earlier source checkpoints. The current candidate was rebuilt from the current branch and is validated for scripted package protocol behavior; real installer-shell, signing, and manual release gates remain open.
 
 - Build command: `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1 -OutputDir <disposable-temp-root>`
 - PyInstaller: `6.16.0`
 - Python: `3.11.9`
 - Target: Windows 10/11 x64 environment
+- Current candidate rebuilt from source tree at `9a7af19` (code checkpoint `08e45f7`): `FocusCheck.exe` (SHA-256 `8827199B74F1A60A2DAEDFD3A77899CB81E237B658E669BEAFB23B11E0825864`) and `FocusCheckSupervisor.exe` (SHA-256 `3A44B5F050BF98AC7F47B4EA3B5EB588CC5A40C125109EE09300F9C3C86E3E69`). Promotion, manifest validation, and the packaged supervisor self-test passed; it reached READY, acknowledged a generation-bound stop request, and reaped its child in a disposable data root.
+- Current candidate disposable lifecycle also passed `Install -> Upgrade -> Uninstall`; the upgrade retained a previous package backup, uninstall archived binaries, and a data sentinel remained intact. No production startup entry was modified.
 - Latest disposable rebuild from source commit `5002cf2` on 2026-08-03: `FocusCheck.exe` (SHA-256 `6142897E296778ABE70C2F6EF566ECF513D8E198B95D47FCBB3A54E3AD8E88EE`) and `FocusCheckSupervisor.exe` (SHA-256 `280C7DEE49D4742081D535C24E1DEC62574A29D811F5FF208A93C76CA01AFE3A`). Promotion generated the manifest, validation passed, and the packaged supervisor reached READY and completed a generation-bound stop acknowledgement/reaping self-test with no package-owned process remaining.
 - Latest isolated real package-lifecycle startup probe: `Install` and `Upgrade` registered a unique HKCU Run value targeting the installed `FocusCheckSupervisor.exe --run --base-dir`; `Uninstall` removed that value and archived the package. The disposable install/data parent was removed afterward; the production `FocusCheck` value was not touched.
 - Historical artifacts from commit `f48fb5b`: `FocusCheck.exe` (SHA-256 `27066AC2DE1F77D63B1D1C2B5BECB311FE340817821CC96F46C6505C83DDFEC7`) and `FocusCheckSupervisor.exe` (SHA-256 `0737E135526CC714E4628738A14511C9E6FE9A233B2A6C4BC31B7749444A69AA`).

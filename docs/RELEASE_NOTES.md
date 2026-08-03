@@ -5,7 +5,7 @@
 - Source checkpoint: `08e45f7`.
 - Full verifier: all 20 bounded stages passed, with 570 unittest cases and zero process leaks.
 - Native tray, overlay, and error-reporting ctypes boundaries now have explicit regression coverage.
-- Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`, and the packaged artifacts documented below predate the current source checkpoint and must be rebuilt before release.
+- Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
 
 ## Current checkpoint
 
