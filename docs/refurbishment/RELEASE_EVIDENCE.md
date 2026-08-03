@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `535` tests across 19 bounded stages at source checkpoint `9eadfd7`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `536` tests across 19 bounded stages at source checkpoint `456f342`; the detailed older bullets are retained as historical baseline context.
+
+The latest heartbeat metadata checkpoint makes lifecycle snapshot serialization capability-safe for injected adapters and adds regression coverage for mapping, missing, and failing snapshot shapes. Focused lifecycle tests and the full verifier passed; manual Windows and release evidence remains pending.
 
 The latest composition checkpoint adds an injectable activity-provider factory for V2 engine construction while preserving direct-provider and production defaults. Focused lifecycle tests and the full verifier passed; live browser and Windows evidence remains pending.
 
