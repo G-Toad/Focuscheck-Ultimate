@@ -175,6 +175,8 @@ Current checkpoint addition: The current tray-state slice selects Pause/Resume f
 
 Current checkpoint addition: The latest `c9a5cd3` tray-state checkpoint passes the full verifier with `397` unittest cases and all 18 bounded stages; the machine-readable report remains partial pending manual gates.
 
+Current checkpoint addition: The current fallback-tray slice reads coordinator-owned manual intent for menu enablement instead of compatibility effective-pause state; live fallback-tray guard/snooze evidence remains pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |

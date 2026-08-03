@@ -129,6 +129,20 @@ class SystemTrayCommandTests(unittest.TestCase):
             app.calls,
         )
 
+    def test_fallback_tray_pause_state_uses_manual_runtime_intent(self):
+        from focuscheck.system_tray import SystemTray
+
+        app = FakeTrayApp()
+        app._runtime_state = mock.Mock()
+        app._runtime_state.snapshot.manual_paused = False
+        tray = SystemTray(app=app, name="FocusCheckTest")
+
+        app.settings["paused"] = True
+
+        self.assertFalse(tray._is_paused())
+        self.assertTrue(tray._stop_enabled())
+        self.assertFalse(tray._start_enabled())
+
     def test_start_stop_and_exit_gates_block_handlers(self):
         from focuscheck.system_tray import SystemTray
 

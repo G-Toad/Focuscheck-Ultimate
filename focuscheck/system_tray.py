@@ -528,6 +528,12 @@ class SystemTray:
 
     # Menu and actions
     def _is_paused(self) -> bool:
+        runtime_state = getattr(self.app, "_runtime_state", None)
+        if runtime_state is not None:
+            try:
+                return bool(runtime_state.snapshot.manual_paused)
+            except Exception:
+                pass
         return bool(self._get_setting("paused", False))
 
     def _pause_checked(self, _: Any = None) -> bool:
