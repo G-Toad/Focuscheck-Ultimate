@@ -38,6 +38,15 @@ class AppDependencies:
     runtime_state_factory: Callable[..., Any] | None = None
     guard_factory: Callable[[Callable[[], Any]], Any] | None = None
     prompt_coordinator_factory: Callable[[], Any] | None = None
+    # App-owned UI factories keep dialogs at the composition boundary.  The
+    # production defaults remain the concrete classes imported by App, while
+    # tests and alternate shells can substitute lifecycle-safe doubles.
+    intervention_wizard_factory: Callable[..., Any] | None = None
+    settings_window_factory: Callable[..., Any] | None = None
+    task_entry_dialog_factory: Callable[..., Any] | None = None
+    snooze_prompt_factory: Callable[..., Any] | None = None
+    snooze_reminder_dialog_factory: Callable[..., Any] | None = None
+    gentle_reminder_dialog_factory: Callable[..., Any] | None = None
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None

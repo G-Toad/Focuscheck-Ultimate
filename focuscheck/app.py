@@ -1268,7 +1268,12 @@ class App:
                     hidden = True
                 except Exception:
                     get_logger().exception("intervention prompt hide failed", exc_info=True)
-            wizard = InterventionWizard(self.root, settings)
+            wizard_factory = getattr(
+                getattr(self, "_dependencies", None),
+                "intervention_wizard_factory",
+                None,
+            )
+            wizard = (wizard_factory or InterventionWizard)(self.root, settings)
             completed = bool(wizard.run(
                 preselect_hwnd=preselect_hwnd,
                 preselect_title=preselect_title,
@@ -1988,7 +1993,12 @@ class App:
                         get_logger().info("snooze prompt: showing confirmation dialog before snoozing %s min", mins)
                     except Exception:
                         pass
-                    dlg = SnoozePromptDialog(
+                    prompt_factory = getattr(
+                        getattr(self, "_dependencies", None),
+                        "snooze_prompt_factory",
+                        None,
+                    )
+                    dlg = (prompt_factory or SnoozePromptDialog)(
                         self.root,
                         settings=self.settings,
                         on_submit=_on_submit,
@@ -2496,7 +2506,12 @@ class App:
                         except Exception:
                             pass
 
-            SettingsWindow(
+            settings_factory = getattr(
+                getattr(self, "_dependencies", None),
+                "settings_window_factory",
+                None,
+            )
+            (settings_factory or SettingsWindow)(
                 self.root,
                 self.settings,
                 on_save=apply_and_refresh,
@@ -2571,7 +2586,12 @@ class App:
                 messagebox.showerror("Unavailable", "Task database not available.")
                 return False
             try:
-                TaskEntryDialog(self.root, on_submit=self._on_new_task_from_tray)
+                dialog_factory = getattr(
+                    getattr(self, "_dependencies", None),
+                    "task_entry_dialog_factory",
+                    None,
+                )
+                (dialog_factory or TaskEntryDialog)(self.root, on_submit=self._on_new_task_from_tray)
                 return True
             except Exception:
                 return False
@@ -2963,7 +2983,12 @@ class App:
                 self._snooze_reminder_next_mono = self._monotonic() + interval
 
             try:
-                self._snooze_reminder_dialog = SnoozeReminderDialog(
+                reminder_factory = getattr(
+                    getattr(self, "_dependencies", None),
+                    "snooze_reminder_dialog_factory",
+                    None,
+                )
+                self._snooze_reminder_dialog = (reminder_factory or SnoozeReminderDialog)(
                     self.root,
                     self.settings,
                     on_yes=on_yes,
@@ -3042,7 +3067,12 @@ class App:
                 interval_minutes = max(1, int(self.settings.get("gentle_reminder_interval", 15)))
                 self._gentle_reminder_next_mono = self._monotonic() + interval_minutes * 60
 
-            self._gentle_reminder_dialog = GentleReminderDialog(
+            reminder_factory = getattr(
+                getattr(self, "_dependencies", None),
+                "gentle_reminder_dialog_factory",
+                None,
+            )
+            self._gentle_reminder_dialog = (reminder_factory or GentleReminderDialog)(
                 self.root, self.settings, on_dismiss=on_dismiss
             )
         except Exception:

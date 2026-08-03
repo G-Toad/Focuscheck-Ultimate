@@ -49,6 +49,68 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertFalse(app.schedule_once("after-close", 25, callback))
         root.after.assert_called_once()
 
+    def test_intervention_uses_app_owned_wizard_factory(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        class State:
+            def begin_intervention(self):
+                return True
+
+            def end_intervention(self):
+                return True
+
+        class Wizard:
+            def run(self, **kwargs):
+                self.kwargs = kwargs
+                return True
+
+        wizard = Wizard()
+        factory = mock.Mock(return_value=wizard)
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(intervention_wizard_factory=factory)
+        app._runtime_state = State()
+        app._engine = None
+        app._intervention_active = False
+        app._active_intervention_id = None
+        app._record_operational_event = mock.Mock()
+        app._notify_engine_intervention_state = mock.Mock()
+        app.root = object()
+
+        self.assertTrue(App.run_intervention(app, {}, hide_prompt=False))
+        factory.assert_called_once_with(app.root, {})
+        self.assertEqual(wizard.kwargs["hide_prompt"], False)
+        self.assertIsNone(app._active_intervention_id)
+
+    def test_tray_task_dialog_uses_app_owned_factory(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        factory = mock.Mock()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(task_entry_dialog_factory=factory)
+        app.root = object()
+        app.taskdb = object()
+        app._call_on_ui_thread = lambda callback: callback()
+
+        self.assertTrue(App._open_task_dialog_from_tray(app))
+        factory.assert_called_once_with(app.root, on_submit=app._on_new_task_from_tray)
+
+    def test_app_owned_ui_factory_seams_remain_wired(self):
+        from focuscheck.app import App
+
+        source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
+        text = source.read_text(encoding="utf-8")
+        for name in (
+            "intervention_wizard_factory",
+            "settings_window_factory",
+            "task_entry_dialog_factory",
+            "snooze_prompt_factory",
+            "snooze_reminder_dialog_factory",
+            "gentle_reminder_dialog_factory",
+        ):
+            self.assertIn(name, text)
+
     def test_initial_monitoring_failure_is_re_raised_from_composition(self):
         source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
         tree = ast.parse(source.read_text(encoding="utf-8"))
@@ -216,6 +278,9 @@ class AppLifecycleTests(unittest.TestCase):
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
                 "shutdown_stage_hook", "tk_root_factory",
+                "intervention_wizard_factory", "settings_window_factory",
+                "task_entry_dialog_factory", "snooze_prompt_factory",
+                "snooze_reminder_dialog_factory", "gentle_reminder_dialog_factory",
             },
             set(deps.__dataclass_fields__),
         )
