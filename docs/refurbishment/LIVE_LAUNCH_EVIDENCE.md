@@ -82,6 +82,18 @@ This is direct per-user registry install/inspection/removal evidence. It does
 not prove that Explorer launches the value at sign-in, nor lock/sleep/resume,
 interactive tray behavior, or target-machine startup behavior.
 
+Latest bounded live browser-provider probe on 2026-08-03:
+
+- The native window enumerator found two visible supported-browser windows on
+  this Windows session, one Chrome and one Firefox.
+- Activity/window and tab-provider calls completed within the bounded probe;
+  UI Automation/CDP returned no tab titles on this host, and no browser
+  profile or tab state was modified.
+
+This demonstrates graceful no-data behavior for unavailable browser metadata.
+It does not prove URL extraction, exact/subdomain matching, cooldown/severity
+behavior, or the supported-browser intervention matrix.
+
 The repeatable automated source-process scenario is `tools/source_supervisor_selftest.py`. It launches disposable children and verifies failure/restart into a second generation, a generation/PID-bound stop with durable graceful acknowledgement, heartbeat hang recovery with old-child reaping, and circuit-breaker entry after repeated crashes. These are bounded source-process scenarios, not production-duration, sleep/resume, or target-machine evidence.
 
 ## Native tray smoke
