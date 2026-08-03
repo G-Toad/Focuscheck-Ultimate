@@ -19,3 +19,5 @@
 - Current disposable transaction also passed `Install`, `Upgrade`, and reversible `Uninstall` using fresh `_package_runtime` paths; upgrade retained the previous package backup, uninstall archived the binaries, and no data root was deleted. An unrelated existing startup entry was retained by the target-match safeguard.
 
 This proves the source package build, dual frozen entrypoints, packaged child self-test, bounded packaged supervisor readiness/intentional-stop/reaping, package manifest/tamper validation, and scripted package lifecycle transactions. Installer shell integration, code signing, production-duration packaged supervision, and native manual evidence remain open.
+
+Current rebuild from source checkpoint `6b86d3f` on 2026-08-03 produced `FocusCheck.exe` SHA-256 `B9B117A5B4308671B10E7ED4B686515BAB240CEB2A9748DB3346632254463FF3` and `FocusCheckSupervisor.exe` SHA-256 `A6F7AB71B141541541B76BB8AEB099C0118C60CBD43F9630BA761BBD2740D7B736D`; promotion generated a versioned manifest, validation passed, and the promoted frozen supervisor self-test reached READY and completed a durable intentional-stop acknowledgement with no package-owned process remaining.

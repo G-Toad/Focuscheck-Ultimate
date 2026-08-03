@@ -274,6 +274,8 @@ Runtime-state evidence correction: The isolated QA harness now evaluates all `25
 
 Native event evidence correction: `WindowsWakeWatcher` now routes session, power, display/DPI, tray, shutdown, and taskbar-recreation messages through a pure classifier with a deterministic regression matrix; this validates translation and dispatch selection but does not replace live Windows event delivery evidence.
 
+Packaging evidence correction: A fresh dual-executable build from source checkpoint `6b86d3f` was promoted into a disposable install root; manifest validation and the frozen supervisor READY/intentional-stop/reaping self-test passed. Signing, clean-VM installer shell behavior, and production-duration evidence remain manual gates.
+
 ## Explicit Scope Boundary
 
 Correction: diagnostic bundle creation now rejects symlinked output files and parent path components before creating temporary files or replacing the destination; focused tests cover both boundaries, with symlink cases skipped where this Windows shell lacks symlink privileges.
