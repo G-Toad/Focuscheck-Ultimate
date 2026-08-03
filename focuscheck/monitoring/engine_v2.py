@@ -160,7 +160,10 @@ class EngineV2(BaseEngine):
         if runtime_state is not None:
             try:
                 # RuntimeStateCoordinator is authoritative for manual,
-                # snooze, and guard pause composition.
+                # snooze, guard pause, and shutdown composition.
+                snapshot = getattr(runtime_state, "snapshot", None)
+                if getattr(snapshot, "shutdown_requested", False) is True:
+                    return False
                 return not runtime_state.is_effectively_paused()
             except Exception:
                 # Preserve standalone/test adapter compatibility, but do not

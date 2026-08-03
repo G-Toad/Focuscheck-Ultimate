@@ -591,6 +591,24 @@ class EngineV2MatchingTests(unittest.TestCase):
         self.assertFalse(engine._should_check_subpopup())
         app._runtime_state.is_effectively_paused.assert_called_once_with()
 
+    def test_subpopup_suppresses_shutdown_requested_runtime_state(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        app = type("App", (), {})()
+        app.settings = {"paused": False, "pause_when_inactive_or_lid_closed": False}
+        app._current_prompt = None
+        app._intervention_active = False
+        app._runtime_state = RuntimeStateCoordinator(app.settings)
+        app._runtime_state.request_shutdown()
+
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = app
+        engine._settings = app.settings
+        engine._subpopup_active = False
+
+        self.assertFalse(engine._should_check_subpopup())
+
     def test_domain_matching_exact_subdomain_and_disabled_flags(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 
