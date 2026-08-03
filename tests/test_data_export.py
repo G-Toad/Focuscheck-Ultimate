@@ -269,6 +269,26 @@ class DataExportTests(unittest.TestCase):
                 export_data(root, link, overwrite=True)
             self.assertEqual(b"original", target.read_bytes())
 
+    def test_export_rejects_symlinked_destination_parent(self):
+        from tools.export_data import export_data
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            base = Path(temp_dir)
+            root = base / "data"
+            root.mkdir()
+            (root / "focus_log.csv").write_text("safe", encoding="utf-8")
+            outside = base / "outside"
+            outside.mkdir()
+            link_dir = base / "exports"
+            try:
+                link_dir.symlink_to(outside, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+
+            with self.assertRaises(ValueError):
+                export_data(root, link_dir / "export.zip")
+            self.assertFalse((outside / "export.zip").exists())
+
     def test_export_rejects_source_mutation_before_promoting_archive(self):
         from focuscheck.utils.data_export import export_data
 

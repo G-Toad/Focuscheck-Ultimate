@@ -58,6 +58,17 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _contains_symlink_component(path: Path) -> bool:
+    current = path
+    while True:
+        if current.is_symlink():
+            return True
+        parent = current.parent
+        if parent == current:
+            return False
+        current = parent
+
+
 def _rotate_audit_if_needed(path: Path, *, max_bytes: int, backup_count: int) -> None:
     if path.is_symlink():
         raise OSError("audit path symlink rejected")
@@ -96,7 +107,7 @@ def export_data(source_root, destination, *, categories=("logs", "metadata"), ov
     selected = _selected_categories(categories)
     if not root.is_dir():
         raise NotADirectoryError(root)
-    if output.is_symlink():
+    if output.is_symlink() or _contains_symlink_component(output.parent):
         raise ValueError("export destination collides with an input or is a symlink")
     if output.exists() and not overwrite:
         raise FileExistsError(output)
