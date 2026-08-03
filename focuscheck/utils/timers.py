@@ -61,9 +61,24 @@ class TimerRegistry:
             finally:
                 current = self._timers.get(name)
                 if interval_ms is not None and not self._closed and current is timer and not timer.cancelled:
-                    timer.callback_id = self._scheduler.after(max(0, int(interval_ms)), run)
+                    try:
+                        timer.callback_id = self._scheduler.after(max(0, int(interval_ms)), run)
+                    except Exception:
+                        # A destroyed/rejecting Tk scheduler must not leave a
+                        # recurring timer registered after its callback fires.
+                        if self._timers.get(name) is timer:
+                            self._timers.pop(name, None)
+                        timer.cancelled = True
+                        raise
 
-        timer.callback_id = self._scheduler.after(max(0, int(delay_ms)), run)
+        try:
+            timer.callback_id = self._scheduler.after(max(0, int(delay_ms)), run)
+        except Exception:
+            # Roll back the ownership record when Tk rejects registration.
+            if self._timers.get(name) is timer:
+                self._timers.pop(name, None)
+            timer.cancelled = True
+            raise
         self._emit(
             "schedule",
             name,

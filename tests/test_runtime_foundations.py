@@ -27,6 +27,17 @@ class FakeScheduler:
         callback()
 
 
+class FailingScheduler(FakeScheduler):
+    def __init__(self):
+        super().__init__()
+        self.fail_after = False
+
+    def after(self, delay, callback):
+        if self.fail_after:
+            raise RuntimeError("scheduler unavailable")
+        return super().after(delay, callback)
+
+
 class RuntimeFoundationTests(unittest.TestCase):
     def test_sequential_phrase_advancement_uses_app_persistence_boundary(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
@@ -148,6 +159,30 @@ class RuntimeFoundationTests(unittest.TestCase):
         self.assertTrue(registry.closed)
         self.assertFalse(registry.schedule("later", 1, lambda: None))
         self.assertFalse(scheduler.callbacks)
+
+    def test_scheduler_failure_rolls_back_one_shot_timer_ownership(self):
+        scheduler = FailingScheduler()
+        registry = TimerRegistry(scheduler)
+        scheduler.fail_after = True
+
+        with self.assertRaisesRegex(RuntimeError, "scheduler unavailable"):
+            registry.schedule("prompt", 1, lambda: None)
+
+        self.assertIsNone(registry.callback_id("prompt"))
+        self.assertFalse(registry._timers)
+
+    def test_recurring_scheduler_failure_releases_timer_after_callback(self):
+        scheduler = FailingScheduler()
+        registry = TimerRegistry(scheduler)
+        registry.schedule("heartbeat", 1, lambda: None, interval_ms=10)
+        callback_id = next(iter(scheduler.callbacks))
+        scheduler.fail_after = True
+
+        with self.assertRaisesRegex(RuntimeError, "scheduler unavailable"):
+            scheduler.fire(callback_id)
+
+        self.assertIsNone(registry.callback_id("heartbeat"))
+        self.assertFalse(registry._timers)
 
     def test_schedule_cancel_stress_leaves_no_owned_callbacks(self):
         scheduler = FakeScheduler()
