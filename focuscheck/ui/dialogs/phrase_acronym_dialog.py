@@ -15,6 +15,7 @@ import platform
 import ctypes
 
 from ...utils.timers import TimerRegistry
+from .prompt_dialog_mixins.windows_integration import _configure_windows_integration_api
 
 
 class PhraseAcronymDialog(tk.Toplevel):
@@ -136,13 +137,15 @@ class PhraseAcronymDialog(tk.Toplevel):
         try:
             hwnd = self.winfo_id()
             user32 = ctypes.windll.user32
+            kernel32 = ctypes.windll.kernel32
+            _configure_windows_integration_api(user32, kernel32)
 
             # 1. Attach to foreground thread
             try:
                 foreground = user32.GetForegroundWindow()
                 if foreground != hwnd:
                     fg_thread = user32.GetWindowThreadProcessId(foreground, None)
-                    this_thread = ctypes.windll.kernel32.GetCurrentThreadId()
+                    this_thread = kernel32.GetCurrentThreadId()
                     if fg_thread != this_thread:
                         user32.AttachThreadInput(fg_thread, this_thread, True)
             except Exception:
@@ -188,7 +191,9 @@ class PhraseAcronymDialog(tk.Toplevel):
                 if platform.system().lower() == "windows":
                     try:
                         hwnd = self.winfo_id()
-                        ctypes.windll.user32.SetForegroundWindow(hwnd)
+                        user32 = ctypes.windll.user32
+                        _configure_windows_integration_api(user32)
+                        user32.SetForegroundWindow(hwnd)
                     except Exception:
                         pass
                 self.lift()

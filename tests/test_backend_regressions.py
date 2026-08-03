@@ -823,6 +823,20 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertEqual([wintypes.DWORD, wintypes.DWORD, wintypes.BOOL], user32.AttachThreadInput.argtypes)
         self.assertEqual([], kernel32.GetCurrentThreadId.argtypes)
 
+    def test_v2_subpopup_declares_virtual_screen_metrics(self):
+        import ctypes
+        from focuscheck.ui.dialogs import v2_subpopup_dialog
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {"GetSystemMetrics": Api()})()
+        v2_subpopup_dialog._configure_virtual_screen_api(user32)
+        self.assertEqual([ctypes.c_int], user32.GetSystemMetrics.argtypes)
+        self.assertEqual(ctypes.c_int, user32.GetSystemMetrics.restype)
+
     def test_spotlight_region_declares_native_signatures(self):
         import ctypes
         from ctypes import wintypes

@@ -6,6 +6,13 @@ import tkinter as tk
 from tkinter import ttk
 
 
+def _configure_virtual_screen_api(user32):
+    """Declare the User32 metrics signature used by the full-screen popup."""
+    import ctypes
+    user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+    user32.GetSystemMetrics.restype = ctypes.c_int
+
+
 class V2SubPopupDialog(tk.Toplevel):
     """Full-screen warning overlay for flagged websites."""
 
@@ -108,6 +115,7 @@ def _get_virtual_screen_rect():
         if platform.system().lower() == "windows":
             import ctypes
             user32 = ctypes.windll.user32
+            _configure_virtual_screen_api(user32)
             SM_XVIRTUALSCREEN = 76
             SM_YVIRTUALSCREEN = 77
             SM_CXVIRTUALSCREEN = 78
