@@ -54,6 +54,20 @@ This is direct source-supervisor/duplicate-launch evidence. It does not prove
 Run-key startup, lock/sleep/resume, interactive tray behavior, browser activity,
 or production-duration supervision.
 
+Latest isolated live child-crash/restart probe on 2026-08-03:
+
+- A real `focuscheck_supervisor.py --run` launched `main.py` under a unique
+  disposable data root and published child PID `19832`.
+- Only that heartbeat-reported child was terminated. The same real supervisor
+  then launched replacement child PID `26880`; the PID changed and the log
+  contained both the child-exit and second-start records.
+- The isolated supervisor tree, marker files, and disposable data root were
+  removed after the probe.
+
+This is direct live source-supervisor crash/restart evidence. It does not prove
+intentional tray-exit acknowledgement, lock/sleep/resume, production-duration
+supervision, or target-machine behavior.
+
 Latest isolated startup-folder launcher probe on 2026-08-03:
 
 - With `APPDATA` redirected to a unique disposable directory, `--install-startup` generated `RunFocusCheckSupervisor.cmd` under the expected Startup-folder path.

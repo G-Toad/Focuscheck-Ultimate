@@ -281,6 +281,8 @@ Supervisor evidence correction: The real disposable source-supervisor self-test 
 
 Live supervisor evidence correction: an isolated Windows probe launched the actual `main.py` child through `focuscheck_supervisor.py`, rejected a second supervisor on the same marker paths, and completed a generation-bound graceful stop with both supervisor processes exiting cleanly. Run-key startup, lock/sleep/resume, interactive tray, and production-duration evidence remain open.
 
+Live restart evidence correction: a disposable real supervisor launched child PID `19832`; terminating only that heartbeat-reported child produced a replacement child PID `26880`, with exit and second-start records in the supervisor log. The isolated tree and data root were removed afterward. Intentional tray exit, lock/sleep/resume, production-duration, and target-machine evidence remain open.
+
 Startup-launcher evidence correction: with `APPDATA` redirected to a disposable Windows profile, the real `--install-startup` path generated the expected `RunFocusCheckSupervisor.cmd` with supervisor, `--run`, base-directory, and timing arguments; `--uninstall-startup` removed it. Real shell/Run-key execution remains unverified.
 
 Canonical Run-key evidence correction: an isolated uniquely named value was written to the real current-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` key through `startup.install_startup()`, read back as `REG_SZ`, classified `valid` by `inspect_startup()`, confirmed by `is_startup_installed()`, and removed through `uninstall_startup()` with a final `absent` state. The production `FocusCheck` value was not touched. Explorer sign-in launch, lock/sleep/resume, and target-machine startup evidence remain open.
