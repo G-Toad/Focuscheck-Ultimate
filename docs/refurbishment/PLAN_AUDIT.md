@@ -207,6 +207,8 @@ Current checkpoint addition: The latest `534416f` task lifecycle checkpoint fixe
 
 Current checkpoint addition: The latest `88eb11c` evidence slice fills all five manual-evidence records with exact steps and expected outcomes while retaining `status=not_run` for every case. The full verifier records `417` unittest cases, all 18 bounded stages passed, zero failed stages, and five manual-required groups.
 
+Current checkpoint addition: The latest `cfe653e` task-flow test slice exercises the real inline change-form callback headlessly, proving successful replacement payload routing to `TaskDB.change_task()` and form retention on a failed transaction. The full verifier records `419` unittest cases, all 18 bounded stages passed, and zero failed stages. Live task UI evidence remains manual_pending.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -228,6 +230,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `417` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `88eb11c`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+Latest verification checkpoint: `419` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `cfe653e`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
