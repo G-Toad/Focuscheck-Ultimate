@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `6b62ff6`; 552 unittest cases and all 19 bounded verification stages pass. Engine replacement, timer registration, and V2 pause/guard/snooze polling paths are failure-safe; manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `f5b25ed`; 553 unittest cases and all 19 bounded verification stages pass. Engine replacement, timer registration, and V2 pause/guard/snooze/tray polling paths are failure-safe; manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
