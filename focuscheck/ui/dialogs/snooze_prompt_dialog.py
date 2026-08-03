@@ -24,11 +24,14 @@ from ...settings.gates import is_spam_detection_enabled
 from ...utils.timers import TimerRegistry
 
 try:
-    from ...utils import get_logger
+    from ...utils import get_logger, privacy_summary
 except ImportError:
     def get_logger():
         import logging
         return logging.getLogger(__name__)
+
+    def privacy_summary(value):
+        return {"type": type(value).__name__, "length": len(str(value or "")), "sha256": None}
 
 
 class SnoozePromptDialog(tk.Toplevel):
@@ -183,7 +186,7 @@ class SnoozePromptDialog(tk.Toplevel):
             else:
                 # Fallbacks
                 self.target_sentence = required_phrase if required_phrase_on else "I am choosing to pause my reminders deliberately."
-            self._log(f"build_ui: exact field enabled target='{self.target_sentence}' choices={len(self.sentence_choices)} require_phrase={required_phrase_on}")
+            self._log(f"build_ui: exact field enabled target_summary={privacy_summary(self.target_sentence)} choices={len(self.sentence_choices)} require_phrase={required_phrase_on}")
 
             self.sentence_label = tk.Label(self.container, text=self.target_sentence, fg="#ddd", bg="#111",
                                            wraplength=460, justify="left")
@@ -413,7 +416,7 @@ class SnoozePromptDialog(tk.Toplevel):
     # ----- Validation -----
     def _validate_reason(self):
         reason = (self.reason_var.get() or "").strip()
-        self._log(f"validate_reason: required={self.reason_required} len={len(reason)} text='{reason}'")
+        self._log(f"validate_reason: required={self.reason_required} len={len(reason)} text_summary={privacy_summary(reason)}")
         if self.reason_required and not reason:
             self._log("validate_reason: missing input while required")
             messagebox.showerror("Required", "Please answer why you're snoozing before continuing.")
@@ -426,7 +429,7 @@ class SnoozePromptDialog(tk.Toplevel):
             elapsed = time.time() - self._dialog_shown_at
             ok, msg = self.spam_detector.is_valid_response(reason, elapsed)
             if not ok:
-                self._log(f"validate_reason: spam detector rejection -> {msg}")
+                self._log(f"validate_reason: spam detector rejection -> {privacy_summary(msg)}")
                 get_logger().warning("spam_check: rejected | reason=%s", msg)
                 messagebox.showerror("Invalid Response", msg)
                 try:
@@ -439,7 +442,7 @@ class SnoozePromptDialog(tk.Toplevel):
             comp_reason = reason if self._case_sensitive else reason.lower()
             comp_phrase = phrase if self._case_sensitive else phrase.lower()
             if comp_phrase and comp_phrase not in comp_reason:
-                self._log(f"validate_reason: required phrase '{phrase}' missing")
+                self._log(f"validate_reason: required phrase_summary={privacy_summary(phrase)} missing")
                 messagebox.showerror("Phrase required", f"Please include '{phrase}' in your reason.")
                 try:
                     if self.reason_entry and self.reason_entry.winfo_exists():

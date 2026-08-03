@@ -114,6 +114,14 @@ class CsvLoggerTests(unittest.TestCase):
         self.assertNotIn("C:\\Users\\singh", rendered)
         self.assertIn("<redacted>", rendered)
 
+        contextual = logging.LogRecord(
+            "focuscheck", logging.INFO, __file__, 1,
+            "reason 'private reason' phrase=\"private phrase\"", (), None,
+        )
+        PrivacyLogFilter().filter(contextual)
+        self.assertNotIn("private reason", contextual.getMessage())
+        self.assertNotIn("private phrase", contextual.getMessage())
+
     def test_csv_text_is_safe_from_spreadsheet_formulas(self):
         from focuscheck.database.csv_logger import _excel_safe
 
