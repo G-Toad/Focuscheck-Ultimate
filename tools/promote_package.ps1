@@ -13,6 +13,15 @@ function Get-Sha256Hex([string]$Path) {
 $source = (Resolve-Path -LiteralPath $PackageDir).Path
 $install = [IO.Path]::GetFullPath($InstallDir)
 $parent = Split-Path -Parent $install
+$sourceItem = Get-Item -LiteralPath $source -Force
+if (($sourceItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw "PackageDir cannot be a reparse point: $source"
+}
+$sourceReparsePoints = Get-ChildItem -LiteralPath $source -Recurse -Force -ErrorAction Stop |
+    Where-Object { ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 }
+if ($sourceReparsePoints) {
+    throw "PackageDir contains reparse points: $($sourceReparsePoints.FullName -join ', ')"
+}
 if (-not (Test-Path -LiteralPath (Join-Path $source "FocusCheck.exe") -PathType Leaf)) {
     throw "PackageDir must contain FocusCheck.exe"
 }

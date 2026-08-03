@@ -102,6 +102,36 @@ class PackagingContractTests(unittest.TestCase):
         self.assertIn("duplicate path", validator)
         self.assertIn("invalid SHA-256 digest", validator)
 
+    def test_promotion_rejects_source_reparse_points_before_replacing_install(self):
+        powershell = shutil.which("powershell") or shutil.which("pwsh")
+        if not powershell:
+            self.skipTest("PowerShell is required for package promotion verification")
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            temp = Path(temp_dir)
+            package = temp / "package"
+            install = temp / "install"
+            package.mkdir()
+            install.mkdir()
+            (package / "FocusCheck.exe").write_text("new", encoding="ascii")
+            (install / "FocusCheck.exe").write_text("old", encoding="ascii")
+            outside = temp / "outside.txt"
+            outside.write_text("outside", encoding="ascii")
+            try:
+                (package / "redirected.txt").symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("reparse points unavailable")
+
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                 str(root / "tools/promote_package.ps1"), "-PackageDir", str(package),
+                 "-InstallDir", str(install)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("reparse", result.stdout.lower() + result.stderr.lower())
+            self.assertEqual("old", (install / "FocusCheck.exe").read_text(encoding="ascii"))
+
     def test_validator_rejects_unsafe_manifest_path(self):
         powershell = shutil.which("powershell") or shutil.which("pwsh")
         if not powershell:
