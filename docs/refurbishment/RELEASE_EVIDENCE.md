@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest browser-matrix correction: source checkpoint `117b6d9` covers the read-only session fallback for Chrome, Edge, Brave, Opera, Opera GX, and Firefox, including titleless URL recovery. The full verifier passed all 20 stages with 564 tests and zero process leaks; live browser/UIA extraction and website-flag intervention remain manual gates.
+
 Latest plan-traceability correction: source checkpoint `8055695` adds explicit accepted alias rows for every one of the 84 defect identifiers named by the controlling V1 plan, plus a dedicated `plan_register_coverage` verifier stage. The full verifier passed all 20 stages with 562 tests and zero process leaks; the register contains 148 defect rows and 6 contradiction rows with no untriaged severity-0/1 entries. Manual/release gates remain pending.
 
 Latest resource-soak correction: source checkpoint `2b46a2c` extends the bounded performance stage with 500 activity-provider calls and a non-daemon-thread leak postcondition. The stage passed in 5.023 seconds with zero timer callbacks and zero non-daemon thread leaks; the full verifier passed all 19 stages with 561 tests and zero process leaks. Manual long-duration UI/native/browser and release gates remain pending.

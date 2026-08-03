@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest browser-matrix correction: source checkpoint `117b6d9` adds deterministic session-fallback coverage for Chrome, Edge, Brave, Opera, Opera GX, and Firefox, including titleless URL recovery. The full verifier passed all 20 stages with 564 tests and zero process leaks; live browser/UIA and website-intervention evidence remain manual.
+
 Latest plan-traceability correction: source checkpoint `8055695` adds explicit accepted alias rows for every one of the 84 defect identifiers named by the controlling V1 plan, plus `tools/plan_register_coverage.py` as a dedicated verifier stage. The full verifier passed all 20 stages with 562 tests and zero process leaks; manual and product-decision gates remain explicitly open.
 
 Latest resource-soak correction: source checkpoint `2b46a2c` extends the bounded performance stage to 500 activity-provider calls and asserts zero non-daemon thread leaks, alongside existing timer/state/SQLite budgets. The stage passed in 5.023 seconds and the full verifier passed all 19 stages with 561 tests and zero process leaks; long-duration UI/native/browser and production-session evidence remain pending.

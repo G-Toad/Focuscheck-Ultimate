@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `8055695`; 562 unittest cases and all 20 bounded verification stages pass with zero process leaks. The controlling plan's 84 defect IDs now have explicit register rows, and the performance soak covers 500 activity-provider calls with zero non-daemon thread leaks. Manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `117b6d9`; 564 unittest cases and all 20 bounded verification stages pass with zero process leaks. The browser session fallback matrix covers six supported browser families, and the controlling plan's 84 defect IDs have explicit register rows. Manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
