@@ -524,6 +524,43 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertTrue(snapshot["effective_paused"])
         self.assertEqual("snooze", snapshot["pause_reason"])
 
+    def test_diagnostic_status_exposes_bounded_health_components(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"paused": False}
+        app.guard = mock.Mock()
+        app.guard.diagnostics.return_value = {"healthy": True}
+        app.lifecycle = mock.Mock()
+        app.lifecycle.phase = "ready"
+        app._runtime_state = None
+        app._engine = None
+        app._engine_shutdown = True
+        app._current_prompt = None
+        app._using_pystray = False
+        app._native_tray_fallback_active = False
+        app.taskdb = object()
+        app._activity_provider = object()
+        app._winwatch = None
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "FOCUSCHECK_SUPERVISOR_ID": "supervisor-id",
+                "FOCUSCHECK_CHILD_GENERATION": "generation-id",
+            },
+            clear=False,
+        ), mock.patch("focuscheck.doctor.get_anomalies", return_value=[]), mock.patch(
+            "focuscheck.settings.schema.get_settings_schema", return_value={}
+        ), mock.patch.object(App, "_data_root", return_value="<runtime-root>"):
+            snapshot = App._diagnostic_status_snapshot(app)
+
+        self.assertEqual("supervised", snapshot["supervisor"])
+        self.assertEqual("generation-id", snapshot["supervisor_generation"])
+        self.assertEqual("unavailable", snapshot["windows_watcher"])
+        self.assertEqual("available", snapshot["task_db"])
+        self.assertEqual("configured", snapshot["activity_provider"])
+
     def test_snooze_reminder_ignores_manual_pause_without_snooze_expiry(self):
         from focuscheck.app import App
 

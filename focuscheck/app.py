@@ -1987,6 +1987,19 @@ class App:
                     guard_reasons = sorted(str(reason) for reason in snapshot.guard_reasons)
             except Exception:
                 pass
+        supervisor_id = str(os.environ.get("FOCUSCHECK_SUPERVISOR_ID", "") or "").strip()
+        supervisor_generation = str(os.environ.get("FOCUSCHECK_CHILD_GENERATION", "") or "").strip()
+        heartbeat_age_seconds = None
+        heartbeat_path = getattr(getattr(self, "paths", None), "heartbeat", None)
+        if heartbeat_path:
+            try:
+                heartbeat_age_seconds = round(max(0.0, time.time() - Path(heartbeat_path).stat().st_mtime), 1)
+            except (OSError, ValueError, TypeError):
+                heartbeat_age_seconds = None
+        watcher = getattr(self, "_winwatch", None)
+        watcher_state = "registered" if watcher is not None else "unavailable"
+        if bool(getattr(watcher, "closed", False)):
+            watcher_state = "closed"
         return {
             "application": APP_NAME,
             "version": APP_VERSION,
@@ -2008,6 +2021,12 @@ class App:
             "settings_schema_keys": schema_key_count,
             "doctor_anomalies": anomaly_count,
             "pid": os.getpid(),
+            "supervisor": "supervised" if supervisor_id else "direct",
+            "supervisor_generation": supervisor_generation[:96] or "none",
+            "heartbeat_age_seconds": heartbeat_age_seconds,
+            "windows_watcher": watcher_state,
+            "task_db": "available" if getattr(self, "taskdb", None) is not None else "unavailable",
+            "activity_provider": "configured" if getattr(self, "_activity_provider", None) is not None else "unavailable",
             "data_root": str(self._data_root()),
         }
 

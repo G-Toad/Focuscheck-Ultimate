@@ -58,13 +58,19 @@ def format_status_snapshot(snapshot: dict) -> str:
         ("Settings schema keys", snapshot.get("settings_schema_keys", "unknown")),
         ("Doctor anomalies", snapshot.get("doctor_anomalies", "unknown")),
         ("Transition journal failures", snapshot.get("transition_sink_failures", "unknown")),
+        ("Supervisor", snapshot.get("supervisor", "unknown")),
+        ("Supervisor generation", snapshot.get("supervisor_generation", "unknown")),
+        ("Heartbeat age seconds", snapshot.get("heartbeat_age_seconds", "unknown")),
+        ("Windows watcher", snapshot.get("windows_watcher", "unknown")),
+        ("Task database", snapshot.get("task_db", "unknown")),
+        ("Activity provider", snapshot.get("activity_provider", "unknown")),
         ("Process ID", snapshot.get("pid", "unknown")),
         # The status window is support-facing, not a path browser. Keep the
         # runtime location useful as a category without exposing the user's
         # absolute filesystem path.
         ("Data root", "<runtime-root>"),
     )
-    return "\n".join(f"{label}: {value}" for label, value in rows)
+    return "\n".join(f"{label}: {str(value)[:160]}" for label, value in rows)
 
 
 def _candidates(root: Path) -> list[Path]:

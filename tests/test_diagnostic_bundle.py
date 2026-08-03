@@ -25,10 +25,14 @@ class DiagnosticBundleTests(unittest.TestCase):
         self.assertIn("Version: 1.2.3", rendered)
         self.assertIn("Lifecycle: ready", rendered)
         self.assertIn("Transition journal failures: 2", rendered)
+        self.assertIn("Supervisor generation: unknown", rendered)
         self.assertIn("Data root: <runtime-root>", rendered)
         self.assertNotIn("C:/FocusCheck", rendered)
         self.assertNotIn("should not appear", rendered)
         self.assertNotIn("private.example", rendered)
+
+        bounded = format_status_snapshot({"supervisor_generation": "x" * 1000})
+        self.assertNotIn("x" * 161, bounded)
 
     def test_sanitize_redacts_paths_and_credentials(self):
         root = Path("C:/verification")
