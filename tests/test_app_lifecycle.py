@@ -1220,9 +1220,33 @@ class AppLifecycleTests(unittest.TestCase):
         with mock.patch.object(App, "_get_engine_class", return_value=NewEngine):
             App._ensure_engine(app)
 
-        self.assertEqual(["camera", "timers", "destroy", "old_shutdown", "new_engine", "settings"], events)
+        self.assertEqual(["new_engine", "camera", "timers", "destroy", "old_shutdown", "settings"], events)
         self.assertIsInstance(app._engine, NewEngine)
         self.assertIsNone(app._current_prompt)
+
+    def test_engine_switch_factory_failure_preserves_running_engine(self):
+        from focuscheck.app import App
+
+        class NewEngine:
+            pass
+
+        old_engine = mock.Mock()
+        prompt = mock.Mock()
+        app = App.__new__(App)
+        app.settings = {"monitoring_mode": "v2"}
+        app._engine = old_engine
+        app._current_prompt = prompt
+
+        with mock.patch.object(App, "_get_engine_class", return_value=NewEngine), \
+                mock.patch.object(App, "_new_engine", side_effect=RuntimeError("factory failed")), \
+                mock.patch.object(App, "_close_current_prompt") as close_prompt:
+            with self.assertRaisesRegex(RuntimeError, "factory failed"):
+                App._ensure_engine(app)
+
+        self.assertIs(old_engine, app._engine)
+        self.assertIs(prompt, app._current_prompt)
+        old_engine.shutdown.assert_not_called()
+        close_prompt.assert_not_called()
 
     def test_prompt_cleanup_runs_before_shutdown_destroy(self):
         from focuscheck.app import App

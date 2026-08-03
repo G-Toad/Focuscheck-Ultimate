@@ -779,6 +779,9 @@ class App:
         cls = self._get_engine_class(self.settings)
         if self._engine is None or not isinstance(self._engine, cls):
             old_engine = self._engine
+            # Construct the replacement before tearing down the current
+            # engine. A factory failure must leave the running engine intact.
+            replacement = self._new_engine(cls)
             if old_engine is not None:
                 # A prompt owns resources that are independent of the
                 # monitoring engine. Close it before replacing the engine so
@@ -789,7 +792,7 @@ class App:
                     old_engine.shutdown()
                 except Exception:
                     pass
-            self._engine = self._new_engine(cls)
+            self._engine = replacement
             try:
                 get_logger().info("monitoring engine set to %s", getattr(self._engine, "name", cls.__name__))
             except Exception:
