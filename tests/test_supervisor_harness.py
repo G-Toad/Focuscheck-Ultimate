@@ -286,6 +286,32 @@ class SupervisorHarnessTests(unittest.TestCase):
         command = popen.call_args.args[0]
         self.assertEqual(["python", str(Path("C:/FocusCheck/main.py")), "--force-start"], command)
 
+    def test_process_launcher_is_composed_without_patching_subprocess(self):
+        from focuscheck_supervisor import FocusCheckSupervisor
+
+        supervisor = FocusCheckSupervisor.__new__(FocusCheckSupervisor)
+        supervisor.target_script = Path("C:/FocusCheck/main.py")
+        supervisor.python_executable = "python"
+        supervisor.logger = MemoryLogger()
+        supervisor.stop_event = FakeEvent()
+        supervisor.current_delay = 3.0
+        supervisor.force_start = False
+        supervisor.child = None
+        supervisor.supervisor_id = "supervisor"
+        supervisor.child_generation = None
+        supervisor.stop_file = Path("C:/FocusCheck/supervisor.stop")
+        supervisor.stop_ack_file = Path("C:/FocusCheck/supervisor.stop.ack")
+        supervisor.heartbeat_path = Path("C:/FocusCheck/hb.txt")
+        process = mock.Mock(pid=4321)
+        launcher = mock.Mock(return_value=process)
+        supervisor._process_launcher = launcher
+
+        supervisor._launch_focuscheck()
+
+        self.assertIs(process, supervisor.child)
+        self.assertEqual(["python", str(Path("C:/FocusCheck/main.py"))], launcher.call_args.args[0])
+        self.assertEqual("supervisor", launcher.call_args.kwargs["env"]["FOCUSCHECK_SUPERVISOR_ID"])
+
     def test_resume_gap_uses_process_scoped_restart(self):
         import focuscheck_supervisor as supervisor_module
         from focuscheck_supervisor import FocusCheckSupervisor

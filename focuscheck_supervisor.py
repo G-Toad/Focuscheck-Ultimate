@@ -19,6 +19,7 @@ import time
 import uuid
 from pathlib import Path
 from ctypes import wintypes
+from typing import Callable
 
 DEFAULT_CHECK_INTERVAL = 10.0
 DEFAULT_RESUME_GAP = 90.0
@@ -375,6 +376,7 @@ class FocusCheckSupervisor:
         stop_file: Path | None = None,
         stop_ack_file: Path | None = None,
         heartbeat_path: Path | None = None,
+        process_launcher: Callable[..., subprocess.Popen] | None = None,
     ) -> None:
         self.target_script = target_script
         self.python_executable = python_executable
@@ -385,6 +387,7 @@ class FocusCheckSupervisor:
         self.force_start = bool(force_start)
         self.stop_event = threading.Event()
         self.child: subprocess.Popen[str] | None = None
+        self._process_launcher = process_launcher or subprocess.Popen
         self.last_tick = time.monotonic()
         self.current_delay = self.restart_delay
         self._ctrl_handler = None
@@ -465,7 +468,8 @@ class FocusCheckSupervisor:
             creationflags |= getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
             creationflags |= getattr(subprocess, "CREATE_NO_WINDOW", 0)
         try:
-            self.child = subprocess.Popen(
+            launcher = getattr(self, "_process_launcher", subprocess.Popen)
+            self.child = launcher(
                 cmd,
                 cwd=str(self.target_script.parent),
                 env=env,
