@@ -527,6 +527,45 @@ class EngineV2MatchingTests(unittest.TestCase):
         dialog_cls.return_value.grab_set.assert_called_once()
         self.assertTrue(engine._subpopup_active)
 
+    def test_subpopup_construction_failure_releases_active_latch(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        app = mock.Mock()
+        app.root = mock.Mock()
+        app._runtime_state = None
+        app.settings = {
+            "paused": False,
+            "pause_when_inactive_or_lid_closed": False,
+            "website_flags": [{"domain": "reddit.com", "enabled": True, "cooldown_minutes": 0, "severity": 2}],
+        }
+        engine = EngineV2(app, activity_provider=lambda: {"url": "https://reddit.com", "title": "Reddit", "hwnd": 456})
+
+        with mock.patch(
+            "focuscheck.monitoring.engine_v2.V2SubPopupDialog",
+            side_effect=RuntimeError("construction failed"),
+        ):
+            engine._maybe_show_subpopup()
+
+        self.assertFalse(engine._subpopup_active)
+        self.assertIsNone(engine._subpopup_dialog)
+
+    def test_subpopup_shutdown_closes_owned_dialog(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        engine = EngineV2.__new__(EngineV2)
+        engine._subpopup_generation = 4
+        engine._subpopup_active = True
+        dialog = mock.Mock()
+        engine._subpopup_dialog = dialog
+        engine._timers = mock.Mock()
+
+        engine.shutdown()
+
+        dialog.destroy.assert_called_once_with()
+        engine._timers.close.assert_called_once_with()
+        self.assertFalse(engine._subpopup_active)
+        self.assertIsNone(engine._subpopup_dialog)
+
     def test_activity_provider_tracks_active_window_duration_without_real_browser(self):
         from focuscheck.monitoring.engine_v2 import EngineV2
 

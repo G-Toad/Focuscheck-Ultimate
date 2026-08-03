@@ -33,6 +33,8 @@ class EngineV2(BaseEngine):
         super().__init__(app)
         self._last_hwnd = None
         self._subpopup_active = False
+        self._subpopup_dialog = None
+        self._subpopup_generation = 0
         self._settings = None
         self._activity_provider = activity_provider or get_active_window_info
         runtime_clock = getattr(getattr(app, "_runtime_state", None), "clock", None)
@@ -92,6 +94,15 @@ class EngineV2(BaseEngine):
         self._schedule_subpopup_check()
 
     def shutdown(self):
+        self._subpopup_generation += 1
+        dialog = self._subpopup_dialog
+        self._subpopup_dialog = None
+        self._subpopup_active = False
+        if dialog is not None:
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
         if self._timers is not None:
             self._timers.close()
 
@@ -182,6 +193,8 @@ class EngineV2(BaseEngine):
         entry, domain = match
         severity = entry.get("severity", 2)
         self._subpopup_active = True
+        self._subpopup_generation = getattr(self, "_subpopup_generation", 0) + 1
+        generation = self._subpopup_generation
 
         try:
             entry_index = next(index for index, candidate in enumerate(flags) if candidate is entry)
@@ -226,7 +239,10 @@ class EngineV2(BaseEngine):
             return bool(result)
 
         def _finish():
+            if generation != self._subpopup_generation:
+                return
             self._subpopup_active = False
+            self._subpopup_dialog = None
 
         def _update_cooldown():
             try:
@@ -275,17 +291,30 @@ class EngineV2(BaseEngine):
             _on_yes()
             return
 
-        dialog = V2SubPopupDialog(
-            self.app.root,
-            domain=domain,
-            severity=severity,
-            on_yes=_on_yes,
-            on_no=_on_no,
-        )
+        try:
+            dialog = V2SubPopupDialog(
+                self.app.root,
+                domain=domain,
+                severity=severity,
+                on_yes=_on_yes,
+                on_no=_on_no,
+            )
+            self._subpopup_dialog = dialog
+        except Exception:
+            _finish()
+            try:
+                get_logger().exception("v2 subpopup construction failed", exc_info=True)
+            except Exception:
+                pass
+            return
         try:
             dialog.grab_set()
         except Exception:
-            pass
+            _finish()
+            try:
+                dialog.destroy()
+            except Exception:
+                pass
 
     def _match_flag(self, info, flags):
         title = (info.get("title") or "").lower()

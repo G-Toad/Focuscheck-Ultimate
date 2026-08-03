@@ -21,6 +21,7 @@ class V2SubPopupDialog(tk.Toplevel):
         self._on_yes = on_yes
         self._on_no = on_no
         self._severity = severity
+        self._closed = False
 
         self.overrideredirect(True)
         self.attributes("-topmost", True)
@@ -72,6 +73,7 @@ class V2SubPopupDialog(tk.Toplevel):
         self.bind("<Escape>", self._on_escape)
         self.bind("<Return>", self._on_return)
         self.bind("<KP_Enter>", self._on_return)
+        self.protocol("WM_DELETE_WINDOW", self._no)
         try:
             yes_btn.focus_set()
         except Exception:
@@ -89,6 +91,9 @@ class V2SubPopupDialog(tk.Toplevel):
         return "break"
 
     def _yes(self):
+        if self._closed:
+            return
+        self._closed = True
         try:
             if callable(self._on_yes):
                 self._on_yes()
@@ -96,11 +101,18 @@ class V2SubPopupDialog(tk.Toplevel):
             self.destroy()
 
     def _no(self):
+        if self._closed:
+            return
+        self._closed = True
         try:
             if callable(self._on_no):
                 self._on_no()
         finally:
             self.destroy()
+
+    def destroy(self):
+        self._closed = True
+        return super().destroy()
 
 
 def _format_geometry(w, h, x, y):
