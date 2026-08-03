@@ -360,12 +360,6 @@ class AdvancedSettingsWindow(
         self.camera_show_face_detection_var = tk.BooleanVar(value=s.get("camera_show_face_detection", False))
         self.camera_invert_colors_var = tk.BooleanVar(value=s.get("camera_invert_colors", False))
 
-        # Adaptive brightness
-        self.camera_adaptive_brightness_enabled_var = tk.BooleanVar(value=s.get("camera_adaptive_brightness_enabled", False))
-        self.camera_adaptive_brightness_overexposed_var = tk.BooleanVar(value=s.get("camera_adaptive_brightness_overexposed", False))
-        self.camera_adaptive_brightness_dim_var = tk.BooleanVar(value=s.get("camera_adaptive_brightness_dim", False))
-        self.camera_adaptive_brightness_intensity_var = tk.DoubleVar(value=s.get("camera_adaptive_brightness_intensity", 0.5))
-
         # Biodata Display
         self.biodata_enabled_var = tk.BooleanVar(value=s.get("biodata_enabled", False))
         self.biodata_title_var = tk.StringVar(value=s.get("biodata_title", "Mr"))

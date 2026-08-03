@@ -15,6 +15,39 @@ from focuscheck.ui.schema_controls import (
 
 
 class SettingsSchemaContractTests(unittest.TestCase):
+    def test_hand_built_controls_have_save_payload_bindings(self):
+        source_path = Path(__file__).resolve().parents[1] / "focuscheck" / "ui" / "windows.py"
+        tree = ast.parse(source_path.read_text(encoding="utf-8"))
+        init_vars: set[str] = set()
+        save_bindings: dict[str, set[str]] = {}
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            if node.name == "_init_vars":
+                for child in ast.walk(node):
+                    if not isinstance(child, ast.Assign):
+                        continue
+                    for target in child.targets:
+                        if isinstance(target, ast.Attribute) and target.attr.endswith("_var"):
+                            init_vars.add(target.attr)
+            elif node.name == "_save":
+                for child in ast.walk(node):
+                    if not isinstance(child, ast.Dict):
+                        continue
+                    for key, value in zip(child.keys, child.values):
+                        if not isinstance(key, ast.Constant) or not isinstance(key.value, str):
+                            continue
+                        for ref in ast.walk(value):
+                            if isinstance(ref, ast.Attribute) and ref.attr.endswith("_var"):
+                                save_bindings.setdefault(ref.attr, set()).add(key.value)
+
+        # webhook_var is intentionally retained only for legacy compatibility
+        # and is hidden from the active settings UI/save payload.
+        self.assertNotIn("webhook_var", save_bindings)
+        missing = sorted(init_vars - {"webhook_var"} - set(save_bindings))
+        self.assertEqual([], missing)
+
     def test_visible_save_keys_are_registered_and_state_only_keys_are_excluded(self):
         source_path = Path(__file__).resolve().parents[1] / "focuscheck" / "ui" / "windows.py"
         tree = ast.parse(source_path.read_text(encoding="utf-8"))
