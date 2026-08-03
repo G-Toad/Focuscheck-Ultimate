@@ -381,6 +381,8 @@ Activity-provider correction: foreground URL enrichment now runs only for suppor
 
 Dialog-native wrapper correction: the parallel `windows_utils` adapter now checks click-through/WNDPROC native results and retains overlay handles after failed `DestroyWindow` calls for retry, matching the primary native wrapper contract. Focused wrapper cleanup coverage passes; the full verifier target is now `513` unittest cases, while live dialog-overlay evidence remains pending.
 
+Overlay creation correction: both primary and dialog-native overlays now fail closed when layered attributes or Z-order setup is rejected, and `set_alpha()` exposes the observed native result. Focused alpha/failure coverage covers both wrappers; the full verifier target is now `514` unittest cases, while live dialog-overlay evidence remains pending.
+
 Supervisor fault-injection correction: `FocusCheckSupervisor` now accepts an optional process launcher at construction and uses it for child creation while retaining `subprocess.Popen` by default. Focused harness coverage verifies command, environment identity, explicit force-start forwarding, and launch-failure wait behavior; real supervisor stages still pass with the production launcher.
 
 Direct-shutdown correction: after gating supervisor stop requests on supervised composition, a real disposable `main.py --run-seconds=20` session exited `0` with zero error-pattern matches and zero `supervisor stop request durability is not confirmed` warnings; the supervised stop protocol remains covered separately.

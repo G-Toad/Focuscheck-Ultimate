@@ -1,6 +1,6 @@
 # Release Evidence
 
-The current automated baseline is `513` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `514` tests across 19 bounded stages; the detailed older bullets are retained as historical baseline context.
 
 The latest filesystem-composition checkpoint adds an injectable canonical data-root directory-creation boundary and regression coverage. Manual Windows, browser, power/session, installer/signing, target-user migration, and production-release evidence remain pending.
 
@@ -39,6 +39,8 @@ The latest overlay checkpoint retains native handles after a failed `DestroyWind
 The latest activity-provider checkpoint restricts CDP/UIA URL enrichment to supported browsers, preventing cross-process title collisions; focused coverage passes, while live browser/provider evidence remains pending.
 
 The latest dialog-native checkpoint aligns the parallel `windows_utils` wrapper with primary native failure/retry semantics for click-through, WNDPROC, and overlay destruction; focused coverage passes, while live dialog-overlay evidence remains pending.
+
+The latest overlay-creation checkpoint fails closed on layered-attribute or Z-order setup failure and exposes `set_alpha()` outcomes across both wrappers; focused coverage passes, while live dialog-overlay evidence remains pending.
 
 - The current verifier has `19` passing bounded stages. The test-category inventory explicitly separates automated categories from live/manual/opt-in categories. `state_restart_selftest` runs the real entrypoint three times in an isolated data root and verifies persisted manual pause, active snooze restoration, expired-snooze reconciliation, heartbeat pause truth, and clean shutdown.
 - Settings UI regression coverage verifies the composed Advanced Settings window uses the App persistence callback, not the UI module's repository import, and applies the normalized committed revision state.

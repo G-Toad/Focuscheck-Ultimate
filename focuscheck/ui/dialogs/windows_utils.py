@@ -257,8 +257,15 @@ class _WinClickThroughOverlay:
         if not self.hwnd:
             raise RuntimeError("CreateWindowExW failed")
         self._brush = gdi32.CreateSolidBrush((b << 16) | (g << 8) | r)
-        user32.SetLayeredWindowAttributes(self.hwnd, 0, 0, LWA_ALPHA)
-        user32.SetWindowPos(self.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_SHOWWINDOW | 0x0001 | 0x0002)
+        if not user32.SetLayeredWindowAttributes(self.hwnd, 0, 0, LWA_ALPHA):
+            self.destroy()
+            raise RuntimeError("SetLayeredWindowAttributes failed")
+        if not user32.SetWindowPos(
+            self.hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOACTIVATE | SWP_SHOWWINDOW | 0x0001 | 0x0002,
+        ):
+            self.destroy()
+            raise RuntimeError("SetWindowPos failed")
         user32.ShowWindow(self.hwnd, SW_SHOWNOACTIVATE)
 
     def _parse_rgb_hex(self, s, default=(0,0,0)):
@@ -279,13 +286,13 @@ class _WinClickThroughOverlay:
 
     def set_alpha(self, alpha):
         if not self.hwnd:
-            return
+            return False
         try:
             a = int(max(0, min(255, alpha * 255)))
             LWA_ALPHA = 0x00000002
-            ctypes.windll.user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA)
+            return bool(ctypes.windll.user32.SetLayeredWindowAttributes(self.hwnd, 0, a, LWA_ALPHA))
         except Exception:
-            pass
+            return False
 
     def destroy(self):
         hwnd = self.hwnd

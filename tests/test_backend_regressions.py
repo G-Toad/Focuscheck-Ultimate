@@ -1326,6 +1326,32 @@ class ImportHardeningTests(unittest.TestCase):
             self.assertTrue(overlay.destroy())
         self.assertEqual(1, gdi32.deleted)
 
+    def test_overlay_alpha_reports_native_attribute_failure(self):
+        from focuscheck.platform_specific import windows
+        from focuscheck.ui.dialogs import windows_utils
+
+        class User32:
+            def __init__(self, result):
+                self.result = result
+
+            def SetLayeredWindowAttributes(self, *_args):
+                return self.result
+
+        for result in (True, False):
+            with self.subTest(result=result):
+                core = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+                core.hwnd = 1
+                core._log_tag = "test"
+                with mock.patch.object(windows, "_user32", return_value=User32(result)):
+                    self.assertEqual(result, core.set_alpha(0.5))
+
+                dialog = windows_utils._WinClickThroughOverlay.__new__(windows_utils._WinClickThroughOverlay)
+                dialog.hwnd = 1
+                with mock.patch.object(
+                    windows_utils.ctypes, "windll", type("Dlls", (), {"user32": User32(result)})()
+                ):
+                    self.assertEqual(result, dialog.set_alpha(0.5))
+
     def test_watcher_declares_tray_and_session_native_signatures(self):
         import ctypes
         from ctypes import wintypes

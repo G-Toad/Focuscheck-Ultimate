@@ -516,14 +516,24 @@ class WinClickThroughOverlay:
         except Exception:
             pass
         try:
-            if not user32.SetWindowPos(self.hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW):
+            positioned = user32.SetWindowPos(
+                self.hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            )
+            if not positioned:
                 code, msg = _get_last_error_info()
                 from ..utils import get_logger
                 get_logger().warning("%s: SetWindowPos failed | err=%s msg=%s", self._log_tag, code, msg)
+                self.destroy()
+                raise RuntimeError(f"SetWindowPos failed for overlay | err={code} msg={msg}")
         except Exception:
-            pass
+            if self.hwnd:
+                self.destroy()
+            raise
         # Initial alpha 0
-        self.set_alpha(0.0)
+        if not self.set_alpha(0.0):
+            self.destroy()
+            raise RuntimeError("SetLayeredWindowAttributes failed for overlay")
         try:
             user32.RedrawWindow(self.hwnd, None, None, 0x0001)
         except Exception:
@@ -553,6 +563,7 @@ class WinClickThroughOverlay:
                 get_logger().info("%s: set alpha=%s", self._log_tag, alpha)
             except Exception:
                 pass
+        return bool(ok)
 
     def destroy(self):
         brush = self._brush
