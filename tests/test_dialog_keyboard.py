@@ -440,6 +440,19 @@ class DialogKeyboardTests(unittest.TestCase):
         self.assertTrue(prompt._closed)
         prompt.destroy.assert_called_once_with()
         self.assertEqual([True], submitted)
+        from focuscheck.ui.prompt_coordinator import PromptOutcome
+        self.assertEqual(PromptOutcome.COMPLETED, prompt.outcome)
+
+    def test_v1_and_v2_dialogs_retain_first_interruption_outcome(self):
+        from focuscheck.ui.dialogs.prompt_dialog import PromptDialog
+        from focuscheck.ui.dialogs.v2_prompt_dialog import V2PromptDialog
+        from focuscheck.ui.prompt_coordinator import PromptOutcome
+
+        for dialog_type in (PromptDialog, V2PromptDialog):
+            dialog = dialog_type.__new__(dialog_type)
+            dialog.set_interruption_outcome(PromptOutcome.INTERRUPTED_BY_PAUSE)
+            dialog.set_interruption_outcome(PromptOutcome.COMPLETED)
+            self.assertEqual(PromptOutcome.INTERRUPTED_BY_PAUSE, dialog.outcome)
 
     def test_follow_up_dialog_callbacks_survive_destroy_failures(self):
         from focuscheck.ui.dialogs.focus_prompt_dialog import FocusPromptDialog

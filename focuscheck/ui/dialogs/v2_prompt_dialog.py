@@ -41,6 +41,7 @@ except Exception:  # pragma: no cover - fallback
         return {"type": type(value).__name__, "length": len(str(value or "")), "sha256": None}
 
 from ...utils.timers import TimerRegistry
+from ..prompt_coordinator import PromptOutcome
 
 
 class V2PromptDialog(
@@ -64,6 +65,7 @@ class V2PromptDialog(
         self._task_clock = getattr(getattr(app_ref, "_runtime_state", None), "clock", None)
         self._dialog_shown_at = self._monotonic_now()
         self._closed = False
+        self._outcome = None
         self._submit_notified = False
         self._active_timers = set()
         self._timer_names = {}
@@ -625,6 +627,8 @@ class V2PromptDialog(
     def _close(self):
         if self._closed:
             return
+        if getattr(self, "_outcome", None) is None:
+            self._outcome = PromptOutcome.COMPLETED
         self._closed = True
         try:
             self._cleanup_camera_feed()
@@ -649,6 +653,14 @@ class V2PromptDialog(
             except Exception:
                 pass
         self._notify_submit()
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    def set_interruption_outcome(self, outcome):
+        if getattr(self, "_outcome", None) is None:
+            self._outcome = PromptOutcome(outcome)
 
     def _notify_submit(self):
         if self._submit_notified:

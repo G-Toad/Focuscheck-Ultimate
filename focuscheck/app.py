@@ -776,6 +776,7 @@ class App:
         self._current_prompt = None
         if prompt is None:
             return
+        self._mark_prompt_interruption(prompt, PromptOutcome.INTERRUPTED_BY_SHUTDOWN)
         try:
             prompt._closed = True
         except Exception:
@@ -1631,6 +1632,10 @@ class App:
             self._current_prompt = None
             return False
         try:
+            self._mark_prompt_interruption(prompt, self._prompt_interruption_outcome(source))
+        except Exception:
+            pass
+        try:
             prompt._closed = True
         except Exception:
             pass
@@ -1660,6 +1665,12 @@ class App:
         except Exception:
             pass
         return True
+
+    @staticmethod
+    def _mark_prompt_interruption(prompt, outcome):
+        setter = getattr(prompt, "set_interruption_outcome", None)
+        if callable(setter):
+            setter(outcome)
 
     @staticmethod
     def _prompt_interruption_outcome(source):
@@ -2336,6 +2347,10 @@ class App:
 
                             # Mark as closed
                             try:
+                                self._mark_prompt_interruption(
+                                    self._current_prompt,
+                                    PromptOutcome.INTERRUPTED_BY_SETTINGS,
+                                )
                                 self._current_prompt._closed = True
                             except Exception:
                                 pass

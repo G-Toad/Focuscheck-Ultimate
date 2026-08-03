@@ -34,6 +34,7 @@ except ImportError:
         pass
 
 from ...utils.timers import TimerRegistry
+from ..prompt_coordinator import PromptOutcome
 
 
 class PromptDialog(
@@ -98,6 +99,7 @@ class PromptDialog(
         self._overdrive = False
         self._overdrive_stage4 = False
         self._closed = False
+        self._outcome = None
         self._submit_notified = False
         self._response_log_failed = False
         self._hold_start = None
@@ -742,6 +744,7 @@ class PromptDialog(
             pass
         # Reset overdrive flags on completion
         self._overdrive_stage4 = False
+        self._outcome = PromptOutcome.COMPLETED
         self._closed = True
         # Finalization must continue if one cleanup owner fails; otherwise a
         # timer exception can leave the prompt visible and the App uninformed.
@@ -760,6 +763,14 @@ class PromptDialog(
             except Exception:
                 pass
         self._notify_submit()
+
+    @property
+    def outcome(self):
+        return self._outcome
+
+    def set_interruption_outcome(self, outcome):
+        if getattr(self, "_outcome", None) is None:
+            self._outcome = PromptOutcome(outcome)
 
     def _notify_submit(self):
         """Notify the owning app after the prompt has been fully cleaned up."""
