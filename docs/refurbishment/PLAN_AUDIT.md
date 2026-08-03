@@ -243,6 +243,8 @@ Native verification correction: The bounded Windows overlay stage now runs `20` 
 
 Supervisor verification correction: The stop protocol now has an explicit rejection matrix for unsupported protocol versions, missing/non-matching identity, PID, generation, process-start, malformed-time, stale, and future-skew requests, plus a valid-request case.
 
+Tk resource correction: The real withdrawn-root leak stage now also constructs and closes the Phrase Acronym challenge and V2 website subpopup, in addition to the reminder, V1/V2 prompt, and Focus/Waste surfaces. It reports zero remaining Tk children and zero non-daemon thread leaks.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -264,6 +266,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
-Latest verification checkpoint: `441` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `58bbaae`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
+Latest verification checkpoint: `441` unittest cases and all 18 bounded stages pass with zero failed stages; the machine-readable report is tied to code commit `1a5b617`. The native overlay stage records `20/20` lifecycle cycles and `100/100` region updates, and the withdrawn-Tk resource stage reports zero remaining children and non-daemon thread leaks. Manual Windows, browser, hardware, installer/signing, target-user migration, privacy, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
