@@ -99,6 +99,7 @@ class PromptDialog(
         self._overdrive_stage4 = False
         self._closed = False
         self._submit_notified = False
+        self._response_log_failed = False
         self._hold_start = None
         # Timer registry for cleanup
         self._active_timers = set()
@@ -684,7 +685,7 @@ class PromptDialog(
                 )
             except Exception:
                 pass
-            append_log(
+            log_ok = append_log(
                 response=choice,
                 latency_ms=latency_ms,
                 settings=self.settings,
@@ -693,7 +694,14 @@ class PromptDialog(
                 overdrive_deadline_s=int(self.settings["overdrive_after_seconds"]),
                 clock=getattr(self, "_task_clock", None),
             )
+            if log_ok is False:
+                self._response_log_failed = True
+                try:
+                    get_logger().error("append_log returned false; response durability is not confirmed")
+                except Exception:
+                    pass
         except Exception as e:
+            self._response_log_failed = True
             try:
                 get_logger().error("append_log failed: %s", e)
             except Exception:

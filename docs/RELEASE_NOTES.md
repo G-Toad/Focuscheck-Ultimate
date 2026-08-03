@@ -2,6 +2,8 @@
 
 ## Current checkpoint
 
+- V1 prompt response logging now exposes an explicit CSV durability failure while preserving cleanup and owner notification.
+
 - Branch: `main`
 - Automated test baseline: 342 unittest cases.
 - Task deadline UI and database overdue transitions now preserve `failed`/`timed_out` semantics instead of allowing overdue completion to be recorded as success.

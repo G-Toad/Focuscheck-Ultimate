@@ -202,12 +202,13 @@ class DialogKeyboardTests(unittest.TestCase):
         prompt._cleanup_all_timers = mock.Mock(side_effect=RuntimeError("timer cleanup"))
         prompt.destroy = mock.Mock()
 
-        with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log"), mock.patch(
+        with mock.patch("focuscheck.ui.dialogs.prompt_dialog.append_log", return_value=False), mock.patch(
             "focuscheck.ui.dialogs.prompt_dialog.get_logger"
         ):
             prompt._finish("Studying")
 
         self.assertTrue(prompt._closed)
+        self.assertTrue(prompt._response_log_failed)
         prompt.destroy.assert_called_once_with()
         self.assertEqual([True], submitted)
 
