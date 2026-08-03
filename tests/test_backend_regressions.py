@@ -749,7 +749,7 @@ class ImportHardeningTests(unittest.TestCase):
 
         names = (
             "RegisterClassExW", "CreateWindowExW", "DefWindowProcW", "BeginPaint",
-            "GetClientRect", "EndPaint", "FillRect", "GetClassLongPtrW", "SetClassLongPtrW",
+            "GetClientRect", "EndPaint", "FillRect", "GetClassLongPtrW", "GetClassLongW", "SetClassLongPtrW",
             "ShowWindow", "SetWindowPos", "RedrawWindow", "SetLayeredWindowAttributes",
             "DestroyWindow",
         )
@@ -772,6 +772,43 @@ class ImportHardeningTests(unittest.TestCase):
             user32.FillRect.argtypes,
         )
         self.assertEqual([wintypes.LPCWSTR], kernel32.GetModuleHandleW.argtypes)
+
+    def test_windows_declares_overlay_and_gdiplus_signatures(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck.platform_specific import windows
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "RegisterClassExW", "CreateWindowExW", "DefWindowProcW", "BeginPaint",
+                "GetClientRect", "EndPaint", "FillRect", "GetClassLongPtrW",
+                "GetClassLongW", "SetClassLongPtrW", "ShowWindow", "SetWindowPos",
+                "RedrawWindow", "SetLayeredWindowAttributes", "DestroyWindow",
+            )
+        })()
+        gdi32 = type("Gdi32", (), {
+            name: Api() for name in ("CreateSolidBrush", "DeleteObject")
+        })()
+        kernel32 = type("Kernel32", (), {"GetModuleHandleW": Api()})()
+        windows._configure_overlay_api(user32, gdi32, kernel32)
+        self.assertEqual([wintypes.HWND, ctypes.c_int], user32.GetClassLongPtrW.argtypes)
+        self.assertEqual([wintypes.HWND, ctypes.c_int], user32.GetClassLongW.argtypes)
+
+        gdiplus = type("GdiPlus", (), {
+            name: Api() for name in (
+                "GdiplusStartup", "GdiplusShutdown", "GdipCreateBitmapFromFile",
+                "GdipCreateHICONFromBitmap", "GdipDisposeImage",
+            )
+        })()
+        windows._configure_gdiplus_api(gdiplus)
+        self.assertEqual(ctypes.c_int, gdiplus.GdiplusStartup.restype)
+        self.assertEqual([ctypes.c_ulonglong], gdiplus.GdiplusShutdown.argtypes)
+        self.assertEqual([ctypes.c_void_p], gdiplus.GdipDisposeImage.argtypes)
 
     def test_dialog_overlay_declares_lifecycle_signatures(self):
         import ctypes

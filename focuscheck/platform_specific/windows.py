@@ -96,6 +96,8 @@ def _configure_overlay_api(user32, gdi32, kernel32):
     user32.FillRect.restype = ctypes.c_int
     user32.GetClassLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int]
     user32.GetClassLongPtrW.restype = LONG_PTR
+    user32.GetClassLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.GetClassLongW.restype = ctypes.c_ulong
     user32.SetClassLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LONG_PTR]
     user32.SetClassLongPtrW.restype = LONG_PTR
     user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
@@ -366,9 +368,9 @@ class WinClickThroughOverlay:
                 user32.GetClientRect(h, ctypes.byref(rect))
                 # Fill with class background brush
                 try:
-                    hbr = ctypes.windll.user32.GetClassLongPtrW(h, -10)
+                    hbr = user32.GetClassLongPtrW(h, -10)
                 except Exception:
-                    hbr = ctypes.windll.user32.GetClassLongW(h, -10)
+                    hbr = user32.GetClassLongW(h, -10)
                 user32.FillRect(hdc, ctypes.byref(rect), hbr)
                 user32.EndPaint(h, ctypes.byref(ps))
                 return 0
@@ -541,6 +543,30 @@ class _GdiplusStartupInput(ctypes.Structure):
     ]
 
 
+def _configure_gdiplus_api(gdiplus):
+    """Declare signatures for GDI+ startup and icon conversion calls."""
+    gdiplus.GdiplusStartup.argtypes = [
+        ctypes.POINTER(ctypes.c_ulonglong),
+        ctypes.POINTER(_GdiplusStartupInput),
+        ctypes.c_void_p,
+    ]
+    gdiplus.GdiplusStartup.restype = ctypes.c_int
+    gdiplus.GdiplusShutdown.argtypes = [ctypes.c_ulonglong]
+    gdiplus.GdiplusShutdown.restype = None
+    gdiplus.GdipCreateBitmapFromFile.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.POINTER(ctypes.c_void_p),
+    ]
+    gdiplus.GdipCreateBitmapFromFile.restype = ctypes.c_int
+    gdiplus.GdipCreateHICONFromBitmap.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(wintypes.HICON),
+    ]
+    gdiplus.GdipCreateHICONFromBitmap.restype = ctypes.c_int
+    gdiplus.GdipDisposeImage.argtypes = [ctypes.c_void_p]
+    gdiplus.GdipDisposeImage.restype = ctypes.c_int
+
+
 def ensure_gdiplus_started() -> bool:
     """Ensure GDI+ is initialized."""
     global _GDIPLUS_TOKEN
@@ -548,6 +574,7 @@ def ensure_gdiplus_started() -> bool:
         return True
     try:
         gdiplus = ctypes.windll.gdiplus
+        _configure_gdiplus_api(gdiplus)
     except Exception:
         return False
     startup_input = _GdiplusStartupInput(1, None, False, False)
@@ -564,7 +591,9 @@ def gdiplus_shutdown():
     global _GDIPLUS_TOKEN
     if _GDIPLUS_TOKEN is not None:
         try:
-            ctypes.windll.gdiplus.GdiplusShutdown(_GDIPLUS_TOKEN)
+            gdiplus = ctypes.windll.gdiplus
+            _configure_gdiplus_api(gdiplus)
+            gdiplus.GdiplusShutdown(_GDIPLUS_TOKEN)
         except Exception:
             pass
         _GDIPLUS_TOKEN = None
@@ -579,6 +608,7 @@ def create_hicon_from_image(path: str) -> Optional[wintypes.HICON]:
     if not ensure_gdiplus_started():
         return None
     gdiplus = ctypes.windll.gdiplus
+    _configure_gdiplus_api(gdiplus)
     image = ctypes.c_void_p()
     status = gdiplus.GdipCreateBitmapFromFile(ctypes.c_wchar_p(path), ctypes.byref(image))
     if status != 0 or not image:
