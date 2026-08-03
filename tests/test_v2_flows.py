@@ -48,6 +48,28 @@ class V2FlowTests(unittest.TestCase):
         self.assertEqual(2.5, v1._monotonic_now())
         self.assertEqual(2.5, v2._monotonic_now())
 
+    def test_standalone_v2_suppresses_active_snooze_but_allows_expired_snooze(self):
+        from focuscheck.monitoring.engine_v2 import EngineV2
+
+        class App:
+            _current_prompt = None
+            _intervention_active = False
+            guard = None
+            settings = {}
+
+        engine = EngineV2.__new__(EngineV2)
+        engine.app = App()
+        engine._subpopup_active = False
+        engine._settings = {
+            "snooze_until_utc": "2030-01-01T00:05:00+00:00",
+            "pause_when_inactive_or_lid_closed": False,
+        }
+        engine._activity_clock = lambda: datetime(2030, 1, 1, tzinfo=timezone.utc)
+
+        self.assertFalse(engine._should_check_subpopup())
+        engine._settings["snooze_until_utc"] = "2029-12-31T23:55:00+00:00"
+        self.assertTrue(engine._should_check_subpopup())
+
     def test_v1_anti_habit_hold_uses_composed_monotonic_clock(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
 

@@ -166,9 +166,22 @@ class EngineV2(BaseEngine):
                 # Preserve standalone/test adapter compatibility, but do not
                 # allow a broken coordinator to enable a website intervention.
                 return False
+        if bool(settings.get("paused", False)):
+            return False
         try:
-            if bool(settings.get("paused", False)):
-                return False
+            snooze_until = str(settings.get("snooze_until_utc", "") or "").strip()
+            if snooze_until:
+                until = datetime.fromisoformat(snooze_until.replace("Z", "+00:00"))
+                if until.tzinfo is None:
+                    until = until.replace(tzinfo=timezone.utc)
+                now = self._activity_clock() if callable(self._activity_clock) else datetime.now(timezone.utc)
+                if until.astimezone(timezone.utc) > now.astimezone(timezone.utc):
+                    return False
+        except (TypeError, ValueError, OverflowError):
+            # Invalid legacy snooze values are not treated as active pauses;
+            # settings normalization remains responsible for repairing them.
+            pass
+        try:
             if bool(settings.get("pause_when_inactive_or_lid_closed", True)):
                 guard = getattr(self.app, "guard", None)
                 if guard is not None and guard.should_pause():
