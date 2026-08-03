@@ -272,6 +272,8 @@ Export path correction: The same export boundary now rejects symlinked parent co
 
 ## Explicit Scope Boundary
 
+Correction: diagnostic bundle creation now rejects symlinked output files and parent path components before creating temporary files or replacing the destination; focused tests cover both boundaries, with symlink cases skipped where this Windows shell lacks symlink privileges.
+
 The plan itself says that static inspection must not be treated as proof of application launch, startup registry behavior, lock/sleep/resume, real browser detection, overlays, packaging, or user-data migration. Those items were checked for evidence and remain unverified or missing; they are not silently inferred from source presence or green automated tests.
 
 ## Verdict
