@@ -1,6 +1,8 @@
 # Release Evidence
 
-The current automated baseline is `536` tests across 19 bounded stages at source checkpoint `456f342`; the detailed older bullets are retained as historical baseline context.
+The current automated baseline is `537` tests across 19 bounded stages at source checkpoint `91e8d31`; the detailed older bullets are retained as historical baseline context.
+
+The latest browser-session safety checkpoint bounds reads even when a session file changes after its initial stat, with an oversized-file regression. Focused browser tests and the full verifier passed; live browser evidence remains pending.
 
 The latest heartbeat metadata checkpoint makes lifecycle snapshot serialization capability-safe for injected adapters and adds regression coverage for mapping, missing, and failing snapshot shapes. Focused lifecycle tests and the full verifier passed; manual Windows and release evidence remains pending.
 

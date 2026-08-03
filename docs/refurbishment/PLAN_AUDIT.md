@@ -12,6 +12,8 @@ Latest composition correction: `AppDependencies` now supports an `activity_provi
 
 Latest heartbeat metadata correction: lifecycle heartbeat snapshots now accept callable mappings, direct mappings, or missing/raising adapter methods without suppressing heartbeat publication. The full verifier passed at source checkpoint `456f342` with 536 tests across 19 stages; manual Windows and release evidence remains pending.
 
+Latest browser-session safety correction: recovery files are now read with a bounded stream after the initial size check, preventing a growing session file from bypassing the parser budget. Oversized-file rejection is covered; the full verifier passed at source checkpoint `91e8d31` with 537 tests across 19 stages.
+
 Latest correction: all active native callback factories in the primary Windows and dialog wrappers now use the platform-safe `WINFUNCTYPE`/`CFUNCTYPE` fallback; source-level regression coverage prevents direct hard-coded callback construction from returning.
 
 Latest native-boundary correction: the supervisor console handler and prompt monitor enumerator now use the same platform-safe callback factory, extending the source contract across all active native callback sites.
