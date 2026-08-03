@@ -46,7 +46,7 @@ class CropAdjustmentWindow(tk.Toplevel):
     - Test preview mode
     """
 
-    def __init__(self, parent, settings, on_settings_updated):
+    def __init__(self, parent, settings, on_settings_updated, persist_settings=None):
         """
         Initialize crop adjustment window.
 
@@ -54,11 +54,13 @@ class CropAdjustmentWindow(tk.Toplevel):
             parent: Parent window
             settings: Settings dictionary
             on_settings_updated: Callback function(new_settings) when settings are applied
+            persist_settings: Optional App-owned callback receiving the full draft
         """
         super().__init__(parent)
 
         self.settings = settings.copy()  # Work with a copy until applied
         self.on_settings_updated = on_settings_updated
+        self.persist_settings = persist_settings
         self.original_settings = settings.copy()  # Keep original for dirty checking
         self.has_unsaved_changes = False  # Track if settings have been modified
 
@@ -1906,7 +1908,8 @@ class CropAdjustmentWindow(tk.Toplevel):
             # updated only after the durable write succeeds.
             candidate = dict(self.original_settings)
             candidate.update(manual_crop_settings)
-            result = save_settings(candidate)
+            persist = getattr(self, "persist_settings", None) or save_settings
+            result = persist(candidate)
             if not result:
                 messagebox.showerror(
                     "Save Error",
@@ -1915,10 +1918,16 @@ class CropAdjustmentWindow(tk.Toplevel):
                 )
                 return False
 
-            for key, value in manual_crop_settings.items():
+            committed = getattr(result, "committed_settings", None)
+            committed_crop = (
+                {key: value for key, value in committed.items() if key.startswith("manual_crop_")}
+                if isinstance(committed, dict)
+                else manual_crop_settings
+            )
+            for key, value in committed_crop.items():
                 self.original_settings[key] = value
             if callable(self.on_settings_updated):
-                self.on_settings_updated(manual_crop_settings)
+                self.on_settings_updated(committed_crop)
 
             # Mark as saved
             self.has_unsaved_changes = False

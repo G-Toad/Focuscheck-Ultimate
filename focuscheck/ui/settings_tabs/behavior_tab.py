@@ -803,15 +803,17 @@ class BehaviorTabMixin:
             # contract accepted the complete settings document.
             candidate = dict(self.settings)
             candidate.update(new_settings)
-            result = save_settings(candidate)
+            persist = getattr(self, "persist_settings", None) or save_settings
+            result = persist(candidate)
             if not result:
                 messagebox.showerror(
                     "Save Error",
                     getattr(result, "error", None) or "Camera settings could not be written durably.",
                 )
                 return
-            # Merge into live settings only after durable persistence succeeds.
-            self.settings.update(new_settings)
+            # Apply normalized committed state when available.
+            committed = getattr(result, "committed_settings", None)
+            self.settings.update(committed if isinstance(committed, dict) else new_settings)
         except Exception as e:
             messagebox.showerror("Save Error", f"Failed to save camera settings: {e}")
             return
@@ -833,7 +835,12 @@ class BehaviorTabMixin:
                 if hasattr(self, 'crop_summary_label'):
                     self.crop_summary_label.config(text=self._get_crop_summary_text())
 
-            CropAdjustmentWindow(self, self.settings, on_settings_updated)
+            CropAdjustmentWindow(
+                self,
+                self.settings,
+                on_settings_updated,
+                persist_settings=getattr(self, "persist_settings", None),
+            )
 
         except ImportError as e:
             messagebox.showerror("Error", f"Could not load crop adjustment window: {e}")

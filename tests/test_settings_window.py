@@ -54,6 +54,28 @@ class SettingsWindowSaveTests(unittest.TestCase):
         self.assertEqual(2.0, editor.original_settings["manual_crop_zoom"])
         self.assertEqual([{"manual_crop_zoom": 2.0}], updated)
 
+    def test_crop_editor_uses_injected_persistence_and_committed_crop(self):
+        from focuscheck.ui.crop_adjustment_window import CropAdjustmentWindow
+
+        updated = []
+        committed = {"manual_crop_zoom": 1.5, "manual_crop_box_width": 640, "settings_revision": 4}
+        persist = mock.Mock(return_value=type(
+            "Result", (), {"durable_write": True, "committed_settings": committed}
+        )())
+        editor = CropAdjustmentWindow.__new__(CropAdjustmentWindow)
+        editor.settings = {"manual_crop_zoom": 2.0, "manual_crop_box_width": 800}
+        editor.original_settings = {"manual_crop_zoom": 1.0, "manual_crop_box_width": 400}
+        editor.on_settings_updated = updated.append
+        editor.persist_settings = persist
+        editor.has_unsaved_changes = True
+        editor.title = mock.Mock()
+
+        self.assertTrue(editor._save_to_disk())
+        persist.assert_called_once()
+        self.assertEqual(2.0, persist.call_args.args[0]["manual_crop_zoom"])
+        self.assertEqual(1.5, editor.original_settings["manual_crop_zoom"])
+        self.assertEqual([{"manual_crop_zoom": 1.5, "manual_crop_box_width": 640}], updated)
+
     def test_camera_editor_does_not_apply_memory_changes_when_save_fails(self):
         from focuscheck.ui.settings_tabs.behavior_tab import BehaviorTabMixin
 
@@ -185,6 +207,24 @@ class SettingsWindowSaveTests(unittest.TestCase):
         finally:
             with contextlib.suppress(tk.TclError):
                 root.destroy()
+
+    def test_camera_settings_use_injected_persistence_and_committed_values(self):
+        from focuscheck.ui.settings_tabs.behavior_tab import BehaviorTabMixin
+
+        committed = {"camera_manual_brightness": 0.75, "settings_revision": 11}
+        persist = mock.Mock(return_value=type(
+            "Result", (), {"durable_write": True, "committed_settings": committed}
+        )())
+        owner = BehaviorTabMixin.__new__(BehaviorTabMixin)
+        owner.settings = {"camera_manual_brightness": 0.5, "settings_revision": 10}
+        owner.persist_settings = persist
+
+        with mock.patch("focuscheck.ui.settings_tabs.behavior_tab.messagebox.showinfo"):
+            owner._save_camera_adjustment_settings({"camera_manual_brightness": 0.9})
+
+        persist.assert_called_once()
+        self.assertEqual(0.9, persist.call_args.args[0]["camera_manual_brightness"])
+        self.assertEqual(committed, owner.settings)
 
     def test_save_payload_round_trips_representative_active_tabs(self):
         from focuscheck.settings.defaults import DEFAULT_SETTINGS
