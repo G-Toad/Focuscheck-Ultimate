@@ -20,6 +20,7 @@ from .website_flags import normalize_website_domain
 
 _settings_lock = threading.Lock()
 MAX_SETTINGS_FILE_BYTES = 2 * 1024 * 1024
+SETTINGS_MIGRATION_JOURNAL_FORMAT_VERSION = 1
 MAX_SETTINGS_KEYS = 1000
 MAX_SETTINGS_COLLECTION_ITEMS = 500
 MAX_SETTINGS_STRING_LENGTH = 8192
@@ -88,6 +89,7 @@ def _settings_sidecar_paths(settings_path):
 def _append_migration_event(path, *, source_version, target_version, outcome, detail=""):
     """Record migration metadata without copying settings values."""
     event = {
+        "format_version": SETTINGS_MIGRATION_JOURNAL_FORMAT_VERSION,
         "utc": datetime.now(timezone.utc).isoformat(),
         "source_schema": source_version,
         "target_schema": target_version,
@@ -99,8 +101,10 @@ def _append_migration_event(path, *, source_version, target_version, outcome, de
             handle.write(json.dumps(event, separators=(",", ":")) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
+        return True
     except OSError:
         get_logger().warning("settings migration journal unavailable", exc_info=True)
+        return False
 
 
 def _sha256_file(path):
@@ -116,6 +120,15 @@ def _migrate_legacy_settings(canonical_path):
     if os.environ.get("FOCUS_DATA_DIR"):
         return
     legacy = legacy_path("focus_settings.json")
+    if os.path.islink(legacy):
+        _append_migration_event(
+            _settings_sidecar_paths(canonical_path)["journal"],
+            source_version="legacy",
+            target_version=CURRENT_SETTINGS_SCHEMA_VERSION,
+            outcome="rejected_symlink",
+            detail="legacy settings source is a symlink",
+        )
+        return
     if os.path.abspath(legacy) == os.path.abspath(canonical_path) or not os.path.exists(legacy):
         return
     journal = _settings_sidecar_paths(canonical_path)["journal"]

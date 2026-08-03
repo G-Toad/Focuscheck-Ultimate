@@ -82,7 +82,30 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertTrue(legacy.exists())
             event = json.loads((root / "data" / "focus_settings.json.migration.jsonl").read_text(encoding="utf-8").splitlines()[-1])
             self.assertEqual("imported", event["outcome"])
+            self.assertEqual(1, event["format_version"])
             self.assertNotIn("interval_seconds", event["detail"])
+
+    def test_legacy_settings_symlink_is_rejected_without_import(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            legacy = root / "legacy" / "focus_settings.json"
+            canonical = root / "data" / "focus_settings.json"
+            legacy.parent.mkdir()
+            target = root / "outside-settings.json"
+            target.write_text('{"interval_seconds": 42}', encoding="utf-8")
+            try:
+                legacy.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable")
+            with mock.patch.dict(manager.os.environ, {"FOCUS_DATA_DIR": ""}, clear=False), \
+                    mock.patch.object(manager, "legacy_path", return_value=str(legacy)):
+                manager._migrate_legacy_settings(str(canonical))
+
+            self.assertFalse(canonical.exists())
+            event = json.loads((root / "data" / "focus_settings.json.migration.jsonl").read_text(encoding="utf-8").splitlines()[-1])
+            self.assertEqual("rejected_symlink", event["outcome"])
 
     def test_canonical_settings_win_and_legacy_conflict_is_preserved_by_hash(self):
         import json
