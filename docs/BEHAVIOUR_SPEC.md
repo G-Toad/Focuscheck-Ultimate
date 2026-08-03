@@ -12,6 +12,13 @@ This file defines externally observable behaviour that agents must preserve unle
 4. The child app writes heartbeat data.
 5. The supervisor logs child start and monitors child liveness.
 
+### Explicit Force Start
+
+1. Normal direct and supervised launch preserves a persisted manual pause.
+2. `main.py --force-start` explicitly overrides that pause for the direct run.
+3. `focuscheck_supervisor.py --run --force-start` forwards the same explicit override to its child.
+4. The legacy `FOCUSCHECK_FORCE_STARTED` environment variable is ignored; it must not silently change normal startup behaviour.
+
 ### Duplicate Supervisor Attempt
 
 1. A second supervisor attempts to start.
@@ -87,7 +94,7 @@ This file defines externally observable behaviour that agents must preserve unle
 
 ### User Accepts Intervention
 
-1. V2 prompt records intervention-active state.
+1. The App runtime coordinator owns the intervention lease and publishes intervention-active state.
 2. Intervention wizard receives the active settings source.
 3. Optional overlay creation respects `overlays_enabled`.
 4. Completion logs success and closes the prompt only after the intervention completes.

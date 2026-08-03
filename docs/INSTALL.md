@@ -6,6 +6,10 @@
 2. Install runtime dependencies with `py -3 -m pip install -r requirements.txt`.
 3. Run the supervised application with `start_focuscheck.bat`.
 
+Normal launch preserves a durable manual pause. To intentionally override it for
+one run, use `py -3 main.py --force-start` or
+`py -3 focuscheck_supervisor.py --run --force-start --base-dir .`.
+
 ## Release build
 
 1. Install pinned development dependencies with `py -3 -m pip install -r requirements-dev.txt`.

@@ -20,6 +20,7 @@ If `pytest` is not installed, use `unittest`; this repo does not require pytest 
 
 - Use `docs/SLICE_COMPLETION_STATUS.md` as the slice-level closeout map.
 - Launch with `start_focuscheck.bat`; confirm the supervisor starts `main.py` and writes `focuscheck_supervisor.log`.
+- With a persisted manual pause, confirm normal launch preserves it; separately run `--force-start` and confirm the explicit override is limited to that invocation.
 - Use tray Exit while supervised; confirm the app exits and the supervisor does not restart it.
 - Start a second supervisor; confirm it exits with a "Supervisor already running" message instead of launching a restart loop.
 - Use tray "Enable supervised run on startup"; confirm the Current User Run key points to `focuscheck_supervisor.py --run --base-dir`.
