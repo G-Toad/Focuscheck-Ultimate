@@ -4,7 +4,7 @@
 - Source folder: `FocusCheck_newest_20260802_221221/3`
 - Latest verified source checkpoint: `08e45f7`; 570 unittest cases and all 20 bounded verification stages pass with zero process leaks. Native tray menu error-reset calls now use a declared Kernel32 contract. Manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
-- Current automated baseline after hardening: `476` unittest cases passing across 19 bounded verification stages.
+- Historical baseline before the current evidence chain: `476` unittest cases across 19 bounded verification stages. The authoritative current checkpoint is recorded above.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
 - The verifier now has `19` passing bounded stages, including test-category inventory, real-entrypoint pause/snooze restart integration, and end-to-end data recovery.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.

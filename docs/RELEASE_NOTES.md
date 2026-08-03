@@ -1,8 +1,15 @@
 # FocusCheck Ultimate Refurbishment Checkpoint
 
+## Current automated checkpoint
+
+- Source checkpoint: `08e45f7`.
+- Full verifier: all 20 bounded stages passed, with 570 unittest cases and zero process leaks.
+- Native tray, overlay, and error-reporting ctypes boundaries now have explicit regression coverage.
+- Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`, and the packaged artifacts documented below predate the current source checkpoint and must be rebuilt before release.
+
 ## Current checkpoint
 
-- V1 prompt response logging now exposes an explicit CSV durability failure while preserving cleanup and owner notification.
+- V1 prompt response logging exposes an explicit CSV durability failure while preserving cleanup and owner notification.
 
 - Branch: `main`
 - Automated test baseline: 342 unittest cases.

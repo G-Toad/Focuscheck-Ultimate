@@ -1,5 +1,9 @@
 # Package Evidence
 
+## Currency warning
+
+The package hashes recorded below are historical artifacts from earlier source checkpoints. They are not release evidence for current source `08e45f7`; rebuild and revalidate both frozen executables after the next source checkpoint before promotion or release.
+
 - Build command: `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1 -OutputDir <disposable-temp-root>`
 - PyInstaller: `6.16.0`
 - Python: `3.11.9`
