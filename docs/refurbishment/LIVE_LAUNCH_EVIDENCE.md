@@ -218,6 +218,28 @@ This strengthens automated native resource evidence. It does not prove live
 multi-monitor DPI transitions, user-visible intervention restoration, or
 hardware-specific overlay behavior.
 
+## Extended direct runtime probe
+
+Command:
+
+```powershell
+$env:FOCUS_DATA_DIR = "$env:TEMP\\FocusCheckDurationProbe_<unique>"
+python main.py --run-seconds=180
+```
+
+Observed on 2026-08-03:
+
+- Exit code: `0` after approximately `181.8` seconds.
+- The isolated log contained zero matches for `Traceback`, `ERROR`, or
+  `Exception`.
+- The application process exited and the disposable data root was removed.
+- Expected caveats were recorded: three `SetForegroundWindow failed` warnings
+  in the non-interactive desktop session and one direct-launch warning that a
+  supervisor stop request was not confirmed.
+
+This is extended direct-entrypoint duration evidence, not production-duration
+supervisor or interactive Windows acceptance evidence.
+
 ## Current runtime probes
 
 On 2026-08-03, an isolated `python main.py --run-seconds=20` process exited

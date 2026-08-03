@@ -327,4 +327,6 @@ Data-recovery correction: `import_data()` now provides an explicit-confirmation,
 
 Direct-launch evidence correction: an isolated 60-second `main.py --run-seconds=60` process exited `0`, created the canonical runtime artifacts in a disposable data root, and produced no `Traceback`, `ERROR`, or `Exception` log matches. This is stronger timed-process evidence only and does not replace interactive, supervisor-restart, browser, power/session, native, or release gates.
 
+Extended direct-launch evidence correction: an isolated real `main.py --run-seconds=180` process exited `0` after approximately `181.8` seconds with zero `Traceback`, `ERROR`, or `Exception` log matches; the disposable root and application process were removed afterward. The run recorded three expected `SetForegroundWindow failed` warnings in the non-interactive session and a direct-launch supervisor-stop durability warning. This strengthens direct-entrypoint duration evidence but does not replace production-duration supervisor or interactive Windows acceptance.
+
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
