@@ -21,7 +21,7 @@ _PRIVATE_LOG_FIELD_RE = re.compile(
 _PRIVATE_LOG_CONTEXT_RE = re.compile(r"(?i)\b(phrase|reason|target|text)\s+(['\"])(.*?)\2")
 _PRIVATE_LOG_CONFIG_RE = re.compile(r"(?i)\bconfig\s*=.*$")
 _PRIVATE_LOG_LABEL_RE = re.compile(
-    r"(?i)(?:\b(returned|value|default|result)\s*:\s*|\bFound in app\.settings:\s*)"
+    r"(?i)(?:\b(returned|returning|value|default|result)\s*(?:\([^)]*\))?\s*:\s*|\bFound in (?:app\.settings|config file):\s*)"
     r".*?(?=\s+\(type:|$)"
 )
 _WINDOWS_USER_PATH_RE = re.compile(r"(?i)[A-Z]:\\Users\\[^\s|]+")
