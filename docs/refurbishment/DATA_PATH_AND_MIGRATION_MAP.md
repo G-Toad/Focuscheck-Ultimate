@@ -9,5 +9,5 @@
 - Task database: `focus_tasks.sqlite3`, SQLite `user_version=3` plus legacy column/index/timestamp repair; timestamps are stored as UTC.
 - CSV/JSONL logs are per-file locked and size-bounded.
 - Settings schema migration is pure and currently upgrades schema `1` to `2`.
-- Legacy task DB and event-log artifacts are imported into the canonical root without deletion; duplicate/conflicting sources are preserved by hash in `data_migration.jsonl` and conflict copies.
+- Legacy task DB and event-log artifacts are imported into the canonical root without deletion; duplicate/conflicting sources are preserved by hash in the versioned `data_migration.jsonl` journal and conflict copies. Symlink sources are rejected before canonical-target comparison, and a journal write failure is returned as an explicit migration outcome.
 - `structured_events.jsonl` is the canonical bounded operational metadata ledger; it contains lifecycle/runtime metadata only and never raw settings, task text, URLs, responses, or camera frames.
