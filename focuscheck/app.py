@@ -315,8 +315,8 @@ class App:
         self._engine = None
         self._engine_shutdown = False
         # App start times for runtime reporting
-        self._start_wall = datetime.now()
-        self._start_mono = time.monotonic()
+        self._start_wall = self._runtime_clock.now_utc()
+        self._start_mono = self._runtime_clock.monotonic()
         try:
             get_logger().info("App starting v%s | data_dir=%s", APP_VERSION, get_data_dir())
         except Exception:
@@ -341,7 +341,7 @@ class App:
         self._shutdown_requested = False
         self._shutdown_cleanup_complete = False
         self._heartbeat_sequence = 0
-        self._process_start_utc = datetime.now(timezone.utc).isoformat()
+        self._process_start_utc = self._now_utc().isoformat()
         # Snooze reminder tracking
         self._snooze_reminder_next_mono = 0.0
         self._snooze_reminder_dialog = None
@@ -622,6 +622,13 @@ class App:
 
     def _now_utc(self):
         """Return the coordinator clock value, with a standalone fallback."""
+        runtime_clock = getattr(self, "_runtime_clock", None)
+        now_utc = getattr(runtime_clock, "now_utc", None)
+        if callable(now_utc):
+            try:
+                return now_utc().astimezone(timezone.utc)
+            except (AttributeError, TypeError, ValueError, OverflowError):
+                pass
         state = getattr(self, "_runtime_state", None)
         clock = getattr(state, "clock", None)
         now_utc = getattr(clock, "now_utc", None)
@@ -631,6 +638,17 @@ class App:
             except (AttributeError, TypeError, ValueError, OverflowError):
                 pass
         return datetime.now(timezone.utc)
+
+    def _monotonic(self):
+        """Return the App-owned monotonic clock with legacy fallback."""
+        runtime_clock = getattr(self, "_runtime_clock", None)
+        monotonic = getattr(runtime_clock, "monotonic", None)
+        if callable(monotonic):
+            try:
+                return float(monotonic())
+            except (TypeError, ValueError, OverflowError):
+                pass
+        return time.monotonic()
 
     def _get_engine_class(self, settings):
         try:
@@ -719,7 +737,7 @@ class App:
         # Track next due for tray meter
         try:
             self._next_total_s = max(1, int(delay_ms // 1000))
-            self._next_due_mono = time.monotonic() + (delay_ms / 1000.0)
+            self._next_due_mono = self._monotonic() + (delay_ms / 1000.0)
         except Exception:
             self._next_total_s = None
             self._next_due_mono = None
@@ -983,12 +1001,12 @@ class App:
 
 
     def _slot_start_info(self):
-        now = datetime.now()
+        now = self._now_utc().astimezone()
         local_minute = now.strftime("%H:%M")
         return {
-            "utc_start": datetime.now(timezone.utc),
+            "utc_start": now.astimezone(timezone.utc),
             "local_minute": local_minute,
-            "mono_start": time.monotonic()
+            "mono_start": self._monotonic()
         }
 
     # --- Windows event hooks ---
@@ -1028,7 +1046,7 @@ class App:
             self.guard.set_sleeping(False)
         except Exception:
             pass
-        now = time.monotonic()
+        now = self._monotonic()
         if now - self._last_resume_mono > 2.0:  # debounce
             self._schedule_next(0)
         self._last_resume_mono = now
@@ -2323,7 +2341,7 @@ class App:
                 "generation": os.environ.get("FOCUSCHECK_CHILD_GENERATION", ""),
                 "pid": os.getpid(),
                 "process_start_utc": getattr(self, "_process_start_utc", ""),
-                "utc": datetime.now(timezone.utc).isoformat(),
+                "utc": self._now_utc().isoformat(),
                 "reason": str(reason)[:80],
             }
             temp_path = stop_path.with_name(f"{stop_path.name}.{os.getpid()}.{request['request_id']}.tmp")
@@ -2349,7 +2367,7 @@ class App:
         temp_path = None
         try:
             self._heartbeat_sequence = getattr(self, "_heartbeat_sequence", 0) + 1
-            process_start_utc = getattr(self, "_process_start_utc", datetime.now(timezone.utc).isoformat())
+            process_start_utc = getattr(self, "_process_start_utc", None) or self._now_utc().isoformat()
             runtime_state = getattr(self, "_runtime_state", None)
             if runtime_state is not None:
                 view_factory = getattr(type(runtime_state), "snapshot_view", None)
@@ -2398,7 +2416,7 @@ class App:
                 "protocol_version": 1,
                 "supervisor_id": os.environ.get("FOCUSCHECK_SUPERVISOR_ID", ""),
                 "generation": os.environ.get("FOCUSCHECK_CHILD_GENERATION", ""),
-                "utc": datetime.now(timezone.utc).isoformat(),
+                "utc": self._now_utc().isoformat(),
                 "pid": os.getpid(),
                 "process_start_utc": process_start_utc,
                 "sequence": self._heartbeat_sequence,
@@ -2431,7 +2449,7 @@ class App:
             self._heartbeat_write_failures = 0
         except Exception as exc:
             self._heartbeat_write_failures = getattr(self, "_heartbeat_write_failures", 0) + 1
-            now = time.monotonic()
+            now = self._monotonic()
             last_log = getattr(self, "_last_heartbeat_failure_log_mono", 0.0)
             count = self._heartbeat_write_failures
             if count <= 3 or count % 10 == 0 or now - last_log >= 60.0:
@@ -2516,7 +2534,7 @@ class App:
                 self._snooze_reminder_dialog = None
 
             # Check if it's time to show the reminder
-            now_mono = time.monotonic()
+            now_mono = self._monotonic()
             if self._snooze_reminder_next_mono == 0.0:
                 # First time snoozed, set initial timer
                 interval = int(self.settings.get("snooze_reminder_interval_seconds", 300))
@@ -2537,7 +2555,7 @@ class App:
                 self._snooze_reminder_dialog = None
                 # Reset timer for next reminder
                 interval = int(self.settings.get("snooze_reminder_interval_seconds", 300))
-                self._snooze_reminder_next_mono = time.monotonic() + interval
+                self._snooze_reminder_next_mono = self._monotonic() + interval
 
             try:
                 self._snooze_reminder_dialog = SnoozeReminderDialog(
@@ -2596,7 +2614,7 @@ class App:
                 except Exception:
                     self._gentle_reminder_dialog = None
 
-            now_mono = time.monotonic()
+            now_mono = self._monotonic()
             if self._gentle_reminder_next_mono == 0.0:
                 interval_minutes = max(1, int(self.settings.get("gentle_reminder_interval", 15)))
                 self._gentle_reminder_next_mono = now_mono + interval_minutes * 60
@@ -2607,7 +2625,7 @@ class App:
             def on_dismiss():
                 self._gentle_reminder_dialog = None
                 interval_minutes = max(1, int(self.settings.get("gentle_reminder_interval", 15)))
-                self._gentle_reminder_next_mono = time.monotonic() + interval_minutes * 60
+                self._gentle_reminder_next_mono = self._monotonic() + interval_minutes * 60
 
             self._gentle_reminder_dialog = GentleReminderDialog(
                 self.root, self.settings, on_dismiss=on_dismiss

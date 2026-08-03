@@ -5,11 +5,25 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
 
 class AppLifecycleTests(unittest.TestCase):
+    def test_slot_start_info_uses_app_owned_clock(self):
+        from focuscheck.app import App
+        from focuscheck.utils.clock import FakeClock
+
+        clock = FakeClock(datetime(2030, 1, 1, 12, 0, tzinfo=timezone.utc), current_monotonic=42.0)
+        app = App.__new__(App)
+        app._runtime_clock = clock
+
+        slot = app._slot_start_info()
+
+        self.assertEqual(clock.now_utc(), slot["utc_start"])
+        self.assertEqual(42.0, slot["mono_start"])
+
     def test_single_instance_mutex_handle_is_released(self):
         import focuscheck.utils.file_ops as file_ops
 
