@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from focuscheck.utils.paths import get_app_paths
 from focuscheck.utils.timers import TimerRegistry
@@ -27,6 +28,43 @@ class FakeScheduler:
 
 
 class RuntimeFoundationTests(unittest.TestCase):
+    def test_sequential_phrase_advancement_uses_app_persistence_boundary(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
+
+        committed = {
+            "custom_button_phrases_enabled": True,
+            "study_phrase_mode": "sequential",
+            "study_phrase_list": ["one", "two"],
+            "study_phrase_index": 1,
+        }
+        persist = mock.Mock(return_value=type(
+            "Result", (), {"durable_write": True, "committed_settings": committed}
+        )())
+        dialog = AntiHabitMixin.__new__(AntiHabitMixin)
+        dialog.settings = dict(committed, study_phrase_index=0)
+        dialog.persist_settings = persist
+
+        self.assertEqual("one", dialog._get_phrase_for_button("study"))
+        persist.assert_called_once()
+        self.assertEqual(1, persist.call_args.args[0]["study_phrase_index"])
+        self.assertEqual(1, dialog.settings["study_phrase_index"])
+
+    def test_sequential_phrase_does_not_claim_index_advanced_after_failed_save(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.anti_habit import AntiHabitMixin
+
+        persist = mock.Mock(return_value=False)
+        dialog = AntiHabitMixin.__new__(AntiHabitMixin)
+        dialog.settings = {
+            "custom_button_phrases_enabled": True,
+            "study_phrase_mode": "sequential",
+            "study_phrase_list": ["one", "two"],
+            "study_phrase_index": 0,
+        }
+        dialog.persist_settings = persist
+
+        self.assertEqual("one", dialog._get_phrase_for_button("study"))
+        self.assertEqual(0, dialog.settings["study_phrase_index"])
+
     def test_prompt_coordinator_ignores_duplicate_and_stale_completion(self):
         from focuscheck.ui.prompt_coordinator import PromptCoordinator
 

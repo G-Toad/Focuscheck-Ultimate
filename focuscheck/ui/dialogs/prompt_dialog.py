@@ -64,7 +64,8 @@ class PromptDialog(
     - CameraFeedMixin: Camera feed and photo capture
     """
 
-    def __init__(self, master, settings, on_submit, slot_start_dt, taskdb=None, app_ref=None):
+    def __init__(self, master, settings, on_submit, slot_start_dt, taskdb=None, app_ref=None,
+                 persist_settings=None):
         """
         Initialize the PromptDialog.
 
@@ -75,6 +76,7 @@ class PromptDialog(
             slot_start_dt: Datetime when this check-in slot started
             taskdb: Optional task database instance
             app_ref: Optional reference to main app instance
+            persist_settings: Optional App-owned callback for durable settings drafts
         """
         super().__init__(master)
         self.settings = settings
@@ -82,6 +84,7 @@ class PromptDialog(
         self.slot_start_dt = slot_start_dt
         self.taskdb = taskdb
         self.app_ref = app_ref
+        self.persist_settings = persist_settings
         self.start_monotonic = time.monotonic()
 
         # Calculate UI scale factor

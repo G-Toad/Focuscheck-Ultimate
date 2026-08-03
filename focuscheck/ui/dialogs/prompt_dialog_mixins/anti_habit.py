@@ -327,15 +327,28 @@ class AntiHabitMixin:
             index = self.settings.get(f"{prefix}_phrase_index", 0)
             phrase = phrase_list[index % len(phrase_list)]
 
-            # Update index for next time
-            self.settings[f"{prefix}_phrase_index"] = (index + 1) % len(phrase_list)
-
-            # Persist the updated index to disk so it advances on next dialog
-            try:
-                if save_settings:  # Use imported module function
-                    save_settings(self.settings)
-            except Exception:
-                pass
+            next_index = (index + 1) % len(phrase_list)
+            persist = getattr(self, "persist_settings", None)
+            if callable(persist):
+                # Keep the shared App snapshot unchanged until the durable
+                # callback accepts the complete draft and returns committed state.
+                candidate = dict(self.settings)
+                candidate[f"{prefix}_phrase_index"] = next_index
+                try:
+                    result = persist(candidate)
+                    committed = getattr(result, "committed_settings", None)
+                    if result and isinstance(committed, dict):
+                        self.settings.update(committed)
+                except Exception:
+                    pass
+            else:
+                # Standalone dialogs retain the historical compatibility path.
+                self.settings[f"{prefix}_phrase_index"] = next_index
+                try:
+                    if save_settings:
+                        save_settings(self.settings)
+                except Exception:
+                    pass
 
             return phrase
 

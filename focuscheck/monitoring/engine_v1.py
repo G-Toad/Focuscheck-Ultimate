@@ -17,4 +17,5 @@ class EngineV1(BaseEngine):
             slot_start_dt=slot_info,
             taskdb=getattr(self.app, "taskdb", None),
             app_ref=self.app,
+            persist_settings=getattr(self.app, "_persist_settings_draft", None),
         )
