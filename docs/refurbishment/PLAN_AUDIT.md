@@ -169,6 +169,8 @@ Current checkpoint addition: The latest `a517583` challenge-ownership checkpoint
 
 Current checkpoint addition: The current runtime-state slice routes gentle-reminder suppression through the coordinator's effective-pause API instead of raw settings pause state; live guard/lock/sleep evidence remains pending.
 
+Current checkpoint addition: The latest `e0c6642` runtime-state checkpoint passes the full verifier with `396` unittest cases and all 18 bounded stages; the report remains partial because native/manual evidence is not run.
+
 ## Final Acceptance Gates
 
 | Gate | Status | Reason |
@@ -190,6 +192,6 @@ The plan itself says that static inspection must not be treated as proof of appl
 
 ## Verdict
 
- Latest verification checkpoint: `395` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `a517583`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
+ Latest verification checkpoint: `396` unittest cases and all 18 bounded stages pass; the machine-readable report is tied to code commit `e0c6642`. Manual Windows, browser, hardware, installer/signing, target-user migration, and production release evidence remain incomplete.
 
 The repository is an automated hardening checkpoint, not completion of the V1 refurbishment plan. Release status remains `NOT_READY`. The minimum evidence needed to change that verdict is the missing implementation work above plus completed manual Windows evidence and a reproducible packaging/rollback path.
