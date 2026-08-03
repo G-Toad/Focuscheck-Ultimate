@@ -12,6 +12,7 @@
 - V2 website-flag cooldown and `allow_once` updates now use copy-on-write App persistence when composed, preserving the prior in-memory state if the durable write fails.
 - The App runtime-state coordinator now persists pause and snooze transitions through the App composition boundary, so normalized committed settings are adopted consistently.
 - Runtime state now exposes an immutable revisioned view with effective-pause reason and guard metadata for diagnostics/adapters, while retaining the compatibility snapshot for existing callers.
+- Status snapshots and heartbeats now consume that view and publish the runtime revision and effective pause reason with scalar-safe compatibility fallback.
 - Fatal mainloop cleanup now uses the same idempotent reverse-order runtime coordinator as intentional exit, preserves the original lifecycle error type, and avoids writing an intentional supervisor-stop request after a crash.
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
 - Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.

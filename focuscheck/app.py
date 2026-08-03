@@ -1816,12 +1816,23 @@ class App:
         effective_paused = bool(getattr(self, "settings", {}).get("paused", False))
         snooze_active = False
         guard_reasons = []
+        runtime_revision = None
+        pause_reason = None
         if runtime_state is not None:
             try:
-                effective_paused = bool(runtime_state.is_effectively_paused())
-                snapshot = runtime_state.snapshot
-                snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
-                guard_reasons = sorted(str(reason) for reason in snapshot.guard_reasons)
+                view_factory = getattr(type(runtime_state), "snapshot_view", None)
+                view = runtime_state.snapshot_view() if callable(view_factory) else None
+                if view is not None:
+                    effective_paused = bool(view.effective_pause)
+                    snooze_active = bool(view.snooze_active)
+                    guard_reasons = sorted(view.guard_reasons)
+                    runtime_revision = view.revision
+                    pause_reason = view.effective_pause_reason
+                else:
+                    effective_paused = bool(runtime_state.is_effectively_paused())
+                    snapshot = runtime_state.snapshot
+                    snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
+                    guard_reasons = sorted(str(reason) for reason in snapshot.guard_reasons)
             except Exception:
                 pass
         return {
@@ -1832,6 +1843,8 @@ class App:
             "paused": bool(getattr(self, "settings", {}).get("paused", False)),
             "effective_paused": effective_paused,
             "snooze_active": snooze_active,
+            "pause_reason": pause_reason,
+            "runtime_revision": runtime_revision,
             "guard_reasons": guard_reasons,
             "prompt_active": getattr(self, "_current_prompt", None) is not None,
             "intervention_active": bool(getattr(self, "_intervention_active", False)),
@@ -2333,18 +2346,34 @@ class App:
             process_start_utc = getattr(self, "_process_start_utc", datetime.now(timezone.utc).isoformat())
             runtime_state = getattr(self, "_runtime_state", None)
             if runtime_state is not None:
-                snapshot = runtime_state.snapshot
-                manual_paused = bool(snapshot.manual_paused)
-                snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
-                guard_reasons = set(snapshot.guard_reasons)
-                guard_paused = bool(guard_reasons)
-                effective_paused = bool(runtime_state.is_effectively_paused())
+                view_factory = getattr(type(runtime_state), "snapshot_view", None)
+                view = runtime_state.snapshot_view() if callable(view_factory) else None
+                if view is not None:
+                    manual_paused = bool(view.manual_paused)
+                    snooze_active = bool(view.snooze_active)
+                    guard_reasons = set(view.guard_reasons)
+                    guard_paused = bool(guard_reasons)
+                    effective_paused = bool(view.effective_pause)
+                    runtime_revision = view.revision
+                    pause_reason = view.effective_pause_reason
+                else:
+                    snapshot = runtime_state.snapshot
+                    manual_paused = bool(snapshot.manual_paused)
+                    snooze_active = bool(snapshot.snooze_active(runtime_state.clock.now_utc()))
+                    guard_reasons = set(snapshot.guard_reasons)
+                    guard_paused = bool(guard_reasons)
+                    effective_paused = bool(runtime_state.is_effectively_paused())
+                    revision = getattr(snapshot, "revision", None)
+                    runtime_revision = revision if isinstance(revision, (int, float, str)) else None
+                    pause_reason = None
             else:
                 manual_paused = bool(self.settings.get("paused", False))
                 snooze_active = False
                 guard_paused = bool(self.guard.should_pause())
                 guard_reasons = {"system_guard"} if guard_paused else set()
                 effective_paused = bool(manual_paused or guard_paused)
+                runtime_revision = None
+                pause_reason = None
             if manual_paused:
                 pause_reason = "manual"
             elif snooze_active:
@@ -2379,6 +2408,7 @@ class App:
                 "guard_reasons": sorted(guard_reasons),
                 "guard_health": guard_health,
                 "pause_reason": pause_reason,
+                "runtime_revision": runtime_revision,
                 "interval_seconds": int(self.settings.get("interval_seconds", 60)),
             }
             paths = getattr(self, "paths", None)

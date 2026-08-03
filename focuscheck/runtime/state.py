@@ -43,6 +43,7 @@ class RuntimeStateView:
     revision: int
     manual_paused: bool
     snooze_until_utc: str
+    snooze_active: bool
     guard_reasons: frozenset[str]
     prompt_active: bool
     intervention_active: bool
@@ -144,6 +145,7 @@ class RuntimeStateCoordinator:
             revision=current.revision,
             manual_paused=bool(current.manual_paused),
             snooze_until_utc=str(current.snooze_until_utc or ""),
+            snooze_active=bool(snooze_active),
             guard_reasons=guard_reasons,
             prompt_active=bool(current.prompt_active),
             intervention_active=bool(current.intervention_active),

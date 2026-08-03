@@ -22,6 +22,7 @@ class RuntimeStateTests(unittest.TestCase):
 
         self.assertTrue(view.effective_pause)
         self.assertEqual("lock", view.effective_pause_reason)
+        self.assertFalse(view.snooze_active)
         self.assertEqual(frozenset({"lock"}), view.guard_reasons)
         with self.assertRaises(FrozenInstanceError):
             view.revision = 99

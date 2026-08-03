@@ -12,6 +12,7 @@
 - V2 website-flag cooldown and one-time dismissal updates use copy-on-write App persistence and preserve retryable state on failure.
 - App-composed runtime pause and snooze transitions now use the same persistence boundary and refresh runtime state from committed normalized settings.
 - `RuntimeStateCoordinator.snapshot_view()` provides an immutable revisioned state view with effective-pause reason and guard metadata for adapters and diagnostics.
+- App status and heartbeat payloads consume the view and expose `runtime_revision` plus pause reason metadata.
 - App composition now captures one immutable `AppPaths` snapshot for task, journal, heartbeat, tray, log-header, and data-control ownership.
 - Shutdown explicitly cleans the active prompt and shuts down the monitoring engine exactly once before Tk destruction.
 - Guard refresh now samples `PauseGuard` directly instead of swallowing a recursive failure as an unpaused state.
