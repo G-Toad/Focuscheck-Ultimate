@@ -98,6 +98,23 @@ class TaskDbRecoveryTests(unittest.TestCase):
 
             self.assertEqual(b"keep existing", destination.read_bytes())
 
+    def test_restore_rejects_future_schema_without_replacing_destination(self):
+        from focuscheck.database.task_db import TaskDB
+
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+            root = Path(temp_dir)
+            source = root / "future.sqlite3"
+            destination = root / "restored.sqlite3"
+            with sqlite3.connect(source) as con:
+                con.execute("PRAGMA user_version = 99")
+                con.commit()
+            destination.write_bytes(b"keep existing")
+
+            with self.assertRaises(RuntimeError):
+                TaskDB.restore_from(source, destination)
+
+            self.assertEqual(b"keep existing", destination.read_bytes())
+
     def test_restore_rejects_symlink_source(self):
         from focuscheck.database.task_db import TaskDB
 

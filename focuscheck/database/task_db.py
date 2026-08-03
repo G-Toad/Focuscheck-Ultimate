@@ -3,6 +3,7 @@
 import sqlite3
 import os
 import shutil
+import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -246,13 +247,36 @@ class TaskDB:
         """Create a consistent SQLite backup, including WAL contents."""
         destination = os.fspath(destination)
         os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
-        with self._conn() as con:
-            backup_con = sqlite3.connect(destination)
-            try:
-                con.backup(backup_con)
-                backup_con.commit()
-            finally:
-                backup_con.close()
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix=f".{os.path.basename(destination)}.",
+                suffix=".backup.tmp",
+                dir=os.path.dirname(os.path.abspath(destination)) or ".",
+                delete=False,
+            ) as handle:
+                temporary = handle.name
+            with self._conn() as con:
+                backup_con = sqlite3.connect(temporary)
+                try:
+                    con.backup(backup_con)
+                    backup_con.commit()
+                    integrity = str(
+                        backup_con.execute("PRAGMA integrity_check").fetchone()[0] or ""
+                    )
+                    if integrity.lower() != "ok":
+                        raise RuntimeError(f"SQLite backup integrity check failed: {integrity[:120]}")
+                finally:
+                    backup_con.close()
+            os.replace(temporary, destination)
+            temporary = None
+        finally:
+            if temporary is not None:
+                try:
+                    os.remove(temporary)
+                except FileNotFoundError:
+                    pass
         return destination
 
     @staticmethod
@@ -266,24 +290,40 @@ class TaskDB:
         if not os.path.isfile(source_path):
             raise FileNotFoundError(source_path)
         os.makedirs(os.path.dirname(destination) or ".", exist_ok=True)
-        temp = f"{destination}.{os.getpid()}.restore.tmp"
+        temp = None
         try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix=f".{os.path.basename(destination)}.",
+                suffix=".restore.tmp",
+                dir=os.path.dirname(os.path.abspath(destination)) or ".",
+                delete=False,
+            ) as handle:
+                temp = handle.name
             shutil.copy2(source_path, temp)
             restored = sqlite3.connect(temp, timeout=30)
             try:
                 integrity = str(restored.execute("PRAGMA integrity_check").fetchone()[0] or "")
+                schema_version = int(restored.execute("PRAGMA user_version").fetchone()[0] or 0)
             except sqlite3.DatabaseError as exc:
                 raise RuntimeError(f"SQLite restore integrity check failed: {exc}") from exc
             finally:
                 restored.close()
             if integrity.lower() != "ok":
                 raise RuntimeError(f"SQLite restore integrity check failed: {integrity[:120]}")
+            if schema_version > CURRENT_TASK_SCHEMA_VERSION:
+                raise RuntimeError(
+                    f"SQLite restore schema version {schema_version} is newer than supported "
+                    f"version {CURRENT_TASK_SCHEMA_VERSION}"
+                )
             os.replace(temp, destination)
+            temp = None
         finally:
-            try:
-                os.remove(temp)
-            except FileNotFoundError:
-                pass
+            if temp is not None:
+                try:
+                    os.remove(temp)
+                except FileNotFoundError:
+                    pass
 
     def get_active(self):
         with self._conn() as con:
