@@ -14,6 +14,7 @@
 - Runtime state now exposes an immutable revisioned view with effective-pause reason and guard metadata for diagnostics/adapters, while retaining the compatibility snapshot for existing callers.
 - Status snapshots and heartbeats now consume that view and publish the runtime revision and effective pause reason with scalar-safe compatibility fallback.
 - The pystray adapter now owns and cancels its post-start health-check timer during reschedule and shutdown.
+- The bounded mutation-smoke stage now kills four selected mutants, including an isolated TaskDB active-to-completed transition mutant.
 - Fatal mainloop cleanup now uses the same idempotent reverse-order runtime coordinator as intentional exit, preserves the original lifecycle error type, and avoids writing an intentional supervisor-stop request after a crash.
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
 - Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.

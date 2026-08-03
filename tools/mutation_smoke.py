@@ -57,7 +57,22 @@ assert not state.begin_prompt()
         'data["settings_schema_version"] = 1',
         """
 from focuscheck.settings.migrations import migrate_settings
-assert migrate_settings({"settings_schema_version": 1})["settings_schema_version"] == 2
+        assert migrate_settings({"settings_schema_version": 1})["settings_schema_version"] == 2
+""",
+    ),
+    Mutation(
+        "task_completion_requires_active_transition",
+        "focuscheck/database/task_db.py",
+        "WHERE id=? AND status='active'",
+        "WHERE id=? AND status='completed'",
+        """
+import tempfile
+from pathlib import Path
+from focuscheck.database.task_db import TaskDB
+with tempfile.TemporaryDirectory() as directory:
+    db = TaskDB(Path(directory) / "tasks.db")
+    task_id = db.start_task(title="task", due_utc=None, why="why", consequences="consequences")
+    assert db.mark_completed(task_id)
 """,
     ),
 )
