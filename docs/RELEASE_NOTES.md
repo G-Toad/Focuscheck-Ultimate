@@ -3,13 +3,14 @@
 ## Current checkpoint
 
 - Branch: `main`
-- Automated test baseline: 327 unittest cases.
+- Automated test baseline: 328 unittest cases.
 - Verification runner: all 17 bounded stages pass, including compile, tests, mutation smoke, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export, performance, and process-leak gates.
 - The verifier also runs disposable real-process supervisor scenarios covering crash/restart, generation-bound stop acknowledgement, hang recovery, circuit-breaker entry, and child reaping; production-duration and target-machine supervision remain pending.
 - The composed Advanced Settings window now delegates durable writes through the App-owned persistence callback and applies the normalized committed settings snapshot after success; standalone construction retains its compatibility fallback.
 - Camera-adjustment and crop-adjustment child windows now use that same App-owned callback when composed by Settings, and apply normalized committed child settings after durable save.
 - V1 sequential phrase-index advancement now uses the App-owned persistence callback when composed, applying committed state only after a successful durable write.
 - V2 website-flag cooldown and `allow_once` updates now use copy-on-write App persistence when composed, preserving the prior in-memory state if the durable write fails.
+- The App runtime-state coordinator now persists pause and snooze transitions through the App composition boundary, so normalized committed settings are adopted consistently.
 - Fatal mainloop cleanup now uses the same idempotent reverse-order runtime coordinator as intentional exit, preserves the original lifecycle error type, and avoids writing an intentional supervisor-stop request after a crash.
 - Partial-construction failures now enter the lifecycle failure path, release acquired runtime resources, preserve the startup exception, and re-raise for a nonzero entrypoint result.
 - Real entrypoint restart coverage now proves persisted manual pause, active snooze restoration, expired-snooze cleanup, and coordinator-derived heartbeat pause truth in an isolated data root.

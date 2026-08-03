@@ -280,6 +280,25 @@ class FakeRoot:
 
 
 class SnoozeStateTests(unittest.TestCase):
+    def test_app_persistence_boundary_applies_committed_settings_to_runtime(self):
+        from focuscheck.app import App
+
+        app = App.__new__(App)
+        app.settings = {"interval_seconds": 60, "settings_revision": 1}
+        app._runtime_state = mock.Mock()
+        committed = {"interval_seconds": 120, "settings_revision": 2}
+        result = type(
+            "Result", (), {"durable_write": True, "committed_settings": committed}
+        )()
+
+        with mock.patch("focuscheck.app.save_settings", return_value=result) as save:
+            returned = App._persist_settings_draft(app, {"interval_seconds": 999})
+
+        self.assertIs(returned, result)
+        save.assert_called_once_with({"interval_seconds": 999})
+        self.assertEqual(committed, app.settings)
+        app._runtime_state.refresh_from_settings.assert_called_once_with(committed)
+
     def test_schedule_next_survives_expired_timer_id(self):
         from focuscheck.app import App
 

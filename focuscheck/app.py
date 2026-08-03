@@ -294,7 +294,7 @@ class App:
 
         self._runtime_state = RuntimeStateCoordinator(
             self.settings,
-            persist=save_settings,
+            persist=self._persist_settings_draft,
             transition_sink=record_runtime_event,
         )
         self._snooze_unpause_timer_id = None
