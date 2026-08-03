@@ -32,7 +32,9 @@ class RuntimeSnapshot:
             until = datetime.fromisoformat(self.snooze_until_utc.replace("Z", "+00:00"))
             if until.tzinfo is None:
                 until = until.replace(tzinfo=timezone.utc)
-            current = now or datetime.now(timezone.utc)
+            current = now or (
+                self._now_provider() if self._now_provider is not None else datetime.now(timezone.utc)
+            )
             return until.astimezone(timezone.utc) > current.astimezone(timezone.utc)
         except (TypeError, ValueError, OverflowError):
             return False

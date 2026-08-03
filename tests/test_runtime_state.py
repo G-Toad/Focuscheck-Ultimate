@@ -155,9 +155,11 @@ class RuntimeStateTests(unittest.TestCase):
         state.set_snooze_until(datetime(2030, 1, 1, 0, 0, 10, tzinfo=timezone.utc))
         self.assertTrue(state.is_effectively_paused())
         self.assertTrue(state.snapshot.effectively_paused)
+        self.assertTrue(state.snapshot.snooze_active())
         clock.advance(10)
         self.assertFalse(state.is_effectively_paused())
         self.assertFalse(state.snapshot.effectively_paused)
+        self.assertFalse(state.snapshot.snooze_active())
         self.assertTrue(state.can_start_prompt())
 
     def test_prompt_eligibility_exhaustive_runtime_truth_table(self):
