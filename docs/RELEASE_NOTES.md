@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Implementation source checkpoint: `d7592e1`; latest evidence/report commit: `c08782a`.
-- Full verifier: all 22 bounded stages passed, with 604 unittest cases and zero process leaks.
+- Implementation source checkpoint: `02626d2`; latest evidence/report commit: `5be13bb`.
+- Full verifier: all 23 bounded stages passed, with 604 unittest cases and zero process leaks.
+- The verifier now runs an isolated privacy-controls transaction covering metadata inventory, allowlisted export, sanitized diagnostics, retention auditing, and confirmed clear-data behavior.
 - The verifier now runs an isolated migration transaction covering all five durable task/log artifacts, conflict preservation, versioned journaling, and legacy settings import without touching the live profile.
 - Guard sampling, effective-pause transition notification, and pause-edge scheduling now have an injectable `GuardMonitorService` boundary; the App methods remain compatibility delegates.
 - Heartbeat payload construction and atomic publication now have an injectable `HeartbeatService` boundary; the App method remains a compatibility delegate and supervisor protocol fields are unchanged.
