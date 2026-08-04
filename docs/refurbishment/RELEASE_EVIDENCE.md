@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest tray composition extraction: source checkpoint `c6a0a53` moves pystray construction/startup, settings accessors, liveness reporting, and native-fallback dispatch into the runtime composition boundary. The full verifier passed all 21 stages with 585 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest native watcher composition extraction: source checkpoint `d20b62f` moves session/power/display watcher construction and callback wiring into the runtime composition boundary while preserving native-tray fallback selection and failure handling. The full verifier passed all 21 stages with 584 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest repository/guard composition extraction: source checkpoint `b6186d5` moves TaskDB, log-header initialization, and `PauseGuard` construction into the runtime composition boundary while preserving TaskDB-unavailable degradation and startup checkpoint semantics. The full verifier passed all 21 stages with 583 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
