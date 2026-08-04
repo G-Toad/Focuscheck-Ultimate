@@ -255,6 +255,7 @@ def main() -> int:
         ("mutation_smoke", [py, "tools/mutation_smoke.py"], args.timeout),
         ("source_supervisor_selftest", [py, "tools/source_supervisor_selftest.py"], args.timeout),
         ("state_restart_selftest", [py, "tools/state_restart_selftest.py"], args.timeout),
+        ("migration_selftest", [py, "tools/migration_selftest.py"], args.timeout),
         ("qa_scenario_runner", [py, "tools/qa_scenario_runner.py", "--reset", "--skip-gui"], args.timeout),
         ("main_selftest", [py, "main.py", "--selftest"], args.timeout),
         ("tray_selftest", [py, "main.py", "--tray-selftest"], args.timeout),
