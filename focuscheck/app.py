@@ -40,11 +40,9 @@ from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 from .ui.guards import PauseGuard
-from .runtime.state import RuntimeStateCoordinator
-from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.dependencies import AppDependencies
-from .runtime.composition import compose_foundations, compose_tk_services
+from .runtime.composition import compose_foundations, compose_tk_services, compose_runtime_state
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -311,23 +309,18 @@ class App:
             get_logger().exception("legacy data migration failed", exc_info=True)
             raise
         self._startup_stage("migration_completed")
-        journal_factory = self._dependencies.runtime_journal_factory or RuntimeTransitionJournal
-        self._runtime_journal = journal_factory(
-            self.paths.runtime_state,
+        compose_runtime_state(
+            self._dependencies,
+            paths=self.paths,
+            settings=self.settings,
             clock=self._runtime_clock,
-        )
-
-        def record_runtime_event(event):
-            journal_ok = self._runtime_journal.append(event)
-            self._event_ledger.append("runtime", event)
-            return journal_ok
-
-        state_factory = self._dependencies.runtime_state_factory or RuntimeStateCoordinator
-        self._runtime_state = state_factory(
-            self.settings,
-            persist=self._persist_settings_draft,
-            clock=self._runtime_clock,
-            transition_sink=record_runtime_event,
+            event_ledger=self._event_ledger,
+            persist_settings=self._persist_settings_draft,
+            component_sink=lambda name, value: setattr(
+                self,
+                {"journal": "_runtime_journal", "state": "_runtime_state"}[name],
+                value,
+            ),
         )
         self._snooze_unpause_timer_id = None
         self._snooze_confirm_dialog = None

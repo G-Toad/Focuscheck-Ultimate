@@ -9,7 +9,9 @@ from typing import Any, Callable
 
 from ..database import configure_paths as configure_csv_paths
 from ..runtime.events import StructuredEventLedger
+from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
+from ..runtime.state import RuntimeStateCoordinator
 from ..utils.clock import SystemClock
 from ..utils.logging_utils import configure_log_path
 from ..utils.logging_utils import get_logger
@@ -34,6 +36,14 @@ class TkServices:
     root: Any
     timers: Any
     owner_thread_id: int
+
+
+@dataclass(frozen=True)
+class RuntimeStateServices:
+    """Durable transition journal and runtime-state coordinator pair."""
+
+    journal: Any
+    state: Any
 
 
 def compose_foundations(
@@ -124,3 +134,36 @@ def compose_tk_services(
     if callable(startup_stage):
         startup_stage("tk_and_timers_created")
     return TkServices(root, timers, owner_thread_id)
+
+
+def compose_runtime_state(
+    dependencies: Any,
+    *,
+    paths: Any,
+    settings: dict[str, Any],
+    clock: Any,
+    event_ledger: Any,
+    persist_settings: Callable[[dict[str, Any]], Any],
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> RuntimeStateServices:
+    """Create the durable runtime journal and state coordinator."""
+    journal_factory = getattr(dependencies, "runtime_journal_factory", None) or RuntimeTransitionJournal
+    journal = journal_factory(paths.runtime_state, clock=clock)
+    if callable(component_sink):
+        component_sink("journal", journal)
+
+    def record_runtime_event(event):
+        journal_ok = journal.append(event)
+        event_ledger.append("runtime", event)
+        return journal_ok
+
+    state_factory = getattr(dependencies, "runtime_state_factory", None) or RuntimeStateCoordinator
+    state = state_factory(
+        settings,
+        persist=persist_settings,
+        clock=clock,
+        transition_sink=record_runtime_event,
+    )
+    if callable(component_sink):
+        component_sink("state", state)
+    return RuntimeStateServices(journal, state)

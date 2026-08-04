@@ -88,6 +88,35 @@ class AppLifecycleTests(unittest.TestCase):
         root.withdraw.assert_called_once_with()
         timer_factory.assert_called_once()
 
+    def test_runtime_state_composition_assigns_journal_before_state_failure(self):
+        from focuscheck.runtime.composition import compose_runtime_state
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        journal = mock.Mock()
+        journal_factory = mock.Mock(return_value=journal)
+        state_factory = mock.Mock(side_effect=RuntimeError("state failure"))
+        paths = type("Paths", (), {"runtime_state": "runtime.jsonl"})()
+        deps = AppDependencies(
+            runtime_journal_factory=journal_factory,
+            runtime_state_factory=state_factory,
+        )
+        assigned = {}
+
+        with self.assertRaisesRegex(RuntimeError, "state failure"):
+            compose_runtime_state(
+                deps,
+                paths=paths,
+                settings={},
+                clock=mock.Mock(),
+                event_ledger=mock.Mock(),
+                persist_settings=mock.Mock(),
+                component_sink=assigned.__setitem__,
+            )
+
+        self.assertIs(journal, assigned["journal"])
+        journal_factory.assert_called_once_with("runtime.jsonl", clock=mock.ANY)
+        state_factory.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
