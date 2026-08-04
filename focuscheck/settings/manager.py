@@ -729,10 +729,10 @@ def validate_settings(data):
     return s
 
 
-def load_settings():
-    """Load settings from JSON file."""
+def load_settings(settings_path=None):
+    """Load settings from JSON file, optionally at a composed path."""
     logger = get_logger()
-    SETTINGS_PATH = choose_path("focus_settings.json")
+    SETTINGS_PATH = os.fspath(settings_path) if settings_path is not None else choose_path("focus_settings.json")
     _migrate_legacy_settings(SETTINGS_PATH)
     sidecars = _settings_sidecar_paths(SETTINGS_PATH)
 
@@ -842,10 +842,10 @@ def load_settings():
         return defaults
 
 
-def save_settings(s, expected_revision=None):
-    """Save settings atomically and return an observable durability result."""
+def save_settings(s, expected_revision=None, settings_path=None):
+    """Save settings atomically at the composed path when supplied."""
     logger = get_logger()
-    SETTINGS_PATH = choose_path("focus_settings.json")
+    SETTINGS_PATH = os.fspath(settings_path) if settings_path is not None else choose_path("focus_settings.json")
     sidecars = _settings_sidecar_paths(SETTINGS_PATH)
 
     logger.info("=" * 80)

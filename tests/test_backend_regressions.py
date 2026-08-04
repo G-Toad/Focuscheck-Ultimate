@@ -428,6 +428,21 @@ class SettingsSaveTests(unittest.TestCase):
             self.assertTrue(result.validation_passed)
             self.assertFalse(result.backup_created)
 
+    def test_settings_repository_honors_explicit_composed_path(self):
+        import focuscheck.settings.manager as manager
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            settings_path = Path(temp_dir) / "composed" / "focus_settings.json"
+            result = manager.save_settings(
+                {"interval_seconds": 120},
+                settings_path=settings_path,
+            )
+            loaded = manager.load_settings(settings_path=settings_path)
+
+        self.assertTrue(result)
+        self.assertEqual(str(settings_path), result.path)
+        self.assertEqual(120, loaded["interval_seconds"])
+
     def test_save_settings_result_reports_backup_and_failure_details(self):
         import focuscheck.settings.manager as manager
 

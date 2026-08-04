@@ -316,8 +316,12 @@ class App:
             self.root.bind_all('<Alt-q>', lambda e: self._quit())
         except Exception:
             pass
-        settings_loader = self._dependencies.settings_loader or load_settings
-        self.settings = settings_loader()
+        settings_loader = self._dependencies.settings_loader
+        self.settings = (
+            settings_loader()
+            if callable(settings_loader)
+            else load_settings(self.paths.settings)
+        )
         self._startup_stage("settings_loaded")
         try:
             migration_factory = self._dependencies.legacy_migration_factory or migrate_legacy_data
@@ -696,10 +700,10 @@ class App:
                     state.clear_snooze()
                 else:
                     self.settings["snooze_until_utc"] = ""
-                    save_settings(self.settings)
+                    self._save_settings(self.settings)
                 return
             self.settings["paused"] = True
-            save_settings(self.settings)
+            self._save_settings(self.settings)
 
             remaining_ms = max(1, int((until - now).total_seconds() * 1000))
 
@@ -710,7 +714,18 @@ class App:
                 self._snooze_unpause_timer_id = self.root.after(remaining_ms, self._expire_snooze)
         except Exception:
             self.settings["snooze_until_utc"] = ""
-            save_settings(self.settings)
+            self._save_settings(self.settings)
+
+    def _save_settings(self, settings, expected_revision=None):
+        """Persist App settings through the frozen composition boundary."""
+        saver = getattr(getattr(self, "_dependencies", None), "settings_saver", None)
+        if callable(saver):
+            return saver(settings)
+        paths = getattr(self, "paths", None)
+        settings_path = getattr(paths, "settings", None)
+        if settings_path is None:
+            return save_settings(settings)
+        return save_settings(settings, expected_revision=expected_revision, settings_path=settings_path)
 
     def _now_utc(self):
         """Return the coordinator clock value, with a standalone fallback."""
@@ -1688,7 +1703,7 @@ class App:
             state.clear_snooze()
         else:
             self.settings["snooze_until_utc"] = ""
-            save_settings(self.settings)
+            self._save_settings(self.settings)
         self._notify_engine_pause_state(source="snooze_expired")
         try:
             get_logger().info("snooze expired, resuming eligible reminders")
@@ -1719,7 +1734,7 @@ class App:
             else:
                 self.settings["snooze_until_utc"] = ""
                 try:
-                    save_settings(self.settings)
+                    self._save_settings(self.settings)
                     self._notify_engine_pause_state(source="snooze_cancelled")
                 except Exception:
                     pass
@@ -1919,7 +1934,7 @@ class App:
                     return
             else:
                 self.settings["snooze_until_utc"] = until.isoformat()
-                save_settings(self.settings)
+                self._save_settings(self.settings)
             self._notify_engine_pause_state(source=f"snooze_{mins}m")
             try:
                 get_logger().info("tray: snooze for %s minute(s) - paused=True", mins)
@@ -2537,7 +2552,7 @@ class App:
         """Reload settings through the composition root and update runtime truth."""
         try:
             loader = getattr(getattr(self, "_dependencies", None), "settings_loader", None)
-            loaded = (loader or load_settings)()
+            loaded = loader() if callable(loader) else load_settings(getattr(self.paths, "settings", None))
             if not isinstance(loaded, dict):
                 return False
             self.settings = loaded
@@ -2584,8 +2599,7 @@ class App:
 
     def _persist_settings_draft(self, draft):
         """Persist a settings-window draft through the App composition root."""
-        settings_saver = getattr(getattr(self, "_dependencies", None), "settings_saver", None)
-        result = (settings_saver or save_settings)(draft)
+        result = self._save_settings(draft)
         committed = getattr(result, "committed_settings", None)
         if getattr(result, "durable_write", bool(result)) and isinstance(committed, dict):
             self.settings.update(committed)
