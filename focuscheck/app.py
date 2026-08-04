@@ -44,7 +44,7 @@ from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.dependencies import AppDependencies
-from .runtime.composition import compose_foundations
+from .runtime.composition import compose_foundations, compose_tk_services
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -269,29 +269,18 @@ class App:
         self._runtime_clock = foundations.clock
         self._event_ledger = foundations.event_ledger
         self.lifecycle = foundations.lifecycle
-        root_factory = getattr(self._dependencies, "tk_root_factory", None) or tk.Tk
-        self.root = root_factory()
-        self._tk_thread_id = threading.get_ident()
-        try:
-            self.root._focuscheck_tk_thread_id = self._tk_thread_id
-        except Exception:
-            pass
-        try:
-            def _tk_callback_exception(exc, val, tb):
-                try:
-                    get_logger().exception("tk callback exception", exc_info=(exc, val, tb))
-                except Exception:
-                    pass
-            self.root.report_callback_exception = _tk_callback_exception
-        except Exception:
-            pass
-        self.root.withdraw()
-        timer_registry_factory = self._dependencies.timer_registry_factory or TimerRegistry
-        self._timers = timer_registry_factory(
-            self.root,
-            event_sink=lambda event: self._event_ledger.append("timer", event),
+        compose_tk_services(
+            self._dependencies,
+            self._event_ledger,
+            component_sink=lambda name, value: setattr(
+                self,
+                {"root": "root", "timers": "_timers"}[name]
+                if name != "owner_thread_id" else "_tk_thread_id",
+                value,
+            ),
+            startup_stage=self._startup_stage,
         )
-        self._startup_stage("tk_and_timers_created")
+        self._tk_thread_id = getattr(self, "_tk_thread_id", threading.get_ident())
         self._ui_dispatch_sequence = 0
         # Ensure window handle is realized before using it for shell hooks
         try:

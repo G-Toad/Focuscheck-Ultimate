@@ -68,6 +68,26 @@ class AppLifecycleTests(unittest.TestCase):
         deps.log_path_configurator.assert_called_once_with("app.log")
         lifecycle.transition.assert_called_once()
 
+    def test_tk_composition_assigns_root_before_timer_failure(self):
+        from focuscheck.runtime.composition import compose_tk_services
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        root = mock.Mock()
+        timer_factory = mock.Mock(side_effect=RuntimeError("timer failure"))
+        deps = AppDependencies(tk_root_factory=mock.Mock(return_value=root), timer_registry_factory=timer_factory)
+
+        assigned = {}
+        with self.assertRaisesRegex(RuntimeError, "timer failure"):
+            compose_tk_services(
+                deps,
+                mock.Mock(),
+                component_sink=assigned.__setitem__,
+            )
+
+        self.assertIs(root, assigned["root"])
+        root.withdraw.assert_called_once_with()
+        timer_factory.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -515,7 +535,7 @@ class AppLifecycleTests(unittest.TestCase):
         }
         self.assertEqual(
             {
-                "tk_and_timers_created", "settings_loaded", "migration_completed",
+                "settings_loaded", "migration_completed",
                 "initial_monitoring_state_applied", "repositories_initialized",
                 "engine_initialized", "services_started", "tray_initialized",
                 "watcher_initialized", "ready",
