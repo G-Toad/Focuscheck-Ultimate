@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `33d0ae3`.
-- Full verifier: all 21 bounded stages passed, with 588 unittest cases and zero process leaks.
+- Source checkpoint: `cebd6a5`.
+- Full verifier: all 21 bounded stages passed, with 590 unittest cases and zero process leaks.
+- Ordered recurring-service startup now has a composition boundary covering tray-icon preparation, heartbeats, reminders, diagnostics, and the `services_started` checkpoint.
 - Startup settings loading and legacy migration now have a dedicated injected composition boundary with fail-closed migration handling and checkpoint coverage.
 - Monitoring engine selection and prompt-coordinator construction now have a dedicated composition boundary while preserving engine-before-coordinator ordering.
 - Pystray adapter construction/startup, settings accessors, liveness callback, and native-fallback dispatch now have a dedicated tray composition boundary.
