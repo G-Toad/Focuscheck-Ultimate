@@ -329,6 +329,24 @@ class V2FlowTests(unittest.TestCase):
         dialog._log_response.assert_called_once_with("no")
         dialog._close.assert_called_once()
 
+    def test_website_warning_destroys_before_dispatching_terminal_callback(self):
+        from focuscheck.ui.dialogs.v2_subpopup_dialog import V2SubPopupDialog
+
+        events = []
+        dialog = V2SubPopupDialog.__new__(V2SubPopupDialog)
+        dialog._closed = False
+        dialog.destroy = lambda: events.append("destroy")
+        dialog._on_yes = lambda: events.append("yes")
+        dialog._on_no = lambda: events.append("no")
+
+        dialog._yes()
+        self.assertEqual(["destroy", "yes"], events)
+
+        dialog._closed = False
+        events.clear()
+        dialog._no()
+        self.assertEqual(["destroy", "no"], events)
+
     def test_close_notifies_app_once_for_reschedule(self):
         dialog = self._dialog(decision="no")
         dialog._cleanup_camera_feed = mock.Mock()

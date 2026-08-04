@@ -95,20 +95,22 @@ class V2SubPopupDialog(tk.Toplevel):
             return
         self._closed = True
         try:
+            # Release the modal/topmost surface before the callback can open
+            # an intervention wizard or otherwise manipulate focus.
+            self.destroy()
+        finally:
             if callable(self._on_yes):
                 self._on_yes()
-        finally:
-            self.destroy()
 
     def _no(self):
         if self._closed:
             return
         self._closed = True
         try:
+            self.destroy()
+        finally:
             if callable(self._on_no):
                 self._on_no()
-        finally:
-            self.destroy()
 
     def destroy(self):
         self._closed = True
