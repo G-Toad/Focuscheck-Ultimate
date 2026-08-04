@@ -97,6 +97,13 @@ class RuntimeServices:
     started: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class ShutdownServices:
+    """Resources successfully closed by the reverse-order shutdown boundary."""
+
+    closed: tuple[str, ...]
+
+
 def compose_foundations(
     dependencies: Any,
     *,
@@ -221,6 +228,33 @@ def compose_runtime_services(
         # Diagnostics are best effort and must not prevent tray/watcher startup.
         pass
     return RuntimeServices(tuple(started))
+
+
+def compose_shutdown_services(
+    closers: list[tuple[str, Callable[[], Any]] | tuple[str, Callable[[], Any], str]],
+    *,
+    shutdown_stage: Callable[[str], Any] | None = None,
+    logger_factory: Callable[[], Any] | None = None,
+) -> ShutdownServices:
+    """Close owned resources in order while isolating each failure."""
+    closed: list[str] = []
+    for closer in closers:
+        name, callback = closer[:2]
+        stage_name = closer[2] if len(closer) == 3 else f"{name}_closed"
+        try:
+            callback()
+            closed.append(name)
+            if callable(shutdown_stage):
+                shutdown_stage(stage_name)
+        except Exception:
+            if callable(logger_factory):
+                try:
+                    logger_factory().exception(
+                        "shutdown cleanup failed: %s", name, exc_info=True
+                    )
+                except Exception:
+                    pass
+    return ShutdownServices(tuple(closed))
 
 
 def compose_tk_services(

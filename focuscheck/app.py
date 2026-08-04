@@ -44,6 +44,7 @@ from .runtime.composition import (
     compose_foundations,
     compose_configuration,
     compose_runtime_services,
+    compose_shutdown_services,
     compose_tk_services,
     compose_runtime_state,
     compose_repositories,
@@ -2571,43 +2572,32 @@ class App:
             self._shutdown_stage("runtime_rejected")
         except Exception:
             get_logger().exception("runtime state shutdown failed", exc_info=True)
-        for name, callback in (
+        closers = [
             ("prompt", self._close_current_prompt_for_shutdown),
             ("snooze_confirmation", self._close_snooze_confirmation),
             ("snooze_reminder", self._close_snooze_reminder),
             ("gentle_reminder", self._close_gentle_reminder),
             ("diagnostic_status", self._close_diagnostic_status_window),
             ("engine", self._shutdown_engine),
-        ):
-            try:
-                callback()
-                self._shutdown_stage(f"{name}_closed")
-            except Exception:
-                get_logger().exception("shutdown cleanup failed: %s", name, exc_info=True)
+        ]
         timers = getattr(self, "_timers", None)
         if timers is not None:
-            try:
-                timers.close()
-                self._shutdown_stage("timers_closed")
-            except Exception:
-                get_logger().exception("shutdown cleanup failed: timers", exc_info=True)
-        try:
-            if getattr(self, "_tray", None):
-                self._tray.stop()
-            self._shutdown_stage("tray_stopped")
-        except Exception:
-            get_logger().exception("shutdown cleanup failed: tray", exc_info=True)
-        try:
-            if getattr(self, "_winwatch", None):
-                self._winwatch.close()
-            self._shutdown_stage("watcher_closed")
-        except Exception:
-            get_logger().exception("shutdown cleanup failed: watcher", exc_info=True)
-        try:
-            self.root.destroy()
-            self._shutdown_stage("tk_destroyed")
-        except Exception:
-            get_logger().exception("shutdown cleanup failed: root", exc_info=True)
+            closers.append(("timers", timers.close))
+        tray = getattr(self, "_tray", None)
+        if tray:
+            closers.append(("tray", tray.stop, "tray_stopped"))
+        watcher = getattr(self, "_winwatch", None)
+        if watcher:
+            closers.append(("watcher", watcher.close, "watcher_closed"))
+        root = getattr(self, "root", None)
+        destroy_root = getattr(root, "destroy", None)
+        if callable(destroy_root):
+            closers.append(("tk", destroy_root, "tk_destroyed"))
+        compose_shutdown_services(
+            closers,
+            shutdown_stage=self._shutdown_stage,
+            logger_factory=get_logger,
+        )
         if lifecycle is not None:
             try:
                 if getattr(lifecycle, "phase", None) == LifecyclePhase.STOPPING:

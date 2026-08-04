@@ -305,6 +305,25 @@ class AppLifecycleTests(unittest.TestCase):
 
         self.assertEqual(["services_started"], stages)
 
+    def test_shutdown_composition_continues_after_a_resource_failure(self):
+        from focuscheck.runtime.composition import compose_shutdown_services
+
+        events = []
+        logger = mock.Mock()
+        result = compose_shutdown_services(
+            [
+                ("first", lambda: events.append("first")),
+                ("broken", lambda: (_ for _ in ()).throw(RuntimeError("broken"))),
+                ("last", lambda: events.append("last")),
+            ],
+            shutdown_stage=lambda name: events.append(name),
+            logger_factory=lambda: logger,
+        )
+
+        self.assertEqual(["first", "first_closed", "last", "last_closed"], events)
+        self.assertEqual(("first", "last"), result.closed)
+        logger.exception.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -784,13 +803,8 @@ class AppLifecycleTests(unittest.TestCase):
             and node.args
             and isinstance(node.args[0], ast.Constant)
         }
-        self.assertEqual(
-            {
-                "runtime_rejected", "timers_closed", "tray_stopped",
-                "watcher_closed", "tk_destroyed",
-            },
-            checkpoints,
-        )
+        self.assertEqual({"runtime_rejected"}, checkpoints)
+        self.assertIn("compose_shutdown_services", source.read_text(encoding="utf-8"))
 
     def test_constructor_failure_injection_covers_each_startup_checkpoint(self):
         from focuscheck.app import App
