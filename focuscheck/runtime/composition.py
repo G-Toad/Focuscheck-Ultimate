@@ -16,6 +16,7 @@ from ..runtime.data_controls import DataControlService
 from ..runtime.health import HealthSnapshotService
 from ..runtime.intervention import InterventionOrchestrator
 from ..runtime.scheduler import PromptScheduler
+from ..runtime.startup import StartupService
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from ..runtime.state import RuntimeStateCoordinator
@@ -266,6 +267,18 @@ def compose_application_services(
     scheduler_factory = getattr(dependencies, "prompt_scheduler_factory", None)
     app._prompt_scheduler = (
         scheduler_factory(app) if callable(scheduler_factory) else PromptScheduler(app)
+    )
+    startup_factory = getattr(dependencies, "startup_service_factory", None)
+    app._startup_service = (
+        startup_factory(app)
+        if callable(startup_factory)
+        else StartupService(
+            app,
+            install=app._install_startup,
+            uninstall=app._uninstall_startup,
+            is_installed=app._is_startup_installed,
+            app_name=app_name,
+        )
     )
     compose_runtime_services(
         app._prepare_tray_icon,

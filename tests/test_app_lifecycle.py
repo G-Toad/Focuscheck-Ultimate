@@ -614,6 +614,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "status_window_factory", "data_control_service_factory",
                 "intervention_service_factory",
                 "prompt_scheduler_factory",
+                "startup_service_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -661,6 +662,18 @@ class AppLifecycleTests(unittest.TestCase):
 
         scheduler.schedule_next.assert_called_once_with(25)
         scheduler.cancel_prompt_observers.assert_called_once_with()
+
+    def test_startup_service_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        service = mock.Mock()
+        service.is_installed.return_value = True
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(startup_service_factory=lambda _app: service)
+
+        self.assertTrue(App._is_startup_enabled(app))
+        service.is_installed.assert_called_once_with()
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App

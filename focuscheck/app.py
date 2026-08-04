@@ -1706,15 +1706,39 @@ class App:
         return self._call_on_ui_thread(_do_snooze)
 
     def _is_startup_enabled(self) -> bool:
-        try:
-            return is_startup_installed(APP_NAME)
-        except Exception:
-            return False
+        return self._startup_controls().is_installed()
+
+    def _is_startup_installed(self, name: str) -> bool:
+        return bool(is_startup_installed(name))
+
+    def _install_startup(self, name: str) -> bool:
+        return bool(install_startup(name))
+
+    def _uninstall_startup(self, name: str) -> bool:
+        return bool(uninstall_startup(name))
+
+    def _startup_controls(self):
+        """Return the composed startup registration boundary."""
+        service = getattr(self, "_startup_service", None)
+        if service is not None:
+            return service
+        from .runtime.startup import StartupService
+
+        factory = getattr(getattr(self, "_dependencies", None), "startup_service_factory", None)
+        service = factory(self) if callable(factory) else StartupService(
+            self,
+            install=self._install_startup,
+            uninstall=self._uninstall_startup,
+            is_installed=self._is_startup_installed,
+            app_name=APP_NAME,
+        )
+        self._startup_service = service
+        return service
 
     def _tray_install_startup(self):
         def _do_install():
             try:
-                ok = install_startup(APP_NAME)
+                ok = self._startup_controls().install()
                 if ok:
                     messagebox.showinfo("Startup", "Enabled supervised run on startup.")
                 return bool(ok)
@@ -1725,7 +1749,7 @@ class App:
     def _tray_uninstall_startup(self):
         def _do_uninstall():
             try:
-                ok = uninstall_startup(APP_NAME)
+                ok = self._startup_controls().uninstall()
                 if ok:
                     messagebox.showinfo("Startup", "Disabled run on startup.")
                 return bool(ok)

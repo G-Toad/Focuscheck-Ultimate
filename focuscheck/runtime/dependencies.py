@@ -51,6 +51,7 @@ class AppDependencies:
     data_control_service_factory: Callable[[Any], Any] | None = None
     intervention_service_factory: Callable[[Any], Any] | None = None
     prompt_scheduler_factory: Callable[[Any], Any] | None = None
+    startup_service_factory: Callable[[Any], Any] | None = None
     filesystem: Any | None = None
     startup_stage_hook: Callable[[str], Any] | None = None
     shutdown_stage_hook: Callable[[str], Any] | None = None
