@@ -103,11 +103,60 @@ def main() -> int:
             ],
             timeout=55,
         )
+        lifecycle_install = temp / "lifecycle-install"
+        lifecycle_data = temp / "lifecycle-data"
+        lifecycle_data.mkdir()
+        marker = lifecycle_data / "user-marker.txt"
+        marker.write_text("preserve-user-data", encoding="utf-8")
+        lifecycle_script = ROOT / "tools/package_lifecycle.ps1"
+        _run(
+            [
+                powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(lifecycle_script),
+                "-Action", "Install", "-PackageDir", str(package), "-InstallDir", str(lifecycle_install),
+                "-DataDir", str(lifecycle_data), "-Version", "lifecycle-1",
+            ],
+            timeout=45,
+        )
+        _run(
+            [
+                powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(lifecycle_script),
+                "-Action", "Upgrade", "-PackageDir", str(package), "-InstallDir", str(lifecycle_install),
+                "-DataDir", str(lifecycle_data), "-Version", "lifecycle-2",
+            ],
+            timeout=45,
+        )
+        backups = list(temp.glob(".FocusCheck.backup.*"))
+        if len(backups) != 1:
+            raise RuntimeError(f"lifecycle upgrade retained {len(backups)} package backups")
+        _run(
+            [
+                powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                str(ROOT / "tools/rollback_package.ps1"), "-InstallDir", str(lifecycle_install),
+                "-BackupDir", str(backups[0]),
+            ],
+            timeout=30,
+        )
+        if not (lifecycle_install / "FocusCheck.exe").is_file():
+            raise RuntimeError("rollback did not restore the installed package")
+        _run(
+            [
+                powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(lifecycle_script),
+                "-Action", "Uninstall", "-InstallDir", str(lifecycle_install), "-DataDir", str(lifecycle_data),
+            ],
+            timeout=30,
+        )
+        if lifecycle_install.exists() or not marker.is_file() or marker.read_text(encoding="utf-8") != "preserve-user-data":
+            raise RuntimeError("lifecycle uninstall did not archive binaries while preserving data")
+        if not list(temp.glob(".FocusCheck.uninstalled.*")):
+            raise RuntimeError("lifecycle uninstall did not archive the package")
         print(build_output, end="")
         print(promotion_output, end="")
         print(validation_output, end="")
         print(supervisor_output, end="")
-        print(f"package_build_selftest_passed package={package} install={install}")
+        print(
+            f"package_build_selftest_passed package={package} install={install} "
+            "lifecycle=install,upgrade,rollback,uninstall data_preserved=true"
+        )
     return 0
 
 
