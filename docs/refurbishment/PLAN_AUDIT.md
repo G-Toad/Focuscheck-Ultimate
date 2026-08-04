@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest composition-root correction: source checkpoint `f3acc2c` routes composed camera-photo storage through the App-owned immutable path snapshot instead of recomputing the global data root inside the prompt mixin. The full verifier passed all 21 stages with 578 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest automated packaging correction: source checkpoint `0ec9af6` adds a bounded disposable current-source package build to the standard verifier. All 21 automated stages passed with 572 tests and zero process leaks; build, promotion, manifest validation, and packaged supervisor READY/stop/reaping passed. Installer-shell, signing, and target-machine manual gates remain open.
 
 Latest native error-boundary correction: source checkpoint `43a628c` configures and reads Kernel32 `GetLastError` for native tray-menu failures instead of relying on an unrelated ctypes last-error accessor. The full verifier passed all 21 stages with 577 tests and zero process leaks; manual Windows/UIA/browser/release gates remain open.
