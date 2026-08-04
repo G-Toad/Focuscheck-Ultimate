@@ -15,6 +15,7 @@ from ..runtime.events import StructuredEventLedger
 from ..runtime.data_controls import DataControlService
 from ..runtime.health import HealthSnapshotService
 from ..runtime.intervention import InterventionOrchestrator
+from ..runtime.scheduler import PromptScheduler
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from ..runtime.state import RuntimeStateCoordinator
@@ -261,6 +262,10 @@ def compose_application_services(
     intervention_factory = getattr(dependencies, "intervention_service_factory", None)
     app._intervention_service = (
         intervention_factory(app) if callable(intervention_factory) else InterventionOrchestrator(app)
+    )
+    scheduler_factory = getattr(dependencies, "prompt_scheduler_factory", None)
+    app._prompt_scheduler = (
+        scheduler_factory(app) if callable(scheduler_factory) else PromptScheduler(app)
     )
     compose_runtime_services(
         app._prepare_tray_icon,

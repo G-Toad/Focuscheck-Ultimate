@@ -613,6 +613,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "snooze_reminder_dialog_factory", "gentle_reminder_dialog_factory",
                 "status_window_factory", "data_control_service_factory",
                 "intervention_service_factory",
+                "prompt_scheduler_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -646,6 +647,20 @@ class AppLifecycleTests(unittest.TestCase):
             prompt_ref=None,
             hide_prompt=False,
         )
+
+    def test_prompt_scheduler_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        scheduler = mock.Mock()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(prompt_scheduler_factory=lambda _app: scheduler)
+
+        App._schedule_next(app, 25)
+        App._cancel_prompt_observers(app)
+
+        scheduler.schedule_next.assert_called_once_with(25)
+        scheduler.cancel_prompt_observers.assert_called_once_with()
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App

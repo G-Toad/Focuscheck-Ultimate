@@ -583,30 +583,14 @@ class App:
             pass
 
     def _schedule_next(self, delay_ms=None):
-        if delay_ms is None:
-            delay_ms = int(self.settings["interval_seconds"] * 1000)
-        if self._scheduled and not hasattr(self, "_timers"):
-            try:
-                self.root.after_cancel(self._scheduled)
-            except Exception:
-                pass
-            self._scheduled = None
-        try:
-            get_logger().debug("scheduling next prompt in %sms", delay_ms)
-        except Exception:
-            pass
-        if hasattr(self, "_timers"):
-            self._timers.schedule("prompt", delay_ms, self._maybe_show_prompt)
-            self._scheduled = self._timers.callback_id("prompt")
-        else:
-            self._scheduled = self.root.after(delay_ms, self._maybe_show_prompt)
-        # Track next due for tray meter
-        try:
-            self._next_total_s = max(1, int(delay_ms // 1000))
-            self._next_due_mono = self._monotonic() + (delay_ms / 1000.0)
-        except Exception:
-            self._next_total_s = None
-            self._next_due_mono = None
+        """Schedule the next prompt through the composed scheduler boundary."""
+        scheduler = getattr(self, "_prompt_scheduler", None)
+        if scheduler is None:
+            from .runtime.scheduler import PromptScheduler
+            factory = getattr(getattr(self, "_dependencies", None), "prompt_scheduler_factory", None)
+            scheduler = factory(self) if callable(factory) else PromptScheduler(self)
+            self._prompt_scheduler = scheduler
+        scheduler.schedule_next(delay_ms)
 
     def _format_hms(self, seconds):
         try:
@@ -967,21 +951,14 @@ class App:
         self._schedule_next()
 
     def _cancel_prompt_observers(self):
-        """Cancel visibility/closed polling owned by the current prompt."""
-        timers = getattr(self, "_timers", None)
-        if timers is not None:
-            timers.cancel("prompt-visible")
-            timers.cancel("prompt-closed")
-        root = getattr(self, "root", None)
-        for attribute in ("_prompt_visibility_timer_id", "_prompt_closed_timer_id"):
-            timer_id = getattr(self, attribute, None)
-            if timer_id is None or root is None:
-                continue
-            try:
-                root.after_cancel(timer_id)
-            except Exception:
-                pass
-            setattr(self, attribute, None)
+        """Cancel prompt observers through the composed scheduler boundary."""
+        scheduler = getattr(self, "_prompt_scheduler", None)
+        if scheduler is None:
+            from .runtime.scheduler import PromptScheduler
+            factory = getattr(getattr(self, "_dependencies", None), "prompt_scheduler_factory", None)
+            scheduler = factory(self) if callable(factory) else PromptScheduler(self)
+            self._prompt_scheduler = scheduler
+        scheduler.cancel_prompt_observers()
 
     def run_intervention(
         self,
