@@ -15,6 +15,7 @@ from ..runtime.events import StructuredEventLedger
 from ..runtime.data_controls import DataControlService
 from ..runtime.health import HealthSnapshotService
 from ..runtime.heartbeat import HeartbeatService
+from ..runtime.guard_monitor import GuardMonitorService
 from ..runtime.intervention import InterventionOrchestrator
 from ..runtime.scheduler import PromptScheduler
 from ..runtime.startup import StartupService
@@ -224,6 +225,12 @@ def compose_application_services(
         event_ledger=app._event_ledger,
         startup_stage=startup_stage,
         component_sink=lambda name, value: setattr(app, name, value),
+    )
+    guard_monitor_factory = getattr(dependencies, "guard_monitor_service_factory", None)
+    app._guard_monitor_service = (
+        guard_monitor_factory(app)
+        if callable(guard_monitor_factory)
+        else GuardMonitorService(app)
     )
     monitoring_services = compose_monitoring(
         app._ensure_engine,

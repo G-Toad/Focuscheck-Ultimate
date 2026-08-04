@@ -160,6 +160,49 @@ class RuntimeFoundationTests(unittest.TestCase):
         self.assertFalse(registry.schedule("later", 1, lambda: None))
         self.assertFalse(scheduler.callbacks)
 
+    def test_guard_monitor_publishes_guard_transition_and_notifies_engine(self):
+        from focuscheck.runtime.guard_monitor import GuardMonitorService
+        from focuscheck.runtime.state import RuntimeStateCoordinator
+
+        class Guard:
+            paused = True
+
+            def should_pause(self):
+                return self.paused
+
+        settings = {"manual_paused": False, "paused": False, "snooze_until_utc": ""}
+        app = mock.Mock()
+        app.guard = Guard()
+        app._runtime_state = RuntimeStateCoordinator(settings)
+        service = GuardMonitorService(app)
+
+        self.assertTrue(service.refresh())
+        app.guard.paused = False
+        self.assertFalse(service.refresh())
+        self.assertEqual(2, app._notify_engine_pause_state.call_count)
+        self.assertEqual(
+            [mock.call(source="system_guard"), mock.call(source="system_guard")],
+            app._notify_engine_pause_state.call_args_list,
+        )
+
+    def test_guard_monitor_start_owns_pause_edge_timer_and_schedules_prompt_on_resume(self):
+        from focuscheck.runtime.guard_monitor import GuardMonitorService
+
+        scheduler = FakeScheduler()
+        app = mock.Mock()
+        app.guard.should_pause.side_effect = [True, False]
+        app._timers = TimerRegistry(scheduler)
+        service = GuardMonitorService(app)
+
+        service.start()
+        self.assertIn("pause-edge", service._app._timers._timers)
+        callback_id = next(iter(scheduler.callbacks))
+        scheduler.fire(callback_id)
+
+        app._schedule_next.assert_called_once_with(0)
+        self.assertEqual("pause-edge", service._app._timers._timers["pause-edge"].name)
+        service._app._timers.close()
+
     def test_scheduler_failure_rolls_back_one_shot_timer_ownership(self):
         scheduler = FailingScheduler()
         registry = TimerRegistry(scheduler)

@@ -37,6 +37,7 @@ class AppDependencies:
     runtime_journal_factory: Callable[..., Any] | None = None
     runtime_state_factory: Callable[..., Any] | None = None
     guard_factory: Callable[[Callable[[], Any]], Any] | None = None
+    guard_monitor_service_factory: Callable[[Any], Any] | None = None
     prompt_coordinator_factory: Callable[[], Any] | None = None
     # App-owned UI factories keep dialogs at the composition boundary.  The
     # production defaults remain the concrete classes imported by App, while

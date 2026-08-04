@@ -606,47 +606,24 @@ class App:
 
 
     def _start_heartbeat(self):
-        # Fires a prompt immediately on paused->unpaused transition, as a safety net.
-        self._last_paused_state = None
-        def tick():
-            try:
-                paused_now = self._refresh_guard_state()
-                if self._last_paused_state is True and paused_now is False:
-                    # Transition from paused to unpaused: schedule a prompt now
-                    self._schedule_next(0)
-                self._last_paused_state = paused_now
-            except Exception:
-                pass
-            if hasattr(self, "_timers"):
-                return
-            self.root.after(1000, tick)  # 1 Hz
-        tick()
-        if hasattr(self, "_timers"):
-            self._timers.schedule("pause-edge", 1000, tick, interval_ms=1000)
+        """Start the compatibility guard-monitor entry point."""
+        service = getattr(self, "_guard_monitor_service", None)
+        if service is None:
+            from .runtime.guard_monitor import GuardMonitorService
+            factory = getattr(getattr(self, "_dependencies", None), "guard_monitor_service_factory", None)
+            service = factory(self) if callable(factory) else GuardMonitorService(self)
+            self._guard_monitor_service = service
+        service.start()
 
     def _refresh_guard_state(self) -> bool:
-        """Sample guard state once and publish it to the runtime coordinator."""
-        try:
-            guard = getattr(self, "guard", None)
-            guard_paused = bool(guard.should_pause()) if guard is not None else False
-        except Exception:
-            guard_paused = False
-        runtime_state = getattr(self, "_runtime_state", None)
-        if runtime_state is not None:
-            previous_effective = None
-            try:
-                previous_effective = bool(runtime_state.is_effectively_paused())
-            except Exception:
-                pass
-            runtime_state.set_guard_reason("system_guard", guard_paused)
-            if previous_effective is not None:
-                try:
-                    current_effective = bool(runtime_state.is_effectively_paused())
-                    if current_effective != previous_effective:
-                        self._notify_engine_pause_state(source="system_guard")
-                except Exception:
-                    pass
-        return guard_paused
+        """Compatibility delegate for one guard-state sample."""
+        service = getattr(self, "_guard_monitor_service", None)
+        if service is None:
+            from .runtime.guard_monitor import GuardMonitorService
+            factory = getattr(getattr(self, "_dependencies", None), "guard_monitor_service_factory", None)
+            service = factory(self) if callable(factory) else GuardMonitorService(self)
+            self._guard_monitor_service = service
+        return bool(service.refresh())
 
     def _maybe_show_prompt(self):
         # Prompt eligibility uses the validated snapshot owned by App. Settings

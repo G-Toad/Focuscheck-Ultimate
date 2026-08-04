@@ -606,6 +606,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "heartbeat_writer", "camera_capture_factory", "clock_factory", "event_ledger_factory", "lifecycle_factory",
                 "activity_provider_factory",
                 "timer_registry_factory", "runtime_journal_factory", "runtime_state_factory", "guard_factory",
+                "guard_monitor_service_factory",
                 "prompt_coordinator_factory", "filesystem", "startup_stage_hook",
                 "shutdown_stage_hook", "tk_root_factory",
                 "intervention_wizard_factory", "settings_window_factory",
@@ -686,6 +687,20 @@ class AppLifecycleTests(unittest.TestCase):
 
         App._write_heartbeat(app)
         service.write.assert_called_once_with()
+
+    def test_guard_monitor_service_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        service = mock.Mock()
+        service.refresh.return_value = True
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(guard_monitor_service_factory=lambda _app: service)
+
+        self.assertTrue(App._refresh_guard_state(app))
+        App._start_heartbeat(app)
+        service.refresh.assert_called_once_with()
+        service.start.assert_called_once_with()
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App
