@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Implementation source checkpoint: `30cbe81`; latest evidence/report commit: `566367c`.
-- Full verifier: all 21 bounded stages passed, with 604 unittest cases and zero process leaks.
+- Implementation source checkpoint: `d7592e1`; latest evidence/report commit: `c08782a`.
+- Full verifier: all 22 bounded stages passed, with 604 unittest cases and zero process leaks.
+- The verifier now runs an isolated migration transaction covering all five durable task/log artifacts, conflict preservation, versioned journaling, and legacy settings import without touching the live profile.
 - Guard sampling, effective-pause transition notification, and pause-edge scheduling now have an injectable `GuardMonitorService` boundary; the App methods remain compatibility delegates.
 - Heartbeat payload construction and atomic publication now have an injectable `HeartbeatService` boundary; the App method remains a compatibility delegate and supervisor protocol fields are unchanged.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
@@ -30,7 +31,7 @@
 - Current automated test count: 592 unittest cases.
 - Task deadline UI and database overdue transitions now preserve `failed`/`timed_out` semantics instead of allowing overdue completion to be recorded as success.
 - Runtime pause persistence now stores manual intent separately from derived effective pause, preserving legacy snooze and manual-pause semantics across restart and expiry.
-- Verification runner: all 21 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export/recovery, performance, package-build, and process-leak gates.
+- Verification runner: all 22 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, disposable migration, QA, application/tray/native self-tests, resource-leak, isolation, export/recovery, performance, package-build, and process-leak gates.
 - The verifier also runs disposable real-process supervisor scenarios covering crash/restart, generation-bound stop acknowledgement, hang recovery, circuit-breaker entry, and child reaping; production-duration and target-machine supervision remain pending.
 - The composed Advanced Settings window now delegates durable writes through the App-owned persistence callback and applies the normalized committed settings snapshot after success; standalone construction retains its compatibility fallback.
 - Camera-adjustment and crop-adjustment child windows now use that same App-owned callback when composed by Settings, and apply normalized committed child settings after durable save.

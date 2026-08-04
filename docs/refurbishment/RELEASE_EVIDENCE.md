@@ -1,6 +1,6 @@
 # Release Evidence
 
-Current verified checkpoint: source `30cbe81`, verifier report `566367c`. The full verifier passed all 21 bounded stages with 604 unittest cases and zero process leaks. `HeartbeatService` owns heartbeat payload construction and atomic publication, while `GuardMonitorService` owns guard sampling and pause-edge scheduling; the report remains `partial` because the five required human Windows/release evidence groups are `not_run`.
+Current verified checkpoint: source `d7592e1`, verifier report `c08782a`. The full verifier passed all 22 bounded stages with 604 unittest cases and zero process leaks. The disposable migration stage covers five durable task/log artifacts, conflict-preserving journaling, and legacy settings import. `HeartbeatService` owns heartbeat payload construction and atomic publication, while `GuardMonitorService` owns guard sampling and pause-edge scheduling; the report remains `partial` because the five required human Windows/release evidence groups are `not_run`.
 
 Latest composition-root consolidation: source checkpoint `301a241` moves the entire pre-READY application assembly sequence into `compose_application_services`, leaving `App._initialize` responsible for delegation, first scheduling, lifecycle READY, and initial heartbeat publication. The full verifier passed all 21 stages with 592 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
