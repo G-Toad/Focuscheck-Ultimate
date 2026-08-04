@@ -48,8 +48,6 @@ from .runtime.composition import (
     compose_tk_services,
     compose_runtime_state,
     compose_repositories,
-    compose_watcher,
-    compose_tray,
     compose_platform_services,
     compose_monitoring,
 )
