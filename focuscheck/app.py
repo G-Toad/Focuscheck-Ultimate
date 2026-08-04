@@ -50,6 +50,7 @@ from .runtime.composition import (
     compose_repositories,
     compose_watcher,
     compose_tray,
+    compose_platform_services,
     compose_monitoring,
 )
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
@@ -401,23 +402,15 @@ class App:
         self._using_pystray = False    # proven alive
         self._native_tray_fallback_active = False
         self._tray = None
-        tray_services = compose_tray(
+        self._winwatch = None
+        platform_services = compose_platform_services(
             self,
             self._tray_factory(),
+            self._watcher_factory(),
             name=APP_NAME,
             paths=self.paths,
-            icon_image=self._tray_icon_image,
-        )
-        self._tray = tray_services.tray
-        self._pystray_started = tray_services.started
-        self._using_pystray = tray_services.using_pystray
-        self._startup_stage("tray_initialized")
-
-        self._winwatch = None
-        compose_watcher(
-            self._watcher_factory(),
             root=self.root,
-            pystray_started=self._pystray_started,
+            icon_image=self._tray_icon_image,
             tray_icon_path=self._tray_icon_path,
             on_resume=self._on_resume_event,
             on_pause=self._on_pause_event,
@@ -425,8 +418,21 @@ class App:
             on_tray_click=self._on_tray_click,
             on_shutdown=self._handle_system_shutdown,
             startup_stage=self._startup_stage,
-            component_sink=lambda name, value: setattr(self, "_winwatch", value),
+            component_sink=lambda name, value: setattr(
+                self,
+                {
+                    "tray": "_tray",
+                    "pystray_started": "_pystray_started",
+                    "using_pystray": "_using_pystray",
+                    "watcher": "_winwatch",
+                }[name],
+                value,
+            ),
         )
+        self._tray = platform_services.tray
+        self._pystray_started = platform_services.pystray_started
+        self._using_pystray = platform_services.using_pystray
+        self._winwatch = platform_services.watcher
         # quick first pop to prove it works
         self._schedule_next(2000)
         self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")

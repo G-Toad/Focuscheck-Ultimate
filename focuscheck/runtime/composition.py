@@ -75,6 +75,16 @@ class TrayServices:
 
 
 @dataclass(frozen=True)
+class PlatformServices:
+    """Tray and native watcher services composed as one platform boundary."""
+
+    tray: Any
+    pystray_started: bool
+    using_pystray: bool
+    watcher: Any
+
+
+@dataclass(frozen=True)
 class MonitoringServices:
     """Selected monitoring engine and prompt coordinator pair."""
 
@@ -507,6 +517,63 @@ def compose_tray(
         except Exception:
             pass
     return TrayServices(tray, started, using_pystray)
+
+
+def compose_platform_services(
+    app: Any,
+    tray_factory: Callable[..., Any] | None,
+    watcher_factory: Callable[..., Any] | None,
+    *,
+    name: str,
+    paths: Any,
+    root: Any,
+    icon_image: Any,
+    tray_icon_path: Any,
+    on_resume: Callable[..., Any],
+    on_pause: Callable[..., Any],
+    on_display_change: Callable[..., Any],
+    on_tray_click: Callable[..., Any],
+    on_shutdown: Callable[..., Any],
+    startup_stage: Callable[[str], Any] | None = None,
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> PlatformServices:
+    """Compose tray first, then native watcher fallback wiring."""
+    tray_services = compose_tray(
+        app,
+        tray_factory,
+        name=name,
+        paths=paths,
+        icon_image=icon_image,
+    )
+    if callable(component_sink):
+        component_sink("tray", tray_services.tray)
+        component_sink("pystray_started", tray_services.started)
+        component_sink("using_pystray", tray_services.using_pystray)
+    if callable(startup_stage):
+        startup_stage("tray_initialized")
+
+    watcher_services = compose_watcher(
+        watcher_factory,
+        root=root,
+        pystray_started=tray_services.started,
+        tray_icon_path=tray_icon_path,
+        on_resume=on_resume,
+        on_pause=on_pause,
+        on_display_change=on_display_change,
+        on_tray_click=on_tray_click,
+        on_shutdown=on_shutdown,
+        startup_stage=startup_stage,
+        component_sink=(
+            (lambda _name, value: component_sink("watcher", value))
+            if callable(component_sink) else None
+        ),
+    )
+    return PlatformServices(
+        tray_services.tray,
+        tray_services.started,
+        tray_services.using_pystray,
+        watcher_services.watcher,
+    )
 
 
 def compose_monitoring(

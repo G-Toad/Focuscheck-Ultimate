@@ -203,6 +203,39 @@ class AppLifecycleTests(unittest.TestCase):
         factory.call_args.kwargs["get_setting"]("enabled", False)
         self.assertTrue(factory.call_args.kwargs["get_setting"]("enabled", False))
 
+    def test_platform_composition_starts_tray_before_watcher_and_sinks_state(self):
+        from focuscheck.runtime.composition import compose_platform_services, TrayServices, WatcherServices
+
+        events = []
+        app = mock.Mock()
+        paths = type("Paths", (), {"app_log": "app.log", "settings": "settings.json"})()
+        tray = mock.Mock()
+        tray.start.return_value = True
+        watcher = mock.Mock()
+        assigned = {}
+
+        with mock.patch(
+            "focuscheck.runtime.composition.compose_tray",
+            side_effect=lambda *args, **kwargs: (events.append("tray") or TrayServices(tray, True, False)),
+        ), mock.patch(
+            "focuscheck.runtime.composition.compose_watcher",
+            side_effect=lambda *args, **kwargs: (events.append("watcher") or WatcherServices(watcher)),
+        ):
+            services = compose_platform_services(
+                app, mock.Mock(), mock.Mock(), name="FocusCheck", paths=paths,
+                root=mock.Mock(), icon_image=None, tray_icon_path="icon.ico",
+                on_resume=mock.Mock(), on_pause=mock.Mock(),
+                on_display_change=mock.Mock(), on_tray_click=mock.Mock(),
+                on_shutdown=mock.Mock(), startup_stage=events.append,
+                component_sink=assigned.__setitem__,
+            )
+
+        self.assertEqual(["tray", "tray_initialized", "watcher"], events)
+        self.assertIs(tray, services.tray)
+        self.assertIs(watcher, services.watcher)
+        self.assertEqual(tray, assigned["tray"])
+        self.assertFalse(assigned["using_pystray"])
+
     def test_monitoring_composition_orders_engine_before_prompt_coordinator(self):
         from focuscheck.runtime.composition import compose_monitoring
 
@@ -772,7 +805,7 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "initial_monitoring_state_applied",
-                "engine_initialized", "tray_initialized",
+                "engine_initialized",
                 "ready",
             },
             checkpoints,
@@ -781,7 +814,7 @@ class AppLifecycleTests(unittest.TestCase):
         for stage in (
             "paths_composed", "clock_composed", "lifecycle_starting",
             "settings_loaded", "migration_completed", "repositories_initialized",
-            "watcher_initialized", "services_started",
+            "watcher_initialized", "services_started", "tray_initialized",
         ):
             self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 
