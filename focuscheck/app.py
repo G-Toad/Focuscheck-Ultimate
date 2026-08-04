@@ -371,7 +371,7 @@ class App:
         self._start_wall = self._runtime_clock.now_utc()
         self._start_mono = self._runtime_clock.monotonic()
         try:
-            get_logger().info("App starting v%s | data_dir=%s", APP_VERSION, get_data_dir())
+            get_logger().info("App starting v%s | data_dir=%s", APP_VERSION, self.paths.root)
         except Exception:
             pass
         # Init task DB
