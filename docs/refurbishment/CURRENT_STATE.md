@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `f3acc2c`; 578 unittest cases and all 21 bounded verification stages pass with zero process leaks. Camera photo storage now uses the composed App path snapshot, with regression coverage; native overlay brush ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval remain covered. The standard verifier rebuilds current source into disposable frozen executables, validates the package, and exercises the packaged supervisor protocol. Manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `e0466a9`; 579 unittest cases and all 21 bounded verification stages pass with zero process leaks. Default settings load/save now use the composed App settings path, with regression coverage; camera photo storage uses the composed path snapshot, and native overlay/tray/intervention boundaries remain covered. The standard verifier rebuilds current source into disposable frozen executables, validates the package, and exercises the packaged supervisor protocol. Manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Historical baseline before the current evidence chain: `476` unittest cases across 19 bounded verification stages. The authoritative current checkpoint is recorded above.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.

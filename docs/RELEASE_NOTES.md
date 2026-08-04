@@ -2,9 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `f3acc2c`.
-- Full verifier: all 21 bounded stages passed, with 578 unittest cases and zero process leaks.
-- Composed camera-photo storage now uses the frozen App path snapshot instead of recomputing the global data root inside the prompt mixin.
+- Source checkpoint: `e0466a9`.
+- Full verifier: all 21 bounded stages passed, with 579 unittest cases and zero process leaks.
+- Default settings load/save now use the composed App settings path instead of recomputing the global data root; camera-photo storage also uses the frozen App path snapshot.
 - Native overlay ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
 - Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
 

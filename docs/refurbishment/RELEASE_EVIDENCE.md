@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest settings-composition correction: source checkpoint `e0466a9` gives the settings repository an explicit path boundary and routes default App load/save through the frozen App settings path. The full verifier passed all 21 stages with 579 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest composition-root correction: source checkpoint `f3acc2c` routes composed camera-photo storage through the App-owned immutable path snapshot and adds a regression proving the composed root wins. The full verifier passed all 21 stages with 578 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest native error-boundary correction: source checkpoint `43a628c` reads native tray-menu failures through the configured Kernel32 `GetLastError` contract after resetting the same thread-local error state. The full verifier passed all 21 stages with 577 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
