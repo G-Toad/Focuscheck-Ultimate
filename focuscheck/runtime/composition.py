@@ -14,6 +14,7 @@ from ..settings import load_settings
 from ..runtime.events import StructuredEventLedger
 from ..runtime.data_controls import DataControlService
 from ..runtime.health import HealthSnapshotService
+from ..runtime.heartbeat import HeartbeatService
 from ..runtime.intervention import InterventionOrchestrator
 from ..runtime.scheduler import PromptScheduler
 from ..runtime.startup import StartupService
@@ -278,6 +279,17 @@ def compose_application_services(
             uninstall=app._uninstall_startup,
             is_installed=app._is_startup_installed,
             app_name=app_name,
+        )
+    )
+    heartbeat_factory = getattr(dependencies, "heartbeat_service_factory", None)
+    app._heartbeat_service = (
+        heartbeat_factory(app)
+        if callable(heartbeat_factory)
+        else HeartbeatService(
+            app,
+            heartbeat_interval_ms=60_000,
+            default_path=getattr(app.paths, "heartbeat", None),
+            logger_factory=get_logger,
         )
     )
     compose_runtime_services(

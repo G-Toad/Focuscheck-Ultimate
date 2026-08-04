@@ -615,6 +615,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "intervention_service_factory",
                 "prompt_scheduler_factory",
                 "startup_service_factory",
+                "heartbeat_service_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -674,6 +675,17 @@ class AppLifecycleTests(unittest.TestCase):
 
         self.assertTrue(App._is_startup_enabled(app))
         service.is_installed.assert_called_once_with()
+
+    def test_heartbeat_service_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        service = mock.Mock()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(heartbeat_service_factory=lambda _app: service)
+
+        App._write_heartbeat(app)
+        service.write.assert_called_once_with()
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App
