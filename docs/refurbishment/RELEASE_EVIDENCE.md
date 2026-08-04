@@ -1,5 +1,7 @@
 # Release Evidence
 
+Current verified checkpoint: source `88534fd`, verifier report `366a49b`, and documentation checkpoint `6e381c5`. The full verifier passed all 21 bounded stages with 601 unittest cases and zero process leaks. `HeartbeatService` now owns heartbeat payload construction and atomic publication; the report remains `partial` because the five required human Windows/release evidence groups are `not_run`.
+
 Latest composition-root consolidation: source checkpoint `301a241` moves the entire pre-READY application assembly sequence into `compose_application_services`, leaving `App._initialize` responsible for delegation, first scheduling, lifecycle READY, and initial heartbeat publication. The full verifier passed all 21 stages with 592 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest platform composition extraction: source checkpoint `c97dbc5` combines pystray and native watcher construction into an ordered platform-services boundary, preserving tray fallback state, callback wiring, and startup checkpoints. The full verifier passed all 21 stages with 592 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
