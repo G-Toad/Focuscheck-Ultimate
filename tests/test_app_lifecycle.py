@@ -609,12 +609,22 @@ class AppLifecycleTests(unittest.TestCase):
                 "intervention_wizard_factory", "settings_window_factory",
                 "task_entry_dialog_factory", "snooze_prompt_factory",
                 "snooze_reminder_dialog_factory", "gentle_reminder_dialog_factory",
-                "status_window_factory",
+                "status_window_factory", "data_control_service_factory",
             },
             set(deps.__dataclass_fields__),
         )
         self.assertIs(settings_loader, deps.settings_loader)
         self.assertIs(task_db_factory, deps.task_db_factory)
+
+    def test_data_control_service_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        service = object()
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(data_control_service_factory=lambda _app: service)
+
+        self.assertIs(service, App._data_controls(app))
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App

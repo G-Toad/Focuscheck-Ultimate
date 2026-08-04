@@ -1806,6 +1806,18 @@ class App:
             return Path(paths.root)
         return Path(get_data_dir())
 
+    def _data_controls(self):
+        """Return the composed data-control boundary with fixture fallback."""
+        service = getattr(self, "_data_control_service", None)
+        if service is not None:
+            return service
+        from .runtime.data_controls import DataControlService
+
+        factory = getattr(getattr(self, "_dependencies", None), "data_control_service_factory", None)
+        service = factory(self) if callable(factory) else DataControlService(self)
+        self._data_control_service = service
+        return service
+
     def _diagnostic_status_snapshot(self) -> dict:
         """Return the bounded health projection owned by the runtime service."""
         service = getattr(self, "_health_snapshot_service", None)
@@ -1928,7 +1940,6 @@ class App:
         """Export privacy-safe data from a tray callback on the Tk thread."""
         def _do_export():
             from tkinter import filedialog
-            from .utils.data_export import export_data
 
             try:
                 data_dir = self._data_root()
@@ -1953,7 +1964,7 @@ class App:
                 if include_sensitive:
                     categories += ("settings", "tasks")
 
-                manifest = export_data(data_dir, output, categories=categories)
+                manifest = self._data_controls().export_data(data_dir, output, categories=categories)
                 messagebox.showinfo(
                     "Export complete",
                     f"Exported {len(manifest['files'])} files to:\n{output}",
@@ -1972,10 +1983,8 @@ class App:
     def _tray_show_data_inventory(self):
         """Show a metadata-only inventory without exposing file contents."""
         def _show_inventory():
-            from .utils.data_export import inventory_data
-
             try:
-                report = inventory_data(self._data_root())
+                report = self._data_controls().inventory_data(self._data_root())
                 totals = {}
                 for item in report["files"]:
                     category = item["category"]
@@ -1997,15 +2006,15 @@ class App:
     def _tray_clear_logs(self):
         """Clear only known log files after an explicit user confirmation."""
         def _clear_logs():
-            from .utils.data_export import clear_data
-
             if not messagebox.askyesno(
                 "Clear logs",
                 "Delete FocusCheck log and response files, including rotated copies?",
             ):
                 return False
             try:
-                report = clear_data(self._data_root(), categories=("logs",), confirmed=True)
+                report = self._data_controls().clear_data(
+                    self._data_root(), categories=("logs",), confirmed=True
+                )
                 deleted = sum(1 for item in report["files"] if item.get("deleted"))
                 if report.get("audit_written") is False:
                     messagebox.showwarning(
@@ -2024,8 +2033,6 @@ class App:
     def _tray_clear_data(self):
         """Clear settings, tasks, and camera files, leaving operational logs intact."""
         def _clear_personal_data():
-            from .utils.data_export import clear_data
-
             if not messagebox.askyesno(
                 "Clear personal data",
                 "Delete settings, task history, and captured camera files?\n\n"
@@ -2033,7 +2040,7 @@ class App:
             ):
                 return False
             try:
-                report = clear_data(
+                report = self._data_controls().clear_data(
                     self._data_root(),
                     categories=("settings", "tasks", "camera"),
                     confirmed=True,
@@ -2061,7 +2068,6 @@ class App:
         """Apply an explicitly selected retention period to old log files."""
         def _retain_logs():
             from tkinter import simpledialog
-            from .utils.data_retention import apply_retention
 
             days = simpledialog.askinteger(
                 "Clean old logs",
@@ -2073,7 +2079,9 @@ class App:
             if days is None:
                 return False
             try:
-                result = apply_retention(self._data_root(), max_age_days=days, apply=True)
+                result = self._data_controls().apply_retention(
+                    self._data_root(), max_age_days=days, apply=True
+                )
                 deleted = sum(1 for item in result if item.get("deleted"))
                 audit_failures = sum(1 for item in result if item.get("audit_written") is False)
                 if audit_failures:
@@ -2094,11 +2102,11 @@ class App:
         """Preview and create a sanitized bundle from operational data only."""
         def _create_bundle():
             from tkinter import filedialog
-            from .utils.diagnostics import create_bundle, preview_bundle
 
             try:
                 data_dir = self._data_root()
-                preview = preview_bundle(data_dir)
+                controls = self._data_controls()
+                preview = controls.preview_bundle(data_dir)
                 files = preview["files"]
                 summary = "\n".join(
                     f"- {item['path']} ({item['size']} bytes)" for item in files
@@ -2121,7 +2129,7 @@ class App:
                 )
                 if not output:
                     return False
-                create_bundle(data_dir, output)
+                controls.create_bundle(data_dir, output)
                 messagebox.showinfo("Diagnostic bundle", f"Created sanitized bundle:\n{output}")
                 return True
             except Exception as exc:

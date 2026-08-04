@@ -12,6 +12,7 @@ from ..database import configure_paths as configure_csv_paths
 from ..database import TaskDB, ensure_log_header
 from ..settings import load_settings
 from ..runtime.events import StructuredEventLedger
+from ..runtime.data_controls import DataControlService
 from ..runtime.health import HealthSnapshotService
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
@@ -251,6 +252,10 @@ def compose_application_services(
         app,
         app_name=app_name,
         app_version=app_version,
+    )
+    data_control_factory = getattr(dependencies, "data_control_service_factory", None)
+    app._data_control_service = (
+        data_control_factory(app) if callable(data_control_factory) else DataControlService(app)
     )
     compose_runtime_services(
         app._prepare_tray_icon,
