@@ -8,6 +8,8 @@ including click-through overlays and transparent windows.
 import ctypes
 from ctypes import wintypes
 
+_WIN_DIALOG_OVERLAY_CLASS_NAME = "FocusCheckDialogOverlayClass"
+
 # Windows constants for extended functionality
 try:
     GWL_WNDPROC = -4
@@ -228,7 +230,7 @@ class _WinClickThroughOverlay:
         wc.cbSize = ctypes.sizeof(WNDCLASSEXW)
         wc.lpfnWndProc = ctypes.cast(wnd_proc, ctypes.c_void_p)
         wc.hInstance = hInstance
-        wc.lpszClassName = "FocusCheckOverlayClass"
+        wc.lpszClassName = _WIN_DIALOG_OVERLAY_CLASS_NAME
         atom = user32.RegisterClassExW(ctypes.byref(wc))
         if not atom:
             raise RuntimeError("RegisterClassExW failed")
@@ -256,7 +258,7 @@ class _WinClickThroughOverlay:
         hInstance = ctypes.windll.kernel32.GetModuleHandleW(None)
         self.hwnd = user32.CreateWindowExW(
             WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
-            "FocusCheckOverlayClass",
+            _WIN_DIALOG_OVERLAY_CLASS_NAME,
             "FocusCheckOverlay",
             WS_POPUP,
             x, y, w, h,

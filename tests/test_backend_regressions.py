@@ -1158,6 +1158,32 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertIs(core_proc, core_overlay._proc)
         self.assertIs(dialog_proc, dialog_overlay._wnd_proc)
 
+    def test_overlay_implementations_use_distinct_native_class_names(self):
+        from focuscheck.platform_specific import windows
+        from focuscheck.ui.dialogs import windows_utils
+
+        self.assertNotEqual(windows._WIN_OVERLAY_CLASS_NAME, windows_utils._WIN_DIALOG_OVERLAY_CLASS_NAME)
+
+    def test_core_overlay_brushes_are_owned_per_window(self):
+        from focuscheck.platform_specific import windows
+
+        windows._win_overlay_brushes.clear()
+        windows._win_overlay_brushes[101] = "brush-a"
+        windows._win_overlay_brushes[202] = "brush-b"
+        first = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+        first.hwnd = 101
+        first._brush = "brush-a"
+        second = windows.WinClickThroughOverlay.__new__(windows.WinClickThroughOverlay)
+        second.hwnd = 202
+        second._brush = "brush-b"
+
+        with mock.patch.object(windows, "_user32", return_value=type("User32", (), {"DestroyWindow": lambda *_: True})()), \
+                mock.patch.object(windows, "_gdi32", return_value=type("Gdi32", (), {"DeleteObject": lambda *_: True})()):
+            self.assertTrue(first.destroy())
+            self.assertEqual({202: "brush-b"}, windows._win_overlay_brushes)
+            self.assertTrue(second.destroy())
+        self.assertEqual({}, windows._win_overlay_brushes)
+
     def test_spotlight_region_cleanup_respects_window_ownership(self):
         from focuscheck.ui.dialogs import intervention_wizard
 

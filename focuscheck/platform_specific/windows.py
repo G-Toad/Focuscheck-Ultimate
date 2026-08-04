@@ -85,6 +85,8 @@ def classify_watcher_message(msg, wparam, lparam, *, tray_message=0, taskbar_cre
 _GDIPLUS_TOKEN = None
 _win_overlay_class_atom = None
 _win_overlay_wndproc = None
+_win_overlay_brushes: dict[int, wintypes.HBRUSH] = {}
+_WIN_OVERLAY_CLASS_NAME = "FocusCheckOverlayClass"
 
 if not hasattr(wintypes, "HCURSOR"):
     HCURSOR = wintypes.HANDLE
@@ -408,7 +410,9 @@ class WinClickThroughOverlay:
             # Always pass mouse through
             if msg == WM_NCHITTEST:
                 return LRESULT(HTTRANSPARENT)
-            # Minimal paint handler to keep window solid color
+            # Paint from the brush owned by this HWND. The Win32 class is
+            # process-global, so storing a per-instance brush on the class
+            # would let one overlay delete a handle still used by another.
             if msg == 0x000F:  # WM_PAINT
                 class PAINTSTRUCT(ctypes.Structure):
                     _fields_ = [
@@ -423,12 +427,9 @@ class WinClickThroughOverlay:
                 hdc = user32.BeginPaint(h, ctypes.byref(ps))
                 rect = wintypes.RECT()
                 user32.GetClientRect(h, ctypes.byref(rect))
-                # Fill with class background brush
-                try:
-                    hbr = user32.GetClassLongPtrW(h, -10)
-                except Exception:
-                    hbr = user32.GetClassLongW(h, -10)
-                user32.FillRect(hdc, ctypes.byref(rect), hbr)
+                hbr = _win_overlay_brushes.get(int(h))
+                if hbr:
+                    user32.FillRect(hdc, ctypes.byref(rect), hbr)
                 user32.EndPaint(h, ctypes.byref(ps))
                 return 0
             return user32.DefWindowProcW(h, msg, wParam, lParam)
@@ -450,7 +451,7 @@ class WinClickThroughOverlay:
         wc.hCursor = None
         wc.hbrBackground = None  # set later on window
         wc.lpszMenuName = None
-        wc.lpszClassName = "FocusCheckOverlayClass"
+        wc.lpszClassName = _WIN_OVERLAY_CLASS_NAME
         wc.hIconSm = None
         try:
             ctypes.set_last_error(0)
@@ -522,11 +523,8 @@ class WinClickThroughOverlay:
         RGB = lambda R,G,B: R | (G << 8) | (B << 16)
         hbrush = gdi32.CreateSolidBrush(RGB(r,g,b))
         self._brush = hbrush
-        GCLP_HBRBACKGROUND = -10
-        try:
-            user32.SetClassLongPtrW(self.hwnd, GCLP_HBRBACKGROUND, hbrush)
-        except Exception:
-            user32.SetClassLongW(self.hwnd, GCLP_HBRBACKGROUND, hbrush)
+        if hbrush:
+            _win_overlay_brushes[int(self.hwnd)] = hbrush
         # Show without activation
         try:
             ctypes.set_last_error(0)
@@ -586,6 +584,7 @@ class WinClickThroughOverlay:
         return bool(ok)
 
     def destroy(self):
+        global _win_overlay_brushes
         brush = self._brush
         hwnd = self.hwnd
         if hwnd:
@@ -599,6 +598,8 @@ class WinClickThroughOverlay:
                 return False
         self.hwnd = None
         self._brush = None
+        if hwnd:
+            _win_overlay_brushes.pop(int(hwnd), None)
         try:
             if brush:
                 _gdi32().DeleteObject(brush)
