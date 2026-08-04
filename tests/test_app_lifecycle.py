@@ -1103,6 +1103,39 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertTrue(snapshot["effective_paused"])
         self.assertEqual("snooze", snapshot["pause_reason"])
 
+    def test_diagnostic_status_is_owned_by_health_snapshot_service(self):
+        from focuscheck.app import APP_NAME, APP_VERSION, App
+        from focuscheck.runtime.health import HealthSnapshotService
+
+        app = App.__new__(App)
+        app._health_snapshot_service = HealthSnapshotService(
+            app,
+            app_name=APP_NAME,
+            app_version=APP_VERSION,
+        )
+        app.settings = {"paused": False}
+        app.guard = mock.Mock()
+        app.guard.diagnostics.return_value = {"healthy": True}
+        app.lifecycle = mock.Mock(phase="ready")
+        app._runtime_state = None
+        app._engine = None
+        app._engine_shutdown = True
+        app._current_prompt = None
+        app._using_pystray = False
+        app._native_tray_fallback_active = False
+        app._winwatch = None
+        app.taskdb = None
+        app._activity_provider = None
+
+        with mock.patch("focuscheck.doctor.get_anomalies", return_value=[]), mock.patch(
+            "focuscheck.settings.schema.get_settings_schema", return_value={}
+        ), mock.patch.object(App, "_data_root", return_value="<runtime-root>"):
+            snapshot = App._diagnostic_status_snapshot(app)
+
+        self.assertIs(app._health_snapshot_service._app, app)
+        self.assertEqual(APP_NAME, snapshot["application"])
+        self.assertEqual("<runtime-root>", snapshot["data_root"])
+
     def test_heartbeat_readiness_accepts_injected_lifecycle_shapes(self):
         from focuscheck.app import App
         from focuscheck.runtime.lifecycle import LifecyclePhase

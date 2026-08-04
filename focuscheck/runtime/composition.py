@@ -12,6 +12,7 @@ from ..database import configure_paths as configure_csv_paths
 from ..database import TaskDB, ensure_log_header
 from ..settings import load_settings
 from ..runtime.events import StructuredEventLedger
+from ..runtime.health import HealthSnapshotService
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from ..runtime.state import RuntimeStateCoordinator
@@ -246,6 +247,11 @@ def compose_application_services(
     app._gentle_reminder_dialog = None
     app._tray_icon_image = None
     app._tray_icon_path = None
+    app._health_snapshot_service = HealthSnapshotService(
+        app,
+        app_name=app_name,
+        app_version=app_version,
+    )
     compose_runtime_services(
         app._prepare_tray_icon,
         app._start_heartbeat,
