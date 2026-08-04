@@ -91,10 +91,17 @@ class RuntimeStateCoordinator:
 
     def refresh_from_settings(self, settings: MutableMapping[str, Any]) -> None:
         """Adopt a reloaded settings document without losing runtime leases."""
+        previous_revision = self.snapshot.revision
         self.settings = settings
         self.snapshot.revision += 1
         self.snapshot.manual_paused = self._manual_pause_from_settings(settings, self.clock.now_utc())
         self.snapshot.snooze_until_utc = str(settings.get("snooze_until_utc", "") or "")
+        self._record(
+            "settings_refresh",
+            "committed",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
 
     def _safe_snapshot(self, snapshot: RuntimeSnapshot | None = None) -> dict:
         current = snapshot or self.snapshot
@@ -109,11 +116,33 @@ class RuntimeStateCoordinator:
             "transition_sink_failures": self._transition_sink_failures,
         }
 
-    def _record(self, event: str, outcome: str, snapshot: RuntimeSnapshot | None = None) -> None:
+    def _record(
+        self,
+        event: str,
+        outcome: str,
+        snapshot: RuntimeSnapshot | None = None,
+        *,
+        previous_revision: int | None = None,
+        persisted: bool | None = None,
+        side_effects: tuple[str, ...] = (),
+    ) -> None:
         if self._transition_sink is None:
             return
         payload = self._safe_snapshot(snapshot)
-        payload.update({"event": event, "outcome": outcome})
+        payload.update(
+            {
+                "event": event,
+                "outcome": outcome,
+                "previous_revision": (
+                    int(previous_revision)
+                    if previous_revision is not None
+                    else max(0, int(payload["revision"]) - 1)
+                ),
+                "new_revision": int(payload["revision"]),
+                "persisted": persisted,
+                "side_effects": [str(effect) for effect in side_effects],
+            }
+        )
         try:
             result = self._transition_sink(payload)
             # Legacy sinks return None; only an explicit False means that the
@@ -135,6 +164,7 @@ class RuntimeStateCoordinator:
     def _commit(self, mutate: Callable[[], None], event: str) -> bool:
         before_settings = deepcopy(dict(self.settings))
         before_snapshot = deepcopy(self.snapshot)
+        previous_revision = before_snapshot.revision
         mutate()
         self.snapshot.revision = before_snapshot.revision + 1
         self.settings["paused"] = (
@@ -149,15 +179,32 @@ class RuntimeStateCoordinator:
                     self.settings.clear()
                     self.settings.update(before_settings)
                     self.snapshot = before_snapshot
-                    self._record(event, "rolled_back", before_snapshot)
+                    self._record(
+                        event,
+                        "rolled_back",
+                        before_snapshot,
+                        previous_revision=previous_revision,
+                        persisted=False,
+                    )
                     return False
             except Exception:
                 self.settings.clear()
                 self.settings.update(before_settings)
                 self.snapshot = before_snapshot
-                self._record(event, "rolled_back", before_snapshot)
+                self._record(
+                    event,
+                    "rolled_back",
+                    before_snapshot,
+                    previous_revision=previous_revision,
+                    persisted=False,
+                )
                 return False
-        self._record(event, "committed")
+        self._record(
+            event,
+            "committed",
+            previous_revision=previous_revision,
+            persisted=True if self._persist is not None else None,
+        )
         return True
 
     def snapshot_view(self, now: datetime | None = None) -> RuntimeStateView:
@@ -220,47 +267,94 @@ class RuntimeStateCoordinator:
         else:
             self.snapshot.guard_reasons.discard(reason)
         if was_active != bool(active):
+            previous_revision = self.snapshot.revision
             self.snapshot.revision += 1
-            self._record("guard", "committed")
+            self._record(
+                "guard",
+                "committed",
+                previous_revision=previous_revision,
+                persisted=None,
+            )
 
     def begin_prompt(self) -> bool:
+        previous_revision = self.snapshot.revision
         if (
             self.snapshot.shutdown_requested
             or self.snapshot.prompt_active
             or self.snapshot.intervention_active
             or self.is_effectively_paused()
         ):
-            self._record("prompt", "denied")
+            self._record(
+                "prompt",
+                "denied",
+                previous_revision=previous_revision,
+                persisted=None,
+            )
             return False
         self.snapshot.prompt_active = True
         self.snapshot.revision += 1
-        self._record("prompt", "begun")
+        self._record(
+            "prompt",
+            "begun",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
         return True
 
     def end_prompt(self) -> None:
+        previous_revision = self.snapshot.revision
         self.snapshot.prompt_active = False
         self.snapshot.revision += 1
-        self._record("prompt", "ended")
+        self._record(
+            "prompt",
+            "ended",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
 
     def begin_intervention(self) -> bool:
+        previous_revision = self.snapshot.revision
         if self.snapshot.shutdown_requested or self.snapshot.intervention_active or self.snapshot.prompt_active:
+            self._record(
+                "intervention",
+                "denied",
+                previous_revision=previous_revision,
+                persisted=None,
+            )
             return False
         self.snapshot.intervention_active = True
         self.snapshot.revision += 1
-        self._record("intervention", "begun")
+        self._record(
+            "intervention",
+            "begun",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
         return True
 
     def end_intervention(self) -> None:
+        previous_revision = self.snapshot.revision
         self.snapshot.intervention_active = False
         self.snapshot.revision += 1
-        self._record("intervention", "ended")
+        self._record(
+            "intervention",
+            "ended",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
 
     def request_shutdown(self) -> bool:
         if self.snapshot.shutdown_requested:
             return False
+        previous_revision = self.snapshot.revision
         self.snapshot.shutdown_requested = True
         self.snapshot.revision += 1
-        self._record("shutdown", "requested")
+        self._record(
+            "shutdown",
+            "requested",
+            previous_revision=previous_revision,
+            persisted=None,
+        )
         return True
 
     def can_start_prompt(self) -> bool:

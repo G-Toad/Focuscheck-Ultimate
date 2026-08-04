@@ -112,6 +112,7 @@
 - App-composed V2 interventions now use `App.run_intervention()` for the intervention lease, prompt visibility, wizard context, and cleanup; standalone V2 dialogs retain a compatibility fallback.
 - CSV and intervention-reflection writers are rebound during App composition to the immutable `AppPaths` snapshot instead of retaining import-time output paths.
 - Heartbeats and the status snapshot now expose coordinator-derived effective pause, snooze activity, and guard reasons; composed heartbeat generation no longer re-samples guard state directly.
+- Runtime transition journal events preserve the previous and new revision boundary, explicit durable-persistence outcome, and bounded side-effect list; rejected and rolled-back transitions remain observable without claiming a durable commit.
 - V2 active-window duration now uses the injected service clock when available, with numeric compatibility fallback for standalone providers.
 
 This file distinguishes code-reviewed and automated evidence from manual Windows evidence. It is not a completion claim.

@@ -60,6 +60,63 @@ class RuntimeStateTests(unittest.TestCase):
         self.assertEqual("manual_pause", events[0]["event"])
         self.assertNotIn("snooze_until_utc", events[0])
 
+    def test_transition_events_expose_revision_boundary_and_persistence_result(self):
+        events = []
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            persist=lambda _settings: True,
+            transition_sink=events.append,
+        )
+
+        self.assertTrue(state.set_manual_paused(True))
+        self.assertEqual(
+            {
+                "previous_revision": 0,
+                "new_revision": 1,
+                "persisted": True,
+                "side_effects": [],
+            },
+            {
+                key: events[0][key]
+                for key in ("previous_revision", "new_revision", "persisted", "side_effects")
+            },
+        )
+
+        self.assertTrue(state.begin_prompt() is False)
+        self.assertEqual(1, events[1]["previous_revision"])
+        self.assertEqual(1, events[1]["new_revision"])
+        self.assertIsNone(events[1]["persisted"])
+
+    def test_transition_events_report_persistence_rollback_boundary(self):
+        events = []
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            persist=lambda _settings: False,
+            transition_sink=events.append,
+        )
+
+        self.assertFalse(state.set_manual_paused(True))
+        self.assertEqual("rolled_back", events[0]["outcome"])
+        self.assertEqual(0, events[0]["previous_revision"])
+        self.assertEqual(0, events[0]["new_revision"])
+        self.assertFalse(events[0]["persisted"])
+        self.assertEqual([], events[0]["side_effects"])
+
+    def test_ephemeral_transition_events_advance_revision_without_persistence(self):
+        events = []
+        state = RuntimeStateCoordinator(
+            {"paused": False, "snooze_until_utc": ""},
+            transition_sink=events.append,
+        )
+
+        self.assertTrue(state.begin_prompt())
+        state.end_prompt()
+        self.assertEqual([(0, 1), (1, 2)], [
+            (event["previous_revision"], event["new_revision"])
+            for event in events
+        ])
+        self.assertTrue(all(event["persisted"] is None for event in events))
+
     def test_transition_sink_failures_are_bounded_and_exposed(self):
         def fail(_event):
             raise OSError("journal unavailable")
