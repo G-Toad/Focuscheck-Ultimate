@@ -2,14 +2,15 @@
 
 ## Current automated checkpoint
 
-- Implementation source checkpoint: `7eb4994`; latest evidence/report commit: `75c20f9`.
-- Full verifier: all 21 bounded stages passed, with 598 unittest cases and zero process leaks.
+- Implementation source checkpoint: `775616e`; latest evidence/report commit: `2187f94`.
+- Full verifier: all 21 bounded stages passed, with 599 unittest cases and zero process leaks.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
 - The full pre-READY startup sequence is now owned by `compose_application_services`; `App._initialize` delegates composition and retains only scheduling, readiness, and initial heartbeat publication.
 - Runtime transition journal events now include previous/new revision boundaries and explicit durable-persistence outcomes for commit and rollback paths.
 - The read-only operational health projection is now owned by `HealthSnapshotService`; `App._diagnostic_status_snapshot()` remains a compatibility delegate.
 - Tray data export, inventory, clear, retention, and diagnostic-bundle operations now run through the injectable `DataControlService`; App retains confirmation and Tk dispatch policy.
 - Intervention lease acquisition, identity propagation, wizard execution, prompt restoration, and terminal cleanup now run through the injectable `InterventionOrchestrator`; `App.run_intervention()` remains the stable API.
+- Prompt timer registration and prompt-observer cancellation now run through the injectable `PromptScheduler`; App scheduling methods remain compatibility delegates.
 - Reverse-order shutdown now has a composition boundary that isolates per-resource failures while preserving lifecycle checkpoint names and partial-start cleanup.
 - Ordered recurring-service startup now has a composition boundary covering tray-icon preparation, heartbeats, reminders, diagnostics, and the `services_started` checkpoint.
 - Startup settings loading and legacy migration now have a dedicated injected composition boundary with fail-closed migration handling and checkpoint coverage.
