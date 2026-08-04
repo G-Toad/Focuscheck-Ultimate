@@ -2,7 +2,7 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `c97dbc5`.
+- Source checkpoint: `c9f04a0`.
 - Full verifier: all 21 bounded stages passed, with 592 unittest cases and zero process leaks.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
 - Reverse-order shutdown now has a composition boundary that isolates per-resource failures while preserving lifecycle checkpoint names and partial-start cleanup.
