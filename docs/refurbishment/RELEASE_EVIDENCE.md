@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest runtime-state composition extraction: source checkpoint `2880124` moves durable journal and runtime-state construction into the runtime composition boundary while preserving transition-ledger and settings-persistence wiring. The full verifier passed all 21 stages with 582 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest Tk composition extraction: source checkpoint `a75a7b2` moves Tk root, owner-thread, callback-exception, withdrawal, and timer-registry setup into the runtime composition boundary while preserving partial cleanup and startup checkpoint semantics. The full verifier passed all 21 stages with 581 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest composition extraction: source checkpoint `203a675` moves App foundation service composition into `focuscheck/runtime/composition.py`, preserving injected factories, partial construction assignment, startup hooks, and lifecycle ordering. The full verifier passed all 21 stages with 580 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.

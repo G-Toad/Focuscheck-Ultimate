@@ -12,6 +12,7 @@ Entries below the current candidate are historical artifacts from earlier source
 - The latest full verifier at source checkpoint `a1b9380` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
 - The latest full verifier at source checkpoint `203a675` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
 - The latest full verifier at source checkpoint `a75a7b2` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
+- The latest full verifier at source checkpoint `2880124` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
 
 - Build command: `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1 -OutputDir <disposable-temp-root>`
 - PyInstaller: `6.16.0`

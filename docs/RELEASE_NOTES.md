@@ -2,9 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `a75a7b2`.
-- Full verifier: all 21 bounded stages passed, with 581 unittest cases and zero process leaks.
-- Tk-root owner-thread setup and timer-registry construction now have a dedicated composition boundary with partial-resource cleanup coverage.
+- Source checkpoint: `2880124`.
+- Full verifier: all 21 bounded stages passed, with 582 unittest cases and zero process leaks.
+- Runtime journal and `RuntimeStateCoordinator` construction now have a dedicated composition boundary with partial-resource assignment coverage.
 - Native overlay ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
 - Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
 
