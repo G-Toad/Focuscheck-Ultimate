@@ -74,6 +74,14 @@ class TrayServices:
     using_pystray: bool
 
 
+@dataclass(frozen=True)
+class MonitoringServices:
+    """Selected monitoring engine and prompt coordinator pair."""
+
+    engine: Any
+    prompt_coordinator: Any
+
+
 def compose_foundations(
     dependencies: Any,
     *,
@@ -372,3 +380,19 @@ def compose_tray(
         except Exception:
             pass
     return TrayServices(tray, started, using_pystray)
+
+
+def compose_monitoring(
+    ensure_engine: Callable[[], Any],
+    prompt_coordinator_factory: Callable[[], Any],
+    *,
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> MonitoringServices:
+    """Assemble the selected engine and its prompt coordinator."""
+    engine = ensure_engine()
+    if callable(component_sink):
+        component_sink("engine", engine)
+    prompt_coordinator = prompt_coordinator_factory()
+    if callable(component_sink):
+        component_sink("prompt_coordinator", prompt_coordinator)
+    return MonitoringServices(engine, prompt_coordinator)

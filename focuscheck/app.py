@@ -47,6 +47,7 @@ from .runtime.composition import (
     compose_repositories,
     compose_watcher,
     compose_tray,
+    compose_monitoring,
 )
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
@@ -358,11 +359,20 @@ class App:
             startup_stage=self._startup_stage,
             component_sink=lambda name, value: setattr(self, name, value),
         )
-        self._ensure_engine()
+        monitoring_services = compose_monitoring(
+            self._ensure_engine,
+            self._new_prompt_coordinator,
+            component_sink=lambda name, value: setattr(
+                self,
+                {"engine": "_engine", "prompt_coordinator": "_prompt_coordinator"}[name],
+                value,
+            ),
+        )
+        self._engine = monitoring_services.engine
         self._startup_stage("engine_initialized")
         self._scheduled = None
         self._current_prompt = None
-        self._prompt_coordinator = self._new_prompt_coordinator()
+        self._prompt_coordinator = monitoring_services.prompt_coordinator
         self._intervention_active = False
         self._active_intervention_id = None
         self._last_resume_mono = 0.0
@@ -711,6 +721,7 @@ class App:
             self._engine.on_settings_updated(self.settings)
         except Exception:
             pass
+        return self._engine
 
     def _shutdown_engine(self):
         """Stop the active monitoring engine exactly once during teardown."""

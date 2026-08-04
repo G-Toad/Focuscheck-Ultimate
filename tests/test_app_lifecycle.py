@@ -203,6 +203,22 @@ class AppLifecycleTests(unittest.TestCase):
         factory.call_args.kwargs["get_setting"]("enabled", False)
         self.assertTrue(factory.call_args.kwargs["get_setting"]("enabled", False))
 
+    def test_monitoring_composition_orders_engine_before_prompt_coordinator(self):
+        from focuscheck.runtime.composition import compose_monitoring
+
+        events = []
+        engine = object()
+        coordinator = object()
+
+        services = compose_monitoring(
+            lambda: (events.append("engine") or engine),
+            lambda: (events.append("prompt") or coordinator),
+        )
+
+        self.assertIs(engine, services.engine)
+        self.assertIs(coordinator, services.prompt_coordinator)
+        self.assertEqual(["engine", "prompt"], events)
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
