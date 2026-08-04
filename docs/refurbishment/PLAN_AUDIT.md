@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest monitoring composition extraction: source checkpoint `a0ad1da` moves selected engine and prompt-coordinator assembly into the runtime composition boundary while preserving engine-before-coordinator ordering. The full verifier passed all 21 stages with 586 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
+
 Latest tray composition extraction: source checkpoint `c6a0a53` moves pystray construction/startup, settings accessors, liveness reporting, and native-fallback dispatch into the runtime composition boundary. The full verifier passed all 21 stages with 585 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
 
 Latest native watcher composition extraction: source checkpoint `d20b62f` moves session/power/display watcher construction and callback wiring into the runtime composition boundary while preserving native-tray fallback selection and failure handling. The full verifier passed all 21 stages with 584 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.

@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `c6a0a53`.
-- Full verifier: all 21 bounded stages passed, with 585 unittest cases and zero process leaks.
+- Source checkpoint: `a0ad1da`.
+- Full verifier: all 21 bounded stages passed, with 586 unittest cases and zero process leaks.
+- Monitoring engine selection and prompt-coordinator construction now have a dedicated composition boundary while preserving engine-before-coordinator ordering.
 - Pystray adapter construction/startup, settings accessors, liveness callback, and native-fallback dispatch now have a dedicated tray composition boundary.
 - Native overlay ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
 - Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
