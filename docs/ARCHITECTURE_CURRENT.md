@@ -5,7 +5,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 ## Process Model
 
 - `focuscheck_supervisor.py` is the release startup process. It launches `main.py`, monitors child liveness, watches heartbeat freshness, and restarts unexpected exits.
-- `main.py` creates the Tk app and writes heartbeat files for the supervisor.
+- `main.py` creates the Tk app; the composed `HeartbeatService` writes heartbeat files for the supervisor.
 - The supervisor creates a lock file to avoid duplicate watchdog loops.
 - The app writes an intentional stop file before user-requested supervised exit so the supervisor does not relaunch it.
 - The app itself still uses a Windows mutex through `focuscheck.utils.file_ops.acquire_single_instance()` to avoid duplicate child app instances.
@@ -23,6 +23,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 - `focuscheck.runtime.composition.compose_application_services` owns ordered pre-READY construction and installs App-owned runtime services. `App` retains compatibility entry points for settings, task, tray, and lifecycle commands while delegating health, data controls, intervention orchestration, and prompt scheduling to dedicated services.
 - `PromptScheduler` owns prompt timer registration and observer cancellation through the composed `TimerRegistry`; direct `after()` use remains only in standalone compatibility paths and component-local dialog timers.
 - `StartupService` owns startup registration operations; App tray handlers retain only UI-thread dispatch and user-facing confirmation.
+- `HeartbeatService` owns heartbeat payload construction, readiness/health projection, atomic publication, and bounded write-failure telemetry; the supervisor remains the consumer of the file protocol.
 - Prompt creation is delegated to the active monitoring engine.
 - Settings changes can regenerate active prompts.
 - Snooze and manual pause are persisted in settings.
@@ -33,6 +34,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 - `DataControlService` owns export, inventory, clear, retention, and diagnostic-bundle operation dispatch.
 - `InterventionOrchestrator` owns one intervention lease, identity, wizard execution, prompt visibility scope, and terminal cleanup.
 - `PromptScheduler` owns the next-prompt timer and prompt visibility/closed observer cancellation.
+- `HeartbeatService` owns the periodic heartbeat protocol and receives the immutable path/runtime context at composition time.
 - These services receive the App context at the composition boundary; legacy App methods remain compatibility delegates for existing adapters and tests.
 
 ## Monitoring Engines

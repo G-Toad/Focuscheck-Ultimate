@@ -17,4 +17,4 @@
 | Supervisor lock/stop files | `SupervisorLock` / supervisor | process-start-token ownership, stale-lock recovery, and generation-bound intentional-stop cleanup. |
 | Canonical runtime paths | immutable `AppPaths` | selected once per data root; legacy selection remains migration-only. |
 | Pause/snooze/runtime leases | `RuntimeStateCoordinator` | transactional persistence; prompt/intervention/shutdown lease methods. |
-| Heartbeat | `App._start_file_heartbeat` | supervisor treats stale/malformed heartbeat as unhealthy. |
+| Heartbeat payload/publication | `HeartbeatService` | App retains the compatibility delegate; atomic writes and bounded failure telemetry are isolated, while the supervisor treats stale/malformed heartbeat as unhealthy. |
