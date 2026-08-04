@@ -42,6 +42,7 @@ from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.dependencies import AppDependencies
 from .runtime.composition import (
     compose_foundations,
+    compose_configuration,
     compose_tk_services,
     compose_runtime_state,
     compose_repositories,
@@ -297,24 +298,18 @@ class App:
             self.root.bind_all('<Alt-q>', lambda e: self._quit())
         except Exception:
             pass
-        settings_loader = self._dependencies.settings_loader
-        self.settings = (
-            settings_loader()
-            if callable(settings_loader)
-            else load_settings(self.paths.settings)
+        configuration_services = compose_configuration(
+            self._dependencies.settings_loader,
+            load_settings,
+            self._dependencies.legacy_migration_factory or migrate_legacy_data,
+            migration_has_fatal_failure,
+            settings_path=self.paths.settings,
+            paths=self.paths,
+            startup_stage=self._startup_stage,
+            logger_factory=get_logger,
+            component_sink=lambda name, value: setattr(self, name, value),
         )
-        self._startup_stage("settings_loaded")
-        try:
-            migration_factory = self._dependencies.legacy_migration_factory or migrate_legacy_data
-            migration_events = migration_factory(self.paths)
-            if migration_events:
-                if migration_has_fatal_failure(migration_events):
-                    raise RuntimeError("legacy data migration did not complete safely")
-                get_logger().info("legacy data migration completed | events=%d", len(migration_events))
-        except Exception:
-            get_logger().exception("legacy data migration failed", exc_info=True)
-            raise
-        self._startup_stage("migration_completed")
+        self.settings = configuration_services.settings
         compose_runtime_state(
             self._dependencies,
             paths=self.paths,

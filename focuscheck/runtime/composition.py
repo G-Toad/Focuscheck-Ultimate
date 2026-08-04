@@ -82,6 +82,14 @@ class MonitoringServices:
     prompt_coordinator: Any
 
 
+@dataclass(frozen=True)
+class ConfigurationServices:
+    """Validated settings snapshot and legacy-migration result."""
+
+    settings: Any
+    migration_events: Any
+
+
 def compose_foundations(
     dependencies: Any,
     *,
@@ -128,6 +136,53 @@ def compose_foundations(
         startup_stage("lifecycle_starting")
 
     return FoundationServices(paths, clock, event_ledger, lifecycle)
+
+
+def compose_configuration(
+    settings_loader: Callable[[], Any] | None,
+    default_settings_loader: Callable[[Any], Any],
+    migration_factory: Callable[[Any], Any],
+    migration_failure_predicate: Callable[[Any], bool],
+    *,
+    settings_path: Any,
+    paths: Any,
+    startup_stage: Callable[[str], Any] | None = None,
+    logger_factory: Callable[[], Any] | None = None,
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> ConfigurationServices:
+    """Load the immutable startup snapshot and complete legacy migration."""
+    settings = (
+        settings_loader()
+        if callable(settings_loader)
+        else default_settings_loader(settings_path)
+    )
+    if callable(component_sink):
+        component_sink("settings", settings)
+    if callable(startup_stage):
+        startup_stage("settings_loaded")
+
+    try:
+        migration_events = migration_factory(paths)
+        if migration_events and migration_failure_predicate(migration_events):
+            raise RuntimeError("legacy data migration did not complete safely")
+        if migration_events and callable(logger_factory):
+            try:
+                logger_factory().info(
+                    "legacy data migration completed | events=%d", len(migration_events)
+                )
+            except Exception:
+                pass
+    except Exception:
+        if callable(logger_factory):
+            try:
+                logger_factory().exception("legacy data migration failed", exc_info=True)
+            except Exception:
+                pass
+        raise
+
+    if callable(startup_stage):
+        startup_stage("migration_completed")
+    return ConfigurationServices(settings, migration_events)
 
 
 def compose_tk_services(

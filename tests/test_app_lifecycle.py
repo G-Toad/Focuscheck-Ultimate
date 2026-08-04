@@ -219,6 +219,50 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertIs(coordinator, services.prompt_coordinator)
         self.assertEqual(["engine", "prompt"], events)
 
+    def test_configuration_composition_orders_settings_before_migration(self):
+        from focuscheck.runtime.composition import compose_configuration
+
+        events = []
+        settings = {"monitoring_mode": "v2"}
+        logger = mock.Mock()
+        services = compose_configuration(
+            lambda: (events.append("settings") or settings),
+            lambda _path: settings,
+            lambda _paths: (events.append("migration") or [{"kind": "migrated"}]),
+            lambda _events: False,
+            settings_path="settings.json",
+            paths=object(),
+            startup_stage=lambda name: events.append(name),
+            logger_factory=lambda: logger,
+        )
+
+        self.assertIs(settings, services.settings)
+        self.assertEqual(
+            ["settings", "settings_loaded", "migration", "migration_completed"],
+            events,
+        )
+        logger.info.assert_called_once()
+
+    def test_configuration_composition_fails_closed_on_fatal_migration(self):
+        from focuscheck.runtime.composition import compose_configuration
+
+        stages = []
+        logger = mock.Mock()
+        with self.assertRaises(RuntimeError):
+            compose_configuration(
+                lambda: {},
+                lambda _path: {},
+                lambda _paths: [{"fatal": True}],
+                lambda _events: True,
+                settings_path="settings.json",
+                paths=object(),
+                startup_stage=stages.append,
+                logger_factory=lambda: logger,
+            )
+
+        self.assertEqual(["settings_loaded"], stages)
+        logger.exception.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -666,7 +710,6 @@ class AppLifecycleTests(unittest.TestCase):
         }
         self.assertEqual(
             {
-                "settings_loaded", "migration_completed",
                 "initial_monitoring_state_applied",
                 "engine_initialized", "services_started", "tray_initialized",
                 "ready",
@@ -674,7 +717,11 @@ class AppLifecycleTests(unittest.TestCase):
             checkpoints,
         )
         composition_source_text = composition_source.read_text(encoding="utf-8")
-        for stage in ("paths_composed", "clock_composed", "lifecycle_starting", "repositories_initialized", "watcher_initialized"):
+        for stage in (
+            "paths_composed", "clock_composed", "lifecycle_starting",
+            "settings_loaded", "migration_completed", "repositories_initialized",
+            "watcher_initialized",
+        ):
             self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 
     def test_cleanup_declares_all_shutdown_failure_injection_checkpoints(self):
