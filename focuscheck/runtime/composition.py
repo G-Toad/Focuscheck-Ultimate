@@ -8,6 +8,7 @@ import tkinter as tk
 from typing import Any, Callable
 
 from ..database import configure_paths as configure_csv_paths
+from ..database import TaskDB, ensure_log_header
 from ..runtime.events import StructuredEventLedger
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
@@ -15,8 +16,10 @@ from ..runtime.state import RuntimeStateCoordinator
 from ..utils.clock import SystemClock
 from ..utils.logging_utils import configure_log_path
 from ..utils.logging_utils import get_logger
+from ..utils.logging_utils import log_exception
 from ..utils.paths import get_app_paths
 from ..utils.timers import TimerRegistry
+from ..ui.guards import PauseGuard
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,14 @@ class RuntimeStateServices:
 
     journal: Any
     state: Any
+
+
+@dataclass(frozen=True)
+class RepositoryServices:
+    """Durable task repository and guard adapter composed for one App."""
+
+    taskdb: Any
+    guard: Any
 
 
 def compose_foundations(
@@ -167,3 +178,41 @@ def compose_runtime_state(
     if callable(component_sink):
         component_sink("state", state)
     return RuntimeStateServices(journal, state)
+
+
+def compose_repositories(
+    dependencies: Any,
+    *,
+    paths: Any,
+    settings: dict[str, Any],
+    clock: Any,
+    event_ledger: Any,
+    startup_stage: Callable[[str], Any] | None = None,
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> RepositoryServices:
+    """Create TaskDB, log-header, and guard services for one App."""
+    taskdb = None
+    try:
+        task_db_factory = getattr(dependencies, "task_db_factory", None) or TaskDB
+        task_db_kwargs = {
+            "clock": clock,
+            "event_sink": lambda event: event_ledger.append("task", event),
+        }
+        sqlite_factory = getattr(dependencies, "sqlite_connection_factory", None)
+        if callable(sqlite_factory):
+            task_db_kwargs["connection_factory"] = sqlite_factory
+        taskdb = task_db_factory(paths.task_db, **task_db_kwargs)
+    except Exception:
+        log_exception("TaskDB unavailable; continuing without tasks feature")
+    if callable(component_sink):
+        component_sink("taskdb", taskdb)
+    if callable(startup_stage):
+        startup_stage("repositories_initialized")
+
+    log_header_factory = getattr(dependencies, "log_header_factory", None) or ensure_log_header
+    log_header_factory(paths.focus_log)
+    guard_factory = getattr(dependencies, "guard_factory", None) or PauseGuard
+    guard = guard_factory(lambda: settings)
+    if callable(component_sink):
+        component_sink("guard", guard)
+    return RepositoryServices(taskdb, guard)

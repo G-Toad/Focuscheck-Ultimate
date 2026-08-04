@@ -117,6 +117,37 @@ class AppLifecycleTests(unittest.TestCase):
         journal_factory.assert_called_once_with("runtime.jsonl", clock=mock.ANY)
         state_factory.assert_called_once()
 
+    def test_repository_composition_degrades_taskdb_before_guard_creation(self):
+        from focuscheck.runtime.composition import compose_repositories
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        paths = type("Paths", (), {"task_db": "tasks.sqlite", "focus_log": "focus.csv"})()
+        guard = mock.Mock()
+        deps = AppDependencies(
+            task_db_factory=mock.Mock(side_effect=RuntimeError("db unavailable")),
+            log_header_factory=mock.Mock(),
+            guard_factory=mock.Mock(return_value=guard),
+        )
+        stages = []
+        assigned = {}
+
+        services = compose_repositories(
+            deps,
+            paths=paths,
+            settings={},
+            clock=mock.Mock(),
+            event_ledger=mock.Mock(),
+            startup_stage=stages.append,
+            component_sink=assigned.__setitem__,
+        )
+
+        self.assertIsNone(services.taskdb)
+        self.assertIs(guard, services.guard)
+        self.assertIsNone(assigned["taskdb"])
+        self.assertEqual(["repositories_initialized"], stages)
+        deps.log_header_factory.assert_called_once_with("focus.csv")
+        deps.guard_factory.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -565,14 +596,14 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "settings_loaded", "migration_completed",
-                "initial_monitoring_state_applied", "repositories_initialized",
+                "initial_monitoring_state_applied",
                 "engine_initialized", "services_started", "tray_initialized",
                 "watcher_initialized", "ready",
             },
             checkpoints,
         )
         composition_source_text = composition_source.read_text(encoding="utf-8")
-        for stage in ("paths_composed", "clock_composed", "lifecycle_starting"):
+        for stage in ("paths_composed", "clock_composed", "lifecycle_starting", "repositories_initialized"):
             self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 
     def test_cleanup_declares_all_shutdown_failure_injection_checkpoints(self):

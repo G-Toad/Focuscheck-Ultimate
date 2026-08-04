@@ -33,16 +33,19 @@ from .config import (
 from .settings import load_settings, save_settings, DEFAULT_SETTINGS
 
 # Database
-from .database import TaskDB, ensure_log_header
 
 # UI components
 from .ui.dialogs.task_entry_dialog import TaskEntryDialog
 from .ui.dialogs.snooze_reminder_dialog import SnoozeReminderDialog
 from .ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
-from .ui.guards import PauseGuard
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.dependencies import AppDependencies
-from .runtime.composition import compose_foundations, compose_tk_services, compose_runtime_state
+from .runtime.composition import (
+    compose_foundations,
+    compose_tk_services,
+    compose_runtime_state,
+    compose_repositories,
+)
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -344,24 +347,15 @@ class App:
             get_logger().info("App starting v%s | data_dir=%s", APP_VERSION, self.paths.root)
         except Exception:
             pass
-        # Init task DB
-        try:
-                task_db_factory = self._dependencies.task_db_factory or TaskDB
-                task_db_kwargs = {
-                    "clock": self._runtime_clock,
-                    "event_sink": lambda event: self._event_ledger.append("task", event),
-                }
-                if callable(self._dependencies.sqlite_connection_factory):
-                    task_db_kwargs["connection_factory"] = self._dependencies.sqlite_connection_factory
-                self.taskdb = task_db_factory(self.paths.task_db, **task_db_kwargs)
-        except Exception:
-            self.taskdb = None
-            log_exception("TaskDB unavailable; continuing without tasks feature")
-        self._startup_stage("repositories_initialized")
-        log_header_factory = self._dependencies.log_header_factory or ensure_log_header
-        log_header_factory(self.paths.focus_log)
-        guard_factory = self._dependencies.guard_factory or PauseGuard
-        self.guard = guard_factory(lambda: self.settings)
+        compose_repositories(
+            self._dependencies,
+            paths=self.paths,
+            settings=self.settings,
+            clock=self._runtime_clock,
+            event_ledger=self._event_ledger,
+            startup_stage=self._startup_stage,
+            component_sink=lambda name, value: setattr(self, name, value),
+        )
         self._ensure_engine()
         self._startup_stage("engine_initialized")
         self._scheduled = None
