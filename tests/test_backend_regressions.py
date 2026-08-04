@@ -761,6 +761,17 @@ class ImportHardeningTests(unittest.TestCase):
         self.assertIsNone(mixin._capture_photo_for_logs("Studying"))
         self.assertNotEqual(Path.cwd() / "camera_photos", mixin._get_camera_photos_directory())
 
+    def test_composed_camera_photo_path_uses_frozen_app_root(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
+
+        mixin = CameraFeedMixin.__new__(CameraFeedMixin)
+        frozen_root = Path(tempfile.mkdtemp()) / "composed-root"
+        mixin.app_ref = type("AppRef", (), {
+            "paths": type("Paths", (), {"root": frozen_root})(),
+        })()
+
+        self.assertEqual(frozen_root / "camera_photos", mixin._get_camera_photos_directory())
+
     def test_camera_photo_capture_handles_read_failure_without_writing(self):
         from focuscheck.ui.dialogs.prompt_dialog_mixins.camera_feed import CameraFeedMixin
 

@@ -1039,8 +1039,14 @@ class CameraFeedMixin:
             Path: Directory path for camera photos
         """
         try:
-            from ....utils.paths import get_app_paths
-            app_data_dir = get_app_paths().root
+            # Composed prompts must use the App's immutable path snapshot;
+            # recomputing paths here could select a different data root.
+            app_ref = getattr(self, "app_ref", None)
+            app_paths = getattr(app_ref, "paths", None)
+            app_data_dir = getattr(app_paths, "root", None)
+            if app_data_dir is None:
+                from ....utils.paths import get_app_paths
+                app_data_dir = get_app_paths().root
             return Path(app_data_dir) / "camera_photos"
         except Exception:
             # Never fall back to the source/install directory for personal data.
