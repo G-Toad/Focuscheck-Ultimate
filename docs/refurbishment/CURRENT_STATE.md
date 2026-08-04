@@ -7,6 +7,7 @@
 - Historical baseline before the current evidence chain: `476` unittest cases across 19 bounded verification stages. The authoritative current checkpoint is recorded above.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
 - The verifier includes `21` passing bounded stages, including current-source package build/promotion/validation, packaged supervisor readiness/stop, test-category inventory, real-entrypoint pause/snooze restart integration, and end-to-end data recovery.
+- V2 website/prompt acceptance is consolidated in `docs/refurbishment/V2_PROMPT_STATE_MATRIX.md`; deterministic suppression, provider, confidence, cooldown, intervention, latch, and shutdown rows are automated while live browser/overlay rows remain manual-pending.
 - Durable settings saves expose the normalized committed snapshot, and the Advanced settings UI applies that snapshot to live memory so clamped values cannot diverge from disk after a successful save.
 - In the composed application path, the Advanced Settings window delegates persistence through the App boundary rather than calling the settings repository directly.
 - Camera-adjustment and crop-adjustment child windows inherit that persistence boundary and do not apply child settings until durable save succeeds.

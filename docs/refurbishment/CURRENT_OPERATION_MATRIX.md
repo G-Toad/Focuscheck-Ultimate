@@ -11,7 +11,7 @@ This is the current repository-grounded operation matrix. `automated` means the 
 | Runtime | Snooze | Durable UTC expiry is stored and effective pause is clock-testable. | `automated`; tray/Tk `manual_pending` |
 | Runtime | Guard pause | Guard reasons are tracked separately from manual intent. | `automated`/source; lock/sleep `manual_pending` |
 | Runtime | Prompt eligibility | Coordinator denies prompt acquisition during effective pause, active intervention, active prompt, or shutdown. | `automated` |
-| Prompt | V1/V2 dialog ownership | One active prompt generation is tracked; duplicate completion is idempotent. | `automated`; visible UI cleanup `manual_pending`; V1 detail/state contract in `V1_PROMPT_STATE_MATRIX.md` |
+| Prompt | V1/V2 dialog ownership | One active prompt generation is tracked; duplicate completion is idempotent. | `automated`; visible UI cleanup `manual_pending`; V1/V2 state contracts in `V1_PROMPT_STATE_MATRIX.md` and `V2_PROMPT_STATE_MATRIX.md` |
 | Intervention | Start/cancel/complete | App owns an intervention lease; cancellation does not consume website cooldown. | `automated`; overlay restoration `manual_pending` |
 | Activity | CDP discovery | Page targets only, URL query/fragment removed, bounded request/discovery timeout, and late candidate ports are not starved by earlier closed ports. | `automated`; disposable live Chrome and Edge CDP evidenced; real browsers/UIA `manual_pending` |
 | Data | Settings | Migration, quarantine, rotating backups, readback validation, revision conflicts, and OS-level sidecar lock. | `automated` |

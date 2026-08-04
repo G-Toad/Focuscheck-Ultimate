@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+V2 acceptance-matrix consolidation: `docs/refurbishment/V2_PROMPT_STATE_MATRIX.md` now indexes deterministic provider, suppression, confidence, cooldown, intervention, latch, and shutdown coverage without promoting live browser/overlay evidence.
+
 Latest runtime-service startup extraction: source checkpoint `cebd6a5` moves tray-icon preparation, heartbeat/reminder starts, diagnostics, and the `services_started` checkpoint into an ordered composition boundary. The full verifier passed all 21 stages with 590 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
 
 Latest startup configuration extraction: source checkpoint `33d0ae3` moves settings loading and legacy migration into an injected composition boundary, preserving the `settings_loaded` and `migration_completed` checkpoints and failing closed on fatal migration results. The full verifier passed all 21 stages with 588 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
