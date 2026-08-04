@@ -12,6 +12,7 @@
 | Task SQLite connection | `TaskDB` | context-managed connection per operation. |
 | Data export/inventory/clear/retention/diagnostics | `DataControlService` | allowlisted utility operations return bounded durability/error results; App owns confirmation and Tk dispatch. |
 | Health/status projection | `HealthSnapshotService` | read-only bounded payload; App-owned status window remains responsible for Tk destruction. |
+| Startup registration | `StartupService` | canonical Run-key inspection/install/uninstall; App owns confirmation and dispatch, platform adapter owns registry handles. |
 | Supervisor child | `FocusCheckSupervisor` | terminate/kill tree on shutdown. |
 | Supervisor lock/stop files | `SupervisorLock` / supervisor | process-start-token ownership, stale-lock recovery, and generation-bound intentional-stop cleanup. |
 | Canonical runtime paths | immutable `AppPaths` | selected once per data root; legacy selection remains migration-only. |
