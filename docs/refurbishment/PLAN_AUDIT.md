@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest shutdown composition extraction: source checkpoint `bd2871a` moves reverse-order prompt/dialog, engine, timer, tray, watcher, and Tk-root closure into a failure-isolated composition boundary while preserving legacy shutdown checkpoints and partial-construction cleanup. The full verifier passed all 21 stages with 591 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
+
 V2 acceptance-matrix consolidation: `docs/refurbishment/V2_PROMPT_STATE_MATRIX.md` now indexes deterministic provider, suppression, confidence, cooldown, intervention, latch, and shutdown coverage without promoting live browser/overlay evidence.
 
 Latest runtime-service startup extraction: source checkpoint `cebd6a5` moves tray-icon preparation, heartbeat/reminder starts, diagnostics, and the `services_started` checkpoint into an ordered composition boundary. The full verifier passed all 21 stages with 590 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
