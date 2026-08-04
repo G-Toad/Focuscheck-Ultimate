@@ -2,9 +2,10 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `c9f04a0`.
+- Source checkpoint: `301a241`.
 - Full verifier: all 21 bounded stages passed, with 592 unittest cases and zero process leaks.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
+- The full pre-READY startup sequence is now owned by `compose_application_services`; `App._initialize` delegates composition and retains only scheduling, readiness, and initial heartbeat publication.
 - Reverse-order shutdown now has a composition boundary that isolates per-resource failures while preserving lifecycle checkpoint names and partial-start cleanup.
 - Ordered recurring-service startup now has a composition boundary covering tray-icon preparation, heartbeats, reminders, diagnostics, and the `services_started` checkpoint.
 - Startup settings loading and legacy migration now have a dedicated injected composition boundary with fail-closed migration handling and checkpoint coverage.

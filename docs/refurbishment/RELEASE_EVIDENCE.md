@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest composition-root consolidation: source checkpoint `301a241` moves the entire pre-READY application assembly sequence into `compose_application_services`, leaving `App._initialize` responsible for delegation, first scheduling, lifecycle READY, and initial heartbeat publication. The full verifier passed all 21 stages with 592 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest platform composition extraction: source checkpoint `c97dbc5` combines pystray and native watcher construction into an ordered platform-services boundary, preserving tray fallback state, callback wiring, and startup checkpoints. The full verifier passed all 21 stages with 592 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest shutdown composition extraction: source checkpoint `bd2871a` moves reverse-order prompt/dialog, engine, timer, tray, watcher, and Tk-root closure into a failure-isolated composition boundary while preserving legacy shutdown checkpoints and partial-construction cleanup. The full verifier passed all 21 stages with 591 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
