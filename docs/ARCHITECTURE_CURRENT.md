@@ -19,11 +19,19 @@ This document describes the architecture as it exists now. It is descriptive, no
 
 ## Main Application Coordination
 
-- `focuscheck.app.App` owns the Tk root, settings, task database, monitoring engine, pause guard, tray integration, prompt scheduling, and shutdown.
-- Scheduling uses Tk `after()` timers.
+- `focuscheck.runtime.composition.compose_application_services` owns ordered pre-READY construction and installs App-owned runtime services. `App` retains compatibility entry points for settings, task, tray, and lifecycle commands while delegating health, data controls, intervention orchestration, and prompt scheduling to dedicated services.
+- `PromptScheduler` owns prompt timer registration and observer cancellation through the composed `TimerRegistry`; direct `after()` use remains only in standalone compatibility paths and component-local dialog timers.
 - Prompt creation is delegated to the active monitoring engine.
 - Settings changes can regenerate active prompts.
 - Snooze and manual pause are persisted in settings.
+
+### Composed Runtime Services
+
+- `HealthSnapshotService` projects bounded operational metadata for status UI and diagnostics.
+- `DataControlService` owns export, inventory, clear, retention, and diagnostic-bundle operation dispatch.
+- `InterventionOrchestrator` owns one intervention lease, identity, wizard execution, prompt visibility scope, and terminal cleanup.
+- `PromptScheduler` owns the next-prompt timer and prompt visibility/closed observer cancellation.
+- These services receive the App context at the composition boundary; legacy App methods remain compatibility delegates for existing adapters and tests.
 
 ## Monitoring Engines
 
