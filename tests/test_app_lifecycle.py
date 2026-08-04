@@ -438,9 +438,12 @@ class AppLifecycleTests(unittest.TestCase):
 
     def test_initial_monitoring_failure_is_re_raised_from_composition(self):
         source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
-        tree = ast.parse(source.read_text(encoding="utf-8"))
-        app_class = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "App")
-        initialize = next(node for node in app_class.body if isinstance(node, ast.FunctionDef) and node.name == "_initialize")
+        composition_source = source.parent / "runtime" / "composition.py"
+        tree = ast.parse(composition_source.read_text(encoding="utf-8"))
+        initialize = next(
+            node for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "compose_application_services"
+        )
         guarded = []
         for node in ast.walk(initialize):
             if not isinstance(node, ast.Try):
@@ -803,11 +806,7 @@ class AppLifecycleTests(unittest.TestCase):
             and isinstance(node.args[0], ast.Constant)
         }
         self.assertEqual(
-            {
-                "initial_monitoring_state_applied",
-                "engine_initialized",
-                "ready",
-            },
+            {"ready"},
             checkpoints,
         )
         composition_source_text = composition_source.read_text(encoding="utf-8")
@@ -815,6 +814,7 @@ class AppLifecycleTests(unittest.TestCase):
             "paths_composed", "clock_composed", "lifecycle_starting",
             "settings_loaded", "migration_completed", "repositories_initialized",
             "watcher_initialized", "services_started", "tray_initialized",
+            "initial_monitoring_state_applied", "engine_initialized",
         ):
             self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 

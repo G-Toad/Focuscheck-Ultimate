@@ -41,15 +41,8 @@ from .ui.dialogs.gentle_reminder_dialog import GentleReminderDialog
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
 from .runtime.dependencies import AppDependencies
 from .runtime.composition import (
-    compose_foundations,
-    compose_configuration,
-    compose_runtime_services,
+    compose_application_services,
     compose_shutdown_services,
-    compose_tk_services,
-    compose_runtime_state,
-    compose_repositories,
-    compose_platform_services,
-    compose_monitoring,
 )
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
@@ -260,177 +253,13 @@ class App:
             raise
 
     def _initialize(self, *, force_start=False):
-        self._force_start = bool(force_start)
-        foundations = compose_foundations(
-            self._dependencies,
-            clock_override=self._clock_override,
-            startup_stage=self._startup_stage,
-            component_sink=lambda name, value: setattr(
-                self,
-                {"paths": "paths", "clock": "_runtime_clock", "event_ledger": "_event_ledger", "lifecycle": "lifecycle"}[name],
-                value,
-            ),
-        )
-        self.paths = foundations.paths
-        self._runtime_clock = foundations.clock
-        self._event_ledger = foundations.event_ledger
-        self.lifecycle = foundations.lifecycle
-        compose_tk_services(
-            self._dependencies,
-            self._event_ledger,
-            component_sink=lambda name, value: setattr(
-                self,
-                {"root": "root", "timers": "_timers"}[name]
-                if name != "owner_thread_id" else "_tk_thread_id",
-                value,
-            ),
-            startup_stage=self._startup_stage,
-        )
-        self._tk_thread_id = getattr(self, "_tk_thread_id", threading.get_ident())
-        self._ui_dispatch_sequence = 0
-        # Ensure window handle is realized before using it for shell hooks
-        try:
-            self.root.update_idletasks()
-        except Exception:
-            pass
-        # Emergency quit shortcuts (for dev convenience)
-        try:
-            self.root.bind_all('<Control-Shift-Escape>', lambda e: self._quit())
-            self.root.bind_all('<Alt-q>', lambda e: self._quit())
-        except Exception:
-            pass
-        configuration_services = compose_configuration(
-            self._dependencies.settings_loader,
-            load_settings,
-            self._dependencies.legacy_migration_factory or migrate_legacy_data,
-            migration_has_fatal_failure,
-            settings_path=self.paths.settings,
-            paths=self.paths,
-            startup_stage=self._startup_stage,
-            logger_factory=get_logger,
-            component_sink=lambda name, value: setattr(self, name, value),
-        )
-        self.settings = configuration_services.settings
-        compose_runtime_state(
-            self._dependencies,
-            paths=self.paths,
-            settings=self.settings,
-            clock=self._runtime_clock,
-            event_ledger=self._event_ledger,
-            persist_settings=self._persist_settings_draft,
-            component_sink=lambda name, value: setattr(
-                self,
-                {"journal": "_runtime_journal", "state": "_runtime_state"}[name],
-                value,
-            ),
-        )
-        self._snooze_unpause_timer_id = None
-        self._snooze_confirm_dialog = None
-        try:
-            self._apply_initial_monitoring_state()
-        except Exception:
-            try:
-                get_logger().exception("startup: failed applying initial monitoring state", exc_info=True)
-            except Exception:
-                pass
-            # Do not enter READY with an unknown durable pause state. The
-            # constructor-level lifecycle handler owns partial cleanup.
-            raise
-        self._startup_stage("initial_monitoring_state_applied")
-        self._engine = None
-        self._engine_shutdown = False
-        # App start times for runtime reporting
-        self._start_wall = self._runtime_clock.now_utc()
-        self._start_mono = self._runtime_clock.monotonic()
-        try:
-            get_logger().info("App starting v%s | data_dir=%s", APP_VERSION, self.paths.root)
-        except Exception:
-            pass
-        compose_repositories(
-            self._dependencies,
-            paths=self.paths,
-            settings=self.settings,
-            clock=self._runtime_clock,
-            event_ledger=self._event_ledger,
-            startup_stage=self._startup_stage,
-            component_sink=lambda name, value: setattr(self, name, value),
-        )
-        monitoring_services = compose_monitoring(
-            self._ensure_engine,
-            self._new_prompt_coordinator,
-            component_sink=lambda name, value: setattr(
-                self,
-                {"engine": "_engine", "prompt_coordinator": "_prompt_coordinator"}[name],
-                value,
-            ),
-        )
-        self._engine = monitoring_services.engine
-        self._startup_stage("engine_initialized")
-        self._scheduled = None
-        self._current_prompt = None
-        self._prompt_coordinator = monitoring_services.prompt_coordinator
-        self._intervention_active = False
-        self._active_intervention_id = None
-        self._last_resume_mono = 0.0
-        self._next_due_mono = None
-        self._next_total_s = None
-        self._shutdown_requested = False
-        self._shutdown_cleanup_complete = False
-        self._heartbeat_sequence = 0
-        self._process_start_utc = self._now_utc().isoformat()
-        # Snooze reminder tracking
-        self._snooze_reminder_next_mono = 0.0
-        self._snooze_reminder_dialog = None
-        self._gentle_reminder_next_mono = 0.0
-        self._gentle_reminder_dialog = None
-        self._tray_icon_image = None
-        self._tray_icon_path = None
-        compose_runtime_services(
-            self._prepare_tray_icon,
-            self._start_heartbeat,
-            self._start_file_heartbeat,
-            self._start_snooze_reminder_check,
-            self._start_gentle_reminder_check,
-            self._log_startup_diagnostics,
-            startup_stage=self._startup_stage,
-        )
-
-        # Optional cross-platform tray using pystray (preferred when available)
-        self._pystray_started = False  # started (requested)
-        self._using_pystray = False    # proven alive
-        self._native_tray_fallback_active = False
-        self._tray = None
-        self._winwatch = None
-        platform_services = compose_platform_services(
+        compose_application_services(
             self,
-            self._tray_factory(),
-            self._watcher_factory(),
-            name=APP_NAME,
-            paths=self.paths,
-            root=self.root,
-            icon_image=self._tray_icon_image,
-            tray_icon_path=self._tray_icon_path,
-            on_resume=self._on_resume_event,
-            on_pause=self._on_pause_event,
-            on_display_change=self._on_display_change,
-            on_tray_click=self._on_tray_click,
-            on_shutdown=self._handle_system_shutdown,
-            startup_stage=self._startup_stage,
-            component_sink=lambda name, value: setattr(
-                self,
-                {
-                    "tray": "_tray",
-                    "pystray_started": "_pystray_started",
-                    "using_pystray": "_using_pystray",
-                    "watcher": "_winwatch",
-                }[name],
-                value,
-            ),
+            force_start=force_start,
+            clock_override=self._clock_override,
+            app_name=APP_NAME,
+            app_version=APP_VERSION,
         )
-        self._tray = platform_services.tray
-        self._pystray_started = platform_services.pystray_started
-        self._using_pystray = platform_services.using_pystray
-        self._winwatch = platform_services.watcher
         # quick first pop to prove it works
         self._schedule_next(2000)
         self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")

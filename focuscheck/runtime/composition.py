@@ -10,6 +10,7 @@ from typing import Any, Callable
 
 from ..database import configure_paths as configure_csv_paths
 from ..database import TaskDB, ensure_log_header
+from ..settings import load_settings
 from ..runtime.events import StructuredEventLedger
 from ..runtime.journal import RuntimeTransitionJournal
 from ..runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
@@ -19,6 +20,7 @@ from ..utils.logging_utils import configure_log_path
 from ..utils.logging_utils import get_logger
 from ..utils.logging_utils import log_exception
 from ..utils.paths import get_app_paths
+from ..utils.paths import migrate_legacy_data, migration_has_fatal_failure
 from ..utils.timers import TimerRegistry
 from ..ui.guards import PauseGuard
 
@@ -112,6 +114,183 @@ class ShutdownServices:
     """Resources successfully closed by the reverse-order shutdown boundary."""
 
     closed: tuple[str, ...]
+
+
+def compose_application_services(
+    app: Any,
+    *,
+    force_start: bool = False,
+    clock_override: Any = None,
+    app_name: str = "FocusCheck",
+    app_version: str = "",
+) -> None:
+    """Compose every pre-READY App service before readiness is published."""
+    app._force_start = bool(force_start)
+    dependencies = app._dependencies
+    startup_stage = app._startup_stage
+
+    foundations = compose_foundations(
+        dependencies,
+        clock_override=clock_override,
+        startup_stage=startup_stage,
+        component_sink=lambda name, value: setattr(
+            app,
+            {"paths": "paths", "clock": "_runtime_clock", "event_ledger": "_event_ledger", "lifecycle": "lifecycle"}[name],
+            value,
+        ),
+    )
+    app.paths = foundations.paths
+    app._runtime_clock = foundations.clock
+    app._event_ledger = foundations.event_ledger
+    app.lifecycle = foundations.lifecycle
+
+    compose_tk_services(
+        dependencies,
+        app._event_ledger,
+        component_sink=lambda name, value: setattr(
+            app,
+            {"root": "root", "timers": "_timers"}[name]
+            if name != "owner_thread_id" else "_tk_thread_id",
+            value,
+        ),
+        startup_stage=startup_stage,
+    )
+    app._tk_thread_id = getattr(app, "_tk_thread_id", threading.get_ident())
+    app._ui_dispatch_sequence = 0
+    try:
+        app.root.update_idletasks()
+    except Exception:
+        pass
+    try:
+        app.root.bind_all("<Control-Shift-Escape>", lambda e: app._quit())
+        app.root.bind_all("<Alt-q>", lambda e: app._quit())
+    except Exception:
+        pass
+
+    configuration_services = compose_configuration(
+        dependencies.settings_loader,
+        load_settings,
+        dependencies.legacy_migration_factory or migrate_legacy_data,
+        migration_has_fatal_failure,
+        settings_path=app.paths.settings,
+        paths=app.paths,
+        startup_stage=startup_stage,
+        logger_factory=get_logger,
+        component_sink=lambda name, value: setattr(app, name, value),
+    )
+    app.settings = configuration_services.settings
+    compose_runtime_state(
+        dependencies,
+        paths=app.paths,
+        settings=app.settings,
+        clock=app._runtime_clock,
+        event_ledger=app._event_ledger,
+        persist_settings=app._persist_settings_draft,
+        component_sink=lambda name, value: setattr(
+            app, {"journal": "_runtime_journal", "state": "_runtime_state"}[name], value
+        ),
+    )
+    app._snooze_unpause_timer_id = None
+    app._snooze_confirm_dialog = None
+    try:
+        app._apply_initial_monitoring_state()
+    except Exception:
+        try:
+            get_logger().exception("startup: failed applying initial monitoring state", exc_info=True)
+        except Exception:
+            pass
+        raise
+    startup_stage("initial_monitoring_state_applied")
+
+    app._engine = None
+    app._engine_shutdown = False
+    app._start_wall = app._runtime_clock.now_utc()
+    app._start_mono = app._runtime_clock.monotonic()
+    try:
+        get_logger().info("App starting v%s | data_dir=%s", app_version, app.paths.root)
+    except Exception:
+        pass
+    compose_repositories(
+        dependencies,
+        paths=app.paths,
+        settings=app.settings,
+        clock=app._runtime_clock,
+        event_ledger=app._event_ledger,
+        startup_stage=startup_stage,
+        component_sink=lambda name, value: setattr(app, name, value),
+    )
+    monitoring_services = compose_monitoring(
+        app._ensure_engine,
+        app._new_prompt_coordinator,
+        component_sink=lambda name, value: setattr(
+            app, {"engine": "_engine", "prompt_coordinator": "_prompt_coordinator"}[name], value
+        ),
+    )
+    app._engine = monitoring_services.engine
+    startup_stage("engine_initialized")
+    app._scheduled = None
+    app._current_prompt = None
+    app._prompt_coordinator = monitoring_services.prompt_coordinator
+    app._intervention_active = False
+    app._active_intervention_id = None
+    app._last_resume_mono = 0.0
+    app._next_due_mono = None
+    app._next_total_s = None
+    app._shutdown_requested = False
+    app._shutdown_cleanup_complete = False
+    app._heartbeat_sequence = 0
+    app._process_start_utc = app._now_utc().isoformat()
+    app._snooze_reminder_next_mono = 0.0
+    app._snooze_reminder_dialog = None
+    app._gentle_reminder_next_mono = 0.0
+    app._gentle_reminder_dialog = None
+    app._tray_icon_image = None
+    app._tray_icon_path = None
+    compose_runtime_services(
+        app._prepare_tray_icon,
+        app._start_heartbeat,
+        app._start_file_heartbeat,
+        app._start_snooze_reminder_check,
+        app._start_gentle_reminder_check,
+        app._log_startup_diagnostics,
+        startup_stage=startup_stage,
+    )
+
+    app._pystray_started = False
+    app._using_pystray = False
+    app._native_tray_fallback_active = False
+    app._tray = None
+    app._winwatch = None
+    platform_services = compose_platform_services(
+        app,
+        app._tray_factory(),
+        app._watcher_factory(),
+        name=app_name,
+        paths=app.paths,
+        root=app.root,
+        icon_image=app._tray_icon_image,
+        tray_icon_path=app._tray_icon_path,
+        on_resume=app._on_resume_event,
+        on_pause=app._on_pause_event,
+        on_display_change=app._on_display_change,
+        on_tray_click=app._on_tray_click,
+        on_shutdown=app._handle_system_shutdown,
+        startup_stage=startup_stage,
+        component_sink=lambda name, value: setattr(
+            app,
+            {
+                "tray": "_tray",
+                "pystray_started": "_pystray_started",
+                "using_pystray": "_using_pystray",
+                "watcher": "_winwatch",
+            }[name],
+            value,
+        ),
+    )
+    app._tray = platform_services.tray
+    app._pystray_started = platform_services.pystray_started
+    app._using_pystray = platform_services.using_pystray
+    app._winwatch = platform_services.watcher
 
 
 def compose_foundations(
