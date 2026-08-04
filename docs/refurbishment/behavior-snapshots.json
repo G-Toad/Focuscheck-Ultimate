@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "purpose": "Phase 0 behavior snapshot index; statuses never imply manual Windows completion.",
-  "source_commit": "bd2871a",
+  "source_commit": "c97dbc5",
   "snapshots": [
     {"id": "launch-direct", "behavior": "direct launch", "expected": "main.py starts one child and exits cleanly on bounded run completion", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
     {"id": "launch-supervised", "behavior": "supervised launch", "expected": "supervisor owns the child generation and heartbeat", "status": "live_disposable", "evidence": ["docs/refurbishment/LIVE_LAUNCH_EVIDENCE.md"]},
