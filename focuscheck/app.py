@@ -992,63 +992,20 @@ class App:
         prompt_ref=None,
         hide_prompt=False,
     ) -> bool:
-        """Run one intervention under the application-owned lease."""
-        state = getattr(self, "_runtime_state", None)
-        if state is not None and not state.begin_intervention():
-            self._record_operational_event("intervention", event="rejected", outcome="lease_unavailable")
-            return False
-        self._intervention_active = True
-        intervention_id = uuid.uuid4().hex
-        self._active_intervention_id = intervention_id
-        self._notify_engine_intervention_state(active=True, source="intervention_started")
-        hidden = False
-        outcome = "failed"
-        self._record_operational_event("intervention", event="started", outcome="started")
-        try:
-            from .ui.dialogs.intervention_wizard import InterventionWizard
-            if hide_prompt and prompt_ref is not None:
-                try:
-                    prompt_ref.withdraw()
-                    hidden = True
-                except Exception:
-                    get_logger().exception("intervention prompt hide failed", exc_info=True)
-            wizard_factory = getattr(
-                getattr(self, "_dependencies", None),
-                "intervention_wizard_factory",
-                None,
-            )
-            wizard = (wizard_factory or InterventionWizard)(self.root, settings)
-            completed = bool(wizard.run(
-                preselect_hwnd=preselect_hwnd,
-                preselect_title=preselect_title,
-                prompt_ref=prompt_ref,
-                hide_prompt=hide_prompt,
-                intervention_id=intervention_id,
-            ))
-            outcome = "completed" if completed else "cancelled"
-            return completed
-        except Exception:
-            try:
-                get_logger().exception("intervention coordinator failed", exc_info=True)
-            except Exception:
-                pass
-            return False
-        finally:
-            if hidden:
-                try:
-                    prompt_ref.deiconify()
-                    prompt_ref.lift()
-                    prompt_ref.focus_force()
-                except Exception:
-                    get_logger().exception("intervention prompt restore failed", exc_info=True)
-            self._intervention_active = False
-            self._active_intervention_id = None
-            try:
-                if state is not None:
-                    state.end_intervention()
-            finally:
-                self._notify_engine_intervention_state(active=False, source="intervention_ended")
-                self._record_operational_event("intervention", event="ended", outcome=outcome)
+        """Run one intervention through the composed orchestration boundary."""
+        service = getattr(self, "_intervention_service", None)
+        if service is None:
+            from .runtime.intervention import InterventionOrchestrator
+            factory = getattr(getattr(self, "_dependencies", None), "intervention_service_factory", None)
+            service = factory(self) if callable(factory) else InterventionOrchestrator(self)
+            self._intervention_service = service
+        return bool(service.run(
+            settings,
+            preselect_hwnd=preselect_hwnd,
+            preselect_title=preselect_title,
+            prompt_ref=prompt_ref,
+            hide_prompt=hide_prompt,
+        ))
 
     def _notify_engine_intervention_state(self, *, active: bool, source: str) -> None:
         """Forward intervention lease changes without coupling App to an engine type."""

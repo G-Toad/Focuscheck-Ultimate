@@ -425,8 +425,9 @@ class AppLifecycleTests(unittest.TestCase):
 
         source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
         text = source.read_text(encoding="utf-8")
+        intervention_source = source.parent / "runtime" / "intervention.py"
+        intervention_text = intervention_source.read_text(encoding="utf-8")
         for name in (
-            "intervention_wizard_factory",
             "settings_window_factory",
             "task_entry_dialog_factory",
             "snooze_prompt_factory",
@@ -435,6 +436,7 @@ class AppLifecycleTests(unittest.TestCase):
             "status_window_factory",
         ):
             self.assertIn(name, text)
+        self.assertIn("intervention_wizard_factory", intervention_text)
 
     def test_initial_monitoring_failure_is_re_raised_from_composition(self):
         source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
@@ -610,6 +612,7 @@ class AppLifecycleTests(unittest.TestCase):
                 "task_entry_dialog_factory", "snooze_prompt_factory",
                 "snooze_reminder_dialog_factory", "gentle_reminder_dialog_factory",
                 "status_window_factory", "data_control_service_factory",
+                "intervention_service_factory",
             },
             set(deps.__dataclass_fields__),
         )
@@ -625,6 +628,24 @@ class AppLifecycleTests(unittest.TestCase):
         app._dependencies = AppDependencies(data_control_service_factory=lambda _app: service)
 
         self.assertIs(service, App._data_controls(app))
+
+    def test_intervention_service_factory_is_used_by_app_boundary(self):
+        from focuscheck.app import App
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        service = mock.Mock()
+        service.run.return_value = True
+        app = App.__new__(App)
+        app._dependencies = AppDependencies(intervention_service_factory=lambda _app: service)
+
+        self.assertTrue(App.run_intervention(app, {"mode": "v2"}))
+        service.run.assert_called_once_with(
+            {"mode": "v2"},
+            preselect_hwnd=None,
+            preselect_title=None,
+            prompt_ref=None,
+            hide_prompt=False,
+        )
 
     def test_activity_provider_factory_composes_v2_engine_provider(self):
         from focuscheck.app import App
