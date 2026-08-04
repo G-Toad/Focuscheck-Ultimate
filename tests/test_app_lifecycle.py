@@ -177,6 +177,32 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertFalse(factory.call_args.kwargs["tray_enabled"])
         self.assertEqual("icon.ico", factory.call_args.kwargs["tray_icon_path"])
 
+    def test_tray_composition_reports_start_and_routes_callbacks(self):
+        from focuscheck.runtime.composition import compose_tray
+
+        app = mock.Mock()
+        app.settings = {"enabled": True}
+        tray = mock.Mock()
+        tray.start.return_value = True
+        factory = mock.Mock(return_value=tray)
+        paths = type("Paths", (), {"app_log": "app.log", "settings": "settings.json"})()
+
+        services = compose_tray(
+            app,
+            factory,
+            name="FocusCheck",
+            paths=paths,
+            icon_image="icon",
+        )
+
+        self.assertIs(tray, services.tray)
+        self.assertTrue(services.started)
+        self.assertFalse(services.using_pystray)
+        self.assertEqual("FocusCheck running", factory.call_args.kwargs["tooltip"])
+        self.assertEqual("app.log", factory.call_args.kwargs["logs_path"])
+        factory.call_args.kwargs["get_setting"]("enabled", False)
+        self.assertTrue(factory.call_args.kwargs["get_setting"]("enabled", False))
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry

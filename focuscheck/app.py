@@ -46,6 +46,7 @@ from .runtime.composition import (
     compose_runtime_state,
     compose_repositories,
     compose_watcher,
+    compose_tray,
 )
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
@@ -400,81 +401,16 @@ class App:
         self._using_pystray = False    # proven alive
         self._native_tray_fallback_active = False
         self._tray = None
-        try:
-            tray_factory = self._tray_factory()
-            if tray_factory is not None:
-                try:
-                    get_logger().info("startup: pystray system tray available; attempting start")
-                except Exception:
-                    pass
-                def _get(k, d=None):
-                    try:
-                        return self.settings.get(k, d)
-                    except Exception:
-                        return d
-                def _set(k, v):
-                    try:
-                        self._set_tray_setting(k, v)
-                    except Exception:
-                        pass
-                # Hooks to track pystray status
-                def _on_alive():
-                    # Proved alive; mark as using pystray
-                    try:
-                        get_logger().info("tray post-start check OK (pystray alive)")
-                    except Exception:
-                        pass
-                    self._using_pystray = True
-                def _on_failure():
-                    # Fallback must run on the Tk owner thread and stop
-                    # pystray before enabling a second tray backend.
-                    try:
-                        get_logger().error("pystray post-start check failed", exc_info=True)
-                    except Exception:
-                        pass
-                    self._call_on_ui_thread(self._activate_native_tray_fallback)
-
-                self._tray = tray_factory(
-                    app=self,
-                    name=APP_NAME,
-                    tooltip=f"{APP_NAME} running",
-                    get_setting=_get,
-                    set_setting=_set,
-                    open_settings_ui=lambda: self._open_settings_from_tray(),
-                    logs_path=str(self.paths.app_log),
-                    config_path=str(self.paths.settings),
-                    icon_image=self._tray_icon_image,
-                    on_failure=_on_failure,
-                    on_alive=_on_alive,
-                )
-                # Explicit marker for tray creation attempt (pystray)
-                try:
-                    get_logger().info("creating icon (pystray)")
-                except Exception:
-                    pass
-                started = False
-                try:
-                    started = bool(self._tray.start())
-                except Exception:
-                    get_logger().exception("pystray start raised", exc_info=True)
-                    started = False
-                if started:
-                    self._pystray_started = True
-                    try:
-                        get_logger().info("tray start succeeded (pystray)")
-                        get_logger().info("startup: pystray tray started successfully")
-                    except Exception:
-                        pass
-                else:
-                    try:
-                        get_logger().error("tray start failed (pystray)")
-                        get_logger().warning("startup: pystray tray failed to start; falling back (Windows native, if available)")
-                    except Exception:
-                        pass
-        except Exception:
-            get_logger().exception("pystray setup failed", exc_info=True)
-            self._pystray_started = False
-            self._using_pystray = False
+        tray_services = compose_tray(
+            self,
+            self._tray_factory(),
+            name=APP_NAME,
+            paths=self.paths,
+            icon_image=self._tray_icon_image,
+        )
+        self._tray = tray_services.tray
+        self._pystray_started = tray_services.started
+        self._using_pystray = tray_services.using_pystray
         self._startup_stage("tray_initialized")
 
         self._winwatch = None

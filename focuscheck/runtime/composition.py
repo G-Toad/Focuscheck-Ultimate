@@ -65,6 +65,15 @@ class WatcherServices:
     watcher: Any
 
 
+@dataclass(frozen=True)
+class TrayServices:
+    """Optional pystray adapter and its startup state."""
+
+    tray: Any
+    started: bool
+    using_pystray: bool
+
+
 def compose_foundations(
     dependencies: Any,
     *,
@@ -269,3 +278,97 @@ def compose_watcher(
     if callable(startup_stage):
         startup_stage("watcher_initialized")
     return WatcherServices(watcher)
+
+
+def compose_tray(
+    app: Any,
+    tray_factory: Callable[..., Any] | None,
+    *,
+    name: str,
+    paths: Any,
+    icon_image: Any,
+) -> TrayServices:
+    """Construct and start the optional pystray adapter."""
+    tray = None
+    started = False
+    using_pystray = False
+    try:
+        if tray_factory is not None:
+            try:
+                get_logger().info("startup: pystray system tray available; attempting start")
+            except Exception:
+                pass
+
+            def _get(key, default=None):
+                try:
+                    return app.settings.get(key, default)
+                except Exception:
+                    return default
+
+            def _set(key, value):
+                try:
+                    app._set_tray_setting(key, value)
+                except Exception:
+                    pass
+
+            def _on_alive():
+                nonlocal using_pystray
+                try:
+                    get_logger().info("tray post-start check OK (pystray alive)")
+                except Exception:
+                    pass
+                using_pystray = True
+                app._using_pystray = True
+
+            def _on_failure():
+                try:
+                    get_logger().error("pystray post-start check failed", exc_info=True)
+                except Exception:
+                    pass
+                app._call_on_ui_thread(app._activate_native_tray_fallback)
+
+            tray = tray_factory(
+                app=app,
+                name=name,
+                tooltip=f"{name} running",
+                get_setting=_get,
+                set_setting=_set,
+                open_settings_ui=lambda: app._open_settings_from_tray(),
+                logs_path=str(paths.app_log),
+                config_path=str(paths.settings),
+                icon_image=icon_image,
+                on_failure=_on_failure,
+                on_alive=_on_alive,
+            )
+            try:
+                get_logger().info("creating icon (pystray)")
+            except Exception:
+                pass
+            try:
+                started = bool(tray.start())
+            except Exception:
+                get_logger().exception("pystray start raised", exc_info=True)
+                started = False
+            if started:
+                try:
+                    get_logger().info("tray start succeeded (pystray)")
+                    get_logger().info("startup: pystray tray started successfully")
+                except Exception:
+                    pass
+            else:
+                try:
+                    get_logger().error("tray start failed (pystray)")
+                    get_logger().warning(
+                        "startup: pystray tray failed to start; falling back (Windows native, if available)"
+                    )
+                except Exception:
+                    pass
+    except Exception:
+        get_logger().exception("pystray setup failed", exc_info=True)
+        started = False
+        using_pystray = False
+        try:
+            app._using_pystray = False
+        except Exception:
+            pass
+    return TrayServices(tray, started, using_pystray)
