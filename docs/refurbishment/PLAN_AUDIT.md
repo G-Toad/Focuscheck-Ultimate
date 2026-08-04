@@ -2,6 +2,8 @@
 
 Audit basis: `focuscheck_ultimate_repo_grounded_refurbishment_plan_v1.md`, inspected against repository state at the current refurbishment checkpoint.
 
+Latest Tk composition extraction: source checkpoint `a75a7b2` moves Tk root, owner-thread, callback-exception, withdrawal, and timer-registry setup into the runtime composition boundary while preserving partial cleanup and startup checkpoint semantics. The full verifier passed all 21 stages with 581 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
+
 Latest composition extraction: source checkpoint `203a675` moves App foundation service composition into `focuscheck/runtime/composition.py`, preserving injected factories, partial construction assignment, startup hooks, and lifecycle ordering. The full verifier passed all 21 stages with 580 tests and zero process leaks; larger App decomposition and manual Windows/UIA/browser/release evidence remain open.
 
 Latest composed-diagnostics correction: source checkpoint `a1b9380` removes the App startup diagnostic's global data-root lookup in favor of the frozen App path snapshot. The full verifier passed all 21 stages with 579 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.

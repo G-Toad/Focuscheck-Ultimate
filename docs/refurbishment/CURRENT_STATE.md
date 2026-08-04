@@ -2,7 +2,7 @@
 
 - Repository: `G-Toad/Focuscheck-Ultimate`
 - Source folder: `FocusCheck_newest_20260802_221221/3`
-- Latest verified source checkpoint: `203a675`; 580 unittest cases and all 21 bounded verification stages pass with zero process leaks. Path, clock, logging, event-ledger, and lifecycle foundation composition now lives behind a dedicated runtime boundary with partial-construction and stage-traceability coverage. Settings, camera, diagnostics, native overlay, tray, and intervention boundaries remain covered. Manual Windows and release evidence remains pending.
+- Latest verified source checkpoint: `a75a7b2`; 581 unittest cases and all 21 bounded verification stages pass with zero process leaks. Path, clock, logging, event-ledger, lifecycle, Tk-root, and timer-registry composition now has dedicated runtime boundaries with partial-construction and stage-traceability coverage. Settings, camera, diagnostics, native overlay, tray, and intervention boundaries remain covered. Manual Windows and release evidence remains pending.
 - Starting snapshot: `0f3beb5` (initial upload)
 - Historical baseline before the current evidence chain: `476` unittest cases across 19 bounded verification stages. The authoritative current checkpoint is recorded above.
 - Runtime state now persists `manual_paused` separately from compatibility `paused`; legacy settings migration distinguishes active snooze-owned pause from manual intent.
