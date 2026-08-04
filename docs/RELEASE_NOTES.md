@@ -2,9 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `0ec9af6`.
-- Full verifier: all 21 bounded stages passed, with 572 unittest cases and zero process leaks.
-- The standard verifier now rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
+- Source checkpoint: `4fdc7fa`.
+- Full verifier: all 21 bounded stages passed, with 576 unittest cases and zero process leaks.
+- Native overlay ownership/class isolation and website-warning callback ordering now have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
 - Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
 
 ## Current checkpoint
