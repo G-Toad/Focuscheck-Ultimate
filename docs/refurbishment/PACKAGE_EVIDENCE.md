@@ -6,6 +6,7 @@ Entries below the current candidate are historical artifacts from earlier source
 
 - Standard verifier package-build stage at source checkpoint `0ec9af6`: current source built both frozen executables in a disposable external directory, promotion and manifest validation passed, and the packaged supervisor reached READY, acknowledged a generation-bound stop request, and reaped its child. The temporary package was removed automatically after the stage; no production profile, startup entry, or repository path was used.
 - The latest full verifier at source checkpoint `4fdc7fa` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
+- The latest full verifier at source checkpoint `43a628c` repeated that disposable build/promotion/validation/supervisor protocol flow successfully; the temporary package was removed automatically and no production profile or startup entry was touched.
 
 - Build command: `powershell -ExecutionPolicy Bypass -File tools/build_package.ps1 -OutputDir <disposable-temp-root>`
 - PyInstaller: `6.16.0`

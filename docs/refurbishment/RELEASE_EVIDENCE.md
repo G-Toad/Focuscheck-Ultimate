@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest native error-boundary correction: source checkpoint `43a628c` reads native tray-menu failures through the configured Kernel32 `GetLastError` contract after resetting the same thread-local error state. The full verifier passed all 21 stages with 577 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest native ownership/lifecycle correction: source checkpoint `4fdc7fa` gives core overlays per-window brush ownership, separates the dialog overlay Win32 class name, and releases the V2 website warning before dispatching its terminal callback. The full verifier passed all 21 stages with 576 tests and zero process leaks; the real native overlay probe passed all 3 lifecycle cycles and 45 region updates. Manual Windows/UIA/browser/release evidence remains pending.
 
 Latest automated package-build correction: source checkpoint `0ec9af6` adds a standard disposable current-source build stage. The full verifier passed all 21 stages with 572 tests and zero process leaks; the stage built both frozen executables, promoted and validated a disposable package, and completed the packaged supervisor READY/generation-bound stop/reaping self-test. Installer-shell, signing, and target-machine manual gates remain open.
