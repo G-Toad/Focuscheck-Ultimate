@@ -1556,7 +1556,7 @@ class ImportHardeningTests(unittest.TestCase):
             name: Api() for name in (
                 "GetWindowLongW", "SetWindowLongW", "SetWindowPos", "FlashWindowEx",
                 "GetForegroundWindow", "GetWindowThreadProcessId", "AttachThreadInput",
-                "ShowWindow", "SetForegroundWindow",
+                "ShowWindow", "SetForegroundWindow", "SetFocus",
             )
         })()
         kernel32 = type("Kernel32", (), {"GetCurrentThreadId": Api()})()
@@ -1578,6 +1578,23 @@ class ImportHardeningTests(unittest.TestCase):
         v2_subpopup_dialog._configure_virtual_screen_api(user32)
         self.assertEqual([ctypes.c_int], user32.GetSystemMetrics.argtypes)
         self.assertEqual(ctypes.c_int, user32.GetSystemMetrics.restype)
+
+    def test_prompt_windows_integration_declares_set_focus_signature(self):
+        from focuscheck.ui.dialogs.prompt_dialog_mixins import windows_integration
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {name: Api() for name in (
+            "GetWindowLongW", "SetWindowLongW", "SetWindowPos", "FlashWindowEx",
+            "GetForegroundWindow", "GetWindowThreadProcessId", "AttachThreadInput",
+            "ShowWindow", "SetForegroundWindow", "SetFocus",
+        )})()
+        windows_integration._configure_windows_integration_api(user32)
+        self.assertEqual([windows_integration.wintypes.HWND], user32.SetFocus.argtypes)
+        self.assertIs(windows_integration.wintypes.HWND, user32.SetFocus.restype)
 
     def test_window_placement_declares_pointer_safe_monitor_signatures(self):
         import ctypes

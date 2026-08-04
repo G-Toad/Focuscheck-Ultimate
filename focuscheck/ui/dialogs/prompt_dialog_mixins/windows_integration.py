@@ -40,6 +40,8 @@ def _configure_windows_integration_api(user32, kernel32=None):
     user32.ShowWindow.restype = wintypes.BOOL
     user32.SetForegroundWindow.argtypes = [wintypes.HWND]
     user32.SetForegroundWindow.restype = wintypes.BOOL
+    user32.SetFocus.argtypes = [wintypes.HWND]
+    user32.SetFocus.restype = wintypes.HWND
     if kernel32 is not None:
         kernel32.GetCurrentThreadId.argtypes = []
         kernel32.GetCurrentThreadId.restype = wintypes.DWORD
