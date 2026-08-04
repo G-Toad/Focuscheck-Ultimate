@@ -1514,10 +1514,31 @@ class ImportHardeningTests(unittest.TestCase):
                 "SetForegroundWindow", "TrackPopupMenu",
             )
         })()
-        kernel32 = type("Kernel32", (), {"SetLastError": Api()})()
+        kernel32 = type("Kernel32", (), {"SetLastError": Api(), "GetLastError": Api()})()
         app._configure_native_tray_api(user32, kernel32)
         self.assertEqual([wintypes.DWORD], kernel32.SetLastError.argtypes)
         self.assertIsNone(kernel32.SetLastError.restype)
+
+    def test_native_tray_declares_and_reads_kernel_last_error(self):
+        import ctypes
+        from ctypes import wintypes
+        from focuscheck import app
+
+        class Api:
+            def __init__(self):
+                self.argtypes = None
+                self.restype = None
+
+        user32 = type("User32", (), {
+            name: Api() for name in (
+                "CreatePopupMenu", "AppendMenuW", "DestroyMenu", "GetCursorPos",
+                "SetForegroundWindow", "TrackPopupMenu",
+            )
+        })()
+        kernel32 = type("Kernel32", (), {"SetLastError": Api(), "GetLastError": Api()})()
+        app._configure_native_tray_api(user32, kernel32)
+        self.assertEqual([], kernel32.GetLastError.argtypes)
+        self.assertIs(wintypes.DWORD, kernel32.GetLastError.restype)
 
     def test_entrypoints_declare_process_wide_native_signatures(self):
         import ctypes

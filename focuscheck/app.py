@@ -120,6 +120,8 @@ def _configure_native_tray_api(user32, kernel32=None):
     if kernel32 is not None:
         kernel32.SetLastError.argtypes = [wintypes.DWORD]
         kernel32.SetLastError.restype = None
+        kernel32.GetLastError.argtypes = []
+        kernel32.GetLastError.restype = wintypes.DWORD
 
 
 def resolve_initial_monitoring_state(settings, *, force_start=False):
@@ -1553,7 +1555,10 @@ class App:
                             None,
                         )
                         if cmd == 0:
-                            err = ctypes.get_last_error()
+                            try:
+                                err = int(kernel32.GetLastError())
+                            except Exception:
+                                err = ctypes.get_last_error()
                             if err:
                                 raise ctypes.WinError(err)
                     finally:
