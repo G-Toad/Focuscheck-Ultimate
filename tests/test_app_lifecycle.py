@@ -263,6 +263,48 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(["settings_loaded"], stages)
         logger.exception.assert_called_once()
 
+    def test_runtime_service_composition_preserves_start_order_and_checkpoint(self):
+        from focuscheck.runtime.composition import compose_runtime_services
+
+        events = []
+        services = compose_runtime_services(
+            lambda: events.append("icon"),
+            lambda: events.append("heartbeat"),
+            lambda: events.append("file_heartbeat"),
+            lambda: events.append("snooze_reminder"),
+            lambda: events.append("gentle_reminder"),
+            lambda: events.append("diagnostics"),
+            startup_stage=lambda name: events.append(name),
+        )
+
+        self.assertEqual(
+            [
+                "icon", "heartbeat", "file_heartbeat", "snooze_reminder",
+                "gentle_reminder", "services_started", "diagnostics",
+            ],
+            events,
+        )
+        self.assertEqual(
+            ("heartbeat", "file_heartbeat", "snooze_reminder", "gentle_reminder"),
+            services.started,
+        )
+
+    def test_runtime_service_diagnostic_failure_does_not_block_startup(self):
+        from focuscheck.runtime.composition import compose_runtime_services
+
+        stages = []
+        compose_runtime_services(
+            lambda: None,
+            lambda: None,
+            lambda: None,
+            lambda: None,
+            lambda: None,
+            lambda: (_ for _ in ()).throw(RuntimeError("diagnostics")),
+            startup_stage=stages.append,
+        )
+
+        self.assertEqual(["services_started"], stages)
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -711,7 +753,7 @@ class AppLifecycleTests(unittest.TestCase):
         self.assertEqual(
             {
                 "initial_monitoring_state_applied",
-                "engine_initialized", "services_started", "tray_initialized",
+                "engine_initialized", "tray_initialized",
                 "ready",
             },
             checkpoints,
@@ -720,7 +762,7 @@ class AppLifecycleTests(unittest.TestCase):
         for stage in (
             "paths_composed", "clock_composed", "lifecycle_starting",
             "settings_loaded", "migration_completed", "repositories_initialized",
-            "watcher_initialized",
+            "watcher_initialized", "services_started",
         ):
             self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 

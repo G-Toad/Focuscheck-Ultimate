@@ -43,6 +43,7 @@ from .runtime.dependencies import AppDependencies
 from .runtime.composition import (
     compose_foundations,
     compose_configuration,
+    compose_runtime_services,
     compose_tk_services,
     compose_runtime_state,
     compose_repositories,
@@ -384,22 +385,15 @@ class App:
         self._gentle_reminder_dialog = None
         self._tray_icon_image = None
         self._tray_icon_path = None
-        self._prepare_tray_icon()
-        # Heartbeat to catch paused->unpaused edges
-        self._start_heartbeat()
-        # File heartbeat for watchdogs
-        self._start_file_heartbeat()
-        # Snooze reminder check loop
-        self._start_snooze_reminder_check()
-        # Optional non-blocking gentle reminder loop
-        self._start_gentle_reminder_check()
-        self._startup_stage("services_started")
-
-        # Startup diagnostics (log versions and tray import attempts)
-        try:
-            self._log_startup_diagnostics()
-        except Exception:
-            pass
+        compose_runtime_services(
+            self._prepare_tray_icon,
+            self._start_heartbeat,
+            self._start_file_heartbeat,
+            self._start_snooze_reminder_check,
+            self._start_gentle_reminder_check,
+            self._log_startup_diagnostics,
+            startup_stage=self._startup_stage,
+        )
 
         # Optional cross-platform tray using pystray (preferred when available)
         self._pystray_started = False  # started (requested)

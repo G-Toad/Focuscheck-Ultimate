@@ -90,6 +90,13 @@ class ConfigurationServices:
     migration_events: Any
 
 
+@dataclass(frozen=True)
+class RuntimeServices:
+    """Application-owned recurring services started in dependency order."""
+
+    started: tuple[str, ...]
+
+
 def compose_foundations(
     dependencies: Any,
     *,
@@ -183,6 +190,37 @@ def compose_configuration(
     if callable(startup_stage):
         startup_stage("migration_completed")
     return ConfigurationServices(settings, migration_events)
+
+
+def compose_runtime_services(
+    prepare_tray_icon: Callable[[], Any],
+    start_heartbeat: Callable[[], Any],
+    start_file_heartbeat: Callable[[], Any],
+    start_snooze_reminder: Callable[[], Any],
+    start_gentle_reminder: Callable[[], Any],
+    startup_diagnostics: Callable[[], Any],
+    *,
+    startup_stage: Callable[[str], Any] | None = None,
+) -> RuntimeServices:
+    """Start recurring App services in a stable order before tray wiring."""
+    prepare_tray_icon()
+    started: list[str] = []
+    start_heartbeat()
+    started.append("heartbeat")
+    start_file_heartbeat()
+    started.append("file_heartbeat")
+    start_snooze_reminder()
+    started.append("snooze_reminder")
+    start_gentle_reminder()
+    started.append("gentle_reminder")
+    if callable(startup_stage):
+        startup_stage("services_started")
+    try:
+        startup_diagnostics()
+    except Exception:
+        # Diagnostics are best effort and must not prevent tray/watcher startup.
+        pass
+    return RuntimeServices(tuple(started))
 
 
 def compose_tk_services(
