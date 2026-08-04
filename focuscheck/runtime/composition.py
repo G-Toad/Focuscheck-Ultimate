@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import threading
 import tkinter as tk
+import sys
 from typing import Any, Callable
 
 from ..database import configure_paths as configure_csv_paths
@@ -55,6 +56,13 @@ class RepositoryServices:
 
     taskdb: Any
     guard: Any
+
+
+@dataclass(frozen=True)
+class WatcherServices:
+    """Optional native session/power/display watcher adapter."""
+
+    watcher: Any
 
 
 def compose_foundations(
@@ -216,3 +224,48 @@ def compose_repositories(
     if callable(component_sink):
         component_sink("guard", guard)
     return RepositoryServices(taskdb, guard)
+
+
+def compose_watcher(
+    watcher_factory: Callable[..., Any] | None,
+    *,
+    root: Any,
+    pystray_started: bool,
+    tray_icon_path: Any,
+    on_resume: Callable[..., Any],
+    on_pause: Callable[..., Any],
+    on_display_change: Callable[..., Any],
+    on_tray_click: Callable[..., Any],
+    on_shutdown: Callable[..., Any],
+    startup_stage: Callable[[str], Any] | None = None,
+    component_sink: Callable[[str, Any], Any] | None = None,
+) -> WatcherServices:
+    """Construct the optional native watcher without owning App state."""
+    watcher = None
+    if watcher_factory is not None:
+        try:
+            watcher = watcher_factory(
+                root,
+                on_resume_callable=on_resume,
+                on_pause_callable=on_pause,
+                on_display_change_callable=on_display_change,
+                tray_enabled=not pystray_started,
+                on_tray_click_callable=on_tray_click,
+                tray_tooltip="Focus Check",
+                tray_icon_path=tray_icon_path,
+                on_shutdown_callable=on_shutdown,
+            )
+            if callable(component_sink):
+                component_sink("watcher", watcher)
+            try:
+                get_logger().info(
+                    "startup: Windows watcher initialized | native_tray=%s",
+                    not pystray_started,
+                )
+            except Exception:
+                pass
+        except Exception as exc:
+            print(f"Windows watcher/tray unavailable: {exc}", file=sys.stderr)
+    if callable(startup_stage):
+        startup_stage("watcher_initialized")
+    return WatcherServices(watcher)

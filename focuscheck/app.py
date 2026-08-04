@@ -45,6 +45,7 @@ from .runtime.composition import (
     compose_tk_services,
     compose_runtime_state,
     compose_repositories,
+    compose_watcher,
 )
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
@@ -476,31 +477,20 @@ class App:
             self._using_pystray = False
         self._startup_stage("tray_initialized")
 
-        # Windows: listen for power/session/display and enable native tray only if pystray failed.
         self._winwatch = None
-        watcher_factory = self._watcher_factory()
-        if watcher_factory is not None:
-            try:
-                # Only enable native tray if pystray didn't start successfully
-                enable_native_tray = not self._pystray_started
-                self._winwatch = watcher_factory(
-                    self.root,
-                    on_resume_callable=self._on_resume_event,
-                    on_pause_callable=self._on_pause_event,
-                    on_display_change_callable=self._on_display_change,
-                    tray_enabled=enable_native_tray,
-                    on_tray_click_callable=self._on_tray_click,
-                    tray_tooltip="Focus Check",
-                    tray_icon_path=self._tray_icon_path,
-                    on_shutdown_callable=self._handle_system_shutdown,
-                )
-                try:
-                    get_logger().info("startup: Windows watcher initialized | native_tray=%s", enable_native_tray)
-                except Exception:
-                    pass
-            except Exception as e:
-                print(f"Windows watcher/tray unavailable: {e}", file=sys.stderr)
-        self._startup_stage("watcher_initialized")
+        compose_watcher(
+            self._watcher_factory(),
+            root=self.root,
+            pystray_started=self._pystray_started,
+            tray_icon_path=self._tray_icon_path,
+            on_resume=self._on_resume_event,
+            on_pause=self._on_pause_event,
+            on_display_change=self._on_display_change,
+            on_tray_click=self._on_tray_click,
+            on_shutdown=self._handle_system_shutdown,
+            startup_stage=self._startup_stage,
+            component_sink=lambda name, value: setattr(self, "_winwatch", value),
+        )
         # quick first pop to prove it works
         self._schedule_next(2000)
         self.lifecycle.transition(LifecyclePhase.READY, reason="app_ready")
