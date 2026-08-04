@@ -24,6 +24,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 - `PromptScheduler` owns prompt timer registration and observer cancellation through the composed `TimerRegistry`; direct `after()` use remains only in standalone compatibility paths and component-local dialog timers.
 - `StartupService` owns startup registration operations; App tray handlers retain only UI-thread dispatch and user-facing confirmation.
 - `HeartbeatService` owns heartbeat payload construction, readiness/health projection, atomic publication, and bounded write-failure telemetry; the supervisor remains the consumer of the file protocol.
+- `GuardMonitorService` owns periodic `PauseGuard` sampling, effective-pause transition notification, and the named pause-edge timer; App guard methods remain compatibility delegates.
 - Prompt creation is delegated to the active monitoring engine.
 - Settings changes can regenerate active prompts.
 - Snooze and manual pause are persisted in settings.
@@ -35,6 +36,7 @@ This document describes the architecture as it exists now. It is descriptive, no
 - `InterventionOrchestrator` owns one intervention lease, identity, wizard execution, prompt visibility scope, and terminal cleanup.
 - `PromptScheduler` owns the next-prompt timer and prompt visibility/closed observer cancellation.
 - `HeartbeatService` owns the periodic heartbeat protocol and receives the immutable path/runtime context at composition time.
+- `GuardMonitorService` owns the one-second guard monitor and receives the App runtime state, guard adapter, and timer registry through the composition boundary.
 - These services receive the App context at the composition boundary; legacy App methods remain compatibility delegates for existing adapters and tests.
 
 ## Monitoring Engines

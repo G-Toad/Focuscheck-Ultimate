@@ -18,3 +18,4 @@
 | Canonical runtime paths | immutable `AppPaths` | selected once per data root; legacy selection remains migration-only. |
 | Pause/snooze/runtime leases | `RuntimeStateCoordinator` | transactional persistence; prompt/intervention/shutdown lease methods. |
 | Heartbeat payload/publication | `HeartbeatService` | App retains the compatibility delegate; atomic writes and bounded failure telemetry are isolated, while the supervisor treats stale/malformed heartbeat as unhealthy. |
+| Guard sampling and pause-edge timer | `GuardMonitorService` | Samples `PauseGuard` once per interval, publishes `system_guard`, notifies the engine on effective-pause changes, and is cancelled by the App-owned `TimerRegistry` during shutdown. |

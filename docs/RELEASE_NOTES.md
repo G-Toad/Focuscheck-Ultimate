@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Implementation source checkpoint: `88534fd`; latest evidence/report commit: `366a49b`.
-- Full verifier: all 21 bounded stages passed, with 601 unittest cases and zero process leaks.
+- Implementation source checkpoint: `30cbe81`; latest evidence/report commit: `566367c`.
+- Full verifier: all 21 bounded stages passed, with 604 unittest cases and zero process leaks.
+- Guard sampling, effective-pause transition notification, and pause-edge scheduling now have an injectable `GuardMonitorService` boundary; the App methods remain compatibility delegates.
 - Heartbeat payload construction and atomic publication now have an injectable `HeartbeatService` boundary; the App method remains a compatibility delegate and supervisor protocol fields are unchanged.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
 - The full pre-READY startup sequence is now owned by `compose_application_services`; `App._initialize` delegates composition and retains only scheduling, readiness, and initial heartbeat publication.
