@@ -2,7 +2,7 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `301a241`.
+- Implementation source checkpoint: `301a241`; latest evidence/report commit: `e9d267a`.
 - Full verifier: all 21 bounded stages passed, with 592 unittest cases and zero process leaks.
 - Tray and native watcher startup are now composed as one ordered platform-services boundary, preserving fallback state and checkpoint ordering.
 - The full pre-READY startup sequence is now owned by `compose_application_services`; `App._initialize` delegates composition and retains only scheduling, readiness, and initial heartbeat publication.
@@ -19,7 +19,7 @@
 - V1 prompt response logging exposes an explicit CSV durability failure while preserving cleanup and owner notification.
 
 - Branch: `main`
-- Automated test baseline: 342 unittest cases.
+- Current automated test count: 592 unittest cases.
 - Task deadline UI and database overdue transitions now preserve `failed`/`timed_out` semantics instead of allowing overdue completion to be recorded as success.
 - Runtime pause persistence now stores manual intent separately from derived effective pause, preserving legacy snooze and manual-pause semantics across restart and expiry.
 - Verification runner: all 21 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export/recovery, performance, package-build, and process-leak gates.
@@ -32,7 +32,7 @@
 - Runtime state now exposes an immutable revisioned view with effective-pause reason and guard metadata for diagnostics/adapters, while retaining the compatibility snapshot for existing callers.
 - Status snapshots and heartbeats now consume that view and publish the runtime revision and effective pause reason with scalar-safe compatibility fallback.
 - The pystray adapter now owns and cancels its post-start health-check timer during reschedule and shutdown.
-- The bounded mutation-smoke stage now kills five selected mutants, including isolated TaskDB active-to-completed and supervisor stable-ready backoff mutants.
+- The bounded mutation-smoke stage now kills six selected mutants, including isolated TaskDB active-to-completed, supervisor stable-ready backoff, and pystray timer-ownership mutants.
 - V1 and V2 prompt settings entry points now pass the App-owned persistence callback into their Settings window.
 - Verification stage timeouts now terminate only the timed-out stage PID tree and the machine-readable report records commit, environment, test count, manual requirements, process leaks, and `partial` release status when manual gates remain.
 - V1 and V2 prompt finalization now preserves dialog destruction and owner notification when timer cleanup raises, with regression coverage for the injected failure path.
