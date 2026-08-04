@@ -22,7 +22,7 @@
 - Automated test baseline: 342 unittest cases.
 - Task deadline UI and database overdue transitions now preserve `failed`/`timed_out` semantics instead of allowing overdue completion to be recorded as success.
 - Runtime pause persistence now stores manual intent separately from derived effective pause, preserving legacy snooze and manual-pause semantics across restart and expiry.
-- Verification runner: all 19 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export/recovery, performance, and process-leak gates.
+- Verification runner: all 21 bounded stages pass, including compile, tests, mutation smoke, test-category inventory, real-process supervisor and state-restart integration, QA, application/tray/native self-tests, resource-leak, isolation, export/recovery, performance, package-build, and process-leak gates.
 - The verifier also runs disposable real-process supervisor scenarios covering crash/restart, generation-bound stop acknowledgement, hang recovery, circuit-breaker entry, and child reaping; production-duration and target-machine supervision remain pending.
 - The composed Advanced Settings window now delegates durable writes through the App-owned persistence callback and applies the normalized committed settings snapshot after success; standalone construction retains its compatibility fallback.
 - Camera-adjustment and crop-adjustment child windows now use that same App-owned callback when composed by Settings, and apply normalized committed child settings after durable save.
