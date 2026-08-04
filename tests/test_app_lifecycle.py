@@ -33,6 +33,41 @@ class AppLifecycleTests(unittest.TestCase):
     def tearDown(self):
         self._reset_application_logger()
 
+    def test_foundation_composition_uses_injected_boundaries(self):
+        from focuscheck.runtime.composition import compose_foundations
+        from focuscheck.runtime.dependencies import AppDependencies
+
+        stages = []
+        paths = type(
+            "Paths", (), {
+                "app_log": "app.log",
+                "structured_events": "events.jsonl",
+            }
+        )()
+        clock = mock.Mock()
+        clock.monotonic.return_value = 1.0
+        ledger = mock.Mock()
+        lifecycle = mock.Mock()
+        deps = AppDependencies(
+            app_paths_factory=mock.Mock(return_value=paths),
+            clock_factory=mock.Mock(return_value=clock),
+            csv_paths_configurator=mock.Mock(),
+            log_path_configurator=mock.Mock(),
+            event_ledger_factory=mock.Mock(return_value=ledger),
+            lifecycle_factory=mock.Mock(return_value=lifecycle),
+        )
+
+        foundations = compose_foundations(deps, startup_stage=stages.append)
+
+        self.assertIs(paths, foundations.paths)
+        self.assertIs(clock, foundations.clock)
+        self.assertIs(ledger, foundations.event_ledger)
+        self.assertIs(lifecycle, foundations.lifecycle)
+        self.assertEqual(["paths_composed", "clock_composed", "lifecycle_starting"], stages)
+        deps.csv_paths_configurator.assert_called_once_with(paths)
+        deps.log_path_configurator.assert_called_once_with("app.log")
+        lifecycle.transition.assert_called_once()
+
     def test_schedule_once_uses_named_app_timer_owner(self):
         from focuscheck.app import App
         from focuscheck.utils.timers import TimerRegistry
@@ -461,10 +496,10 @@ class AppLifecycleTests(unittest.TestCase):
     def test_initialize_declares_all_startup_failure_injection_checkpoints(self):
         from focuscheck.app import App
 
-        source = Path(App.__module__.replace(".", os.sep) + ".py")
-        if not source.is_absolute():
-            source = Path(__file__).resolve().parents[1] / "focuscheck" / "app.py"
-        tree = ast.parse(source.read_text(encoding="utf-8"))
+        root = Path(__file__).resolve().parents[1]
+        app_source = root / "focuscheck" / "app.py"
+        composition_source = root / "focuscheck" / "runtime" / "composition.py"
+        tree = ast.parse(app_source.read_text(encoding="utf-8"))
         initialize = next(
             node for node in ast.walk(tree)
             if isinstance(node, ast.FunctionDef) and node.name == "_initialize"
@@ -480,7 +515,6 @@ class AppLifecycleTests(unittest.TestCase):
         }
         self.assertEqual(
             {
-                "paths_composed", "clock_composed", "lifecycle_starting",
                 "tk_and_timers_created", "settings_loaded", "migration_completed",
                 "initial_monitoring_state_applied", "repositories_initialized",
                 "engine_initialized", "services_started", "tray_initialized",
@@ -488,6 +522,9 @@ class AppLifecycleTests(unittest.TestCase):
             },
             checkpoints,
         )
+        composition_source_text = composition_source.read_text(encoding="utf-8")
+        for stage in ("paths_composed", "clock_composed", "lifecycle_starting"):
+            self.assertIn(f'startup_stage("{stage}")', composition_source_text)
 
     def test_cleanup_declares_all_shutdown_failure_injection_checkpoints(self):
         from focuscheck.app import App

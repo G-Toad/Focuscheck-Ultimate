@@ -33,7 +33,7 @@ from .config import (
 from .settings import load_settings, save_settings, DEFAULT_SETTINGS
 
 # Database
-from .database import TaskDB, configure_paths as configure_csv_paths, ensure_log_header
+from .database import TaskDB, ensure_log_header
 
 # UI components
 from .ui.dialogs.task_entry_dialog import TaskEntryDialog
@@ -43,9 +43,8 @@ from .ui.guards import PauseGuard
 from .runtime.state import RuntimeStateCoordinator
 from .runtime.journal import RuntimeTransitionJournal
 from .runtime.lifecycle import LifecycleCoordinator, LifecyclePhase
-from .runtime.events import StructuredEventLedger
 from .runtime.dependencies import AppDependencies
-from .utils.clock import SystemClock
+from .runtime.composition import compose_foundations
 from .ui.prompt_coordinator import PromptCoordinator, PromptOutcome
 from .utils.timers import TimerRegistry
 from .ui.windows import SettingsWindow
@@ -68,7 +67,6 @@ from .platform_specific import (
 
 # Utilities
 from .utils import (
-    configure_log_path,
     get_logger,
     log_exception,
     get_data_dir,
@@ -84,7 +82,6 @@ from .utils.paths import (
     HEARTBEAT_PATH,
     TASK_DB_PATH,
     APP_LOG_PATH,
-    get_app_paths,
 )
 
 FILE_HEARTBEAT_INTERVAL_SECONDS = 60_000
@@ -258,29 +255,20 @@ class App:
 
     def _initialize(self, *, force_start=False):
         self._force_start = bool(force_start)
-        # Freeze one path snapshot for every component composed by this App.
-        paths_factory = self._dependencies.app_paths_factory or get_app_paths
-        self.paths = paths_factory(filesystem=getattr(self._dependencies, "filesystem", None))
-        self._startup_stage("paths_composed")
-        clock_factory = self._dependencies.clock_factory or SystemClock
-        self._runtime_clock = self._clock_override or clock_factory()
-        self._startup_stage("clock_composed")
-        csv_paths_configurator = self._dependencies.csv_paths_configurator or configure_csv_paths
-        csv_paths_configurator(self.paths)
-        log_path_configurator = self._dependencies.log_path_configurator or configure_log_path
-        log_path_configurator(self.paths.app_log)
-        event_ledger_factory = self._dependencies.event_ledger_factory or StructuredEventLedger
-        self._event_ledger = event_ledger_factory(
-            self.paths.structured_events,
-            clock=self._runtime_clock,
-            monotonic_clock=self._runtime_clock.monotonic,
+        foundations = compose_foundations(
+            self._dependencies,
+            clock_override=self._clock_override,
+            startup_stage=self._startup_stage,
+            component_sink=lambda name, value: setattr(
+                self,
+                {"paths": "paths", "clock": "_runtime_clock", "event_ledger": "_event_ledger", "lifecycle": "lifecycle"}[name],
+                value,
+            ),
         )
-        lifecycle_factory = self._dependencies.lifecycle_factory or LifecycleCoordinator
-        self.lifecycle = lifecycle_factory(
-            _sink=lambda event: self._event_ledger.append("lifecycle", event)
-        )
-        self.lifecycle.transition(LifecyclePhase.STARTING, reason="app_construct")
-        self._startup_stage("lifecycle_starting")
+        self.paths = foundations.paths
+        self._runtime_clock = foundations.clock
+        self._event_ledger = foundations.event_ledger
+        self.lifecycle = foundations.lifecycle
         root_factory = getattr(self._dependencies, "tk_root_factory", None) or tk.Tk
         self.root = root_factory()
         self._tk_thread_id = threading.get_ident()
