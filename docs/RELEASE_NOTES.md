@@ -2,9 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `2880124`.
-- Full verifier: all 21 bounded stages passed, with 582 unittest cases and zero process leaks.
-- Runtime journal and `RuntimeStateCoordinator` construction now have a dedicated composition boundary with partial-resource assignment coverage.
+- Source checkpoint: `b6186d5`.
+- Full verifier: all 21 bounded stages passed, with 583 unittest cases and zero process leaks.
+- TaskDB, log-header, and `PauseGuard` construction now have a dedicated repository/guard composition boundary preserving TaskDB degradation behavior.
 - Native overlay ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.
 - Release status remains `NOT_READY`: the five manual Windows/release evidence groups are still `not_run`; a current-source package now builds, validates, and passes the bounded packaged supervisor protocol self-test, but installer-shell, signing, and target-machine gates remain open.
 
