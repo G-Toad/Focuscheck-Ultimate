@@ -2,8 +2,9 @@
 
 ## Current automated checkpoint
 
-- Source checkpoint: `a0ad1da`.
-- Full verifier: all 21 bounded stages passed, with 586 unittest cases and zero process leaks.
+- Source checkpoint: `33d0ae3`.
+- Full verifier: all 21 bounded stages passed, with 588 unittest cases and zero process leaks.
+- Startup settings loading and legacy migration now have a dedicated injected composition boundary with fail-closed migration handling and checkpoint coverage.
 - Monitoring engine selection and prompt-coordinator construction now have a dedicated composition boundary while preserving engine-before-coordinator ordering.
 - Pystray adapter construction/startup, settings accessors, liveness callback, and native-fallback dispatch now have a dedicated tray composition boundary.
 - Native overlay ownership/class isolation, website-warning callback ordering, and Kernel32 tray error retrieval have deterministic regression coverage; the standard verifier also rebuilds current source into disposable frozen executables, validates the package, and exercises packaged supervisor READY/stop/reaping behavior.

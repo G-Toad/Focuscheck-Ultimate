@@ -1,5 +1,7 @@
 # Release Evidence
 
+Latest startup configuration extraction: source checkpoint `33d0ae3` moves settings loading and legacy migration into an injected composition boundary, preserving the `settings_loaded` and `migration_completed` checkpoints and failing closed on fatal migration results. The full verifier passed all 21 stages with 588 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
+
 Latest monitoring composition extraction: source checkpoint `a0ad1da` moves selected engine and prompt-coordinator assembly into the runtime composition boundary while preserving engine-before-coordinator ordering. The full verifier passed all 21 stages with 586 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
 
 Latest tray composition extraction: source checkpoint `c6a0a53` moves pystray construction/startup, settings accessors, liveness reporting, and native-fallback dispatch into the runtime composition boundary. The full verifier passed all 21 stages with 585 tests and zero process leaks; manual Windows/UIA/browser/release evidence remains pending.
